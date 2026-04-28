@@ -1,0 +1,9 @@
+Im Agenturumfeld wird die Website eines Kunden oft als abgeschlossenes Produkt verkauft. In der Praxis ist das fast immer ein Formulierungsfehler. Nicht weil die Teams schlecht arbeiten, sondern weil der eigentliche Gegenstand der Diskussion ausgetauscht wird: Statt eines Systems wird dem Kunden ein Artefakt übergeben.
+
+- Sinnvoller ist es, „Website als Ausgabe“ und „Website als Asset“ nicht nach Budget und auch nicht nach visueller Qualität zu unterscheiden, sondern nach dem Verhalten nach dem Launch. Wenn man den bezahlten Traffic abschaltet, was bleibt dann übrig? Messbarkeit, organischer Traffic, angesammelte Daten, funktionierende Integrationen, eine steuerbare Infrastruktur? Oder nur eine Oberfläche, die ständig weiter gespeist werden muss? Für eine Agentur ist das keine Philosophie, sondern eine Frage eines korrekt definierten Scope.
+- Das zweite Problem sind Ergebnisversprechen dort, wo der Dienstleister den größten Teil der Gleichung gar nicht kontrolliert. Der Auftragnehmer kann für Analytics, die Übergabe von Zugängen, technische Zuverlässigkeit, Dokumentation, die Seitenlogik und Integrationen verantwortlich sein. Das wirtschaftliche Ergebnis hängt aber zusätzlich vom Offer, vom Traffic, von der Lead-Bearbeitung, von Saisonalität und von der Reputation ab. Wenn eine Agentur diese Grenze verwischt, legt sie den Grundstein für einen künftigen Konflikt.
+- Der dritte Punkt, der im Agenturbetrieb oft unterschätzt wird: Eine reife Website reduziert die Abhängigkeit des Kunden von ständiger manueller Beteiligung. Wenn Anfragen in das CRM gelangen, Daten lesbar sind, Rechte dem Eigentümer gehören, Inhalte ausgebaut werden können und die Struktur sowohl für Menschen als auch für KI-Systeme verständlich ist, baut die Agentur Infrastruktur. Wenn nicht, betreut sie eine Fassade.
+
+Wie zieht ihr bei euch die Grenze zwischen „Website geliefert“ und „ein funktionierendes System aufgebaut“?
+
+---

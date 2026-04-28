@@ -1,0 +1,9 @@
+Für Selbständige und kleinere Unternehmen wirkt eine Website oft wie etwas offensichtlich Nützliches. Aus praktischer Sicht ist jedoch eine andere Frage wichtiger: Arbeitet sie als Vermögenswert oder kostet sie nur Geld und Zeit in der Pflege? Besonders sichtbar wird das dort, wo der Inhaber gleichzeitig Kunden betreut, Vertrieb macht und die Administration übernimmt.
+
+- Das erste Kriterium ist sehr einfach: Wenn man heute Werbung und externe Promotion stoppt, bleibt die Website dann trotzdem nützlich? Zum Beispiel indem sie Suchanfragen über die Suche bringt, Kontakte sammelt, Leistungen klar darstellt, Zeit bei Erklärungen oder bei der Terminvereinbarung spart. Wenn nicht, ist sie womöglich noch kein Vermögenswert, sondern eine digitale Visitenkarte. Das ist nicht unbedingt schlecht – wichtig ist nur, das ehrlich zu verstehen.
+- Das zweite Kriterium ist Kontrolle. Domain, Hosting, E-Mail, Analytics, Formulare, Texte, Zugänge – all das muss unter der Kontrolle des Geschäftsinhabers stehen. Andernfalls entsteht jederzeit eine Abhängigkeit von einem Dienstleister oder einem Bekannten, der „damals alles eingerichtet hat“. Für Selbständige ist das besonders schmerzhaft, weil es in der Regel keine zusätzlichen administrativen Ressourcen gibt.
+- Das dritte Kriterium ist die Beteiligung der Website an der täglichen Arbeit. Wenn sie Anfragen, Terminbuchungen, Antworten auf Standardfragen, die Übergabe von Daten ins CRM automatisiert oder zumindest den Umfang manueller Korrespondenz reduziert, schafft sie bereits einen realen Wert. Wenn die Website dagegen nur existiert und die gesamte Arbeit weiterhin manuell läuft, sollte ihre Rolle neu bewertet werden.
+
+Wie definieren Sie für sich den Moment, in dem eine Website aufhört, nur eine Präsenz im Internet zu sein, und beginnt, als Vermögenswert zu arbeiten?
+
+---

@@ -1,0 +1,11 @@
+## KI und die neuen Spielregeln: Was sich bereits verändert
+
+Wenn Sie denken, dass die Gespräche über KI nur ein Hype sind, der Sie nicht betrifft, schauen Sie genauer hin.
+
+Schon heute sucht ein spürbarer Teil der Menschen Informationen nicht mehr über Google. Sie fragen Perplexity oder ChatGPT.
+
+Was bedeutet das für Ihre Website?
+
+KI-Systeme müssen verstehen: Was Sie tun, wo Sie sich befinden, wie viel Ihre Leistungen kosten, wie man Sie kontaktiert. Wenn die Informationen unstrukturiert sind, in PDFs oder Bildern versteckt - dann existieren Sie für KI nicht.
+
+Morgen werden nicht alle aufhören, die klassische Suche zu nutzen. Aber den Trend zu ignorieren bedeutet, einen wachsenden Kanal zu verpassen. Vor allem, wenn sich Ihre Wettbewerber bereits anpassen.

@@ -1,0 +1,30 @@
+# Verantwortungsbereich: Was eine Agentur leisten kann – und was von Ihnen abhängt
+
+## Grenzen von Zusagen
+### Garantien für Anfragen
+### Garantien für den ROI
+### Risiko von Manipulation
+
+## Wovon der ROI abhängt
+### Qualität der Website
+### Traffic
+### Angebot
+### Bearbeitung von Anfragen
+
+## Kontrollbereich der Agentur
+### Ein Teil der Gleichung
+### Qualitätskontrolle der Website
+
+## Was die Agentur garantiert
+### Technische Funktionsfähigkeit
+### Geschwindigkeit der Website
+### Eingerichtete Analytik
+### Rechte und Zugänge
+### Dokumentation und Schulung
+
+## Gemeinsame Verantwortung
+### Werbung und SEO
+### Reputation
+### Produkt und Preis
+### Verkaufsbedingungen
+### Geschwindigkeit und Professionalität in der Bearbeitung

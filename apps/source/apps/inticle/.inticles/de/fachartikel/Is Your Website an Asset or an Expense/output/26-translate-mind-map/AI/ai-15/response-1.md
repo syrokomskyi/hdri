@@ -1,0 +1,30 @@
+# Area of Responsibility: What the Studio Can Do, and What Depends on You
+
+## The Limits of Promises
+### Lead Guarantees
+### ROI Guarantees
+### The Risk of Manipulation
+
+## What ROI Depends On
+### Website Quality
+### Traffic
+### Offer
+### Lead Handling
+
+## The Studio’s Zone of Control
+### Part of the Equation
+### Website Quality Control
+
+## What the Studio Guarantees
+### Technical Reliability
+### Website Speed
+### Configured Analytics
+### Rights and Access
+### Documentation and Training
+
+## Shared Responsibility
+### Advertising and SEO
+### Reputation
+### Product and Price
+### Sales Conditions
+### Speed and Professionalism of Lead Handling

@@ -1,0 +1,9 @@
+Ich halte es für sinnvoll, eine Website nicht als „etwas, das man haben muss“ zu diskutieren, sondern als ökonomische Konstruktion. Im professionellen Umfeld nimmt das viel Verwirrung aus der Debatte: Dieselbe Ressource kann überzeugend wirken, aber entweder ein sich aufbauender Vermögenswert sein oder ein laufender Kostenblock ohne eigenen Trägheitseffekt.
+
+- Das erste Kriterium ist, was nach dem Stopp des bezahlten Traffics passiert. Wenn die Website keinen organischen Nutzen bewahrt, keine Reputationsebene hält, keine Daten sammelt und nicht in Prozesse eingebunden ist, erhält sie keinen Wert. Das bedeutet, dass das Marketing jeden Monat das Ergebnis neu einkauft, statt ein bereits geschaffenes System zu verstärken.
+- Das zweite Kriterium ist die Verantwortungsgrenze. Ein Dienstleister kann Struktur, Analytics, Performance, die Übergabe von Zugängen und die Dokumentation qualitativ sauber umsetzen. Aber niemand kontrolliert gleichzeitig das Angebot, die Qualität des Vertriebs, die Reaktionsgeschwindigkeit, die Marktsituation und alle Traffic-Quellen. Deshalb wirken Zusagen eines vollständigen Geschäftsergebnisses allein durch eine Website methodisch schwach.
+- Das dritte Kriterium ist die Bereitschaft für neue Suchschnittstellen. Heute ist immer häufiger entscheidend, ob Maschinen verstehen, womit sich ein Unternehmen beschäftigt, wo es sich befindet, wie man es kontaktiert, wie die Leistungen aufgebaut sind und welche Vertrauenssignale vorhanden sind. Wenn eine Website nur für die visuelle Wahrnehmung durch Menschen gebaut ist, wird ihre Sichtbarkeit selbst bei normaler klassischer Optimierung begrenzt.
+
+Welche Merkmalskombination würden Sie als zwingend bezeichnen, damit man in einem professionellen Gespräch eine Website tatsächlich als Asset und nicht einfach als Digital Overhead einordnet?
+
+---

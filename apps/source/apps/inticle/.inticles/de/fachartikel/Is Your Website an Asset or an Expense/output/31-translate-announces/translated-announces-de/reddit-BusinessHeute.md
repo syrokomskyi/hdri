@@ -1,0 +1,9 @@
+In vielen kleinen Unternehmen wird die Website als obligatorisches digitales Attribut wahrgenommen. Aus wirtschaftlicher Sicht ist es jedoch sinnvoller, eine andere Frage zu stellen: Ist sie ein Vermögenswert oder ein laufender Aufwand? Der Unterschied ist nicht kosmetisch. Er beeinflusst die Steuerbarkeit des Unternehmens, die Abhängigkeit vom Inhaber und die Qualität einer späteren Unternehmensübergabe.
+
+- Das erste Kriterium ist, ob der Wert ohne ständige finanzielle Zufuhr erhalten bleibt. Wenn die Website nach dem Stopp von Werbung nichts mehr bringt und keine Daten für Analysen vorliegen, haben wir es nicht mit einem Vermögenswert zu tun, sondern mit einer digitalen Visitenkarte. Messbarkeit, organische Sichtbarkeit, der Aufbau von Kontakten, Vertrauenssignalen und funktionierenden Prozessen erzeugen dagegen einen Effekt, der nicht unmittelbar nach Abschaltung des Budgets verschwindet.
+- Das zweite Kriterium ist Kontrolle. Wem gehören Domain, Hosting, Analytik, Ausgangsmaterialien und Integrationen? Wenn der Unternehmer den Dienstleister nicht konfliktfrei wechseln oder das System nicht übertragen kann, dann steuert er keinen digitalen Vermögenswert. Er ist von einer externen Partei in einer Frage abhängig, die innerhalb des Unternehmens verankert sein sollte.
+- Das dritte Kriterium ist die Verbindung zum operativen Geschäft. Eine Website ist nicht nur als Akquisekanal sinnvoll, sondern auch als Element zur Senkung des administrativen Aufwands: Anfragen, Dokumente, Terminbuchung, Routing von Anfragen, eine einheitliche Datenstruktur. Im deutschen Kontext kommen rechtliche Sauberkeit, DSGVO und die Reduzierung des Inhaberrisikos bei der Unternehmensübergabe hinzu.
+
+Wenn Sie die Website als Teil der Unternehmensinfrastruktur betrachten: Welche Merkmale sind für Sie entscheidend?
+
+---

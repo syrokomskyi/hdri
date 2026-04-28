@@ -1,0 +1,9 @@
+In der Agenturpraxis ist es sinnvoll, nicht mehr über eine Website als "Projekt zum Launch" zu sprechen, sondern als eine Asset-Klasse. Das verändert den Vertrieb, die Delivery und die Erwartungen des Kunden. Und was noch wichtiger ist: Es reduziert die Zahl der Konflikte nach dem Go-live.
+
+- Der nüchternste Test, dem ich begegnet bin: Wenn man die Werbung stoppt, was bleibt dann übrig? Wenn nur eine schöne Benutzeroberfläche bleibt, hat der Kunde kein Asset gekauft, sondern einen laufenden Aufwand. Wenn Daten, eine indexierbare Struktur, eine aufgebaute Reputationsebene, funktionierende Formulare, Integrationen und echte Steuerbarkeit bleiben, dann gibt es bereits eine Grundlage, auf der sich Wirkung kumulativ aufbauen kann. Für eine Agentur ist es sinnvoll, das vor der Vertragsunterzeichnung klar anzusprechen.
+- Die nächste Ebene ist der Verantwortungsbereich. Ein Dienstleister kann tatsächlich Verantwortung für die Seitenarchitektur, die Analytik, die Übergabe von Zugängen, die Performance, die Dok und einen stabilen Support übernehmen. Er kontrolliert aber weder die Qualität des Angebots, noch die Reaktionsgeschwindigkeit des Vertriebs, die Preispolitik oder den gesamten Media-Mix. Wenn eine Agentur ohne diese Voraussetzungen ein Geschäftsergebnis verspricht, baut sie ihre Kommunikation auf einer ungenauen Grundlage auf.
+- Der dritte Punkt ist Reife in der Infrastruktur. Eine gute Website zieht nicht nur an, sondern reduziert auch die operative Last: Sie leitet Anfragen in das CRM, hilft dabei, Info zu standardisieren, vereinfacht den Wechsel des Dienstleisters und erhöht die Maschinenlesbarkeit für neue Suchschnittstellen. Das ist bereits keine "Marketing-Website" mehr, sondern ein Teil des Systems des Unternehmens.
+
+Wie formulieren Sie bei sich gegenüber dem Kunden den Unterschied zwischen der Entwicklung einer Website und dem Aufbau eines digitalen Assets?
+
+---
