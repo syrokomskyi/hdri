@@ -12,4 +12,10 @@ This is not a text about redesign. It is an attempt to provide a working model f
 
 Tags: webarchitecture, seo, digitalstrategy, automation, ai
 
+🟦 EN https://linkedin.com/pulse/your-website-asset-expense-one-question-changes-andrii-syrokomskyi-bgopf
+
+🟨 DE https://grow.syrokomskyi.com/ist-ihre-website-ein-vermogenswert-oder-ein-kostenfaktor-eine-frage-die-alles-verandert
+
 ---
+
+https://dev.to/syrokomskyi/is-your-website-an-asset-or-an-expense-one-question-that-changes-everything-d8k

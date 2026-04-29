@@ -27,3 +27,5 @@ It seems useful to me to look at a website not as a launch project, but as a man
 If you apply this perspective to your website today, does it look more like an asset or more like an expense?
 
 ---
+
+🟦 EN https://linkedin.com/pulse/your-website-asset-expense-one-question-changes-andrii-syrokomskyi-bgopf

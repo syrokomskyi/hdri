@@ -8,4 +8,10 @@ I also addressed the topic of AI separately: if a site's structure is unreadable
 
 A website as an artifact is one scenario. A website as infrastructure is a completely different one.
 
+🟦 EN https://linkedin.com/pulse/your-website-asset-expense-one-question-changes-andrii-syrokomskyi-bgopf
+
+🟨 DE https://grow.syrokomskyi.com/ist-ihre-website-ein-vermogenswert-oder-ein-kostenfaktor-eine-frage-die-alles-verandert
+
 ---
+
+https://www.threads.com/@syrokomskyi/post/DXuFdQjDJmt?xmt=AQF0rGo4yR3Bsmh4Ra7y1JGo9Ll5VYatPSWyoighbIlJ_Q

@@ -24,4 +24,10 @@ if paid promotion stops, will the website retain value for the company?
 
 #SEO #Digitalstrategie #Mittelstand
 
+🟦 EN https://linkedin.com/pulse/your-website-asset-expense-one-question-changes-andrii-syrokomskyi-bgopf
+
+🟨 DE https://grow.syrokomskyi.com/ist-ihre-website-ein-vermogenswert-oder-ein-kostenfaktor-eine-frage-die-alles-verandert
+
 ---
+
+https://www.xing.com/discover/detail-activities/6749161880.fcaad6
