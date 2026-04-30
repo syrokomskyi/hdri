@@ -30,4 +30,6 @@ if paid promotion stops, will the website retain value for the company?
 
 ---
 
-https://www.xing.com/discover/detail-activities/6749161880.fcaad6
+DELETED https://www.xing.com/discover/detail-activities/6749161880.fcaad6
+
+REPLACED TO https://www.xing.com/discover/detail-activities/6749165251.686cdd
