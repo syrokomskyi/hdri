@@ -1,0 +1,12 @@
+{"timestamp":"2026-05-25T06:01:22.896Z","event":"step_started","stepId":"translate-announces","stepNumber":31,"status":"started"}
+{"timestamp":"2026-05-25T06:01:22.898Z","stepId":"translate-announces","stepNumber":31,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-05-25T06:07:21.450Z","stepId":"translate-announces","stepNumber":31,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-05-25T06:07:21.451Z","stepId":"translate-announces","stepNumber":31,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-05-25T06:07:21.452Z","stepId":"translate-announces","stepNumber":31,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-05-25T06:07:21.453Z","stepId":"translate-announces","stepNumber":31,"event":"phase_completed","status":"completed","details":{"phaseId":"announcement-packaging","phaseTitle":"Announcement packaging"}}
+{"timestamp":"2026-05-25T06:19:26.946Z","event":"step_started","stepId":"translate-announces","stepNumber":31,"status":"started"}
+{"timestamp":"2026-05-25T06:19:26.947Z","stepId":"translate-announces","stepNumber":31,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-05-25T06:19:26.983Z","stepId":"translate-announces","stepNumber":31,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-05-25T06:19:26.984Z","stepId":"translate-announces","stepNumber":31,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-05-25T06:19:26.987Z","stepId":"translate-announces","stepNumber":31,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-05-25T06:19:26.990Z","stepId":"translate-announces","stepNumber":31,"event":"phase_completed","status":"completed","details":{"phaseId":"announcement-packaging","phaseTitle":"Announcement packaging"}}

@@ -1,0 +1,9 @@
+Über SEO wird oft im Zusammenhang mit Ergebnissen gesprochen, seltener jedoch über die Natur des Beitrags. Und genau hier, so scheint es mir, beginnt die Verwirrung. Nicht jede SEO-Arbeit eignet sich gleichermaßen für eine langfristige Beteiligung am geschaffenen Wert: Das eine ist ein geschaffenes Asset, das andere ein Effekt, der nur so lange besteht, wie das System aufrechterhalten wird.
+
+- Wenn man nüchtern darauf blickt, liegt ein Teil der SEO-Arbeit näher am Werk: etwa eine Methodik für die Prüfung der Präsenz eines Unternehmens in AI-Systemen, eine formalisierte Informationsarchitektur, eine Template-Bibliothek, ein strukturiertes Framework für die interne Verlinkung. Das ist nicht einfach nur eine „Dienstleistung“. Es ist ein Artefakt mit Grenzen, einem Zustand, Abnahmekriterien, und es kann als Teil der Infrastruktur weiterleben.
+- Ein anderer Teil liegt näher an der Wirkung: der Effekt von Optimierung, verbesserte Sichtbarkeit, mehr Anfragen, das Halten von Positionen, die Interaktion mit Nachfrage über die Zeit. Auch das ist Wert, aber er akkumuliert nicht als eigenständiges Objekt. Genau deshalb wirken alle Versuche, für diese Art von Beitrag einen „ewigen Anteil“ zu geben, sehr angreifbar und enden oft in Streit über Attribution.
+- Für mich liegt die nützlichste Schlussfolgerung hier darin, dass SEO-Strukturen nicht nur auf Wirkung hin entworfen werden müssen, sondern auch im Hinblick auf die Art des Rechts am Beitrag. Wenn man nicht zwischen einem geschaffenen Asset und einer zeitgebundenen Handlung unterscheidet, wird das Vergütungsmodell entweder unfair oder nicht funktionsfähig. Und dann verwandelt sich das ganze Gespräch über Ergebnisbeteiligung in Nebel.
+
+Wo ziehen Sie im SEO die Grenze zwischen einem geschaffenen Asset und einer bloß nützlichen Handlung über die Zeit, wenn es um eine langfristige Beteiligung am Umsatz geht?
+
+---

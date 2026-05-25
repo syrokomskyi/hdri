@@ -1,0 +1,13 @@
+## Two Forms That Dominate
+
+In the modern world, I see two most familiar forms of participation in value creation.
+
+**Salary.** A person sells time. They have no stake in what is created. It is safe in the moment, but replaceable. When AI displaces professions, the salary-based form feels the greatest pressure. It pays for presence. A machine reproduces presence more cheaply.
+
+**Capital.** A person has a stake. Typical access requires money upfront. Fintech has broadened access—fractional shares, mutual funds, crowdfunding. But this is still participation with money, not labor. A person without capital remains outside.
+
+Why not look, alongside them, for room for a third form?
+
+**Participation through what is created, not what is bought.** A stake arises from what a person has made. Verifiably, immutably, in their name. Without the need to buy entry.
+
+This echoes old principles: the composer’s royalty, the scientist’s attribution, the craftsperson’s name on the product. A composer earns from each performance—not because they bought a stake, but because they wrote it. I am trying to extend this principle to work that previously had no royalties: development, research, operational work.

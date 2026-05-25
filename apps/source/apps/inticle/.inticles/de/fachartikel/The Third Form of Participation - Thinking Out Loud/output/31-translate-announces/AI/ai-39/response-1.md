@@ -1,0 +1,9 @@
+Digital agencies have a structural problem that is often masked by talk about motivation: the team creates value, but almost the entire compensation model remains tied to time, utilization, or short-horizon bonuses. The question is not whether this is good or bad. The question is whether there is another operationally fair form of participation.
+
+- The most useful distinction for me is between a created artifact and impact over time. If a specialist brings a library, system, methodology, reusable structure, or other completed outcome to completion, that can be treated as a separate asset. If, however, we are talking about support, engagement, coordination, or commercial effect, the value is real, but it is much harder to capture and far more likely to become a subject of dispute.
+- For an agency, this means that the participation model should be based not on sentiment, but on infrastructure: written acceptance criteria before the start, boundaries of responsibility, an authorship document or another evidentiary trail, transparent revenue reporting, and clearly defined scenarios if the product does not sell. Without this, a "partnership format" usually turns out to be employment translated into another language, but without the protections.
+- The most uncomfortable point here is risk. The studio controls the infrastructure, brand, sales, and decision perimeter. The author often invests time without base income and without access to the distribution channel. If this asymmetry is not offset by rights reversion mechanics, mutual risk protection, or minimum safeguards, the model selects for those who are more financially resilient, not necessarily the strongest specialists.
+
+Do you see a workable participation model for agencies through a created digital asset that would remain fair both operationally and in the distribution of risk?
+
+---

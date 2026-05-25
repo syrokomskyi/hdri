@@ -1,0 +1,11 @@
+{"timestamp":"2026-05-24T14:39:35.454Z","event":"step_started","stepId":"lead-paragraph","stepNumber":11,"status":"started"}
+{"timestamp":"2026-05-24T14:39:35.497Z","stepId":"lead-paragraph","stepNumber":11,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-05-24T14:39:35.727Z","stepId":"lead-paragraph","stepNumber":11,"event":"llm_call_started","status":"running","operation":"createAnthropicAiText","provider":"anthropic","model":"claude-opus-4-1","details":{"maxTokens":600,"temperature":0.8}}
+{"timestamp":"2026-05-24T14:39:45.604Z","stepId":"lead-paragraph","stepNumber":11,"event":"llm_call_finished","status":"completed","operation":"createAnthropicAiText","provider":"anthropic","model":"claude-opus-4-1"}
+{"timestamp":"2026-05-24T14:39:45.619Z","stepId":"lead-paragraph","stepNumber":11,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-05-24T14:39:45.625Z","stepId":"lead-paragraph","stepNumber":11,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-05-24T14:39:45.635Z","stepId":"lead-paragraph","stepNumber":11,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-05-25T05:42:31.363Z","stepId":"lead-paragraph","stepNumber":11,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-05-25T05:51:54.473Z","stepId":"lead-paragraph","stepNumber":11,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-05-25T06:01:22.608Z","stepId":"lead-paragraph","stepNumber":11,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-05-25T06:19:26.449Z","stepId":"lead-paragraph","stepNumber":11,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

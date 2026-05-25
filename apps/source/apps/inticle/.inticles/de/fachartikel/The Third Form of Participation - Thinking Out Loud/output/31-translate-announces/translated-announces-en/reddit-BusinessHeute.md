@@ -1,0 +1,9 @@
+Lately, I've often been thinking not about forms of payment, but about forms of participation in the value that has been created. In business, two models dominate: either a person sells their time, or they enter through their own capital. But between them there is an underexplored space - participation through the result created, which continues to work after the job is done.
+
+- For me, the key distinction here is between what can be called a completed asset and what is merely influence over time. If a specialist creates a methodology, a system, a component library, or another reproducible result, such a contribution can be described, accepted against defined criteria, and built into the company's economics as a separate object. If, however, we are talking about support, organizational influence, or commercial facilitation, then participation is much harder to justify in a stable and fair way.
+- From a management perspective, several hard questions arise immediately: who bears the initial risk, who controls sales, how transparent reporting is ensured, what happens if the product does not sell, and where the line lies between a partnership model and attractively packaged unpaid labor. Without these elements, any "new form of participation" looks bad-faith.
+- It is especially important that such a model can reproduce social inequality even if it declares the opposite. If entry requires a financial cushion for several months, the system is effectively selecting not only for competence, but also for the ability to wait a long time. For business, this is no longer a matter of ideology, but of the actual design of access to opportunity.
+
+Do you see a viable form of participation through what has been created in modern business that does not collapse either into employment or into classic capital?
+
+---

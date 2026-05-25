@@ -1,0 +1,9 @@
+Meiner Meinung nach wird im SEO eine grundlegende Sache zu wenig diskutiert: Nicht jeder Beitrag hat dieselbe Ontologie, und folglich eignet sich auch nicht jeder Beitrag für dasselbe Vergütungsmodell. Solange wir alles auf das "Ergebnis" reduzieren, erzeugen wir selbst Konflikte bei Attribution und Erwartungshaltung.
+
+- Ich würde mindestens zwei Arten von Wert strikt voneinander trennen. Die erste ist artefaktbezogen: Informationsarchitektur, eine formalisierte Methodik, eine Template-Bibliothek, ein Komponentensystem, ein Tool oder ein anderes reproduzierbares SEO-Objekt, das sich anhand von Kriterien abnehmen und wiederverwenden lässt. Die zweite ist dynamisch: Einfluss auf Nachfrage, Sichtbarkeit, Conversion-Flow, Stabilität des Supports. Das sind nicht einfach unterschiedliche Aufgaben. Das sind unterschiedliche Existenzmodi von Wert.
+- Wenn der Beitrag artefaktbezogen ist, kann man noch von einer längerfristigen Form der Beteiligung sprechen, weil das Objekt selbst existiert, einen Zustand bewahrt und künftig Träger von Wert sein kann. Geht es jedoch um dynamischen Einfluss, ist alles deutlich komplexer. Dort gibt es kein stabiles Objekt, sondern ein multifaktorielles System, in dem faire Attribution sehr schnell zerfällt. Genau hier entstehen die meisten toxischen Vereinbarungen über einen "Anteil am Ergebnis".
+- Für Advanced SEO ist das aus meiner Sicht kein philosophisches Detail, sondern eine Frage des Systemdesigns. Solange die Beitragstypen nicht sauber getrennt sind, lassen sich weder ein Kooperationsmodell noch die Bedingungen einer langfristigen Beteiligung noch die Grenzen der Verantwortung ernsthaft konzipieren. Alles andere ist Rhetorik ohne Engineering.
+
+Wo würden Sie die professionelle Grenze zwischen SEO als Asset-Aufbau und SEO als Steuerung eines dynamischen Effekts über die Zeit ziehen?
+
+---

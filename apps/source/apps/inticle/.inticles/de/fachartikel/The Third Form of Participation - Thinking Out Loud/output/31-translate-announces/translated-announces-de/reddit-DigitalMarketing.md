@@ -1,0 +1,9 @@
+Mir scheint, im professionellen Digitalmarketing fehlt ein grundlegendes Gespräch: nicht über Kanäle, nicht über Tools, sondern über die Natur des Beitrags selbst. Solange alles als "Ergebnis" bezeichnet wird, können wir weder Kooperationsmodelle noch langfristige Anreizsysteme noch eine faire Risikoverteilung sauber gestalten.
+
+- Ich sehe einen grundlegenden Unterschied zwischen einem geschaffenen Artefakt und einer Wirkung über die Zeit. Ein Artefakt ist etwas, das Grenzen, Struktur und Abnahmekriterien hat, wiederverwendet werden kann und auch nach Abschluss der Arbeit Nutzen stiftet. Im Digitalen können das Systeme, Bibliotheken, Methodiken, Standards oder formalisierte Prozesse sein. Eine Wirkung über die Zeit ist Verkauf, Nachfragegenerierung, Kanalpflege, operative Wirkung. Sie ist real, existiert aber nicht als separates stabiles Objekt.
+- Diese Unterscheidung ist nicht nur theoretisch wichtig. Von ihr hängt ab, ob man überhaupt ernsthaft über eine langfristige Beteiligung am Umsatz sprechen kann. Für ein Artefakt hat ein solches Gespräch noch eine Grundlage. Für dynamische Wirkung ist sie deutlich fragiler, weil dort die Attribution schwächer und die Abhängigkeit vom Gesamtsystem stärker ist: von Marke, Vertrieb, Support, Markt und operativen Abläufen.
+- Daraus folgt auch eine unangenehmere Schlussfolgerung. Wenn man diese Dinge nicht präzise benennt, läuft jedes "partnerschaftliche" Modell Gefahr, entweder dem Auftragnehmer gegenüber unfair oder für das Unternehmen wirtschaftlich untragbar zu werden. Das Problem liegt meist nicht in der Idee der Beteiligung an sich, sondern darin, dass man versucht, sie auf einen Beitrag anzuwenden, der dafür konstruktiv nicht geeignet ist.
+
+Wo verläuft Ihrer Meinung nach die professionell faire Grenze zwischen einem digitalen Beitrag als Asset und einem digitalen Beitrag als temporärem Effekt?
+
+---

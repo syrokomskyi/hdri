@@ -1,0 +1,11 @@
+## Werk und Wirkung: zwei Naturen des Beitrags
+
+In diesem Modell unterscheide ich zwei Naturen des Beitrags. Zwei Arten von Wert mit unterschiedlicher Mechanik.
+
+**Werk – das, was einen Zustand hat.** Ein Erzeugnis, ein Asset, ein Objekt mit Koordinaten und Integrität. Im Moment nachweisbar: „Hier ist es, in diesem Zustand, mit meiner Signatur.“ Werk akkumuliert. Ein Designsystem lebt nach seiner Erstellung weiter und stiftet weiterhin Nutzen.
+
+Im deutschen Urheberrecht gibt es die Logik einer fairen Beteiligung des Urhebers am Erfolg des Werks. Wenn ein Werk tatsächlich ein schutzfähiges Werk ist, kann ein Anteil daran rechtlich gestützt sein. Aber nicht jedes Werkstück ist automatisch ein Werk im rechtlichen Sinne. Das muss gesondert geprüft werden.
+
+**Wirkung – das, was über die Zeit wirksam ist.** Mitwirkung, Einfluss, Fluss. Verkauf, Kundengewinnung, Unterstützung der Infrastruktur. Nur über die Dynamik nachweisbar: „Das hat sich im Zeitraum verändert.“ Wirkung verblasst. Der Effekt verflüchtigt sich. Ein gewonnener Kunde bleibt nach Jahren wegen des Studios und nicht wegen der Person, die ihn einst gebracht hat.
+
+Wirkung schafft kein schutzfähiges Werk. Ein Anteil für Wirkung kann sich nicht auf das Urheberrecht stützen. Das ist keine Benachteiligung. Es ist die Wahrheit über die Natur des Beitrags: Wo es keine Akkumulation gibt, ist es schwieriger, einen ewigen Anteil zu begründen.
