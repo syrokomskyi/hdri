@@ -153,11 +153,3 @@ The answer is still incomplete. What distinguishes this model from ordinary expl
 But without a basic income, this can still become a trap for those who have no choice. I.e. why I am not presenting it as a finished solution. It is an experiment with honest boundaries.
 
 This is not a final answer. But the question is worth asking: "Can there be a way to participate in what is created that requires neither selling one's time nor paying money upfront"? And if so: "How can it be made genuinely fair for all sides"?
-
----
-
-## Quick self-audit: is the "created-participation" format a fit for you? {#139}
-
-This model is not about "yes/no", and it does not promise income. But you can honestly assess where the main risk lies for you: in your financial cushion, the type of contribution, dependence on the studio, or legal uncertainty. Answer a few questions and you will get a short risk profile and a list of questions worth asking before you start.
-
-**Next step:** Take the self-audit

@@ -1,6 +1,6 @@
 # The Third Form of Participation: Thinking Out Loud
 
-I run a web studio in Baden-Württemberg. I am experimenting with a form of participation that fits into neither salary nor equity.
+I run a web studio in Baden-Württemberg (Germany). I am experimenting with a form of participation that fits into neither salary nor equity.
 
 This is not a finished model. Not a universal solution. An attempt to find a way for work not to disappear when a project ends, at a time when AI is beginning to displace professions.
 
@@ -153,11 +153,3 @@ The answer is still incomplete. What distinguishes this model from ordinary expl
 But without a basic income, this can still become a trap for those who have no choice. I.e. why I am not presenting it as a finished solution. It is an experiment with honest boundaries.
 
 This is not a final answer. But the question is worth asking: "Can there be a way to participate in what is created that requires neither selling one's time nor paying money upfront"? And if so: "How can it be made genuinely fair for all sides"?
-
----
-
-## Quick self-audit: is the "created-participation" format a fit for you?
-
-This model is not about "yes/no", and it does not promise income. But you can honestly assess where the main risk lies for you: in your financial cushion, the type of contribution, dependence on the studio, or legal uncertainty. Answer a few questions and you will get a short risk profile and a list of questions worth asking before you start.
-
-**Next step:** Take the self-audit

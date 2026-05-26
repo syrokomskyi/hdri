@@ -153,11 +153,3 @@ Die Antwort ist bislang unvollständig. Was dieses Modell von gewöhnlicher Ausb
 Aber ohne ein Grundeinkommen kann all das trotzdem eine Falle für diejenigen sein, die keine Wahl haben. Deshalb biete ich das nicht als fertige Lösung an. Es ist ein Experiment mit ehrlichen Grenzen.
 
 Das ist keine endgültige Antwort. Aber die Frage ist es wert, gestellt zu werden: "Kann es eine Form der Beteiligung am Geschaffenen geben, die weder den Verkauf von Zeit noch Geld beim Einstieg verlangt"? Und wenn ja: "Wie lässt sie sich für alle Seiten wirklich fair gestalten"?
-
----
-
-## Schneller Selbst-Check: Passt das Modell "Beteiligung durch Leistung" zu Ihnen? {#139}
-
-Dieses Modell ist weder eine Frage von "Ja/Nein" noch ein Einkommensversprechen. Aber Sie können ehrlich prüfen, wo für Sie das größte Risiko liegt: bei Ihrem finanziellen Puffer, der Art des eingebrachten Beitrags, der Abhängigkeit von der Agentur oder bei rechtlicher Unklarheit. Geben Sie ein paar Antworten - und Sie erhalten ein kurzes Risikoprofil sowie eine Liste von Fragen, die Sie vor dem Start stellen sollten.
-
-**Nächster Schritt:** Selbst-Check durchführen
