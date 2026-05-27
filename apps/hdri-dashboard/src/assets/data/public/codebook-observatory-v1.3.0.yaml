@@ -1,0 +1,735 @@
+id: observatory-v1
+version: "1.3.0"
+label: "Observatory HDRI (Handwerk Digital Readiness Index) Codebook v1.3"
+ontologyRef: "ontology.yaml"
+notes: |-
+  Scoring specification for the Digital Observatory HDRI (Handwerk Digital Readiness Index) index.
+  Signal definitions live in ontology.yaml (what exists / how extracted).
+  This file defines scoring weights, rules, remediation, and missing-value policies (how signals translate to the 0–100 index).
+
+  v1.1 — Added source provenance, remediation metadata, conditional missing states, and privacy.consent.quality as first enum-type signal.
+
+  v1.2 — Adds a dedicated accessibility_audit dimension based on AXE signals and inverse count scoring for defect counts.
+
+  v1.3 — Current dimension weights: legal 28%, contact 22%, structured 18%, trust 12%, social 4%, accessibility 16%; consent_quality default: skip.
+
+dimensions:
+
+  # ── Legal compliance (28%) ─────────────────────────────────────────────────
+
+  - id: legal_compliance
+    label: "Legal compliance"
+    weight: 0.28
+    indicators:
+
+      - id: impressum
+        inputKey: legal.impressum.present
+        weight: 0.25
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: rule_v3
+        remediation:
+          severity: critical
+          category: legal
+          humanLabel: "Impressum fehlt"
+          recommendation: >-
+            Fügen Sie eine vollständige Impressum-Seite gemäß §5 TMG ein.
+            Pflichtangaben: Name, Adresse, Telefon, E-Mail, ggf. USt-IdNr.
+
+      - id: datenschutz
+        inputKey: legal.datenschutz.present
+        weight: 0.25
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: rule_v3
+        remediation:
+          severity: critical
+          category: legal
+          humanLabel: "Datenschutzerklärung fehlt"
+          recommendation: >-
+            Erstellen Sie eine DSGVO-konforme Datenschutzerklärung (Art. 13/14 DSGVO).
+            Geben Sie alle Verarbeitungszwecke, Rechtsgrundlagen und Betroffenenrechte an.
+
+      - id: agb
+        inputKey: legal.agb.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: rule_v3
+        remediation:
+          severity: high
+          category: legal
+          humanLabel: "AGB fehlen"
+          recommendation: >-
+            Veröffentlichen Sie Allgemeine Geschäftsbedingungen, die Leistungsumfang,
+            Zahlungsbedingungen und Gewährleistung regeln.
+
+      - id: bfsg
+        inputKey: legal.bfsg.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: rule_v3
+        remediation:
+          severity: medium
+          category: legal
+          humanLabel: "Barrierefreiheitserklärung fehlt"
+          recommendation: >-
+            Veröffentlichen Sie eine Erklärung zur Barrierefreiheit gemäß BFSG/BITV 2.0.
+            Pflicht für gewerbliche Online-Shops ab 28.06.2025.
+
+      - id: widerruf
+        inputKey: legal.widerruf.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+            not_applicable: skip
+          default: skip
+        source:
+          extractor: rule_v3
+        remediation:
+          severity: high
+          category: legal
+          humanLabel: "Widerrufsrecht fehlt"
+          recommendation: >-
+            Informieren Sie Verbraucher über ihr 14-tägiges Widerrufsrecht gemäß §312g BGB.
+            Nur relevant für E-Commerce-Seiten mit Checkout.
+
+      - id: versand
+        inputKey: legal.versand.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+            not_applicable: skip
+          default: skip
+        source:
+          extractor: rule_v3
+        remediation:
+          severity: medium
+          category: ux
+          humanLabel: "Versandinformationen fehlen"
+          recommendation: >-
+            Veröffentlichen Sie Lieferbedingungen: Liefergebiete, Lieferzeiten und Versandkosten.
+            Nur relevant für E-Commerce-Seiten.
+
+      - id: consent_quality
+        inputKey: privacy.consent.quality
+        weight: 0.05
+        # Observatory-grade enum signal: presence ≠ quality.
+        # 'none' = no consent mechanism detected.
+        # 'informational_only' = banner without choice.
+        # 'accept_only' = only accept button, no reject.
+        # 'reject_equal_prominence' = reject option at same level as accept (GDPR-compliant).
+        # 'granular_with_revoke' = per-purpose toggles + revoke at any time (gold standard).
+        rule:
+          type: enum
+          cases:
+            none: 0
+            informational_only: 20
+            accept_only: 35
+            reject_equal_prominence: 85
+            granular_with_revoke: 100
+          defaultScore: 0
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+            not_applicable: skip
+          default: skip
+        source:
+          extractor: dom_css_v2
+        remediation:
+          severity: high
+          category: legal
+          humanLabel: "Cookie-Einwilligung nicht DSGVO-konform"
+          recommendation: >-
+            Implementieren Sie einen Cookie-Banner mit gleichwertig sichtbarem Ablehnen-Button
+            und Möglichkeit zum nachträglichen Widerruf (§25 TDDDG).
+            Ziel: reject_equal_prominence oder granular_with_revoke.
+
+  # ── Contact & accessibility (22%) ──────────────────────────────────────────
+
+  - id: contact_accessibility
+    label: "Contact & accessibility"
+    weight: 0.22
+    indicators:
+
+      - id: contact_form
+        inputKey: contact.form.present
+        weight: 0.30
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: dom_css_v2
+        remediation:
+          severity: high
+          category: ux
+          humanLabel: "Kontaktformular fehlt"
+          recommendation: >-
+            Fügen Sie ein Kontaktformular hinzu, damit Kunden ohne E-Mail-Client
+            Anfragen senden können. Mindestfelder: Name, E-Mail, Nachricht.
+
+      - id: opening_hours
+        inputKey: content.opening_hours.present
+        weight: 0.20
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: dom_text_v1
+        remediation:
+          severity: medium
+          category: ux
+          humanLabel: "Öffnungszeiten fehlen"
+          recommendation: >-
+            Veröffentlichen Sie aktuelle Öffnungszeiten. Empfehlung: auch als
+            OpeningHoursSpecification in LocalBusiness Schema.org auszeichnen.
+
+      - id: map
+        inputKey: content.map.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: dom_css_v2
+        remediation:
+          severity: low
+          category: ux
+          humanLabel: "Karte / Anfahrtsbeschreibung fehlt"
+          recommendation: >-
+            Binden Sie eine Karte (Google Maps, OpenStreetMap) oder eine
+            Anfahrtsbeschreibung ein, um die Auffindbarkeit zu verbessern.
+
+      - id: team_page
+        inputKey: content.team_page.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: dom_text_v1
+        remediation:
+          severity: low
+          category: trust
+          humanLabel: "Team-/Über-uns-Seite fehlt"
+          recommendation: >-
+            Stellen Sie Ihr Team mit Namen und Fotos vor. Das erhöht Vertrauen
+            und ist besonders für Handwerksbetriebe ein Differenzierungsmerkmal.
+
+      - id: portfolio
+        inputKey: content.portfolio.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: dom_text_v1
+        remediation:
+          severity: low
+          category: trust
+          humanLabel: "Portfolio / Referenzen fehlen"
+          recommendation: >-
+            Zeigen Sie abgeschlossene Projekte mit Fotos und kurzen Beschreibungen.
+            Referenzprojekte sind ein starkes Vertrauenssignal im Handwerk.
+
+      - id: testimonials
+        inputKey: content.testimonials.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: dom_text_v1
+        remediation:
+          severity: low
+          category: trust
+          humanLabel: "Kundenbewertungen fehlen"
+          recommendation: >-
+            Veröffentlichen Sie Kundenbewertungen oder Erfahrungsberichte.
+            Idealerweise mit Review-Markup (Schema.org), damit Google sie anzeigt.
+
+  # ── Structured data (18%) ──────────────────────────────────────────────────
+
+  - id: structured_data
+    label: "Structured data & Schema.org"
+    weight: 0.18
+    indicators:
+
+      - id: local_business
+        inputKey: structured_data.schema_org.local_business.present
+        weight: 0.30
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: json_ld_v1
+        remediation:
+          severity: high
+          category: seo
+          humanLabel: "LocalBusiness Schema.org fehlt"
+          recommendation: >-
+            Implementieren Sie LocalBusiness JSON-LD mit name, address, telephone,
+            openingHours und geo-Koordinaten. Verbessert Google-Suchergebnis-Darstellung
+            und ermöglicht Knowledge Panel.
+
+      - id: faq
+        inputKey: structured_data.schema_org.faq.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: json_ld_v1
+        remediation:
+          severity: low
+          category: seo
+          humanLabel: "FAQPage Schema.org fehlt"
+          recommendation: >-
+            Wenn Sie FAQ-Inhalte haben, zeichnen Sie diese mit FAQPage JSON-LD aus,
+            um Rich Results in der Google-Suche zu erhalten.
+
+      - id: review
+        inputKey: structured_data.schema_org.review.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: json_ld_v1
+        remediation:
+          severity: medium
+          category: seo
+          humanLabel: "Review Schema.org fehlt"
+          recommendation: >-
+            Zeichnen Sie Kundenbewertungen mit Review oder AggregateRating JSON-LD aus,
+            damit Sternebewertungen in den Suchergebnissen erscheinen.
+
+      - id: service
+        inputKey: structured_data.schema_org.service.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: json_ld_v1
+        remediation:
+          severity: medium
+          category: seo
+          humanLabel: "Service Schema.org fehlt"
+          recommendation: >-
+            Beschreiben Sie Ihre Leistungen mit Service JSON-LD, einschließlich
+            serviceType, provider und areaServed.
+
+      - id: breadcrumb
+        inputKey: structured_data.schema_org.breadcrumb.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: json_ld_v1
+        remediation:
+          severity: low
+          category: seo
+          humanLabel: "BreadcrumbList Schema.org fehlt"
+          recommendation: >-
+            Ergänzen Sie BreadcrumbList JSON-LD für mehrstufige Seitenstrukturen.
+            Verbessert die Darstellung des Seitenpfads in den Suchergebnissen.
+
+      - id: product
+        inputKey: structured_data.schema_org.product.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+            not_applicable: skip
+          default: skip
+        source:
+          extractor: json_ld_v1
+        remediation:
+          severity: medium
+          category: seo
+          humanLabel: "Product Schema.org fehlt"
+          recommendation: >-
+            Zeichnen Sie Produkte mit Product JSON-LD aus (name, price, availability).
+            Nur relevant für E-Commerce-Betriebe mit Produktkatalog.
+
+  # ── Trust signals (12%) ────────────────────────────────────────────────────
+
+  - id: trust_signals
+    label: "Trust & credibility"
+    weight: 0.12
+    indicators:
+
+      - id: certifications
+        inputKey: trust.certifications.present
+        weight: 0.25
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: dom_text_v1
+        remediation:
+          severity: medium
+          category: trust
+          humanLabel: "Zertifikate / Qualifikationen fehlen"
+          recommendation: >-
+            Zeigen Sie Ihre Qualifikationen, Zertifizierungen und Gütezeichen sichtbar
+            auf der Webseite — idealerweise auf der Startseite und der Über-uns-Seite.
+
+      - id: meister
+        inputKey: trust.certification.meister.present
+        weight: 0.25
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: dom_text_v1
+        remediation:
+          severity: medium
+          category: trust
+          humanLabel: "Meisterbrief nicht kommuniziert"
+          recommendation: >-
+            Erwähnen Sie Ihren Meistertitel explizit auf der Webseite.
+            Der Meisterbrief ist ein starkes Qualitätsmerkmal — nutzen Sie ihn als
+            Vertrauenssignal in der Selbstdarstellung.
+
+      - id: awards
+        inputKey: trust.awards.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: dom_text_v1
+        remediation:
+          severity: low
+          category: trust
+          humanLabel: "Auszeichnungen fehlen"
+          recommendation: >-
+            Falls Sie Preise oder Auszeichnungen erhalten haben, veröffentlichen Sie diese
+            mit Logo und Jahr. Stärkt Ihre Glaubwürdigkeit.
+
+      - id: memberships
+        inputKey: trust.memberships.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: dom_text_v1
+        remediation:
+          severity: low
+          category: trust
+          humanLabel: "Innungs- / Verbandsmitgliedschaft nicht sichtbar"
+          recommendation: >-
+            Kommunizieren Sie Ihre Mitgliedschaft in Handwerksinnungen oder Fachverbänden.
+            Logos und Mitgliedsnummern erhöhen die Seriosität.
+
+      - id: handelsregister
+        inputKey: registry.handelsregister.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: rule_v3
+        remediation:
+          severity: low
+          category: legal
+          humanLabel: "Handelsregisternummer fehlt"
+          recommendation: >-
+            Falls Sie im Handelsregister eingetragen sind, geben Sie die HRB/HRA-Nummer
+            im Impressum an. Pflicht für GmbH, UG, AG, OHG, KG.
+
+      - id: google_business
+        inputKey: registry.google_business.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: link_scan_v2
+        remediation:
+          severity: medium
+          category: seo
+          humanLabel: "Google Business Profile nicht verlinkt"
+          recommendation: >-
+            Verlinken Sie Ihr Google Business Profile auf der Webseite.
+            Stärkt lokale Sichtbarkeit und ermöglicht Kundenbewertungen über Google.
+
+  # ── Social presence (4%) ───────────────────────────────────────────────────
+
+  - id: social_presence
+    label: "Social media presence"
+    weight: 0.04
+    indicators:
+
+      - id: facebook
+        inputKey: social.facebook.present
+        weight: 0.20
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: link_scan_v2
+        remediation:
+          severity: low
+          category: social
+          humanLabel: "Facebook-Seite nicht verlinkt"
+          recommendation: >-
+            Verlinken Sie Ihre Facebook-Unternehmensseite, falls vorhanden.
+            Pflegen Sie regelmäßige Posts für lokale Reichweite.
+
+      - id: instagram
+        inputKey: social.instagram.present
+        weight: 0.20
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing:
+          kind: conditional
+          states:
+            absent: zero
+            unreachable: exclude
+            forbidden: exclude
+          default: zero
+        source:
+          extractor: link_scan_v2
+        remediation:
+          severity: low
+          category: social
+          humanLabel: "Instagram-Profil nicht verlinkt"
+          recommendation: >-
+            Verlinken Sie Ihr Instagram-Profil. Besonders wirkungsvoll im Handwerk
+            für visuelle Vorher-/Nachher-Darstellungen von Projekten.
+
+      - id: youtube
+        inputKey: social.youtube.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: link_scan_v2
+        remediation:
+          severity: low
+          category: social
+          humanLabel: "YouTube-Kanal nicht verlinkt"
+          recommendation: >-
+            Verlinken Sie Ihren YouTube-Kanal, falls vorhanden.
+            Erklärvideos oder Projektdokumentationen erhöhen Verweildauer und Vertrauen.
+
+      - id: linkedin
+        inputKey: social.linkedin.present
+        weight: 0.15
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: link_scan_v2
+        remediation:
+          severity: low
+          category: social
+          humanLabel: "LinkedIn-Profil nicht verlinkt"
+          recommendation: >-
+            LinkedIn ist für B2B-Gewerke (z.B. Elektro-Haustechnik, Metallbau) relevant.
+            Verlinken Sie das Unternehmensprofil, falls vorhanden.
+
+      - id: tiktok
+        inputKey: social.tiktok.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: link_scan_v2
+        remediation:
+          severity: low
+          category: social
+          humanLabel: "TikTok-Kanal nicht verlinkt"
+          recommendation: >-
+            TikTok hat starke organische Reichweite für Handwerk-Content.
+            Verlinken Sie den Kanal, falls Sie dort aktiv sind.
+
+      - id: whatsapp
+        inputKey: social.whatsapp.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: link_scan_v2
+        remediation:
+          severity: low
+          category: ux
+          humanLabel: "WhatsApp-Kontakt fehlt"
+          recommendation: >-
+            Ein WhatsApp-Business-Link senkt die Kontaktbarriere erheblich,
+            besonders für mobile Nutzer. Ergänzen Sie einen wa.me-Link.
+
+      - id: xing
+        inputKey: social.xing.present
+        weight: 0.10
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+        source:
+          extractor: link_scan_v2
+        remediation:
+          severity: low
+          category: social
+          humanLabel: "XING-Profil nicht verlinkt"
+          recommendation: >-
+            XING verliert an Bedeutung, aber für regionale B2B-Kontakte im DACH-Raum
+            noch relevant. Verlinken Sie das Profil, falls gepflegt.
+
+  # ── Accessibility audit (16%) ──────────────────────────────────────────────
+
+  - id: accessibility_audit
+    label: "Accessibility audit"
+    weight: 0.16
+    indicators:
+
+      - id: axe_critical
+        inputKey: audit.axe.violations.critical.count
+        weight: 0.40
+        rule: { type: countClampInverse, min: 0, max: 5 }
+        missing:
+          kind: conditional
+          states:
+            absent: skip
+            unreachable: exclude
+            forbidden: exclude
+          default: skip
+        source:
+          extractor: axe_core_live
+        remediation:
+          severity: critical
+          category: accessibility
+          humanLabel: "Kritische Barrierefreiheitsfehler vorhanden"
+          recommendation: >-
+            Beheben Sie zuerst kritische AXE-Verstöße wie fehlende Formularlabels,
+            unzugängliche interaktive Elemente oder gravierende Kontrastprobleme.
+            Zielwert: 0 kritische Verstöße.
+
+      - id: axe_serious
+        inputKey: audit.axe.violations.serious.count
+        weight: 0.30
+        rule: { type: countClampInverse, min: 0, max: 10 }
+        missing:
+          kind: conditional
+          states:
+            absent: skip
+            unreachable: exclude
+            forbidden: exclude
+          default: skip
+        source:
+          extractor: axe_core_live
+        remediation:
+          severity: high
+          category: accessibility
+          humanLabel: "Erhebliche Barrierefreiheitsfehler vorhanden"
+          recommendation: >-
+            Reduzieren Sie erhebliche AXE-Verstöße systematisch: semantische HTML-Struktur,
+            Tastaturbedienbarkeit, eindeutige Linktexte und saubere ARIA-Verwendung.
+            Zielwert: möglichst nahe 0.
+
+      - id: axe_moderate
+        inputKey: audit.axe.violations.moderate.count
+        weight: 0.20
+        rule: { type: countClampInverse, min: 0, max: 20 }
+        missing:
+          kind: conditional
+          states:
+            absent: skip
+            unreachable: exclude
+            forbidden: exclude
+          default: skip
+        source:
+          extractor: axe_core_live
+        remediation:
+          severity: medium
+          category: accessibility
+          humanLabel: "Mittlere Barrierefreiheitsfehler vorhanden"
+          recommendation: >-
+            Arbeiten Sie moderate AXE-Verstöße im Rahmen regulärer Frontend-Verbesserungen ab,
+            insbesondere bei Landmarken, Formular-Hinweisen und Fokusführung.
+
+      - id: axe_minor
+        inputKey: audit.axe.violations.minor.count
+        weight: 0.10
+        rule: { type: countClampInverse, min: 0, max: 30 }
+        missing:
+          kind: conditional
+          states:
+            absent: skip
+            unreachable: exclude
+            forbidden: exclude
+          default: skip
+        source:
+          extractor: axe_core_live
+        remediation:
+          severity: low
+          category: accessibility
+          humanLabel: "Leichte Barrierefreiheitsfehler vorhanden"
+          recommendation: >-
+            Bereinigen Sie kleinere AXE-Verstöße iterativ, um die technische Qualität
+            der Oberfläche zu erhöhen und zukünftige Accessibility-Regressionen zu vermeiden.
