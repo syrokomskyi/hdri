@@ -1,5 +1,6 @@
 {
   "name": "@org/site-liveness",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/2-check-liveness/tsconfig.json --noEmit",

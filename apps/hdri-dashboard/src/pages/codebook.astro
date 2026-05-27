@@ -4,7 +4,7 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { readFileSync } from 'node:fs';
 import { parse as parseYaml } from 'yaml';
 
-const yamlPath = new URL('public/codebook-observatory-v1.3.0.yaml', 'file://' + process.cwd() + '/');
+const yamlPath = new URL('src/assets/data/public/codebook-observatory-v1.3.0.yaml', 'file://' + process.cwd() + '/');
 const yamlText = readFileSync(yamlPath, 'utf-8');
 const codebook = parseYaml(yamlText);
 

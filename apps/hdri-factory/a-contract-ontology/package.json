@@ -1,5 +1,6 @@
 {
   "name": "@org/contract-ontology",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/a-contract-ontology/tsconfig.json --noEmit",

@@ -1,5 +1,6 @@
 {
   "name": "@org/register-businesses",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/1-register-businesses/tsconfig.json --noEmit",

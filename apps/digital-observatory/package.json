@@ -1,5 +1,6 @@
 {
   "name": "@org/digital-observatory",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build": "pnpm --dir ../.. exec tsc -p apps/digital-observatory/tsconfig.json --noEmit",

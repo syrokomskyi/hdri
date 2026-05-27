@@ -1,5 +1,6 @@
 {
   "name": "@org/catalog-harvest",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/0-harvest-source/tsconfig.json --noEmit",

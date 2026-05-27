@@ -1,5 +1,6 @@
 {
   "name": "@org/site-profile",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/3-extract-profile/tsconfig.json --noEmit",
