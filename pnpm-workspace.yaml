@@ -1,0 +1,10 @@
+packages:
+  - packages/*
+  - apps/*
+  - apps/hdri-factory/*
+
+onlyBuiltDependencies:
+  - '@duckdb/node-api'
+  - '@swc/core'
+  - better-sqlite3
+  - esbuild

@@ -1,0 +1,33 @@
+# Signing key — never commit private key material
+.input/signing-key/
+.env
+.env.*
+
+# Build outputs
+.output
+.debug
+.debug-public
+dist
+node_modules
+
+# Workspace
+.turbo
+
+# TypeScript
+*.tsbuildinfo
+
+# Data files
+**/*.db
+.cadence-state.json
+archive/
+.pipeline-data/
+
+# Dashboard debug
+/src/assets/data/debug-csv/
+
+# Astro
+.astro
+
+# OS files
+.DS_Store
+Thumbs.db

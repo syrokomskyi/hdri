@@ -1,0 +1,78 @@
+{
+  "axis": "gewerk",
+  "generatedAt": "2026-05-27T16:31:01.871Z",
+  "suppressionPolicy": {
+    "kind": "k_plus_suppression_diffs",
+    "kAnonymityMin": 5,
+    "minAbsoluteDelta": 3,
+    "minRelativeDelta": 0.03
+  },
+  "periods": [
+    "2026-q2"
+  ],
+  "categories": [
+    {
+      "key": "I",
+      "label": "I",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "II",
+      "label": "II",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "III",
+      "label": "III",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "IV",
+      "label": "IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "V",
+      "label": "V",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "VI",
+      "label": "VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "VII",
+      "label": "VII",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    }
+  ]
+}

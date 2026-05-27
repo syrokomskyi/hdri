@@ -1,0 +1,33 @@
+{
+  "name": "@org/site-lighthouse-audit",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/4-audit-lighthouse/tsconfig.json --noEmit",
+    "typecheck": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/4-audit-lighthouse/tsconfig.json --noEmit",
+    "dev": "tsx -C @org/source watch run/run.ts",
+    "start": "tsx -C @org/source run/run.ts"
+  },
+  "dependencies": {
+    "@org/business-core": "workspace:*",
+    "@org/business-rate-limit": "workspace:*",
+    "@org/hdri-factory-core": "workspace:*",
+    "@org/observatory-core": "workspace:*",
+    "@org/observatory-crypto": "workspace:*",
+    "@org/observatory-emit": "workspace:*",
+    "@org/pipeline-core": "workspace:*",
+    "@org/pipeline-node": "workspace:*",
+    "@org/pipeline-steps": "workspace:*",
+    "@org/utils": "workspace:*",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.1",
+    "@types/systeminformation": "^3.54.1",
+    "better-sqlite3": "^12.10.0",
+    "chrome-launcher": "^1.2.1",
+    "dotenv": "^17.4.2",
+    "gray-matter": "^4.0.3",
+    "lighthouse": "^13.3.0",
+    "markdown-table": "^3.0.4",
+    "systeminformation": "^5.31.6",
+    "tsx": "^4.22.3"
+  }
+}

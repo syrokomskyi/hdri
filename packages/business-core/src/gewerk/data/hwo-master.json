@@ -1,0 +1,1192 @@
+{
+  "dataset": {
+    "id": "hwo-master",
+    "title": "Handwerksordnung official classifications master dataset",
+    "jurisdiction": "DE",
+    "source_of_truth": [
+      {
+        "type": "A",
+        "title": "Anlage A der Handwerksordnung",
+        "legal_basis_url": "https://www.gesetze-im-internet.de/hwo/anlage_a.html"
+      },
+      {
+        "type": "B1",
+        "title": "Anlage B Abschnitt 1 der Handwerksordnung",
+        "legal_basis_url": "https://www.gesetze-im-internet.de/hwo/anlage_b.html"
+      },
+      {
+        "type": "B2",
+        "title": "Anlage B Abschnitt 2 der Handwerksordnung",
+        "legal_basis_url": "https://www.gesetze-im-internet.de/hwo/anlage_b.html"
+      }
+    ],
+    "notes": [
+      "Official legal lists from Gesetze im Internet are the source of truth.",
+      "classification_no is stored as a zero-padded string.",
+      "Entries marked entfällt or (weggefallen) are preserved for referential stability and history."
+    ]
+  },
+  "classifications": [
+    {
+      "type": "A",
+      "anlage": "A",
+      "abschnitt": null,
+      "type_name": "Zulassungspflichtige Handwerke",
+      "legal_basis_url": "https://www.gesetze-im-internet.de/hwo/anlage_a.html",
+      "items": [
+        {
+          "uid": "A-01",
+          "classification_no": "01",
+          "status": "active",
+          "official_text": "Maurer und Betonbauer",
+          "name": "Maurer und Betonbauer"
+        },
+        {
+          "uid": "A-02",
+          "classification_no": "02",
+          "status": "active",
+          "official_text": "Ofen- und Luftheizungsbauer",
+          "name": "Ofen- und Luftheizungsbauer"
+        },
+        {
+          "uid": "A-03",
+          "classification_no": "03",
+          "status": "active",
+          "official_text": "Zimmerer",
+          "name": "Zimmerer"
+        },
+        {
+          "uid": "A-04",
+          "classification_no": "04",
+          "status": "active",
+          "official_text": "Dachdecker",
+          "name": "Dachdecker"
+        },
+        {
+          "uid": "A-05",
+          "classification_no": "05",
+          "status": "active",
+          "official_text": "Straßenbauer",
+          "name": "Straßenbauer"
+        },
+        {
+          "uid": "A-06",
+          "classification_no": "06",
+          "status": "active",
+          "official_text": "Wärme-, Kälte- und Schallschutzisolierer",
+          "name": "Wärme-, Kälte- und Schallschutzisolierer"
+        },
+        {
+          "uid": "A-07",
+          "classification_no": "07",
+          "status": "active",
+          "official_text": "Brunnenbauer",
+          "name": "Brunnenbauer"
+        },
+        {
+          "uid": "A-08",
+          "classification_no": "08",
+          "status": "active",
+          "official_text": "Steinmetzen und Steinbildhauer",
+          "name": "Steinmetzen und Steinbildhauer"
+        },
+        {
+          "uid": "A-09",
+          "classification_no": "09",
+          "status": "active",
+          "official_text": "Stuckateure",
+          "name": "Stuckateure"
+        },
+        {
+          "uid": "A-10",
+          "classification_no": "10",
+          "status": "active",
+          "official_text": "Maler und Lackierer",
+          "name": "Maler und Lackierer"
+        },
+        {
+          "uid": "A-11",
+          "classification_no": "11",
+          "status": "active",
+          "official_text": "Gerüstbauer",
+          "name": "Gerüstbauer"
+        },
+        {
+          "uid": "A-12",
+          "classification_no": "12",
+          "status": "active",
+          "official_text": "Schornsteinfeger",
+          "name": "Schornsteinfeger"
+        },
+        {
+          "uid": "A-13",
+          "classification_no": "13",
+          "status": "active",
+          "official_text": "Metallbauer",
+          "name": "Metallbauer"
+        },
+        {
+          "uid": "A-14",
+          "classification_no": "14",
+          "status": "active",
+          "official_text": "Chirurgiemechaniker",
+          "name": "Chirurgiemechaniker"
+        },
+        {
+          "uid": "A-15",
+          "classification_no": "15",
+          "status": "active",
+          "official_text": "Karosserie- und Fahrzeugbauer",
+          "name": "Karosserie- und Fahrzeugbauer"
+        },
+        {
+          "uid": "A-16",
+          "classification_no": "16",
+          "status": "active",
+          "official_text": "Feinwerkmechaniker",
+          "name": "Feinwerkmechaniker"
+        },
+        {
+          "uid": "A-17",
+          "classification_no": "17",
+          "status": "active",
+          "official_text": "Zweiradmechaniker",
+          "name": "Zweiradmechaniker"
+        },
+        {
+          "uid": "A-18",
+          "classification_no": "18",
+          "status": "active",
+          "official_text": "Kälteanlagenbauer",
+          "name": "Kälteanlagenbauer"
+        },
+        {
+          "uid": "A-19",
+          "classification_no": "19",
+          "status": "active",
+          "official_text": "Informationstechniker",
+          "name": "Informationstechniker"
+        },
+        {
+          "uid": "A-20",
+          "classification_no": "20",
+          "status": "active",
+          "official_text": "Kraftfahrzeugtechniker",
+          "name": "Kraftfahrzeugtechniker"
+        },
+        {
+          "uid": "A-21",
+          "classification_no": "21",
+          "status": "active",
+          "official_text": "Land- und Baumaschinenmechatroniker",
+          "name": "Land- und Baumaschinenmechatroniker"
+        },
+        {
+          "uid": "A-22",
+          "classification_no": "22",
+          "status": "active",
+          "official_text": "Büchsenmacher",
+          "name": "Büchsenmacher"
+        },
+        {
+          "uid": "A-23",
+          "classification_no": "23",
+          "status": "active",
+          "official_text": "Klempner",
+          "name": "Klempner"
+        },
+        {
+          "uid": "A-24",
+          "classification_no": "24",
+          "status": "active",
+          "official_text": "Installateur und Heizungsbauer",
+          "name": "Installateur und Heizungsbauer"
+        },
+        {
+          "uid": "A-25",
+          "classification_no": "25",
+          "status": "active",
+          "official_text": "Elektrotechniker",
+          "name": "Elektrotechniker"
+        },
+        {
+          "uid": "A-26",
+          "classification_no": "26",
+          "status": "active",
+          "official_text": "Elektromaschinenbauer",
+          "name": "Elektromaschinenbauer"
+        },
+        {
+          "uid": "A-27",
+          "classification_no": "27",
+          "status": "active",
+          "official_text": "Tischler",
+          "name": "Tischler"
+        },
+        {
+          "uid": "A-28",
+          "classification_no": "28",
+          "status": "active",
+          "official_text": "Boots- und Schiffbauer",
+          "name": "Boots- und Schiffbauer"
+        },
+        {
+          "uid": "A-29",
+          "classification_no": "29",
+          "status": "active",
+          "official_text": "Seiler",
+          "name": "Seiler"
+        },
+        {
+          "uid": "A-30",
+          "classification_no": "30",
+          "status": "active",
+          "official_text": "Bäcker",
+          "name": "Bäcker"
+        },
+        {
+          "uid": "A-31",
+          "classification_no": "31",
+          "status": "active",
+          "official_text": "Konditoren",
+          "name": "Konditoren"
+        },
+        {
+          "uid": "A-32",
+          "classification_no": "32",
+          "status": "active",
+          "official_text": "Fleischer",
+          "name": "Fleischer"
+        },
+        {
+          "uid": "A-33",
+          "classification_no": "33",
+          "status": "active",
+          "official_text": "Augenoptiker",
+          "name": "Augenoptiker"
+        },
+        {
+          "uid": "A-34",
+          "classification_no": "34",
+          "status": "active",
+          "official_text": "Hörakustiker",
+          "name": "Hörakustiker"
+        },
+        {
+          "uid": "A-35",
+          "classification_no": "35",
+          "status": "active",
+          "official_text": "Orthopädietechniker",
+          "name": "Orthopädietechniker"
+        },
+        {
+          "uid": "A-36",
+          "classification_no": "36",
+          "status": "active",
+          "official_text": "Orthopädieschuhmacher",
+          "name": "Orthopädieschuhmacher"
+        },
+        {
+          "uid": "A-37",
+          "classification_no": "37",
+          "status": "active",
+          "official_text": "Zahntechniker",
+          "name": "Zahntechniker"
+        },
+        {
+          "uid": "A-38",
+          "classification_no": "38",
+          "status": "active",
+          "official_text": "Friseure",
+          "name": "Friseure"
+        },
+        {
+          "uid": "A-39",
+          "classification_no": "39",
+          "status": "active",
+          "official_text": "Glaser",
+          "name": "Glaser"
+        },
+        {
+          "uid": "A-40",
+          "classification_no": "40",
+          "status": "active",
+          "official_text": "Glasbläser und Glasapparatebauer",
+          "name": "Glasbläser und Glasapparatebauer"
+        },
+        {
+          "uid": "A-41",
+          "classification_no": "41",
+          "status": "active",
+          "official_text": "Mechaniker für Reifen- und Vulkanisationstechnik",
+          "name": "Mechaniker für Reifen- und Vulkanisationstechnik"
+        },
+        {
+          "uid": "A-42",
+          "classification_no": "42",
+          "status": "active",
+          "official_text": "Fliesen-, Platten- und Mosaikleger",
+          "name": "Fliesen-, Platten- und Mosaikleger"
+        },
+        {
+          "uid": "A-43",
+          "classification_no": "43",
+          "status": "active",
+          "official_text": "Werkstein- und Terrazzohersteller",
+          "name": "Werkstein- und Terrazzohersteller"
+        },
+        {
+          "uid": "A-44",
+          "classification_no": "44",
+          "status": "active",
+          "official_text": "Estrichleger",
+          "name": "Estrichleger"
+        },
+        {
+          "uid": "A-45",
+          "classification_no": "45",
+          "status": "active",
+          "official_text": "Behälter- und Apparatebauer",
+          "name": "Behälter- und Apparatebauer"
+        },
+        {
+          "uid": "A-46",
+          "classification_no": "46",
+          "status": "active",
+          "official_text": "Parkettleger",
+          "name": "Parkettleger"
+        },
+        {
+          "uid": "A-47",
+          "classification_no": "47",
+          "status": "active",
+          "official_text": "Rollladen- und Sonnenschutztechniker",
+          "name": "Rollladen- und Sonnenschutztechniker"
+        },
+        {
+          "uid": "A-48",
+          "classification_no": "48",
+          "status": "active",
+          "official_text": "Drechsler (Elfenbeinschnitzer) und Holzspielzeugmacher",
+          "name": "Drechsler (Elfenbeinschnitzer) und Holzspielzeugmacher"
+        },
+        {
+          "uid": "A-49",
+          "classification_no": "49",
+          "status": "active",
+          "official_text": "Böttcher",
+          "name": "Böttcher"
+        },
+        {
+          "uid": "A-50",
+          "classification_no": "50",
+          "status": "active",
+          "official_text": "Glasveredler",
+          "name": "Glasveredler"
+        },
+        {
+          "uid": "A-51",
+          "classification_no": "51",
+          "status": "active",
+          "official_text": "Schilder- und Lichtreklamehersteller",
+          "name": "Schilder- und Lichtreklamehersteller"
+        },
+        {
+          "uid": "A-52",
+          "classification_no": "52",
+          "status": "active",
+          "official_text": "Raumausstatter",
+          "name": "Raumausstatter"
+        },
+        {
+          "uid": "A-53",
+          "classification_no": "53",
+          "status": "active",
+          "official_text": "Orgel- und Harmoniumbauer",
+          "name": "Orgel- und Harmoniumbauer"
+        }
+      ]
+    },
+    {
+      "type": "B1",
+      "anlage": "B",
+      "abschnitt": "1",
+      "type_name": "Zulassungsfreie Handwerke",
+      "legal_basis_url": "https://www.gesetze-im-internet.de/hwo/anlage_b.html",
+      "items": [
+        {
+          "uid": "B1-05",
+          "classification_no": "05",
+          "status": "active",
+          "official_text": "Uhrmacher",
+          "name": "Uhrmacher"
+        },
+        {
+          "uid": "B1-06",
+          "classification_no": "06",
+          "status": "active",
+          "official_text": "Graveure",
+          "name": "Graveure"
+        },
+        {
+          "uid": "B1-07",
+          "classification_no": "07",
+          "status": "active",
+          "official_text": "Metallbildner",
+          "name": "Metallbildner"
+        },
+        {
+          "uid": "B1-08",
+          "classification_no": "08",
+          "status": "active",
+          "official_text": "Galvaniseure",
+          "name": "Galvaniseure"
+        },
+        {
+          "uid": "B1-09",
+          "classification_no": "09",
+          "status": "active",
+          "official_text": "Metall- und Glockengießer",
+          "name": "Metall- und Glockengießer"
+        },
+        {
+          "uid": "B1-10",
+          "classification_no": "10",
+          "status": "active",
+          "official_text": "Präzisionswerkzeugmechaniker",
+          "name": "Präzisionswerkzeugmechaniker"
+        },
+        {
+          "uid": "B1-11",
+          "classification_no": "11",
+          "status": "active",
+          "official_text": "Gold- und Silberschmiede",
+          "name": "Gold- und Silberschmiede"
+        },
+        {
+          "uid": "B1-12",
+          "classification_no": "12",
+          "status": "active",
+          "official_text": "Galvanotechniker",
+          "name": "Galvanotechniker"
+        },
+        {
+          "uid": "B1-13",
+          "classification_no": "13",
+          "status": "active",
+          "official_text": "Werkzeugmacher",
+          "name": "Werkzeugmacher"
+        },
+        {
+          "uid": "B1-14",
+          "classification_no": "14",
+          "status": "active",
+          "official_text": "Modellbauer",
+          "name": "Modellbauer"
+        },
+        {
+          "uid": "B1-15",
+          "classification_no": "15",
+          "status": "active",
+          "official_text": "Ziseleure",
+          "name": "Ziseleure"
+        },
+        {
+          "uid": "B1-16",
+          "classification_no": "16",
+          "status": "active",
+          "official_text": "Holzbildhauer",
+          "name": "Holzbildhauer"
+        },
+        {
+          "uid": "B1-17",
+          "classification_no": "17",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B1-18",
+          "classification_no": "18",
+          "status": "active",
+          "official_text": "Korb- und Flechtwerkgestalter",
+          "name": "Korb- und Flechtwerkgestalter"
+        },
+        {
+          "uid": "B1-19",
+          "classification_no": "19",
+          "status": "active",
+          "official_text": "Maßschneider",
+          "name": "Maßschneider"
+        },
+        {
+          "uid": "B1-20",
+          "classification_no": "20",
+          "status": "active",
+          "official_text": "Textilgestalter (Sticker, Weber, Klöppler, Posamentierer, Stricker)",
+          "name": "Textilgestalter (Sticker, Weber, Klöppler, Posamentierer, Stricker)"
+        },
+        {
+          "uid": "B1-21",
+          "classification_no": "21",
+          "status": "active",
+          "official_text": "Modisten",
+          "name": "Modisten"
+        },
+        {
+          "uid": "B1-22",
+          "classification_no": "22",
+          "status": "repealed_weggefallen",
+          "official_text": "(weggefallen)",
+          "name": null
+        },
+        {
+          "uid": "B1-23",
+          "classification_no": "23",
+          "status": "active",
+          "official_text": "Segelmacher",
+          "name": "Segelmacher"
+        },
+        {
+          "uid": "B1-24",
+          "classification_no": "24",
+          "status": "active",
+          "official_text": "Kürschner",
+          "name": "Kürschner"
+        },
+        {
+          "uid": "B1-25",
+          "classification_no": "25",
+          "status": "active",
+          "official_text": "Schuhmacher",
+          "name": "Schuhmacher"
+        },
+        {
+          "uid": "B1-26",
+          "classification_no": "26",
+          "status": "active",
+          "official_text": "Sattler und Feintäschner",
+          "name": "Sattler und Feintäschner"
+        },
+        {
+          "uid": "B1-27",
+          "classification_no": "27",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B1-28",
+          "classification_no": "28",
+          "status": "active",
+          "official_text": "Müller",
+          "name": "Müller"
+        },
+        {
+          "uid": "B1-29",
+          "classification_no": "29",
+          "status": "active",
+          "official_text": "Brauer und Mälzer",
+          "name": "Brauer und Mälzer"
+        },
+        {
+          "uid": "B1-30",
+          "classification_no": "30",
+          "status": "active",
+          "official_text": "Weinküfer",
+          "name": "Weinküfer"
+        },
+        {
+          "uid": "B1-31",
+          "classification_no": "31",
+          "status": "active",
+          "official_text": "Textilreiniger",
+          "name": "Textilreiniger"
+        },
+        {
+          "uid": "B1-32",
+          "classification_no": "32",
+          "status": "active",
+          "official_text": "Wachszieher",
+          "name": "Wachszieher"
+        },
+        {
+          "uid": "B1-33",
+          "classification_no": "33",
+          "status": "active",
+          "official_text": "Gebäudereiniger",
+          "name": "Gebäudereiniger"
+        },
+        {
+          "uid": "B1-34",
+          "classification_no": "34",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B1-35",
+          "classification_no": "35",
+          "status": "active",
+          "official_text": "Feinoptiker",
+          "name": "Feinoptiker"
+        },
+        {
+          "uid": "B1-36",
+          "classification_no": "36",
+          "status": "active",
+          "official_text": "Glas- und Porzellanmaler",
+          "name": "Glas- und Porzellanmaler"
+        },
+        {
+          "uid": "B1-37",
+          "classification_no": "37",
+          "status": "active",
+          "official_text": "Edelsteinschleifer und -graveure",
+          "name": "Edelsteinschleifer und -graveure"
+        },
+        {
+          "uid": "B1-38",
+          "classification_no": "38",
+          "status": "active",
+          "official_text": "Fotografen",
+          "name": "Fotografen"
+        },
+        {
+          "uid": "B1-39",
+          "classification_no": "39",
+          "status": "active",
+          "official_text": "Buchbinder",
+          "name": "Buchbinder"
+        },
+        {
+          "uid": "B1-40",
+          "classification_no": "40",
+          "status": "active",
+          "official_text": "Print- und Medientechnologen (Drucker, Siebdrucker, Flexografen)",
+          "name": "Print- und Medientechnologen (Drucker, Siebdrucker, Flexografen)"
+        },
+        {
+          "uid": "B1-41",
+          "classification_no": "41",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B1-42",
+          "classification_no": "42",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B1-43",
+          "classification_no": "43",
+          "status": "active",
+          "official_text": "Keramiker",
+          "name": "Keramiker"
+        },
+        {
+          "uid": "B1-44",
+          "classification_no": "44",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B1-45",
+          "classification_no": "45",
+          "status": "active",
+          "official_text": "Klavier- und Cembalobauer",
+          "name": "Klavier- und Cembalobauer"
+        },
+        {
+          "uid": "B1-46",
+          "classification_no": "46",
+          "status": "active",
+          "official_text": "Handzuginstrumentenmacher",
+          "name": "Handzuginstrumentenmacher"
+        },
+        {
+          "uid": "B1-47",
+          "classification_no": "47",
+          "status": "active",
+          "official_text": "Geigenbauer",
+          "name": "Geigenbauer"
+        },
+        {
+          "uid": "B1-48",
+          "classification_no": "48",
+          "status": "active",
+          "official_text": "Bogenmacher",
+          "name": "Bogenmacher"
+        },
+        {
+          "uid": "B1-49",
+          "classification_no": "49",
+          "status": "active",
+          "official_text": "Metallblasinstrumentenmacher",
+          "name": "Metallblasinstrumentenmacher"
+        },
+        {
+          "uid": "B1-50",
+          "classification_no": "50",
+          "status": "active",
+          "official_text": "Holzblasinstrumentenmacher",
+          "name": "Holzblasinstrumentenmacher"
+        },
+        {
+          "uid": "B1-51",
+          "classification_no": "51",
+          "status": "active",
+          "official_text": "Zupfinstrumentenmacher",
+          "name": "Zupfinstrumentenmacher"
+        },
+        {
+          "uid": "B1-52",
+          "classification_no": "52",
+          "status": "active",
+          "official_text": "Vergolder",
+          "name": "Vergolder"
+        },
+        {
+          "uid": "B1-53",
+          "classification_no": "53",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B1-54",
+          "classification_no": "54",
+          "status": "active",
+          "official_text": "Holz- und Bautenschützer (Mauerschutz und Holzimprägnierung in Gebäuden)",
+          "name": "Holz- und Bautenschützer (Mauerschutz und Holzimprägnierung in Gebäuden)"
+        },
+        {
+          "uid": "B1-55",
+          "classification_no": "55",
+          "status": "active",
+          "official_text": "Bestatter",
+          "name": "Bestatter"
+        },
+        {
+          "uid": "B1-56",
+          "classification_no": "56",
+          "status": "active",
+          "official_text": "Kosmetiker",
+          "name": "Kosmetiker"
+        }
+      ]
+    },
+    {
+      "type": "B2",
+      "anlage": "B",
+      "abschnitt": "2",
+      "type_name": "Handwerksähnliche Gewerbe",
+      "legal_basis_url": "https://www.gesetze-im-internet.de/hwo/anlage_b.html",
+      "items": [
+        {
+          "uid": "B2-01",
+          "classification_no": "01",
+          "status": "active",
+          "official_text": "Eisenflechter",
+          "name": "Eisenflechter"
+        },
+        {
+          "uid": "B2-02",
+          "classification_no": "02",
+          "status": "active",
+          "official_text": "Bautentrocknungsgewerbe",
+          "name": "Bautentrocknungsgewerbe"
+        },
+        {
+          "uid": "B2-03",
+          "classification_no": "03",
+          "status": "active",
+          "official_text": "Bodenleger",
+          "name": "Bodenleger"
+        },
+        {
+          "uid": "B2-04",
+          "classification_no": "04",
+          "status": "active",
+          "official_text": "Asphaltierer (ohne Straßenbau)",
+          "name": "Asphaltierer (ohne Straßenbau)"
+        },
+        {
+          "uid": "B2-05",
+          "classification_no": "05",
+          "status": "active",
+          "official_text": "Fuger (im Hochbau)",
+          "name": "Fuger (im Hochbau)"
+        },
+        {
+          "uid": "B2-06",
+          "classification_no": "06",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B2-07",
+          "classification_no": "07",
+          "status": "active",
+          "official_text": "Rammgewerbe (Einrammen von Pfählen im Wasserbau)",
+          "name": "Rammgewerbe (Einrammen von Pfählen im Wasserbau)"
+        },
+        {
+          "uid": "B2-08",
+          "classification_no": "08",
+          "status": "active",
+          "official_text": "Betonbohrer und -schneider",
+          "name": "Betonbohrer und -schneider"
+        },
+        {
+          "uid": "B2-09",
+          "classification_no": "09",
+          "status": "active",
+          "official_text": "Theater- und Ausstattungsmaler",
+          "name": "Theater- und Ausstattungsmaler"
+        },
+        {
+          "uid": "B2-10",
+          "classification_no": "10",
+          "status": "active",
+          "official_text": "Herstellung von Drahtgestellen für Dekorationszwecke in Sonderanfertigung",
+          "name": "Herstellung von Drahtgestellen für Dekorationszwecke in Sonderanfertigung"
+        },
+        {
+          "uid": "B2-11",
+          "classification_no": "11",
+          "status": "active",
+          "official_text": "Metallschleifer und Metallpolierer",
+          "name": "Metallschleifer und Metallpolierer"
+        },
+        {
+          "uid": "B2-12",
+          "classification_no": "12",
+          "status": "active",
+          "official_text": "Metallsägen-Schärfer",
+          "name": "Metallsägen-Schärfer"
+        },
+        {
+          "uid": "B2-13",
+          "classification_no": "13",
+          "status": "active",
+          "official_text": "Tankschutzbetriebe (Korrosionsschutz von Öltanks für Feuerungsanlagen ohne chemische Verfahren)",
+          "name": "Tankschutzbetriebe (Korrosionsschutz von Öltanks für Feuerungsanlagen ohne chemische Verfahren)"
+        },
+        {
+          "uid": "B2-14",
+          "classification_no": "14",
+          "status": "active",
+          "official_text": "Fahrzeugverwerter",
+          "name": "Fahrzeugverwerter"
+        },
+        {
+          "uid": "B2-15",
+          "classification_no": "15",
+          "status": "active",
+          "official_text": "Rohr- und Kanalreiniger",
+          "name": "Rohr- und Kanalreiniger"
+        },
+        {
+          "uid": "B2-16",
+          "classification_no": "16",
+          "status": "active",
+          "official_text": "Kabelverleger im Hochbau (ohne Anschlussarbeiten)",
+          "name": "Kabelverleger im Hochbau (ohne Anschlussarbeiten)"
+        },
+        {
+          "uid": "B2-17",
+          "classification_no": "17",
+          "status": "active",
+          "official_text": "Holzschuhmacher",
+          "name": "Holzschuhmacher"
+        },
+        {
+          "uid": "B2-18",
+          "classification_no": "18",
+          "status": "active",
+          "official_text": "Holzblockmacher",
+          "name": "Holzblockmacher"
+        },
+        {
+          "uid": "B2-19",
+          "classification_no": "19",
+          "status": "active",
+          "official_text": "Daubenhauer",
+          "name": "Daubenhauer"
+        },
+        {
+          "uid": "B2-20",
+          "classification_no": "20",
+          "status": "active",
+          "official_text": "Holz-Leitermacher (Sonderanfertigung)",
+          "name": "Holz-Leitermacher (Sonderanfertigung)"
+        },
+        {
+          "uid": "B2-21",
+          "classification_no": "21",
+          "status": "active",
+          "official_text": "Muldenhauer",
+          "name": "Muldenhauer"
+        },
+        {
+          "uid": "B2-22",
+          "classification_no": "22",
+          "status": "active",
+          "official_text": "Holzreifenmacher",
+          "name": "Holzreifenmacher"
+        },
+        {
+          "uid": "B2-23",
+          "classification_no": "23",
+          "status": "active",
+          "official_text": "Holzschindelmacher",
+          "name": "Holzschindelmacher"
+        },
+        {
+          "uid": "B2-24",
+          "classification_no": "24",
+          "status": "active",
+          "official_text": "Einbau von genormten Baufertigteilen (zum Beispiel Fenster, Türen, Zargen, Regale)",
+          "name": "Einbau von genormten Baufertigteilen (zum Beispiel Fenster, Türen, Zargen, Regale)"
+        },
+        {
+          "uid": "B2-25",
+          "classification_no": "25",
+          "status": "active",
+          "official_text": "Bürsten- und Pinselmacher",
+          "name": "Bürsten- und Pinselmacher"
+        },
+        {
+          "uid": "B2-26",
+          "classification_no": "26",
+          "status": "active",
+          "official_text": "Bügelanstalten für Herren-Oberbekleidung",
+          "name": "Bügelanstalten für Herren-Oberbekleidung"
+        },
+        {
+          "uid": "B2-27",
+          "classification_no": "27",
+          "status": "active",
+          "official_text": "Dekorationsnäher (ohne Schaufensterdekoration)",
+          "name": "Dekorationsnäher (ohne Schaufensterdekoration)"
+        },
+        {
+          "uid": "B2-28",
+          "classification_no": "28",
+          "status": "active",
+          "official_text": "Fleckteppichhersteller",
+          "name": "Fleckteppichhersteller"
+        },
+        {
+          "uid": "B2-29",
+          "classification_no": "29",
+          "status": "repealed_weggefallen",
+          "official_text": "(weggefallen)",
+          "name": null
+        },
+        {
+          "uid": "B2-30",
+          "classification_no": "30",
+          "status": "active",
+          "official_text": "Theaterkostümnäher",
+          "name": "Theaterkostümnäher"
+        },
+        {
+          "uid": "B2-31",
+          "classification_no": "31",
+          "status": "active",
+          "official_text": "Plisseebrenner",
+          "name": "Plisseebrenner"
+        },
+        {
+          "uid": "B2-32",
+          "classification_no": "32",
+          "status": "repealed_weggefallen",
+          "official_text": "(weggefallen)",
+          "name": null
+        },
+        {
+          "uid": "B2-33",
+          "classification_no": "33",
+          "status": "active",
+          "official_text": "Stoffmaler",
+          "name": "Stoffmaler"
+        },
+        {
+          "uid": "B2-34",
+          "classification_no": "34",
+          "status": "repealed_weggefallen",
+          "official_text": "(weggefallen)",
+          "name": null
+        },
+        {
+          "uid": "B2-35",
+          "classification_no": "35",
+          "status": "active",
+          "official_text": "Textil-Handdrucker",
+          "name": "Textil-Handdrucker"
+        },
+        {
+          "uid": "B2-36",
+          "classification_no": "36",
+          "status": "active",
+          "official_text": "Kunststopfer",
+          "name": "Kunststopfer"
+        },
+        {
+          "uid": "B2-37",
+          "classification_no": "37",
+          "status": "active",
+          "official_text": "Änderungsschneider",
+          "name": "Änderungsschneider"
+        },
+        {
+          "uid": "B2-38",
+          "classification_no": "38",
+          "status": "active",
+          "official_text": "Handschuhmacher",
+          "name": "Handschuhmacher"
+        },
+        {
+          "uid": "B2-39",
+          "classification_no": "39",
+          "status": "active",
+          "official_text": "Ausführung einfacher Schuhreparaturen",
+          "name": "Ausführung einfacher Schuhreparaturen"
+        },
+        {
+          "uid": "B2-40",
+          "classification_no": "40",
+          "status": "active",
+          "official_text": "Gerber",
+          "name": "Gerber"
+        },
+        {
+          "uid": "B2-41",
+          "classification_no": "41",
+          "status": "active",
+          "official_text": "Innerei-Fleischer (Kuttler)",
+          "name": "Innerei-Fleischer (Kuttler)"
+        },
+        {
+          "uid": "B2-42",
+          "classification_no": "42",
+          "status": "active",
+          "official_text": "Speiseeishersteller (mit Vertrieb von Speiseeis mit üblichem Zubehör)",
+          "name": "Speiseeishersteller (mit Vertrieb von Speiseeis mit üblichem Zubehör)"
+        },
+        {
+          "uid": "B2-43",
+          "classification_no": "43",
+          "status": "active",
+          "official_text": "Fleischzerleger, Ausbeiner",
+          "name": "Fleischzerleger, Ausbeiner"
+        },
+        {
+          "uid": "B2-44",
+          "classification_no": "44",
+          "status": "active",
+          "official_text": "Appreteure, Dekateure",
+          "name": "Appreteure, Dekateure"
+        },
+        {
+          "uid": "B2-45",
+          "classification_no": "45",
+          "status": "active",
+          "official_text": "Schnellreiniger",
+          "name": "Schnellreiniger"
+        },
+        {
+          "uid": "B2-46",
+          "classification_no": "46",
+          "status": "active",
+          "official_text": "Teppichreiniger",
+          "name": "Teppichreiniger"
+        },
+        {
+          "uid": "B2-47",
+          "classification_no": "47",
+          "status": "active",
+          "official_text": "Getränkeleitungsreiniger",
+          "name": "Getränkeleitungsreiniger"
+        },
+        {
+          "uid": "B2-48",
+          "classification_no": "48",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B2-49",
+          "classification_no": "49",
+          "status": "active",
+          "official_text": "Maskenbildner",
+          "name": "Maskenbildner"
+        },
+        {
+          "uid": "B2-50",
+          "classification_no": "50",
+          "status": "repealed_entfaellt",
+          "official_text": "entfällt",
+          "name": null
+        },
+        {
+          "uid": "B2-51",
+          "classification_no": "51",
+          "status": "active",
+          "official_text": "Lampenschirmhersteller (Sonderanfertigung)",
+          "name": "Lampenschirmhersteller (Sonderanfertigung)"
+        },
+        {
+          "uid": "B2-52",
+          "classification_no": "52",
+          "status": "active",
+          "official_text": "Klavierstimmer",
+          "name": "Klavierstimmer"
+        },
+        {
+          "uid": "B2-53",
+          "classification_no": "53",
+          "status": "active",
+          "official_text": "Theaterplastiker",
+          "name": "Theaterplastiker"
+        },
+        {
+          "uid": "B2-54",
+          "classification_no": "54",
+          "status": "active",
+          "official_text": "Requisiteure",
+          "name": "Requisiteure"
+        },
+        {
+          "uid": "B2-55",
+          "classification_no": "55",
+          "status": "active",
+          "official_text": "Schirmmacher",
+          "name": "Schirmmacher"
+        },
+        {
+          "uid": "B2-56",
+          "classification_no": "56",
+          "status": "active",
+          "official_text": "Steindrucker",
+          "name": "Steindrucker"
+        },
+        {
+          "uid": "B2-57",
+          "classification_no": "57",
+          "status": "active",
+          "official_text": "Schlagzeugmacher",
+          "name": "Schlagzeugmacher"
+        }
+      ]
+    }
+  ]
+}

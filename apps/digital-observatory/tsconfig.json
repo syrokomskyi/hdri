@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.app.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "include": [
+    "run/**/*.ts",
+    "run/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/dist/**",
+    "**/build/**",
+    "spec/**",
+    ".input",
+    ".output"
+  ]
+}

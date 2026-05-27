@@ -1,0 +1,79 @@
+{
+  "name": "@org/business-core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.lib.json",
+    "lint": "pnpm exec eslint src --ext .ts",
+    "typecheck": "pnpm exec tsc -p tsconfig.lib.json --noEmit",
+    "upgrade-packages": "pnpm up --latest"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "@org/source": "./src/schema/index.ts",
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js",
+      "default": "./dist/schema/index.js"
+    },
+    "./migrate": {
+      "@org/source": "./src/migrate/index.ts",
+      "types": "./dist/migrate/index.d.ts",
+      "import": "./dist/migrate/index.js",
+      "default": "./dist/migrate/index.js"
+    },
+    "./ids": {
+      "@org/source": "./src/ids/index.ts",
+      "types": "./dist/ids/index.d.ts",
+      "import": "./dist/ids/index.js",
+      "default": "./dist/ids/index.js"
+    },
+    "./gewerk": {
+      "@org/source": "./src/gewerk/index.ts",
+      "types": "./dist/gewerk/index.d.ts",
+      "import": "./dist/gewerk/index.js",
+      "default": "./dist/gewerk/index.js"
+    },
+    "./cross-db": {
+      "@org/source": "./src/cross-db.ts",
+      "types": "./dist/cross-db.d.ts",
+      "import": "./dist/cross-db.js",
+      "default": "./dist/cross-db.js"
+    },
+    "./liveness-schema": {
+      "@org/source": "./src/schema/liveness.ts",
+      "types": "./dist/schema/liveness.d.ts",
+      "import": "./dist/schema/liveness.js",
+      "default": "./dist/schema/liveness.js"
+    },
+    "./liveness-migrate": {
+      "@org/source": "./src/migrate/liveness.ts",
+      "types": "./dist/migrate/liveness.d.ts",
+      "import": "./dist/migrate/liveness.js",
+      "default": "./dist/migrate/liveness.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.10.0",
+    "drizzle-orm": "^0.45.2",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "csv-parse": "^6.2.1"
+  }
+}

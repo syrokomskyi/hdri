@@ -1,0 +1,68 @@
+{
+  "compilerOptions": {
+    "importHelpers": true,
+    "isolatedModules": true,
+    "lib": [
+      "es2022"
+    ],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2022",
+    "customConditions": [
+      "@org/source"
+    ],
+    "paths": {
+      "@org/business-core": [
+        "./packages/business-core/src"
+      ],
+      "@org/business-crawler": [
+        "./packages/business-crawler/src"
+      ],
+      "@org/business-rate-limit": [
+        "./packages/business-rate-limit/src"
+      ],
+      "@org/hdri-codebook": [
+        "./packages/hdri-codebook/src"
+      ],
+      "@org/hdri-factory-core": [
+        "./packages/hdri-factory-core/src"
+      ],
+      "@org/observatory-asset-id": [
+        "./packages/observatory-asset-id/src"
+      ],
+      "@org/observatory-core": [
+        "./packages/observatory-core/src"
+      ],
+      "@org/observatory-crypto": [
+        "./packages/observatory-crypto/src"
+      ],
+      "@org/observatory-emit": [
+        "./packages/observatory-emit/src"
+      ],
+      "@org/observatory-vault": [
+        "./packages/observatory-vault/src"
+      ],
+      "@org/pipeline-ai": [
+        "./packages/pipeline-ai/src"
+      ],
+      "@org/pipeline-core": [
+        "./packages/pipeline-core/src"
+      ],
+      "@org/pipeline-node": [
+        "./packages/pipeline-node/src"
+      ],
+      "@org/pipeline-steps": [
+        "./packages/pipeline-steps/src"
+      ],
+      "@org/utils": [
+        "./packages/utils/src"
+      ]
+    }
+  }
+}

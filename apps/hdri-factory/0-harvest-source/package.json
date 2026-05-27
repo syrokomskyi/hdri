@@ -1,0 +1,32 @@
+{
+  "name": "@org/catalog-harvest",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/0-harvest-source/tsconfig.json --noEmit",
+    "typecheck": "pnpm --dir ../../.. exec tsc -p apps/hdri-factory/0-harvest-source/tsconfig.json --noEmit",
+    "dev": "tsx -C @org/source watch run/run.ts",
+    "start": "tsx -C @org/source run/run.ts"
+  },
+  "dependencies": {
+    "@org/business-core": "workspace:*",
+    "@org/business-rate-limit": "workspace:*",
+    "@org/hdri-factory-core": "workspace:*",
+    "@org/observatory-core": "workspace:*",
+    "@org/observatory-crypto": "workspace:*",
+    "@org/observatory-emit": "workspace:*",
+    "@org/pipeline-core": "workspace:*",
+    "@org/pipeline-node": "workspace:*",
+    "@org/utils": "workspace:*",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.1",
+    "better-sqlite3": "^12.10.0",
+    "cheerio": "^1.2.0",
+    "csv-parse": "^6.2.1",
+    "csv-stringify": "^6.7.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "gray-matter": "^4.0.3",
+    "markdown-table": "^3.0.4",
+    "tsx": "^4.22.3"
+  }
+}

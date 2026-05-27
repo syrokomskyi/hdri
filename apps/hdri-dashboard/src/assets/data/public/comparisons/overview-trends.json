@@ -1,0 +1,23 @@
+[
+  {
+    "axis": "overall",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "HDRI Gesamt",
+    "key": "overall",
+    "n": 38121,
+    "mean": 32.5,
+    "p10": 17.2,
+    "p25": 26.5,
+    "p50": 33.2,
+    "p75": 39.8,
+    "p90": 46,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  }
+]

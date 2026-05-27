@@ -1,0 +1,299 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { readFileSync } from 'node:fs';
+import { parse as parseYaml } from 'yaml';
+
+const yamlPath = new URL('public/codebook-observatory-v1.3.0.yaml', 'file://' + process.cwd() + '/');
+const yamlText = readFileSync(yamlPath, 'utf-8');
+const codebook = parseYaml(yamlText);
+
+const pageTitle = 'HDRI Codebook — Scoring-Spezifikation';
+const pageDescription = 'Vollständige Codebook-Spezifikation des HDRI: Dimensionen, Indikatoren, Gewichtungen, Scoring-Regeln und Versionsgeschichte.';
+
+const cb = codebook as {
+  id: string;
+  version: string;
+  label: string;
+  ontologyRef: string;
+  notes: string;
+  dimensions: Array<{
+    id: string;
+    label: string;
+    weight: number;
+    indicators: Array<{
+      id: string;
+      inputKey: string;
+      weight: number;
+      rule: Record<string, unknown>;
+      missing?: Record<string, unknown>;
+      source?: { extractor?: string };
+      remediation?: {
+        severity?: string;
+        category?: string;
+        humanLabel?: string;
+        recommendation?: string;
+      };
+    }>;
+  }>;
+};
+
+const LOCALE = 'de-DE';
+const pct = (n: number) => new Intl.NumberFormat(LOCALE, { style: 'percent', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+
+function ruleSummary(rule: Record<string, unknown>): string {
+  const type = rule.type as string;
+  if (type === 'bool') return `bool — true:${rule.trueScore} / false:${rule.falseScore}`;
+  if (type === 'presence') return `presence — present:${rule.presentScore} / absent:${rule.absentScore}`;
+  if (type === 'countClamp') return `countClamp — min:${rule.min}→${rule.scoreAtMin} / max:${rule.max}→${rule.scoreAtMax}`;
+  if (type === 'enum') return `enum — ${Object.entries(rule.cases as Record<string, number>).map(([k, v]) => `${k}:${v}`).join(', ')}`;
+  return type ?? 'unknown';
+}
+
+function missingSummary(m: Record<string, unknown> | undefined): string {
+  if (!m) return 'zero';
+  if (m.kind === 'conditional') {
+    const states = m.states as Record<string, string> | undefined;
+    return `conditional — ${states ? Object.entries(states).map(([k, v]) => `${k}:${v}`).join(', ') : ''}`;
+  }
+  return String(m.kind);
+}
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: 'HDRI Dashboard', href: '/' }, { label: 'Codebook' }]} />
+    </div>
+    <section class="hero">
+      <div class="container hero-panel layer-accent accent-schema">
+        <div class="hero-copy">
+          <span class="eyebrow">Scoring-Spezifikation</span>
+          <h1>Codebook v{cb.version}</h1>
+          <p>
+            Diese Seite dokumentiert die vollständige Scoring-Spezifikation des HDRI.
+            Sie enthält alle Dimensionen, Indikatoren, Gewichtungen und Scoring-Regeln,
+            die für die Berechnung des Index verwendet werden.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="/">Zum Dashboard</a>
+            <a class="button button-secondary" href="/methodik">Methodik</a>
+            <a class="button button-secondary" href={`/codebook-observatory-${cb.version}.yaml`} download>YAML herunterladen</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Version & Kontext</span>
+            <h2>Codebook-Identität</h2>
+          </div>
+        </div>
+        <div class="meta-card layer-accent accent-metadata">
+          <div>
+            <span class="meta-line"><strong>ID:</strong> {cb.id}</span>
+            <span class="meta-line"><strong>Version:</strong> {cb.version}</span>
+            <span class="meta-line"><strong>Label:</strong> {cb.label}</span>
+          </div>
+          <div>
+            <span class="meta-line"><strong>Ontology:</strong> {cb.ontologyRef}</span>
+            <span class="meta-line"><strong>Dimensionen:</strong> {cb.dimensions.length}</span>
+            <span class="meta-line"><strong>Indikatoren:</strong> {cb.dimensions.reduce((sum, d) => sum + d.indicators.length, 0)}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Versionsgeschichte</span>
+            <h2>CHANGELOG</h2>
+          </div>
+        </div>
+        <article class="method-card layer-accent accent-text changelog-card">
+          <div class="changelog-body">
+            {cb.notes.split(/\n\n/).map((para) => {
+              const versionMatch = para.match(/^(v\d+\.\d+(?:\.\d+)?)\s*(?:—|–|-|:)\s*(.*)/s);
+              if (versionMatch) {
+                return (
+                  <div class="changelog-entry">
+                    <span class="version-tag">{versionMatch[1]}</span>
+                    <p>{versionMatch[2]}</p>
+                  </div>
+                );
+              }
+              return <p>{para}</p>;
+            })}
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Scoring-Rahmen</span>
+            <h2>Dimensionen & Gewichtungen</h2>
+          </div>
+        </div>
+        <div class="table-card table-wrap layer-accent accent-schema">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Label</th>
+                <th>Gewicht</th>
+                <th>Indikatoren</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cb.dimensions.map((dim) => (
+                <tr>
+                  <td><code>{dim.id}</code></td>
+                  <td>{dim.label}</td>
+                  <td>{pct(dim.weight)}</td>
+                  <td>{dim.indicators.length}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Indikatoren</span>
+            <h2>Alle Scoring-Regeln pro Dimension</h2>
+          </div>
+        </div>
+        {cb.dimensions.map((dim) => (
+          <div class="table-card table-wrap section-stack-top layer-accent accent-shtama">
+            <h3 class="dimension-title">{dim.label} <span class="weight-badge">{pct(dim.weight)}</span></h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Input Key</th>
+                  <th>Gewicht</th>
+                  <th>Regel</th>
+                  <th>Missing Policy</th>
+                  <th>Extractor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dim.indicators.map((ind) => (
+                  <tr>
+                    <td><code>{ind.id}</code></td>
+                    <td><code>{ind.inputKey}</code></td>
+                    <td>{pct(ind.weight)}</td>
+                    <td><span class="rule-tag">{ruleSummary(ind.rule)}</span></td>
+                    <td><span class="missing-tag">{missingSummary(ind.missing)}</span></td>
+                    <td>{ind.source?.extractor ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Reproduzierbarkeit</span>
+            <h2>Download & Lizenz</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent accent-metadata">
+            <h3>YAML-Download</h3>
+            <p>Das Codebook steht als maschinenlesbare YAML-Datei zur Verfügung. Forscher und Entwickler können damit die Scoring-Logik nachvollziehen und reproduzieren.</p>
+            <a class="button" href={`/codebook-observatory-${cb.version}.yaml`} download>codebook-observatory-{cb.version}.yaml herunterladen</a>
+          </article>
+          <article class="method-card layer-accent accent-faq">
+            <h3>Semantische Versionierung</h3>
+            <p>Das Codebook folgt semantischer Versionierung (MAJOR.MINOR.PATCH):</p>
+            <ul>
+              <li><strong>MAJOR</strong> — inkompatible Änderung (Indikator entfernt, Dimension umbenannt)</li>
+              <li><strong>MINOR</strong> — additive Änderung (neuer Indikator, neue Dimension deaktiviert)</li>
+              <li><strong>PATCH</strong> — Beschreibung oder Tippfehler, keine Scoring-Auswirkung</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .changelog-body {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .changelog-body p {
+    margin: 0 0 0.75rem 0;
+  }
+  .changelog-body p:last-child {
+    margin-bottom: 0;
+  }
+  .changelog-entry {
+    margin-bottom: 0.75rem;
+  }
+  .changelog-entry:last-child {
+    margin-bottom: 0;
+  }
+  .changelog-entry p {
+    margin: 0.25rem 0 0 0;
+  }
+  .version-tag {
+    display: inline-block;
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+  .dimension-title {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.1rem;
+    padding: 0 1rem;
+  }
+  .weight-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--muted);
+    vertical-align: middle;
+    margin-left: 0.5rem;
+  }
+  .rule-tag, .missing-tag {
+    font-size: 0.78rem;
+    font-family: ui-monospace, 'SF Mono', monospace;
+    color: var(--muted);
+  }
+  .button-secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .button-secondary:hover {
+    background: var(--surface-3);
+  }
+</style>

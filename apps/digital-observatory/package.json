@@ -1,0 +1,41 @@
+{
+  "name": "@org/digital-observatory",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --dir ../.. exec tsc -p apps/digital-observatory/tsconfig.json --noEmit",
+    "lint": "pnpm --dir ../.. exec eslint apps/digital-observatory/run --ext .ts",
+    "typecheck": "pnpm --dir ../.. exec tsc -p apps/digital-observatory/tsconfig.json --noEmit",
+    "dev": "tsx -C @org/source watch run/main.ts",
+    "start": "tsx -C @org/source run/main.ts",
+    "export:dashboard": "tsx -C @org/source tools/export-hdri-dashboard-archive.ts",
+    "verify:vault": "tsx -C @org/source run/verify-vault.ts",
+    "start:and:build": "pnpm run build && pnpm run start",
+    "test": "pnpm exec vitest run",
+    "upgrade-packages": "pnpm up --latest"
+  },
+  "dependencies": {
+    "@org/business-core": "workspace:*",
+    "@org/hdri-codebook": "workspace:*",
+    "@org/observatory-asset-id": "workspace:*",
+    "@org/observatory-core": "workspace:*",
+    "@org/observatory-crypto": "workspace:*",
+    "@org/observatory-emit": "workspace:*",
+    "@org/observatory-vault": "workspace:*",
+    "@org/pipeline-core": "workspace:*",
+    "@org/pipeline-node": "workspace:*",
+    "@org/pipeline-steps": "workspace:*",
+    "@org/utils": "workspace:*",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.1",
+    "better-sqlite3": "^12.10.0",
+    "csv-stringify": "^6.7.0",
+    "dotenv": "^17.4.2",
+    "gray-matter": "^4.0.3",
+    "markdown-table": "^3.0.4",
+    "tsx": "^4.22.3",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.7"
+  }
+}

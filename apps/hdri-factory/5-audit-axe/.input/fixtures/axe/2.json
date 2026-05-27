@@ -1,0 +1,13 @@
+{
+  "testEngine": { "name": "axe-core", "version": "4.10.0" },
+  "violations": [
+    { "id": "color-contrast",     "impact": "serious",  "nodes": [{}, {}, {}, {}, {}, {}, {}] },
+    { "id": "image-alt",          "impact": "critical", "nodes": [{}, {}, {}, {}] },
+    { "id": "link-name",          "impact": "serious",  "nodes": [{}, {}] },
+    { "id": "region",             "impact": "moderate", "nodes": [{}] },
+    { "id": "html-has-lang",      "impact": "serious",  "nodes": [{}] },
+    { "id": "autocomplete-valid", "impact": "minor",    "nodes": [{}, {}] }
+  ],
+  "nodesScanned": 287
+}
+

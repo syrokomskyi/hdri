@@ -1,0 +1,128 @@
+[
+  {
+    "axis": "dimension",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Barrierefreiheit",
+    "key": "accessibility_audit",
+    "n": 34830,
+    "mean": 67.5,
+    "p10": 35,
+    "p25": 53,
+    "p50": 69,
+    "p75": 86.7,
+    "p90": 95,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "dimension",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Kontakt & Erreichbarkeit",
+    "key": "contact_accessibility",
+    "n": 38121,
+    "mean": 25,
+    "p10": 0,
+    "p25": 0,
+    "p50": 20,
+    "p75": 40,
+    "p90": 55,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "dimension",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Recht & Pflichtangaben",
+    "key": "legal_compliance",
+    "n": 38121,
+    "mean": 47.4,
+    "p10": 0,
+    "p25": 50,
+    "p50": 51,
+    "p75": 55,
+    "p90": 66,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "dimension",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Soziale Präsenz",
+    "key": "social_presence",
+    "n": 38121,
+    "mean": 15.3,
+    "p10": 0,
+    "p25": 0,
+    "p50": 0,
+    "p75": 35,
+    "p90": 50,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "dimension",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Strukturierte Informationen",
+    "key": "structured_data",
+    "n": 38121,
+    "mean": 5.6,
+    "p10": 0,
+    "p25": 0,
+    "p50": 0,
+    "p75": 10,
+    "p90": 25,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "dimension",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Vertrauen & Nachweise",
+    "key": "trust_signals",
+    "n": 38121,
+    "mean": 15.5,
+    "p10": 0,
+    "p25": 0,
+    "p50": 10,
+    "p75": 25,
+    "p90": 40,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  }
+]

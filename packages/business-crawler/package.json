@@ -1,0 +1,59 @@
+{
+  "name": "@org/business-crawler",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.lib.json",
+    "typecheck": "pnpm exec tsc -p tsconfig.lib.json --noEmit"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./liveness": {
+      "@org/source": "./src/liveness.ts",
+      "types": "./dist/liveness.d.ts",
+      "import": "./dist/liveness.js",
+      "default": "./dist/liveness.js"
+    },
+    "./fetch-page": {
+      "@org/source": "./src/fetch-page.ts",
+      "types": "./dist/fetch-page.d.ts",
+      "import": "./dist/fetch-page.js",
+      "default": "./dist/fetch-page.js"
+    },
+    "./extract": {
+      "@org/source": "./src/extract.ts",
+      "types": "./dist/extract.d.ts",
+      "import": "./dist/extract.js",
+      "default": "./dist/extract.js"
+    },
+    "./robots-honor": {
+      "@org/source": "./src/robots-honor.ts",
+      "types": "./dist/robots-honor.d.ts",
+      "import": "./dist/robots-honor.js",
+      "default": "./dist/robots-honor.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@types/node": "^25.9.1",
+    "cheerio": "^1.2.0",
+    "robots-parser": "^3.0.1",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.7"
+  }
+}

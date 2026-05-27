@@ -1,0 +1,338 @@
+[
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Baden-Württemberg",
+    "key": "Baden-Württemberg",
+    "n": 4076,
+    "mean": 32.2,
+    "p10": 16.9,
+    "p25": 26.5,
+    "p50": 32.8,
+    "p75": 39.3,
+    "p90": 45.4,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Bayern",
+    "key": "Bayern",
+    "n": 4601,
+    "mean": 32.5,
+    "p10": 17.7,
+    "p25": 26.6,
+    "p50": 32.9,
+    "p75": 39.8,
+    "p90": 46.1,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Berlin",
+    "key": "Berlin",
+    "n": 1813,
+    "mean": 32.9,
+    "p10": 16.9,
+    "p25": 25.9,
+    "p50": 33.7,
+    "p75": 40.9,
+    "p90": 47.1,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Brandenburg",
+    "key": "Brandenburg",
+    "n": 1125,
+    "mean": 32.4,
+    "p10": 16.7,
+    "p25": 27.1,
+    "p50": 33.3,
+    "p75": 39.4,
+    "p90": 45.3,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Bremen",
+    "key": "Bremen",
+    "n": 290,
+    "mean": 31.9,
+    "p10": 16.3,
+    "p25": 26.8,
+    "p50": 32.8,
+    "p75": 39.2,
+    "p90": 46.6,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Hamburg",
+    "key": "Hamburg",
+    "n": 869,
+    "mean": 33,
+    "p10": 17.6,
+    "p25": 26.2,
+    "p50": 33.6,
+    "p75": 40.7,
+    "p90": 47.2,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Hessen",
+    "key": "Hessen",
+    "n": 1830,
+    "mean": 31.4,
+    "p10": 15.7,
+    "p25": 25,
+    "p50": 32.2,
+    "p75": 38.9,
+    "p90": 45.5,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Mecklenburg-Vorpommern",
+    "key": "Mecklenburg-Vorpommern",
+    "n": 916,
+    "mean": 31.8,
+    "p10": 15.7,
+    "p25": 25.8,
+    "p50": 32.8,
+    "p75": 39.1,
+    "p90": 44.8,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Niedersachsen",
+    "key": "Niedersachsen",
+    "n": 3616,
+    "mean": 33.4,
+    "p10": 18.4,
+    "p25": 27.2,
+    "p50": 34,
+    "p75": 40.4,
+    "p90": 46.5,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Nordrhein-Westfalen",
+    "key": "Nordrhein-Westfalen",
+    "n": 9600,
+    "mean": 33,
+    "p10": 17.7,
+    "p25": 26.8,
+    "p50": 33.9,
+    "p75": 40.7,
+    "p90": 46.6,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Rheinland-Pfalz",
+    "key": "Rheinland-Pfalz",
+    "n": 1739,
+    "mean": 32.2,
+    "p10": 18,
+    "p25": 26.5,
+    "p50": 33,
+    "p75": 38.7,
+    "p90": 44.7,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Saarland",
+    "key": "Saarland",
+    "n": 483,
+    "mean": 31.5,
+    "p10": 15.8,
+    "p25": 26.7,
+    "p50": 32.3,
+    "p75": 38.7,
+    "p90": 44.6,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Sachsen",
+    "key": "Sachsen",
+    "n": 1211,
+    "mean": 31.2,
+    "p10": 14.9,
+    "p25": 24.9,
+    "p50": 32.1,
+    "p75": 38.9,
+    "p90": 45,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Sachsen-Anhalt",
+    "key": "Sachsen-Anhalt",
+    "n": 419,
+    "mean": 31.3,
+    "p10": 14.8,
+    "p25": 24.8,
+    "p50": 31.8,
+    "p75": 39.2,
+    "p90": 45.6,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Schleswig-Holstein",
+    "key": "Schleswig-Holstein",
+    "n": 1710,
+    "mean": 32.6,
+    "p10": 18,
+    "p25": 27.2,
+    "p50": 33.2,
+    "p75": 39.3,
+    "p90": 45.8,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "bundesland",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "Thüringen",
+    "key": "Thüringen",
+    "n": 874,
+    "mean": 31.5,
+    "p10": 16.4,
+    "p25": 26,
+    "p50": 31.9,
+    "p75": 38.4,
+    "p90": 44,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "lighthouseVersion": "12.0.0",
+  "finalUrl": "https://mulfinger.de/",
+  "categories": {
+    "performance":    { "score": 0.91 },
+    "accessibility":  { "score": 0.95 },
+    "best-practices": { "score": 1.00 },
+    "seo":            { "score": 0.92 }
+  },
+  "audits": {
+    "largest-contentful-paint": { "numericValue": 1500 },
+    "cumulative-layout-shift":  { "numericValue": 0.02 },
+    "total-blocking-time":      { "numericValue": 110 }
+  }
+}
+

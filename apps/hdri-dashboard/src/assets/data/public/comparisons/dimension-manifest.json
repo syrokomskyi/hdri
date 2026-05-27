@@ -1,0 +1,69 @@
+{
+  "axis": "dimension",
+  "generatedAt": "2026-05-27T16:31:01.787Z",
+  "suppressionPolicy": {
+    "kind": "k_plus_suppression_diffs",
+    "kAnonymityMin": 5,
+    "minAbsoluteDelta": 3,
+    "minRelativeDelta": 0.03
+  },
+  "periods": [
+    "2026-q2"
+  ],
+  "categories": [
+    {
+      "key": "accessibility_audit",
+      "label": "Barrierefreiheit",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "contact_accessibility",
+      "label": "Kontakt & Erreichbarkeit",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "legal_compliance",
+      "label": "Recht & Pflichtangaben",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "social_presence",
+      "label": "Soziale Präsenz",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "structured_data",
+      "label": "Strukturierte Informationen",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "trust_signals",
+      "label": "Vertrauen & Nachweise",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    }
+  ]
+}

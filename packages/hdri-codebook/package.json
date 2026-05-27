@@ -1,0 +1,56 @@
+{
+  "name": "@org/hdri-codebook",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.lib.json",
+    "typecheck": "pnpm exec tsc -p tsconfig.lib.json --noEmit",
+    "test": "pnpm exec vitest run",
+    "validate-signatories": "tsx scripts/validate-signatories.ts"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./parse": {
+      "@org/source": "./src/parse.ts",
+      "types": "./dist/parse.d.ts",
+      "import": "./dist/parse.js",
+      "default": "./dist/parse.js"
+    },
+    "./score": {
+      "@org/source": "./src/score-site.ts",
+      "types": "./dist/score-site.d.ts",
+      "import": "./dist/score-site.js",
+      "default": "./dist/score-site.js"
+    },
+    "./aggregate": {
+      "@org/source": "./src/aggregate.ts",
+      "types": "./dist/aggregate.d.ts",
+      "import": "./dist/aggregate.js",
+      "default": "./dist/aggregate.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@types/node": "^25.9.1",
+    "tslib": "^2.8.1",
+    "tsx": "^4.22.3",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.7"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@org/hdri-dashboard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "export:data": "pnpm --filter @org/digital-observatory run export:dashboard",
+    "build": "astro build",
+    "start": "astro dev",
+    "dev": "astro dev",
+    "preview": "pnpm --dir ../.. exec astro preview --root apps/hdri-dashboard",
+    "typecheck": "pnpm --dir ../.. exec astro sync --root apps/hdri-dashboard && pnpm --dir ../.. exec tsc -p apps/hdri-dashboard/tsconfig.json --noEmit",
+    "upgrade-packages": "pnpm up --latest"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/cloudflare": "^13.5.5",
+    "astro": "^6.3.8",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "terser": "^5.48.0",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.95.0"
+  }
+}

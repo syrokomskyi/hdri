@@ -1,0 +1,76 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/business-core"
+    },
+    {
+      "path": "./packages/business-crawler"
+    },
+    {
+      "path": "./packages/business-rate-limit"
+    },
+    {
+      "path": "./packages/hdri-codebook"
+    },
+    {
+      "path": "./packages/hdri-factory-core"
+    },
+    {
+      "path": "./packages/observatory-asset-id"
+    },
+    {
+      "path": "./packages/observatory-core"
+    },
+    {
+      "path": "./packages/observatory-crypto"
+    },
+    {
+      "path": "./packages/observatory-emit"
+    },
+    {
+      "path": "./packages/observatory-vault"
+    },
+    {
+      "path": "./packages/pipeline-ai"
+    },
+    {
+      "path": "./packages/pipeline-core"
+    },
+    {
+      "path": "./packages/pipeline-node"
+    },
+    {
+      "path": "./packages/pipeline-steps"
+    },
+    {
+      "path": "./packages/utils"
+    },
+    {
+      "path": "./apps/hdri-factory/0-harvest-source"
+    },
+    {
+      "path": "./apps/hdri-factory/1-register-businesses"
+    },
+    {
+      "path": "./apps/hdri-factory/2-check-liveness"
+    },
+    {
+      "path": "./apps/hdri-factory/3-extract-profile"
+    },
+    {
+      "path": "./apps/hdri-factory/4-audit-lighthouse"
+    },
+    {
+      "path": "./apps/hdri-factory/5-audit-axe"
+    },
+    {
+      "path": "./apps/hdri-factory/a-contract-ontology"
+    },
+    {
+      "path": "./apps/digital-observatory"
+    }
+  ]
+}

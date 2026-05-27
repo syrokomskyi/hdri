@@ -1,0 +1,159 @@
+{
+  "axis": "bundesland",
+  "generatedAt": "2026-05-27T16:31:01.834Z",
+  "suppressionPolicy": {
+    "kind": "k_plus_suppression_diffs",
+    "kAnonymityMin": 5,
+    "minAbsoluteDelta": 3,
+    "minRelativeDelta": 0.03
+  },
+  "periods": [
+    "2026-q2"
+  ],
+  "categories": [
+    {
+      "key": "Baden-Württemberg",
+      "label": "Baden-Württemberg",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bayern",
+      "label": "Bayern",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Berlin",
+      "label": "Berlin",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Brandenburg",
+      "label": "Brandenburg",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bremen",
+      "label": "Bremen",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hamburg",
+      "label": "Hamburg",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hessen",
+      "label": "Hessen",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Mecklenburg-Vorpommern",
+      "label": "Mecklenburg-Vorpommern",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Niedersachsen",
+      "label": "Niedersachsen",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Nordrhein-Westfalen",
+      "label": "Nordrhein-Westfalen",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Rheinland-Pfalz",
+      "label": "Rheinland-Pfalz",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Saarland",
+      "label": "Saarland",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Sachsen",
+      "label": "Sachsen",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Sachsen-Anhalt",
+      "label": "Sachsen-Anhalt",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Schleswig-Holstein",
+      "label": "Schleswig-Holstein",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Thüringen",
+      "label": "Thüringen",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    }
+  ]
+}

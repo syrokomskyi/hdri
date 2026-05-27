@@ -1,0 +1,149 @@
+[
+  {
+    "axis": "gewerk",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "I",
+    "key": "I",
+    "n": 17128,
+    "mean": 32.2,
+    "p10": 16.3,
+    "p25": 26.1,
+    "p50": 33,
+    "p75": 39.6,
+    "p90": 45.6,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "gewerk",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "II",
+    "key": "II",
+    "n": 5110,
+    "mean": 32.9,
+    "p10": 18.6,
+    "p25": 27.3,
+    "p50": 33.6,
+    "p75": 39.9,
+    "p90": 45.9,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "gewerk",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "III",
+    "key": "III",
+    "n": 1499,
+    "mean": 32.5,
+    "p10": 16.7,
+    "p25": 26.8,
+    "p50": 33.4,
+    "p75": 39.7,
+    "p90": 46.1,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "gewerk",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "IV",
+    "key": "IV",
+    "n": 1630,
+    "mean": 33.5,
+    "p10": 19.3,
+    "p25": 27.8,
+    "p50": 34.5,
+    "p75": 40.5,
+    "p90": 45.9,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "gewerk",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "V",
+    "key": "V",
+    "n": 543,
+    "mean": 32.3,
+    "p10": 20.8,
+    "p25": 26.8,
+    "p50": 32.7,
+    "p75": 38.5,
+    "p90": 44.9,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "gewerk",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "VI",
+    "key": "VI",
+    "n": 452,
+    "mean": 34.1,
+    "p10": 23.3,
+    "p25": 28.7,
+    "p50": 33.9,
+    "p75": 39.8,
+    "p90": 45.3,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  },
+  {
+    "axis": "gewerk",
+    "period": "2026-q2",
+    "previousPeriod": null,
+    "label": "VII",
+    "key": "VII",
+    "n": 953,
+    "mean": 31.9,
+    "p10": 16.3,
+    "p25": 25.4,
+    "p50": 32.5,
+    "p75": 39.4,
+    "p90": 46,
+    "currentStatus": "suppressed",
+    "previousStatus": "absent",
+    "deltaFromPrevious": null,
+    "suppressionReasons": [
+      "no_previous_period"
+    ],
+    "reliability": "suppressed"
+  }
+]

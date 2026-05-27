@@ -1,0 +1,115 @@
+{
+  "name": "@org/pipeline-node",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.lib.json",
+    "lint": "pnpm exec eslint src --ext .ts",
+    "typecheck": "pnpm exec tsc -p tsconfig.lib.json --noEmit",
+    "upgrade-packages": "pnpm up --latest"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./fs": {
+      "@org/source": "./src/lib/create-node-pipeline-fs.ts",
+      "types": "./src/lib/create-node-pipeline-fs.ts",
+      "import": "./dist/lib/create-node-pipeline-fs.js",
+      "default": "./dist/lib/create-node-pipeline-fs.js"
+    },
+    "./context": {
+      "@org/source": "./src/lib/create-node-pipeline-context.ts",
+      "types": "./src/lib/create-node-pipeline-context.ts",
+      "import": "./dist/lib/create-node-pipeline-context.js",
+      "default": "./dist/lib/create-node-pipeline-context.js"
+    },
+    "./ai": {
+      "@org/source": "./src/lib/ai-helpers.ts",
+      "types": "./src/lib/ai-helpers.ts",
+      "import": "./dist/lib/ai-helpers.js",
+      "default": "./dist/lib/ai-helpers.js"
+    },
+    "./env": {
+      "@org/source": "./src/lib/env.ts",
+      "types": "./src/lib/env.ts",
+      "import": "./dist/lib/env.js",
+      "default": "./dist/lib/env.js"
+    },
+    "./frontmatter": {
+      "@org/source": "./src/lib/frontmatter.ts",
+      "types": "./src/lib/frontmatter.ts",
+      "import": "./dist/lib/frontmatter.js",
+      "default": "./dist/lib/frontmatter.js"
+    },
+    "./declarations": {
+      "@org/source": "./src/lib/pipeline-declarations.ts",
+      "types": "./src/lib/pipeline-declarations.ts",
+      "import": "./dist/lib/pipeline-declarations.js",
+      "default": "./dist/lib/pipeline-declarations.js"
+    },
+    "./engine": {
+      "@org/source": "./src/lib/run-node-pipeline-engine.ts",
+      "types": "./src/lib/run-node-pipeline-engine.ts",
+      "import": "./dist/lib/run-node-pipeline-engine.js",
+      "default": "./dist/lib/run-node-pipeline-engine.js"
+    },
+    "./documentation": {
+      "@org/source": "./src/lib/pipeline-documentation.ts",
+      "types": "./src/lib/pipeline-documentation.ts",
+      "import": "./dist/lib/pipeline-documentation.js",
+      "default": "./dist/lib/pipeline-documentation.js"
+    },
+    "./types": {
+      "@org/source": "./src/lib/node-pipeline-types.ts",
+      "types": "./src/lib/node-pipeline-types.ts",
+      "import": "./dist/lib/node-pipeline-types.js",
+      "default": "./dist/lib/node-pipeline-types.js"
+    },
+    "./prompts": {
+      "@org/source": "./src/lib/prompt-files.ts",
+      "types": "./src/lib/prompt-files.ts",
+      "import": "./dist/lib/prompt-files.js",
+      "default": "./dist/lib/prompt-files.js"
+    },
+    "./input-validation": {
+      "@org/source": "./src/lib/input-validation.ts",
+      "types": "./src/lib/input-validation.ts",
+      "import": "./dist/lib/input-validation.js",
+      "default": "./dist/lib/input-validation.js"
+    },
+    "./templates": {
+      "@org/source": "./src/lib/template-files.ts",
+      "types": "./src/lib/template-files.ts",
+      "import": "./dist/lib/template-files.js",
+      "default": "./dist/lib/template-files.js"
+    },
+    "./llm-artifacts": {
+      "@org/source": "./src/lib/llm-artifacts.ts",
+      "types": "./src/lib/llm-artifacts.ts",
+      "import": "./dist/lib/llm-artifacts.js",
+      "default": "./dist/lib/llm-artifacts.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@org/pipeline-ai": "workspace:*",
+    "@org/pipeline-core": "workspace:*",
+    "gray-matter": "^4.0.3",
+    "handlebars": "^4.7.9",
+    "playwright": "^1.60.0",
+    "sharp": "^0.34.5",
+    "tslib": "^2.8.1"
+  }
+}

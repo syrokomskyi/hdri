@@ -1,0 +1,24 @@
+{
+  "axis": "overall",
+  "generatedAt": "2026-05-27T16:31:01.774Z",
+  "suppressionPolicy": {
+    "kind": "k_plus_suppression_diffs",
+    "kAnonymityMin": 5,
+    "minAbsoluteDelta": 3,
+    "minRelativeDelta": 0.03
+  },
+  "periods": [
+    "2026-q2"
+  ],
+  "categories": [
+    {
+      "key": "overall",
+      "label": "HDRI Gesamt",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    }
+  ]
+}

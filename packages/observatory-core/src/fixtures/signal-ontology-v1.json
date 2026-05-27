@@ -1,0 +1,601 @@
+{
+  "version": "1.0.0",
+  "signals": {
+    "transport.tls.present": {
+      "label": "TLS/HTTPS enabled",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_ssl"],
+      "stability": "high",
+      "notes": "True if site responds on HTTPS without redirect errors"
+    },
+    "transport.tls.version": {
+      "label": "TLS protocol version",
+      "value_type": "str",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["tls_version"],
+      "stability": "high",
+      "notes": "TLS version string, e.g. TLSv1.3"
+    },
+    "transport.http.status_code": {
+      "label": "HTTP response status code",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["http_status"],
+      "stability": "high",
+      "notes": "Status code of the final HTTP response after redirects"
+    },
+    "transport.http.latency_ms": {
+      "label": "HTTP response latency in milliseconds",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["latency_ms"],
+      "stability": "high",
+      "notes": "Time to first byte in ms"
+    },
+    "privacy.consent.banner.present": {
+      "label": "Cookie/consent banner detected",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": "1.0.0",
+      "supersedes": ["has_cookie_banner"],
+      "stability": "low",
+      "notes": "Deprecated — use privacy.consent.quality (5-level enum) for observatory-grade scoring."
+    },
+    "privacy.consent.quality": {
+      "label": "Cookie consent quality (5-level enum)",
+      "value_type": "str",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["privacy.consent.banner.present"],
+      "stability": "high",
+      "extractor": "dom_css_v2",
+      "notes": "Values: none | informational_only | accept_only | reject_equal_prominence | granular_with_revoke"
+    },
+    "privacy.consent.granular": {
+      "label": "Granular consent options available",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["granular_consent"],
+      "stability": "high",
+      "notes": "True if user can selectively accept/reject cookie categories"
+    },
+    "analytics.tracking.google_analytics.present": {
+      "label": "Google Analytics detected",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["uses_ga"],
+      "stability": "low",
+      "notes": "True if GA tracking code is detected in HTML"
+    },
+    "analytics.tracking.cookieless.present": {
+      "label": "Cookieless tracking detected",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["cookieless_tracking"],
+      "stability": "medium",
+      "notes": "True if a cookieless analytics solution is detected"
+    },
+    "analytics.tracking.cookie_based.present": {
+      "label": "Cookie-based tracking detected",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["cookie_based_tracking"],
+      "stability": "medium",
+      "notes": "True if cookie-based tracking is detected"
+    },
+    "legal.impressum.present": {
+      "label": "Impressum page present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_impressum"],
+      "stability": "high",
+      "notes": "True if an Impressum page link is found"
+    },
+    "legal.datenschutz.present": {
+      "label": "Datenschutz (privacy policy) page present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_datenschutz"],
+      "stability": "high",
+      "notes": "True if a Datenschutzerklärung link is found"
+    },
+    "legal.agb.present": {
+      "label": "AGB (terms of service) page present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_agb"],
+      "stability": "high",
+      "notes": "True if an AGB link is found"
+    },
+    "legal.bfsg.present": {
+      "label": "BFSG (accessibility declaration) page present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_bfsg"],
+      "stability": "high",
+      "notes": "True if a BFSG/accessibility statement link is found"
+    },
+    "contact.phone.present": {
+      "label": "Phone number present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_phone"],
+      "stability": "high",
+      "notes": "True if a phone number is found on the page"
+    },
+    "contact.email.present": {
+      "label": "Email address present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_email"],
+      "stability": "high",
+      "notes": "True if an email address is found on the page"
+    },
+    "contact.email.professional": {
+      "label": "Professional email (own domain)",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["professional_email"],
+      "stability": "high",
+      "notes": "True if email matches the site domain"
+    },
+    "contact.form.present": {
+      "label": "Contact form present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_contact_form"],
+      "stability": "high",
+      "notes": "True if a contact form is detected on the page"
+    },
+    "content.opening_hours.present": {
+      "label": "Opening hours present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_opening_hours"],
+      "stability": "high",
+      "notes": "True if opening hours text is found on the page"
+    },
+    "content.copyright.year": {
+      "label": "Copyright year",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["copyright_year"],
+      "stability": "high",
+      "notes": "Most recent copyright year found in footer"
+    },
+    "structured_data.schema_org.local_business.present": {
+      "label": "Schema.org LocalBusiness markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["schema_local_business"],
+      "stability": "medium",
+      "notes": "True if LocalBusiness structured data is detected"
+    },
+    "structured_data.schema_org.faq.present": {
+      "label": "Schema.org FAQ markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["schema_faq"],
+      "stability": "medium",
+      "notes": "True if FAQPage structured data is detected"
+    },
+    "structured_data.schema_org.review.present": {
+      "label": "Schema.org Review markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["schema_review"],
+      "stability": "medium",
+      "notes": "True if Review structured data is detected"
+    },
+    "social.instagram.present": {
+      "label": "Instagram link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_instagram"],
+      "stability": "low",
+      "notes": "True if link to Instagram profile is found"
+    },
+    "social.facebook.present": {
+      "label": "Facebook link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_facebook"],
+      "stability": "low",
+      "notes": "True if link to Facebook page is found"
+    },
+    "social.youtube.present": {
+      "label": "YouTube link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_youtube"],
+      "stability": "low",
+      "notes": "True if link to YouTube channel is found"
+    },
+    "social.linkedin.present": {
+      "label": "LinkedIn link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_linkedin"],
+      "stability": "low",
+      "notes": "True if link to LinkedIn profile is found"
+    },
+    "social.tiktok.present": {
+      "label": "TikTok link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_tiktok"],
+      "stability": "low",
+      "notes": "True if link to TikTok profile is found"
+    },
+    "social.whatsapp.present": {
+      "label": "WhatsApp link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_whatsapp"],
+      "stability": "low",
+      "notes": "True if link to WhatsApp is found"
+    },
+    "registry.handelsregister.present": {
+      "label": "Handelsregister entry referenced",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_handelsregister"],
+      "stability": "high",
+      "notes": "True if a Handelsregister reference is found"
+    },
+    "registry.google_business.present": {
+      "label": "Google Business profile linked",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_google_business"],
+      "stability": "low",
+      "notes": "True if link to Google Business profile is found"
+    },
+    "trust.certification.meister.present": {
+      "label": "Meister certification mentioned",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_meister"],
+      "stability": "high",
+      "notes": "True if Meisterbetrieb certification is referenced"
+    },
+    "conversion.booking.form.present": {
+      "label": "Booking/appointment form present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["has_booking_form"],
+      "stability": "high",
+      "notes": "True if an online booking or appointment form is detected"
+    },
+    "conversion.cta.above_fold": {
+      "label": "Call-to-action above the fold",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["cta_above_fold"],
+      "stability": "medium",
+      "notes": "True if a prominent CTA is visible without scrolling"
+    },
+    "audit.lighthouse.performance.score": {
+      "label": "Lighthouse Performance score",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["lighthouse_performance"],
+      "stability": "medium",
+      "notes": "Lighthouse performance score 0-100"
+    },
+    "audit.lighthouse.accessibility.score": {
+      "label": "Lighthouse Accessibility score",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["lighthouse_accessibility"],
+      "stability": "medium",
+      "notes": "Lighthouse accessibility score 0-100"
+    },
+    "audit.lighthouse.seo.score": {
+      "label": "Lighthouse SEO score",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["lighthouse_seo"],
+      "stability": "medium",
+      "notes": "Lighthouse SEO score 0-100"
+    },
+    "audit.lighthouse.best_practices.score": {
+      "label": "Lighthouse Best Practices score",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["lighthouse_best_practices"],
+      "stability": "medium",
+      "notes": "Lighthouse best practices score 0-100"
+    },
+    "audit.axe.violations.total.count": {
+      "label": "axe-core total violations count",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["axe_violations_total"],
+      "stability": "medium",
+      "notes": "Total number of axe-core accessibility violations across all impact levels"
+    },
+    "audit.axe.violations.critical.count": {
+      "label": "axe-core critical violations count",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["axe_critical_count"],
+      "stability": "medium",
+      "notes": "Number of critical accessibility violations from axe-core"
+    },
+    "audit.axe.violations.serious.count": {
+      "label": "axe-core serious violations count",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["axe_serious_count"],
+      "stability": "medium",
+      "notes": "Number of serious accessibility violations from axe-core"
+    },
+    "audit.axe.violations.moderate.count": {
+      "label": "axe-core moderate violations count",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["axe_moderate_count"],
+      "stability": "medium",
+      "notes": "Number of moderate accessibility violations from axe-core"
+    },
+    "audit.axe.violations.minor.count": {
+      "label": "axe-core minor violations count",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["axe_minor_count"],
+      "stability": "medium",
+      "notes": "Number of minor accessibility violations from axe-core"
+    },
+    "audit.axe.nodes_scanned.count": {
+      "label": "axe-core nodes scanned count",
+      "value_type": "num",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": ["axe_nodes_scanned"],
+      "stability": "low",
+      "notes": "Number of DOM nodes scanned by axe-core when reported by the tool"
+    },
+
+    "legal.widerruf.present": {
+      "label": "Widerruf (cancellation policy) page present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "high",
+      "notes": "True if a Widerrufsbelehrung link is found"
+    },
+    "legal.versand.present": {
+      "label": "Versand (shipping policy) page present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "high",
+      "notes": "True if a Versandinformationen link is found"
+    },
+    "content.portfolio.present": {
+      "label": "Portfolio / project gallery present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if a portfolio or project gallery section is detected"
+    },
+    "content.map.present": {
+      "label": "Embedded map present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if an embedded map (Google Maps, OpenStreetMap, etc.) is detected"
+    },
+    "content.team_page.present": {
+      "label": "Team / about-us page present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if a team or about-us page link is found"
+    },
+    "content.testimonials.present": {
+      "label": "Testimonials / reviews section present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if a testimonials or customer reviews section is detected"
+    },
+    "content.case_studies.present": {
+      "label": "Case studies / reference projects present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if a case studies or reference projects section is detected"
+    },
+    "structured_data.schema_org.service.present": {
+      "label": "Schema.org Service markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if Service structured data is detected"
+    },
+    "structured_data.schema_org.how_to.present": {
+      "label": "Schema.org HowTo markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if HowTo structured data is detected"
+    },
+    "structured_data.schema_org.breadcrumb.present": {
+      "label": "Schema.org BreadcrumbList markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if BreadcrumbList structured data is detected"
+    },
+    "structured_data.schema_org.opening_hours_spec.present": {
+      "label": "Schema.org OpeningHoursSpecification markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if OpeningHoursSpecification structured data is detected"
+    },
+    "structured_data.schema_org.person.present": {
+      "label": "Schema.org Person markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if Person structured data is detected"
+    },
+    "structured_data.schema_org.product.present": {
+      "label": "Schema.org Product markup",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if Product structured data is detected"
+    },
+    "social.xing.present": {
+      "label": "Xing link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "low",
+      "notes": "True if link to Xing profile is found"
+    },
+    "social.pinterest.present": {
+      "label": "Pinterest link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "low",
+      "notes": "True if link to Pinterest profile is found"
+    },
+    "social.twitter.present": {
+      "label": "Twitter/X link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "low",
+      "notes": "True if link to Twitter/X profile is found"
+    },
+    "registry.unternehmensregister.present": {
+      "label": "Unternehmensregister entry referenced",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "high",
+      "notes": "True if an Unternehmensregister reference is found"
+    },
+    "registry.kammern.present": {
+      "label": "Trade chamber (Kammer) membership referenced",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "high",
+      "notes": "True if a Handwerkskammer or IHK reference is found"
+    },
+    "registry.industry_catalogs.present": {
+      "label": "Industry catalog link present",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if link to an industry catalog or directory is found"
+    },
+    "trust.certifications.present": {
+      "label": "Certifications displayed",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if certification badges or logos are detected"
+    },
+    "trust.awards.present": {
+      "label": "Awards displayed",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if award badges or mentions are detected"
+    },
+    "trust.memberships.present": {
+      "label": "Memberships displayed",
+      "value_type": "bool",
+      "introduced_in": "1.0.0",
+      "deprecated_in": null,
+      "supersedes": [],
+      "stability": "medium",
+      "notes": "True if professional membership badges or logos are detected"
+    }
+  }
+}

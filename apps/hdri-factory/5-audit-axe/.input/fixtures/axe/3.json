@@ -1,0 +1,8 @@
+{
+  "testEngine": { "name": "axe-core", "version": "4.10.0" },
+  "violations": [
+    { "id": "color-contrast", "impact": "serious", "nodes": [{}] }
+  ],
+  "nodesScanned": 98
+}
+

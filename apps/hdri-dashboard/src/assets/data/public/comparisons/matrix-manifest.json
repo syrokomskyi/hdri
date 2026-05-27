@@ -1,0 +1,447 @@
+{
+  "axis": "matrix",
+  "generatedAt": "2026-05-27T16:31:01.929Z",
+  "suppressionPolicy": {
+    "kind": "k_plus_suppression_diffs",
+    "kAnonymityMin": 5,
+    "minAbsoluteDelta": 3,
+    "minRelativeDelta": 0.03
+  },
+  "periods": [
+    "2026-q2"
+  ],
+  "categories": [
+    {
+      "key": "Baden-Württemberg__IV",
+      "label": "Baden-Württemberg × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bayern__III",
+      "label": "Bayern × III",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bayern__VI",
+      "label": "Bayern × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bayern__VII",
+      "label": "Bayern × VII",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Berlin__I",
+      "label": "Berlin × I",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Berlin__II",
+      "label": "Berlin × II",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Berlin__IV",
+      "label": "Berlin × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Berlin__VI",
+      "label": "Berlin × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Berlin__VII",
+      "label": "Berlin × VII",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Brandenburg__III",
+      "label": "Brandenburg × III",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Brandenburg__IV",
+      "label": "Brandenburg × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Brandenburg__V",
+      "label": "Brandenburg × V",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Brandenburg__VI",
+      "label": "Brandenburg × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bremen__II",
+      "label": "Bremen × II",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bremen__III",
+      "label": "Bremen × III",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bremen__IV",
+      "label": "Bremen × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Bremen__VI",
+      "label": "Bremen × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hamburg__I",
+      "label": "Hamburg × I",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hamburg__II",
+      "label": "Hamburg × II",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hamburg__V",
+      "label": "Hamburg × V",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hamburg__VI",
+      "label": "Hamburg × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hamburg__VII",
+      "label": "Hamburg × VII",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hessen__II",
+      "label": "Hessen × II",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hessen__III",
+      "label": "Hessen × III",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Hessen__IV",
+      "label": "Hessen × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Mecklenburg-Vorpommern__IV",
+      "label": "Mecklenburg-Vorpommern × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Niedersachsen__I",
+      "label": "Niedersachsen × I",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Niedersachsen__II",
+      "label": "Niedersachsen × II",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Niedersachsen__III",
+      "label": "Niedersachsen × III",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Niedersachsen__IV",
+      "label": "Niedersachsen × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Niedersachsen__VII",
+      "label": "Niedersachsen × VII",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Nordrhein-Westfalen__I",
+      "label": "Nordrhein-Westfalen × I",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Nordrhein-Westfalen__II",
+      "label": "Nordrhein-Westfalen × II",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Nordrhein-Westfalen__III",
+      "label": "Nordrhein-Westfalen × III",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Nordrhein-Westfalen__IV",
+      "label": "Nordrhein-Westfalen × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Nordrhein-Westfalen__VI",
+      "label": "Nordrhein-Westfalen × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Nordrhein-Westfalen__VII",
+      "label": "Nordrhein-Westfalen × VII",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Rheinland-Pfalz__III",
+      "label": "Rheinland-Pfalz × III",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Rheinland-Pfalz__IV",
+      "label": "Rheinland-Pfalz × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Rheinland-Pfalz__VII",
+      "label": "Rheinland-Pfalz × VII",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Sachsen__IV",
+      "label": "Sachsen × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Sachsen__V",
+      "label": "Sachsen × V",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Sachsen__VI",
+      "label": "Sachsen × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Sachsen-Anhalt__IV",
+      "label": "Sachsen-Anhalt × IV",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Sachsen-Anhalt__V",
+      "label": "Sachsen-Anhalt × V",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Sachsen-Anhalt__VI",
+      "label": "Sachsen-Anhalt × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Schleswig-Holstein__II",
+      "label": "Schleswig-Holstein × II",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    },
+    {
+      "key": "Schleswig-Holstein__VI",
+      "label": "Schleswig-Holstein × VI",
+      "firstPeriod": "2026-q2",
+      "lastPeriod": "2026-q2",
+      "periodsPresent": [
+        "2026-q2"
+      ]
+    }
+  ]
+}

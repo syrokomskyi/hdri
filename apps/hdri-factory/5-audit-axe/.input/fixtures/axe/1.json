@@ -1,0 +1,10 @@
+{
+  "testEngine": { "name": "axe-core", "version": "4.10.0" },
+  "violations": [
+    { "id": "color-contrast",        "impact": "serious",  "nodes": [{}, {}, {}] },
+    { "id": "image-alt",             "impact": "critical", "nodes": [{}] },
+    { "id": "landmark-one-main",     "impact": "moderate", "nodes": [{}] }
+  ],
+  "nodesScanned": 142
+}
+

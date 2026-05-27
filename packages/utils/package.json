@@ -1,0 +1,27 @@
+{
+  "name": "@org/utils",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.lib.json",
+    "lint": "pnpm exec eslint src --ext .ts",
+    "typecheck": "pnpm exec tsc -p tsconfig.lib.json --noEmit",
+    "upgrade-packages": "pnpm up --latest"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.8.1"
+  }
+}

@@ -1,0 +1,7 @@
+# Ontology source (Phase A: copy of digital-observatory's ontology.yaml).
+# Phase B: this becomes the authoritative ontology for the factory→observatory
+# contract; the observatory consumes the ontology embedded in each emit-bundle
+# manifest rather than maintaining its own copy.
+#
+# Until Phase B implementation lands, see:
+#   apps/digital-observatory/.input/ontology.yaml

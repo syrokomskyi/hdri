@@ -1,0 +1,640 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import archive from '../assets/data/public/archive.json';
+import latest from '../assets/data/public/latest.json';
+import overviewTrends from '../assets/data/public/comparisons/overview-trends.json';
+import dimensionTrends from '../assets/data/public/comparisons/dimension-trends.json';
+import bundeslandTrends from '../assets/data/public/comparisons/bundesland-trends.json';
+import gewerkTrends from '../assets/data/public/comparisons/gewerk-trends.json';
+import destatisMapping from '../../../../packages/business-core/src/gewerk/data/destatis-mapping.json';
+import matrixTrends from '../assets/data/public/comparisons/matrix-trends.json';
+
+type Summary = {
+  n: number;
+  mean: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+  min: number;
+  max: number;
+  stdDev?: number;
+};
+
+type Maturity = {
+  id: string;
+  label: string;
+  count: number;
+  share: number;
+};
+
+type DimensionItem = Summary & {
+  id: string;
+  label: string;
+  weight: number;
+};
+
+type SliceItem = Summary & {
+  id: string;
+  label: string;
+};
+
+type MatrixItem = {
+  bundesland: string;
+  gewerk: string;
+  n: number;
+  mean: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+};
+
+type PeriodManifest = {
+  period: string;
+  observatoryRunId: string;
+  codebookVersion: string;
+  generatedAt: string;
+  publishedAt: string;
+  kAnonymityMin: number;
+  sampleSize: number;
+  totalPublishedSlices: number;
+  suppressionPolicy: {
+    kind: string;
+  };
+};
+
+type Overview = {
+  sampleSize: number;
+  summary: Summary;
+  maturity: Maturity[];
+  confidence: Summary;
+};
+
+type ComparisonPoint = {
+  axis: 'overall' | 'dimension' | 'bundesland' | 'gewerk' | 'matrix';
+  period: string;
+  previousPeriod: string | null;
+  label: string;
+  key: string;
+  n: number;
+  mean: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+  currentStatus: 'present' | 'suppressed' | 'absent';
+  previousStatus: 'present' | 'suppressed' | 'absent';
+  deltaFromPrevious: number | null;
+  suppressionReasons: string[];
+  reliability: 'reliable' | 'caution' | 'suppressed';
+};
+
+const pageTitle = 'HDRI Dashboard Deutschland';
+const pageDescription = 'Öffentliches Dashboard für veröffentlichte HDRI-Quartalsindizes, Verlauf und sichere Vergleiche.';
+
+const manifestModules = import.meta.glob('../assets/data/public/periods/*/manifest.json', { eager: true });
+const overviewModules = import.meta.glob('../assets/data/public/periods/*/overview.json', { eager: true });
+const dimensionModules = import.meta.glob('../assets/data/public/periods/*/dimensions.json', { eager: true });
+const bundeslandModules = import.meta.glob('../assets/data/public/periods/*/bundeslaender.json', { eager: true });
+const gewerkModules = import.meta.glob('../assets/data/public/periods/*/gewerke.json', { eager: true });
+const matrixModules = import.meta.glob('../assets/data/public/periods/*/matrix.json', { eager: true });
+
+const currentPeriod = latest.period;
+const currentManifest = readPeriodFile<PeriodManifest>(manifestModules, currentPeriod);
+const currentOverview = readPeriodFile<Overview>(overviewModules, currentPeriod);
+const currentDimensions = readPeriodFile<DimensionItem[]>(dimensionModules, currentPeriod);
+const currentBundeslaender = readPeriodFile<SliceItem[]>(bundeslandModules, currentPeriod);
+const currentGewerke = readPeriodFile<SliceItem[]>(gewerkModules, currentPeriod);
+const currentMatrix = readPeriodFile<MatrixItem[]>(matrixModules, currentPeriod);
+
+const summary = currentOverview.summary;
+const confidence = currentOverview.confidence;
+const maturity = currentOverview.maturity;
+const topBundeslaender = currentBundeslaender.slice(0, 8);
+const topGewerke = currentGewerke.slice(0, 8);
+const topMatrix = currentMatrix.slice(0, 12);
+const archiveEntries = archive as Array<{ period: string; manifestPath: string; overviewPath: string }>;
+const overviewTrendItems = overviewTrends as ComparisonPoint[];
+const dimensionTrendItems = (dimensionTrends as ComparisonPoint[]).filter((item) => item.period === currentPeriod);
+const bundeslandTrendItems = (bundeslandTrends as ComparisonPoint[]).filter((item) => item.period === currentPeriod).slice(0, 8);
+const gewerkTrendItems = (gewerkTrends as ComparisonPoint[]).filter((item) => item.period === currentPeriod).slice(0, 8);
+const gewerkGroupLabel = new Map<string, string>(
+  (destatisMapping as { target_system: { groups: Array<{ code: string; label: string }> } }).target_system.groups.map(
+    (g) => [g.code, g.label],
+  ),
+);
+const matrixTrendItems = (matrixTrends as ComparisonPoint[]).filter((item) => item.period === currentPeriod).slice(0, 8);
+
+const LOCALE = 'de-DE';
+
+function readPeriodFile<T>(
+  modules: Record<string, unknown>,
+  period: string,
+): T {
+  const entry = Object.entries(modules).find(([filePath]) => filePath.includes(`/periods/${period}/`));
+  if (!entry) {
+    throw new Error(`Missing dashboard archive file for period ${period}`);
+  }
+  return (entry[1] as { default: T }).default;
+}
+
+function score(value: number): string {
+  return new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1, minimumFractionDigits: 1 }).format(value);
+}
+
+function pct(value: number): string {
+  return new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: 0 }).format(value);
+}
+
+function count(value: number): string {
+  return new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(value);
+}
+
+function axisRange(item: Summary): string {
+  return `${score(item.p25)} – ${score(item.p75)}`;
+}
+
+function deltaLabel(item: ComparisonPoint): string {
+  if ((item.suppressionReasons?.length ?? 0) > 0) return 'Delta unterdrückt';
+  if (item.deltaFromPrevious == null) return 'Kein Vorquartal';
+  const sign = item.deltaFromPrevious > 0 ? '+' : '';
+  return `${sign}${score(item.deltaFromPrevious)}`;
+}
+
+function formatDate(isoString: string): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Berlin'
+  }).format(new Date(isoString));
+}
+
+function reliabilityLabel(r: 'reliable' | 'caution' | 'suppressed'): string {
+  switch (r) {
+    case 'reliable': return 'Zuverlässig';
+    case 'caution': return 'Mit Vorsicht';
+    case 'suppressed': return 'Unterdrückt';
+  }
+}
+
+function reliabilityClass(r: 'reliable' | 'caution' | 'suppressed'): string {
+  return `reliability-dot reliability-${r}`;
+}
+
+function percentileTooltip(item: Summary): string {
+  const pad = (s: string) => s.padEnd(13, ' ');
+  return `${pad('P75')} = ${score(item.p75)}\n${pad('P50 (Median)')} = ${score(item.p50)}\n${pad('P25')} = ${score(item.p25)}\n${pad('Mittelwert')} = ${score(item.mean)}\n${pad('N')} = ${count(item.n)}`;
+}
+
+function detailGrid(item: { p10: number; p25: number; p50: number; p75: number; p90: number }): string {
+  return `
+    <div class="details-grid">
+      <div class="details-cell"><small>P10</small><strong>${score(item.p10)}</strong></div>
+      <div class="details-cell"><small>P25</small><strong>${score(item.p25)}</strong></div>
+      <div class="details-cell"><small>P50</small><strong>${score(item.p50)}</strong></div>
+      <div class="details-cell"><small>P75</small><strong>${score(item.p75)}</strong></div>
+      <div class="details-cell"><small>P90</small><strong>${score(item.p90)}</strong></div>
+    </div>
+  `;
+}
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <main>
+    <section class="hero">
+      <div class="container hero-panel layer-accent">
+        <div class="hero-copy">
+          <span class="eyebrow">Öffentlicher HDRI-Überblick</span>
+          <h1>Digitale Reife im deutschen Handwerk sichtbar machen.</h1>
+          <p>
+            Dieses Dashboard zeigt nur aggregierte und anonymisierte Kennzahlen aus dem HDRI Observatory.
+            Es dient als transparente Orientierung für Regionen, Gewerke und methodische Entwicklungen —
+            ohne Veröffentlichung einzelner Betriebe.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="#dimensionen">Dimensionen ansehen</a>
+            <a class="button button-secondary" href="/methodik">Methodik</a>
+            <a class="button button-secondary" href="/codebook">Codebook</a>
+          </div>
+        </div>
+        <div class="hero-aside">
+          <article class="stat-card">
+            <small>P75 HDRI</small>
+            <strong>{score(summary.p75)}</strong>
+            <span class="caption">Interquartilsbereich {axisRange(summary)}</span>
+          </article>
+          <article class="stat-card">
+            <small>Beobachtete Websites</small>
+            <strong>{count(currentOverview.sampleSize)}</strong>
+            <span class="caption">nur veröffentlichungsfähige Auswertung</span>
+          </article>
+          <article class="stat-card">
+            <small>Berichtsperiode</small>
+            <strong>{currentManifest.period}</strong>
+            <span class="caption"><a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
+          </article>
+          <article class="stat-card">
+            <small>Vertrauensniveau der Signale</small>
+            <strong>{score(confidence.mean)}</strong>
+            <span class="caption">mittlere Scoring-Konfidenz</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="meta-card layer-accent accent-metadata">
+        <div>
+          <span class="credibility-line">HDRI {currentManifest.period} — Deskriptiver Quartalsindex</span>
+          <span class="meta-line">Stichprobe: N = {count(currentOverview.sampleSize)} | k-Anonymität: ≥ {count(currentManifest.kAnonymityMin)} | <a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
+        </div>
+        <div class="meta-line">
+          {currentManifest.generatedAt ? `Export: ${formatDate(currentManifest.generatedAt)}` : ''} · <a href="/methodik">Methodik</a>
+        </div>
+      </div>
+    </div>
+
+    <section class="section" id="dimensionen">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Sechs operative Dimensionen</span>
+            <h2>Was der aktuelle HDRI im MVP tatsächlich misst</h2>
+          </div>
+          <p>
+            Die Visualisierung zeigt das aktuelle veröffentlichte Quartal und ist bereits auf Verlauf und Vergleiche ausgelegt.
+            Jede Karte zeigt P75, Mittelwert und Spannweite für eine veröffentlichbare, k-anonyme Stichprobe.
+          </p>
+        </div>
+
+        {currentDimensions.length > 0 ? (
+          <div class="cards-grid">
+            {currentDimensions.map((item) => (
+              <article class="card layer-accent accent-shtama">
+                <small>{item.id}</small>
+                <h3>{item.label}</h3>
+                <div class="metric-value tooltip-host" data-tooltip={percentileTooltip(item)}>{score(item.p75)}</div>
+                <span class="metric-label">P75-Wert bei Gewicht {new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(item.weight)}</span>
+                <div class="bar-track" aria-hidden="true">
+                  <div class="bar-fill" style={`width: ${Math.min(item.p75, 100)}%`}></div>
+                  <div class="bar-iqr" style={`left: ${Math.min(item.p25, 100)}%; width: ${Math.min(Math.max(item.p75 - item.p25, 0), 100)}%`}></div>
+                  <div class="bar-mean-marker" style={`left: ${Math.min(item.mean, 100)}%`}></div>
+                </div>
+                <div class="card-grid-meta">
+                  <div class="metric-chip">
+                    <span class="metric-label">Mittelwert</span>
+                    <strong>{score(item.mean)}</strong>
+                  </div>
+                  <div class="metric-chip">
+                    <span class="metric-label">IQR</span>
+                    <strong>{axisRange(item)}</strong>
+                  </div>
+                  <div class="metric-chip">
+                    <span class="metric-label">N</span>
+                    <strong>{count(item.n)}</strong>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div class="empty-state">Noch keine publizierbaren Dimensionsdaten vorhanden.</div>
+        )}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Archiv & Verlauf</span>
+            <h2>Veröffentlichte Quartale und Gesamttrend</h2>
+          </div>
+          <p>
+            Pro Quartal gibt es genau einen veröffentlichten, canonical Index. Vergleiche zeigen nur sichere, veröffentlichbare Deltas.
+          </p>
+        </div>
+        <div class="bands-grid">
+          {archiveEntries.map((entry) => (
+            <article class="maturity-card layer-accent accent-schema share-archive">
+              <small>Quartal</small>
+              <strong>{entry.period}</strong>
+              <span class="caption">canonical veröffentlicht</span>
+            </article>
+          ))}
+        </div>
+        {maturity.length > 0 ? (
+          <div class="bands-grid section-stack-top">
+            {maturity.map((band) => (
+              <article class="maturity-card layer-accent accent-schema" style={`--share: ${band.share};`}>
+                <small>{band.label}</small>
+                <strong>{count(band.count)}</strong>
+                <span class="caption">{pct(band.share)} der Stichprobe</span>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div class="empty-state">Noch keine Reifestufen vorhanden.</div>
+        )}
+
+        <div class="table-card table-wrap section-stack-top layer-accent accent-schema">
+          <table>
+            <thead>
+              <tr>
+                <th>Quartal</th>
+                <th>P75</th>
+                <th>Mittelwert</th>
+                <th>Delta</th>
+                <th>N</th>
+              </tr>
+            </thead>
+            <tbody>
+              {overviewTrendItems.map((item) => (
+                <tr>
+                  <td>{item.period}</td>
+                  <td>{score(item.p75)}</td>
+                  <td>{score(item.mean)}</td>
+                  <td><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
+                  <td>{count(item.n)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div class="provenance-badge">
+            Quelle: @org/digital-observatory · Run {currentManifest.observatoryRunId.slice(0, 8)} · <a href="/codebook">Codebook {currentManifest.codebookVersion}</a> · k ≥ {count(currentManifest.kAnonymityMin)}
+          </div>
+          {overviewTrendItems.length > 0 && (
+            <details class="details-row">
+              <summary>Details: Perzentile anzeigen</summary>
+              <Fragment set:html={detailGrid(overviewTrendItems[0]!)} />
+            </details>
+          )}
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="bundeslaender">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Regionale Perspektive</span>
+            <h2>Bundesländer im anonymisierten Vergleich</h2>
+          </div>
+          <p>Gezeigt werden nur Länder mit ausreichend großer Stichprobe. Deltas werden unterdrückt, wenn die Vergleichsregeln es verlangen.</p>
+        </div>
+        {topBundeslaender.length > 0 ? (
+          <div class="table-card table-wrap layer-accent accent-faq">
+            <table>
+              <thead>
+                <tr>
+                  <th>Bundesland</th>
+                  <th>P75</th>
+                  <th>Mittelwert</th>
+                  <th>Delta</th>
+                  <th>N</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bundeslandTrendItems.map((item) => (
+                  <tr>
+                    <td>{item.label}</td>
+                    <td>{score(item.p75)}</td>
+                    <td>{score(item.mean)}</td>
+                    <td><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
+                    <td>{count(item.n)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div class="provenance-badge">
+              Quelle: @org/digital-observatory · Run {currentManifest.observatoryRunId.slice(0, 8)} · <a href="/codebook">Codebook {currentManifest.codebookVersion}</a> · k ≥ {count(currentManifest.kAnonymityMin)}
+            </div>
+            {bundeslandTrendItems.length > 0 && (
+              <details class="details-row">
+                <summary>Details: Perzentile pro Bundesland</summary>
+                {bundeslandTrendItems.map((item) => (
+                  <div>
+                    <p class="detail-row-caption"><strong>{item.label}</strong> — N = {count(item.n)}</p>
+                    <Fragment set:html={detailGrid(item)} />
+                  </div>
+                ))}
+              </details>
+            )}
+          </div>
+        ) : (
+          <div class="empty-state">Noch keine regionalen Schnitte mit k-Anonymität ≥ {count(currentManifest.kAnonymityMin)}.</div>
+        )}
+      </div>
+    </section>
+
+    <section class="section" id="gewerke">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Branchenperspektive</span>
+            <h2>Gewerke mit belastbarer öffentlicher Fallzahl</h2>
+          </div>
+          <p>Die veröffentlichten Gewerkeschnitte helfen bei der Einordnung von Handlungsfeldern, ohne Ranglisten einzelner Unternehmen zu erzeugen.</p>
+        </div>
+        {gewerkTrendItems.length > 0 ? (
+          <div class="table-card table-wrap layer-accent accent-entities">
+            <table>
+              <thead>
+                <tr>
+                  <th>Gewerk</th>
+                  <th>P75</th>
+                  <th>Mittelwert</th>
+                  <th>Delta</th>
+                  <th>N</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gewerkTrendItems.map((item) => (
+                  <tr>
+                    <td><strong>{item.label}</strong>{gewerkGroupLabel.has(item.label) ? ` ${gewerkGroupLabel.get(item.label)}` : ''}</td>
+                    <td>{score(item.p75)}</td>
+                    <td>{score(item.mean)}</td>
+                    <td><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
+                    <td>{count(item.n)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div class="provenance-badge">
+              Quelle: @org/digital-observatory · Run {currentManifest.observatoryRunId.slice(0, 8)} · <a href="/codebook">Codebook {currentManifest.codebookVersion}</a> · k ≥ {count(currentManifest.kAnonymityMin)}
+            </div>
+            {gewerkTrendItems.length > 0 && (
+              <details class="details-row">
+                <summary>Details: Perzentile pro Gewerk</summary>
+                {gewerkTrendItems.map((item) => (
+                  <div>
+                    <p class="detail-row-caption"><strong>{item.label}{gewerkGroupLabel.has(item.label) ? ` ${gewerkGroupLabel.get(item.label)}` : ''}</strong> · N = {count(item.n)}</p>
+                    <Fragment set:html={detailGrid(item)} />
+                  </div>
+                ))}
+              </details>
+            )}
+          </div>
+        ) : (
+          <div class="empty-state">Noch keine veröffentlichbaren Gewerksdaten vorhanden.</div>
+        )}
+      </div>
+    </section>
+
+    <section class="section" id="matrix">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Kombinierte Perspektive</span>
+            <h2>Region × Gewerk mit Vergleichsschutz</h2>
+          </div>
+          <p>
+            Die Matrix zeigt nur belastbare Zellen. Wenn ein Quartalsdelta zu sensibel wäre, bleibt der Vergleich sichtbar, aber der Wert wird unterdrückt.
+          </p>
+        </div>
+        {topMatrix.length > 0 ? (
+          <div class="matrix-grid">
+            {topMatrix.map((item) => (
+              <article class="card layer-accent accent-metadata">
+                <small>{item.bundesland}</small>
+                <h3>{item.gewerk}{gewerkGroupLabel.has(item.gewerk) ? ` ${gewerkGroupLabel.get(item.gewerk)}` : ''}</h3>
+                <div class="metric-value">{score(item.p75)}</div>
+                <span class="metric-label">P75 bei {count(item.n)} Fällen</span>
+                <div class="card-grid-meta">
+                  <div class="metric-chip">
+                    <span class="metric-label">Mittelwert</span>
+                    <strong>{score(item.mean)}</strong>
+                  </div>
+                  <div class="metric-chip">
+                    <span class="metric-label">P25 / P75</span>
+                    <strong>{score(item.p25)} – {score(item.p75)}</strong>
+                  </div>
+                  <div class="metric-chip">
+                    <span class="metric-label">Vergleich</span>
+                    <strong>{deltaLabel(matrixTrendItems.find((trend) => trend.key === `${item.bundesland}__${item.gewerk}`) ?? { axis: 'matrix', period: currentPeriod, previousPeriod: null, label: '', key: '', n: item.n, mean: item.mean, p10: item.p10, p25: item.p25, p50: item.p50, p75: item.p75, p90: item.p90, currentStatus: 'absent', previousStatus: 'absent', deltaFromPrevious: null, suppressionReasons: [], reliability: 'suppressed' })}</strong>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div class="provenance-badge">
+            Quelle: @org/digital-observatory · Run {currentManifest.observatoryRunId.slice(0, 8)} · <a href="/codebook">Codebook {currentManifest.codebookVersion}</a> · k ≥ {count(currentManifest.kAnonymityMin)}
+          </div>
+        ) : (
+          <div class="empty-state">Derzeit gibt es keine Region-Gewerk-Zellen mit ausreichender öffentlicher Fallzahl.</div>
+        )}
+      </div>
+    </section>
+
+    <section class="section" id="methodik">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Methodik & Veröffentlichung</span>
+            <h2>Transparente Regeln statt Marketing-Metriken</h2>
+          </div>
+          <p>
+            Der HDRI ist als methodische Infrastruktur gedacht: reproduzierbar, versionsfähig und öffentlich nachvollziehbar.
+            Für das Dashboard wird der Rohbestand bewusst auf sichere Aggregationen reduziert.
+          </p>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent accent-schema">
+            <h3>Datengrundlage</h3>
+            <ul>
+              <li>Die Daten stammen aus öffentlich zugänglichen Quellen.</li>
+              <li>Exportiert werden veröffentlichte Quartals-Snapshots plus Vergleichsdateien.</li>
+              <li>Debug-Dateien liegen getrennt außerhalb der deploybaren öffentlichen Assets.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent accent-shtama">
+            <h3>Privacy by default</h3>
+            <ul>
+              <li>Keine Domains, keine Asset-IDs, keine per-site Remediation im UI.</li>
+              <li>Jeder veröffentlichte Slice erfüllt `k ≥ {count(currentManifest.kAnonymityMin)}`.</li>
+              <li>Deltas werden zusätzlich nach der Suppression-Policy verborgen, wenn Vergleiche zu sensitiv wären.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent accent-text">
+            <h3>Leselogik</h3>
+            <ul>
+              <li>Primäre Kennzahl ist P75, ergänzt um Mittelwert und Quartile.</li>
+              <li>Die KPI-Karten bilden das aktuelle veröffentlichte Quartal ab.</li>
+              <li>Verlauf und Vergleiche verwenden nur canonical veröffentlichte Quartale.</li>
+            </ul>
+          </article>
+        </div>
+        <div class="section-head section-head-top">
+          <a class="button" href="/methodik">Ausführliche Methodik lesen</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <footer class="footer-card layer-accent accent-metadata">
+        <div>
+          <span class="eyebrow">HDRI Dashboard</span>
+          <p class="table-meta">
+            Letzter Export: {formatDate(currentManifest.generatedAt)}<br />
+            Veröffentlichte Quartale: {count(archiveEntries.length)}<br />
+            Suppression: {currentManifest.suppressionPolicy.kind}<br />
+            <a href="/methodik">Methodische Dokumentation</a> · <a href="/codebook">Codebook</a>
+          </p>
+        </div>
+        <div>
+          <strong>Öffentliche Nutzungshinweise</strong>
+          <ul>
+            <li>Nur aggregierte Interpretation, keine Aussagen zu Einzelbetrieben.</li>
+            <li>Build-Time Export für Cloudflare Pages, kein Server-Runtime erforderlich.</li>
+            <li>Verlauf und Vergleichswerte folgen k-Anonymität plus Delta-Suppression.</li>
+          </ul>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <script is:inline>
+    document.querySelectorAll('.tooltip-host').forEach((host) => {
+      const text = host.dataset.tooltip;
+      if (!text) return;
+
+      let popup = null;
+
+      host.addEventListener('mouseenter', () => {
+        popup = document.createElement('div');
+        popup.className = 'tooltip-popup';
+        popup.textContent = text;
+        document.body.appendChild(popup);
+
+        const rect = host.getBoundingClientRect();
+        const tipRect = popup.getBoundingClientRect();
+
+        let left = rect.left + rect.width / 2 - tipRect.width / 2;
+        let top = rect.top - tipRect.height - 8;
+
+        // Clamp to viewport
+        left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+        top = Math.max(8, top);
+
+        popup.style.left = left + 'px';
+        popup.style.top = top + 'px';
+        requestAnimationFrame(() => popup.classList.add('visible'));
+      });
+
+      host.addEventListener('mouseleave', () => {
+        if (popup) {
+          popup.classList.remove('visible');
+          popup.addEventListener('transitionend', () => popup.remove(), { once: true });
+          popup = null;
+        }
+      });
+    });
+  </script>
+</BaseLayout>

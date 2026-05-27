@@ -1,0 +1,2 @@
+# Signing key — never commit private key material
+.input/signing-key/

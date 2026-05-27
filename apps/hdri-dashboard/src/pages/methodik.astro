@@ -1,0 +1,421 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+
+const pageTitle = 'HDRI Methodik — Handwerk Digital Reife Index';
+const pageDescription = 'Methodische Dokumentation des HDRI: Datenquellen, Scoring-Formel, Privacy-Regeln, Limitationen und Reproduzierbarkeit.';
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: 'HDRI Dashboard', href: '/' }, { label: 'Methodik' }]} />
+    </div>
+    <section class="hero">
+      <div class="container hero-panel layer-accent">
+        <div class="hero-copy">
+          <span class="eyebrow">Methodische Dokumentation</span>
+          <h1>Wie der HDRI entsteht und was er misst</h1>
+          <p>
+            Diese Seite beschreibt den vollständigen methodischen Rahmen des Handwerk Digital Reife Index (HDRI).
+            Sie dient der Nachvollziehbarkeit, Reproduzierbarkeit und kritischen Einordnung der veröffentlichten Kennzahlen.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="/">Zum Dashboard</a>
+            <a class="button button-secondary" href="/codebook">Codebook</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Zweck & Kontext</span>
+            <h2>Was der HDRI ist — und was er nicht ist</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Zweck</h3>
+            <ul>
+              <li>Der HDRI misst die digitale Reife von Handwerkswebsites auf Basis öffentlich zugänglicher Signale.</li>
+              <li>Er dient als methodische Orientierung für Regionen, Branchen und Entwickler digitaler Infrastruktur.</li>
+              <li>Er ist kein Ranking einzelner Betriebe und kein SEO-Score.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Grenzen</h3>
+            <ul>
+              <li>Der Index erhebt keine Anspruch auf Vollständigkeit des digitalen Auftritts.</li>
+              <li>Er misst nur das, was automatisch aus öffentlichen Quellen extrahiert werden kann.</li>
+              <li>Er bewertet nicht Qualität von Inhalten, Usability oder Geschäftserfolg.</li>
+              <li>Keine Echtzeitdaten — nur quartalsweise Snapshots.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Datengrundlage</span>
+            <h2>Quellen, Stichprobe und Pipeline</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>Datenquellen</h3>
+            <ul>
+              <li>Öffentlich zugängliche Websites deutscher Handwerksbetriebe.</li>
+              <li>Keine Login-Seiten, keine internen Systeme, keine bezahlten APIs.</li>
+              <li>Signale werden durch automatisierte Extraktoren aus HTML, strukturierten Daten und Metadaten gelesen.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Stichprobenrahmen</h3>
+            <ul>
+              <li>Die Stichprobe umfasst alle öffentlich erreichbaren Handwerkswebsites des Quartals.</li>
+              <li>Nicht jede erfasste Domain ist im Dashboard sichtbar — nur k-anonyme Aggregate werden veröffentlicht.</li>
+              <li>Neue Domains werden beim ersten Crawl erfasst, inaktive fallen nach mehreren Fehlversuchen heraus.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Pipeline</h3>
+            <ul>
+              <li>Harvest → Asset-State Ingest → Signal Extraction → Scoring → Cohort Aggregation → Dashboard Export.</li>
+              <li>Jeder Lauf produziert eine versionsgebundene Codebook-Version und einen eindeutigen Run-Id.</li>
+              <li>Debug-Daten (einzelne Sites, Rohsignale) werden getrennt von öffentlichen Assets gehalten.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Scoring-Modell</span>
+            <h2>Wie der HDRI-Score berechnet wird</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>1. Indikator-Score</h3>
+            <ul>
+              <li>Jeder Indikator mappt einen rohen Signalwert auf einen Score zwischen 0 und 100.</li>
+              <li>Regeltypen: <code>bool</code>, <code>presence</code>, <code>countClamp</code>, <code>countClampInverse</code>, <code>enum</code>.</li>
+              <li>Fehlende Werte werden nach der Missing-Policy behandelt (zero, skip, impute, conditional).</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>2. Dimensions-Score</h3>
+            <ul>
+              <li>Score = gewichtetes arithmetisches Mittel aller Indikatoren der Dimension.</li>
+              <li>Wenn Indikatoren fehlen (skip), wird das effektive Gewicht reduziert.</li>
+              <li>Confidence = Mittelwert der Confidence aller beitragenden Indikatoren.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>3. Overall HDRI-Score</h3>
+            <ul>
+              <li>Overall = gewichtetes arithmetisches Mittel aller Dimensions-Scores.</li>
+              <li>Jede Dimension hat ein deklariertes Gewicht (Summe = 1,0).</li>
+              <li>Wenn eine Dimension vollständig fehlt, wird ihr Gewicht auf die verbleibenden umverteilt.</li>
+              <li>Overall-Confidence = gewichtetes Mittel der Dimensions-Confidences.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Dimensionen</span>
+            <h2>Was die sechs Dimensionen konkret messen</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>Barrierefreiheit</h3>
+            <p><strong>Gewicht:</strong> 0,16</p>
+            <ul>
+              <li>Automatisierte Axe-Core-Prüfung auf WCAG-Konformität.</li>
+              <li>Misst Anzahl und Schweregrad von Barrierefreiheitsfehlern.</li>
+              <li>Nur automatisch prüfbare Aspekte — keine manuelle Bewertung.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Recht & Pflichtangaben</h3>
+            <p><strong>Gewicht:</strong> 0,28</p>
+            <ul>
+              <li>Prüft Pflichtangaben nach deutschem Recht (Impressum, Datenschutz, Widerruf, Versandbedingungen).</li>
+              <li>Misst strukturierte Rechtssignale aus HTML und Schema.org.</li>
+              <li>Keine Rechtsberatung — nur statistische Erfassung vorhandener Elemente.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Kontakt & Erreichbarkeit</h3>
+            <p><strong>Gewicht:</strong> 0,22</p>
+            <ul>
+              <li>Erfasst Telefon, E-Mail, Adresse, Öffnungszeiten, Kontaktformular.</li>
+              <li>Bewertet Vollständigkeit und maschinenlesbare Strukturierung.</li>
+              <li>Signalquelle: HTML-Inhalt und Schema.org-Strukturdaten.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Soziale Präsenz</h3>
+            <p><strong>Gewicht:</strong> 0,04</p>
+            <ul>
+              <li>Prüft Verweise auf soziale Netzwerke (Xing, Pinterest, Twitter/X).</li>
+              <li>Niedriges Gewicht, da optional — aber relevanter Trendindikator.</li>
+              <li>Misst nur Existenz der Links, nicht Aktivität oder Reichweite.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-faq);">
+            <h3>Vertrauen & Nachweise</h3>
+            <p><strong>Gewicht:</strong> 0,12</p>
+            <ul>
+              <li>Zertifizierungen, Auszeichnungen, Mitgliedschaften, Kammereinträge.</li>
+              <li>Signalquelle: Registrierungsdaten, strukturierte Trust-Signale.</li>
+              <li>Keine Bewertung der Güte — nur statistische Erfassung.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-entities);">
+            <h3>Strukturierte Informationen</h3>
+            <p><strong>Gewicht:</strong> 0,18</p>
+            <ul>
+              <li>Schema.org-Markup, strukturierte Daten, Breadcrumbs, Opening Hours.</li>
+              <li>Bewertet Reichhaltigkeit und Korrektheit der semantischen Auszeichnung.</li>
+              <li>Starke Korrelation mit Suchmaschinen-Verständlichkeit, aber kein SEO-Score.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Privacy & Suppression</span>
+            <h2>Wie wir Daten schützen bevor sie veröffentlicht werden</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>k-Anonymität</h3>
+            <ul>
+              <li>Jeder veröffentlichte Slice muss mindestens <code>k ≥ 5</code> Fälle enthalten.</li>
+              <li>Wenn ein Bundesland oder Gewerk zu wenige Fälle hat, wird es nicht angezeigt.</li>
+              <li>Die Matrix (Region × Gewerk) hat höhere Anforderungen — beide Achsen müssen k-erfüllt sein.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Delta-Suppression</h3>
+            <ul>
+              <li><code>delta_below_absolute_threshold</code>: Änderung kleiner als definierter absoluter Mindestwert.</li>
+              <li><code>delta_below_relative_threshold</code>: Relative Änderung zu gering im Vergleich zum Vorquartal.</li>
+              <li><code>current_sample_below_k</code> / <code>previous_sample_below_k</code>: Stichprobe unterschreitet k.</li>
+              <li><code>category_absent_current</code> / <code>category_absent_previous</code>: Kategorie fehlt in einem Quartal.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>Was nie veröffentlicht wird</h3>
+            <ul>
+              <li>Keine Domains, keine URLs, keine Asset-IDs.</li>
+              <li>Keine Einzelscores pro Website.</li>
+              <li>Keine Rohsignale außerhalb des Observatory-Systems.</li>
+              <li>Debug-Dateien (CSV mit Einzelwerten) liegen außerhalb der deploybaren Assets.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Confidence & Qualität</span>
+            <h2>Wie verlässlich sind die Messungen?</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Confidence-Skala</h3>
+            <ul>
+              <li><strong>1,0</strong> = Signal wurde direkt beobachtet und erfolgreich extrahiert.</li>
+              <li><strong>0,5</strong> = Signal wurde imputiert (geschätzt) aufgrund fehlender Daten.</li>
+              <li><strong>0,0</strong> = Signal wurde übersprungen (skip) und fließt nicht in den Score ein.</li>
+              <li>Dimensions-Confidence ist das Mittel aller beitragenden Indikatoren.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Bekannte Limitationen</h3>
+            <ul>
+              <li>Automatisierte Extraktion kann falsch-positive und falsch-negative Ergebnisse liefern.</li>
+              <li>Sites mit starkem Bot-Schutz (403, Anti-Bot) werden unterrepräsentiert.</li>
+              <li>JavaScript-lastige Single-Page-Apps können nicht vollständig gescraped werden.</li>
+              <li>Confidence ≠ statistische Signifikanz — sie misst Datenverfügbarkeit, nicht Modellgüte.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Statistische Einordnung</h3>
+            <ul>
+              <li>Der HDRI verwendet <strong>deskriptive Statistik</strong> — er beschreibt die Stichprobe, nicht die Grundgesamtheit.</li>
+              <li>Es werden keine p-Werte, Konfidenzintervalle oder Hypothesentests berechnet.</li>
+              <li>Die Aussagekraft kommt aus der Stichprobengröße (N &gt; 30 000), nicht aus inferenzstatistischen Verfahren.</li>
+              <li>P75 ist robust gegenüber Ausreißern und spiegelt das „erreichbare Niveau" wider.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Kennzahlen & Statistik</span>
+            <h2>Wie die veröffentlichten Zahlen zu lesen sind</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>P75 — Primäre Kennzahl</h3>
+            <ul>
+              <li>P75 ist der <strong>75. Perzentil</strong>: 75 % der gemessenen Websites liegen unter diesem Wert, 25 % darüber.</li>
+              <li>Berechnung via <strong>lineare Interpolation (Type 7, R-Standard)</strong>: <code>pos = (n − 1) × 0,75</code>, linear interpoliert zwischen den benachbarten Rangplätzen.</li>
+              <li>P75 wurde gewählt, weil es robust gegen Ausreißer ist und gleichzeitig ein ambitioniertes, aber erreichbares Niveau anzeigt.</li>
+              <li>Im Gegensatz zum Mittelwert wird P75 nicht von Einzelwerten jenseits von 100 gezerrt.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Mittelwert & Median (P50)</h3>
+            <ul>
+              <li>Der <strong>Mittelwert</strong> (arithmetisches Mittel) zeigt die „Schwerpunktlage" der Verteilung.</li>
+              <li>Wenn Mittelwert deutlich unter P75 liegt, ist die Verteilung linksschief: viele niedrige Werte, wenige hohe.</li>
+              <li>Der <strong>Median (P50)</strong> ist in den Rohdaten vorhanden, wird aber nicht als eigene Spalte geführt — er liegt typischerweise zwischen Mittelwert und P75.</li>
+              <li>Die Kombination P75 + Mittelwert + IQR gibt ein vollständiges Bild der Verteilung.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>IQR und Quartile</h3>
+            <ul>
+              <li><strong>IQR</strong> = Interquartilsabstand = P75 − P25. Er umfasst die mittleren 50 % aller Werte.</li>
+              <li>Ein enger IQR bedeutet, dass die meisten Websites ähnliche Scores haben.</li>
+              <li>Ein breiter IQR deutet auf heterogene Qualität innerhalb der Gruppe hin.</li>
+              <li>IQR wird auf den Dimension-Karten als Spannweite angezeigt.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Reproduzierbarkeit</span>
+            <h2>Quellcode, Versionierung und Nachvollziehbarkeit</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Codebook-Versionierung</h3>
+            <ul>
+              <li>Jeder veröffentlichte Index bezieht sich auf eine semantisch versionierte Codebook-Version.</li>
+              <li>MAJOR-Änderungen (z. B. neue Dimensionen) sind nicht rückwärtskompatibel.</li>
+              <li>MINOR-Änderungen (z. B. neue Indikatoren) erweitern das Modell.</li>
+              <li>PATCH-Änderungen korrigieren Extraktoren oder Regeln ohne Modelländerung.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-entities);">
+            <h3>Open Source</h3>
+            <ul>
+              <li>Scoring-Engine, Codebook-Parser und Aggregationslogik sind als <code>@org/hdri-codebook</code> verfügbar.</li>
+              <li>Observatory-Pipeline und Export-Tools sind im Repository dokumentiert.</li>
+              <li>Jeder veröffentlichte Lauf kann theoretisch von einem unabhängigen System reproduziert werden, sofern dieselben Quelldaten vorliegen.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Häufige Fragen</span>
+            <h2>Antworten auf die wichtigsten Einwände</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Warum P75 und nicht der Median?</h3>
+            <p>
+              Der Median (P50) beschreibt das „typische" Niveau. P75 beschreibt das Niveau, das 25 % der besten Websites erreichen — es ist ein ambitionierterer, aber realistischer Benchmark für Betriebe, die ihre digitale Präsenz verbessern wollen.
+            </p>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Warum fehlen manche Deltas?</h3>
+            <p>
+              Deltas werden unterdrückt, wenn die Änderung zu klein ist (&lt; 3 Punkte oder &lt; 3 %), oder wenn eine der Vergleichsstichproben die k-Anonymität unterschreitet. Das ist kein Fehler — es ist ein gezielter Schutz vor statistisch instabilen Aussagen.
+            </p>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>Ist das statistisch signifikant?</h3>
+            <p>
+              Der HDRI arbeitet mit <strong>deskriptiver Statistik</strong>. Wir beschreiben, was in der Stichprobe gemessen wurde, und ziehen keine inferenzstatistischen Schlüsse auf die Grundgesamtheit. Bei N &gt; 30 000 und quartalsweisen Wiederholungen ist die Stabilität der Kennzahlen selbst die Evidenz — nicht ein p-Wert.
+            </p>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Werden Einzelbetriebe identifizierbar?</h3>
+            <p>
+              Nein. Es werden keine Domains, URLs oder Einzelscores veröffentlicht. Jeder veröffentlichte Slice muss mindestens k ≥ 5 Fälle enthalten. Die Matrix-Schnitte (Region × Gewerk) haben noch strengere implizite Schwellen, da beide Achsen erfüllt sein müssen.
+            </p>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-faq);">
+            <h3>Warum schwanken die Quartale?</h3>
+            <p>
+              Die Stichprobe ändert sich leicht von Quartal zu Quartal: neue Domains kommen hinzu, inaktive fallen heraus, Extraktoren werden verbessert. Deshalb ist der Vergleich nur zwischen „canonical" veröffentlichten Quartalen sinnvoll, nicht zwischen Rohdaten verschiedener Runs.
+            </p>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-entities);">
+            <h3>Kann ich die Daten nachnutzen?</h3>
+            <p>
+              Ja — unter der Voraussetzung, dass Sie keine Rückschlüsse auf Einzelbetriebe ziehen und den HDRI als deskriptiven Index (nicht als Ranking- oder SEO-Score) zitieren. Quellenangabe: „Handwerk Digital Reife Index (HDRI), Quartalsindex [Periode]".
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <footer class="footer-card layer-accent" style="--accent-color: var(--layer-metadata);">
+        <div>
+          <span class="eyebrow">HDRI Dashboard</span>
+          <p class="table-meta">
+            Methodische Dokumentation des Handwerk Digital Reife Index.<br />
+            Zurück zum <a href="/">Dashboard</a> · <a href="/codebook">Codebook</a>.
+          </p>
+        </div>
+        <div>
+          <strong>Hinweise zur Nutzung</strong>
+          <ul>
+            <li>Nur aggregierte Interpretation, keine Aussagen zu Einzelbetrieben.</li>
+            <li>Verlauf und Vergleichswerte folgen k-Anonymität plus Delta-Suppression.</li>
+            <li>Bei methodischen Fragen: siehe Open-Source-Repository oder kontaktieren Sie das Entwicklerteam.</li>
+          </ul>
+        </div>
+      </footer>
+    </div>
+  </main>
+</BaseLayout>

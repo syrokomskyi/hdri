@@ -1,0 +1,20 @@
+{
+  "period": "2026-q2",
+  "observatoryRunId": "14373674-bbbe-4fed-bb4c-dfd89bc06281",
+  "factoryRunId": "c72f3b7d-0f23-4f9e-b53c-25abf4e78188",
+  "bundleHash": "68297647136b486ab7ec1d56b733e36f36b34baa2220bee29ec048a9620521f2",
+  "codebookVersion": "observatory-v1",
+  "ontologyVersion": "1.0.0",
+  "generatedAt": "2026-05-27T16:30:36.156Z",
+  "publishedAt": "2026-05-27T12:32:25.787Z",
+  "kAnonymityMin": 5,
+  "suppressionPolicy": {
+    "kind": "k_plus_suppression_diffs",
+    "kAnonymityMin": 5,
+    "minAbsoluteDelta": 3,
+    "minRelativeDelta": 0.03
+  },
+  "sampleSize": 38121,
+  "totalPublishedSlices": 77,
+  "sourceDb": "apps/digital-observatory/.output/db/observatory_2026.db"
+}
