@@ -158,6 +158,13 @@ function axisRange(item: Summary): string {
   return `${score(item.p25)} – ${score(item.p75)}`;
 }
 
+function barColorClass(value: number): string {
+  if (value >= 80) return 'bar-excellent';
+  if (value >= 60) return 'bar-good';
+  if (value >= 30) return 'bar-fair';
+  return 'bar-poor';
+}
+
 function deltaLabel(item: ComparisonPoint): string {
   if ((item.suppressionReasons?.length ?? 0) > 0) return 'Delta unterdrückt';
   if (item.deltaFromPrevious == null) return 'Kein Vorquartal';
@@ -281,7 +288,7 @@ const schema = {
       <div class="meta-card layer-accent accent-metadata">
         <div>
           <span class="credibility-line">HDRI {currentManifest.period} — Deskriptiver Quartalsindex</span>
-          <span class="meta-line">Stichprobe: N = {count(currentOverview.sampleSize)} | k-Anonymität ≥ {count(currentManifest.kAnonymityMin)} | <a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
+          <span class="meta-line">Stichprobe N = {count(currentOverview.sampleSize)} | k-Anonymität ≥ {count(currentManifest.kAnonymityMin)} | <a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
         </div>
         <div class="meta-line">
           {currentManifest.generatedAt ? `Export: ${formatDate(currentManifest.generatedAt)}` : ''} · <a href="/methodik">Methodik</a>
@@ -311,7 +318,7 @@ const schema = {
                 <div class="metric-value tooltip-host" data-tooltip={percentileTooltip(item)}>{score(item.p75)}</div>
                 <span class="metric-label">P75-Wert bei Gewicht {new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(item.weight)}</span>
                 <div class="bar-track" aria-hidden="true">
-                  <div class="bar-fill" style={`width: ${Math.min(item.p75, 100)}%`}></div>
+                  <div class={`bar-fill ${barColorClass(item.p75)}`} style={`width: ${Math.min(item.p75, 100)}%`}></div>
                   <div class="bar-iqr" style={`left: ${Math.min(item.p25, 100)}%; width: ${Math.min(Math.max(item.p75 - item.p25, 0), 100)}%`}></div>
                   <div class="bar-mean-marker" style={`left: ${Math.min(item.mean, 100)}%`}></div>
                 </div>

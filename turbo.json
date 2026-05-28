@@ -1,0 +1,87 @@
+{
+  "$schema": "https://v2-9-14.turborepo.dev/schema.json",
+  "globalDependencies": [
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "tsconfig.base.json",
+    "tsconfig.json",
+    "eslint.config.mjs",
+    "vitest.workspace.ts",
+    ".github/workflows/**"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [
+        "dist/**",
+        "build/**",
+        ".output/**",
+        "!.output/_guide/**",
+        "test-output/**"
+      ]
+    },
+    "@org/site#build": {
+      "outputs": []
+    },
+    "@org/site-deep-audit#build": {
+      "outputs": []
+    },
+    "@org/catalog-harvest#build": {
+      "outputs": []
+    },
+    "@org/register-businesses#build": {
+      "outputs": []
+    },
+    "@org/site-liveness#build": {
+      "outputs": []
+    },
+    "@org/site-profile#build": {
+      "outputs": []
+    },
+    "@org/digital-observatory#build": {
+      "outputs": []
+    },
+    "@org/hdri-dashboard#build": {
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "@org/contract-ontology#build": {
+      "outputs": []
+    },
+    "@org/site-lighthouse-audit#build": {
+      "outputs": []
+    },
+    "@org/site-axe-audit#build": {
+      "outputs": []
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "outputs": [".eslintcache"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**", "test-output/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "outputs": ["dist/**/*.tsbuildinfo", "tsconfig.tsbuildinfo"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "docs:pipeline": {
+      "dependsOn": ["^build"],
+      "outputs": [".output/_guide/**"]
+    },
+    "validate-signatories": {
+      "cache": false,
+      "inputs": ["src/**/*.yaml", "scripts/**/*.ts"]
+    }
+  }
+}
