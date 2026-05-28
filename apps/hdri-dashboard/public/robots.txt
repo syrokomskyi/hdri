@@ -1,0 +1,5 @@
+# Default crawl policy
+User-agent: *
+Disallow:
+
+Sitemap: https://handwerk-index.org/sitemap.xml

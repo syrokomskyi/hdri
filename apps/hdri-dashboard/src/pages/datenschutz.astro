@@ -1,0 +1,177 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+
+const pageTitle = 'Datenschutzerklärung — HDRI Dashboard';
+const pageDescription = 'Datenschutzerklärung des HDRI Dashboard: DSGVO-konforme Informationen zur Datenverarbeitung.';
+
+const site = 'https://handwerk-index.org';
+const schema = {
+  '@type': 'WebPage',
+  name: pageTitle,
+  description: pageDescription,
+  url: `${site}/datenschutz`,
+  inLanguage: 'de-DE',
+  publisher: {
+    '@type': 'Organization',
+    name: 'HDRI Observatory',
+    url: site,
+  },
+};
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: 'HDRI Dashboard', href: '/' }, { label: 'Datenschutz' }]} />
+    </div>
+
+    <section class="hero">
+      <div class="container hero-panel layer-accent">
+        <div class="hero-copy">
+          <span class="eyebrow">Rechtliches</span>
+          <h1>Datenschutzerklärung</h1>
+          <p>Zuletzt aktualisiert: Mai 2026</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="legal-card">
+          <h2>1. Verantwortlicher</h2>
+          <p>
+            Verantwortlicher im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:<br /><br />
+            Andrii Syrokomskyi<br />
+            Elly-Heuss-Knapp-Weg 29<br />
+            71522 Backnang, Deutschland<br />
+            E-Mail: <a href="mailto:andrii@syrokomskyi.com">andrii@syrokomskyi.com</a>
+          </p>
+
+          <h2>2. Allgemeines zur Datenverarbeitung</h2>
+          <p>
+            Diese Website dient ausschließlich der Veröffentlichung des quartalsweise erscheinenden "Digitalen Bereitschaftsindex für das deutsche Handwerk". Es werden keine Nutzerkonten, Formulare, Kommentarfunktionen oder sonstige interaktive Eingabemöglichkeiten angeboten. Cookies werden durch die Website selbst nicht gesetzt.
+          </p>
+          <p>
+            Die Verarbeitung personenbezogener Daten erfolgt nur, soweit dies technisch für den Betrieb der Website erforderlich ist.
+          </p>
+
+          <h2>3. Hosting und Content Delivery Network (Cloudflare)</h2>
+          <p>
+            Diese Website wird über das Content Delivery Network (CDN) von <strong>Cloudflare, Inc., 101 Townsend St., San Francisco, CA 94107, USA</strong> (europäische Niederlassung: Cloudflare Germany GmbH, Rosental 7, c/o Mindspace, 80331 München) ausgeliefert.
+          </p>
+          <p>
+            Wenn Sie unsere Website aufrufen, wird Ihre Anfrage über Server von Cloudflare geleitet. Dabei können folgende Daten technisch verarbeitet werden:
+          </p>
+          <ul>
+            <li>IP-Adresse des anfragenden Geräts (durch Cloudflare für Sicherheits- und Lastverteilungszwecke)</li>
+            <li>Zeitpunkt der Anfrage</li>
+            <li>Aufgerufene Seite / Ressource</li>
+            <li>Browsertyp und Betriebssystem</li>
+            <li>Referrer-URL</li>
+          </ul>
+          <p>
+            <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer sicheren, schnellen und zuverlässigen Auslieferung der Website).
+          </p>
+          <p>
+            <strong>Drittlandübermittlung:</strong> Cloudflare ist ein US-amerikanisches Unternehmen und im EU-US Data Privacy Framework (DPF) zertifiziert. Zusätzlich hat Cloudflare EU-Standardvertragsklauseln (SCCs) abgeschlossen. Weitere Informationen zum Datenschutz bei Cloudflare: <a href="https://www.cloudflare.com/de-de/privacypolicy/" target="_blank" rel="noopener noreferrer">https://www.cloudflare.com/de-de/privacypolicy/</a>
+          </p>
+          <p>
+            <strong>Auftragsverarbeitung:</strong> Mit Cloudflare wurde ein Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO abgeschlossen.
+          </p>
+          <p>
+            <strong>Hinweis zu Cloudflare-Cookies:</strong> Cloudflare kann in bestimmten Betriebssituationen (z. B. Bot-Schutz, Lastverteilung) technisch notwendige Cookies setzen (z. B. <code>__cf_bm</code>, <code>__cflb</code>). Diese Cookies werden ausschließlich für den sicheren Betrieb des CDN benötigt, dienen keiner Nutzerverfolgung und erfordern keine Einwilligung, da sie technisch notwendig sind.
+          </p>
+
+          <h2>4. Webanalyse mit Matomo (ohne Cookies, datenschutzfreundlich)</h2>
+          <p>
+            Diese Website nutzt <strong>Matomo</strong>, eine Open-Source-Software zur statistischen Auswertung von Zugriffen. Matomo wird selbst gehostet; alle Daten verbleiben auf dem eigenen Server und werden nicht an Dritte weitergegeben.
+          </p>
+          <p><strong>Matomo ist wie folgt konfiguriert:</strong></p>
+          <ul>
+            <li><strong>Keine Cookies:</strong> Matomo setzt keinerlei Tracking-Cookies auf Ihrem Endgerät.</li>
+            <li><strong>IP-Anonymisierung:</strong> Ihre IP-Adresse wird vor der Speicherung um mindestens 2 Bytes gekürzt (z. B. wird aus <code>192.168.100.123</code> die Adresse <code>192.168.0.0</code>). Eine Rückführung auf Ihre Person ist damit nicht möglich.</li>
+            <li><strong>Keine Nutzerprofile:</strong> Es werden keine individuellen Besucherprofile erstellt; ausschließlich aggregierte Statistiken werden ausgewertet.</li>
+            <li><strong>Keine Weitergabe:</strong> Erfasste Daten werden nicht an Dritte übermittelt und nicht für Werbezwecke genutzt.</li>
+            <li><strong>Automatische Datenlöschung:</strong> Rohdaten werden nach spätestens 12 Monaten automatisch gelöscht.</li>
+          </ul>
+          <p><strong>Folgende Daten werden statistisch erfasst:</strong></p>
+          <ul>
+            <li>Anonymisierte IP-Adresse</li>
+            <li>Aufgerufene Seiten und Zeitpunkt des Zugriffs</li>
+            <li>Referrer-URL (Herkunftsseite)</li>
+            <li>Verwendeter Browser, Betriebssystem und Bildschirmauflösung</li>
+            <li>Land / Region (auf Basis der anonymisierten IP)</li>
+          </ul>
+          <p>
+            <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der anonymen, statistischen Auswertung der Websitenutzung zur Verbesserung des Angebots). Da weder Cookies gesetzt noch persistente Identifikatoren verwendet werden, ist keine Einwilligung nach § 25 TDDDG erforderlich.
+          </p>
+
+          <h2>5. Daten des veröffentlichten Indexes</h2>
+          <p>
+            Die Daten, die dem "Digitalen Bereitschaftsindex für das deutsche Handwerk" zugrunde liegen, werden aus öffentlich zugänglichen Quellen und Verzeichnissen im Internet zusammengestellt. Die Rohdaten werden vor der Verarbeitung anonymisiert; der veröffentlichte Index enthält ausschließlich aggregierte, nicht personenbezogene Kennzahlen. Es werden keine personenbezogenen Daten von Dritten im Rahmen des Indexes verarbeitet oder veröffentlicht.
+          </p>
+
+          <h2>6. Ihre Rechte als betroffene Person</h2>
+          <p>Soweit personenbezogene Daten verarbeitet werden, stehen Ihnen folgende Rechte zu:</p>
+          <ul>
+            <li><strong>Auskunft</strong> (Art. 15 DSGVO): Sie haben das Recht zu erfahren, ob und welche Daten über Sie gespeichert sind.</li>
+            <li><strong>Berichtigung</strong> (Art. 16 DSGVO): Unrichtige Daten können Sie berichtigen lassen.</li>
+            <li><strong>Löschung</strong> (Art. 17 DSGVO): Sie können die Löschung Ihrer Daten verlangen, sofern keine Aufbewahrungspflichten entgegenstehen.</li>
+            <li><strong>Einschränkung</strong> (Art. 18 DSGVO): Sie können die Verarbeitung Ihrer Daten einschränken lassen.</li>
+            <li><strong>Widerspruch</strong> (Art. 21 DSGVO): Sie können der Verarbeitung Ihrer Daten aufgrund berechtigten Interesses widersprechen.</li>
+            <li><strong>Beschwerde</strong>: Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren. Die zuständige Aufsichtsbehörde für Baden-Württemberg ist der <strong>Landesbeauftragte für den Datenschutz und die Informationsfreiheit Baden-Württemberg (LfDI BW)</strong>, Lautenschlagerstraße 20, 70173 Stuttgart, <a href="https://www.baden-wuerttemberg.datenschutz.de" target="_blank" rel="noopener noreferrer">https://www.baden-wuerttemberg.datenschutz.de</a>.</li>
+          </ul>
+          <p>Anfragen richten Sie bitte per E-Mail an: <a href="mailto:andrii@syrokomskyi.com">andrii@syrokomskyi.com</a></p>
+
+          <h2>7. Aktualität dieser Datenschutzerklärung</h2>
+          <p>
+            Diese Datenschutzerklärung ist aktuell gültig und datiert vom Mai 2026. Sie wird bei Änderungen am Dienst oder bei Änderungen der rechtlichen Rahmenbedingungen aktualisiert.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .legal-card {
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px) saturate(140%);
+    border-radius: var(--radius-lg);
+    padding: 2.2rem;
+    max-width: 800px;
+    line-height: 1.7;
+  }
+  .legal-card h2 {
+    margin: 2rem 0 0.75rem;
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+  }
+  .legal-card h2:first-child {
+    margin-top: 0;
+  }
+  .legal-card p {
+    margin: 0 0 1rem;
+  }
+  .legal-card ul {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+  }
+  .legal-card li {
+    margin-bottom: 0.4rem;
+  }
+  .legal-card a {
+    color: var(--layer-text);
+    text-decoration: underline;
+  }
+  .legal-card code {
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', monospace;
+    font-size: 0.9em;
+    background: var(--surface-muted);
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+  }
+</style>

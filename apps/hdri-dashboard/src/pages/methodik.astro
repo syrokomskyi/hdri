@@ -4,9 +4,23 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 
 const pageTitle = 'HDRI Methodik — Handwerk Digital Reife Index';
 const pageDescription = 'Methodische Dokumentation des HDRI: Datenquellen, Scoring-Formel, Privacy-Regeln, Limitationen und Reproduzierbarkeit.';
+
+const site = 'https://handwerk-index.org';
+const schema = {
+  '@type': 'WebPage',
+  name: pageTitle,
+  description: pageDescription,
+  url: `${site}/methodik`,
+  inLanguage: 'de-DE',
+  publisher: {
+    '@type': 'Organization',
+    name: 'HDRI Observatory',
+    url: site,
+  },
+};
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription}>
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
   <main>
     <div class="container">
       <Breadcrumbs items={[{ label: 'HDRI Dashboard', href: '/' }, { label: 'Methodik' }]} />
@@ -398,24 +412,53 @@ const pageDescription = 'Methodische Dokumentation des HDRI: Datenquellen, Scori
       </div>
     </section>
 
-    <div class="container">
-      <footer class="footer-card layer-accent" style="--accent-color: var(--layer-metadata);">
-        <div>
-          <span class="eyebrow">HDRI Dashboard</span>
-          <p class="table-meta">
-            Methodische Dokumentation des Handwerk Digital Reife Index.<br />
-            Zurück zum <a href="/">Dashboard</a> · <a href="/codebook">Codebook</a>.
-          </p>
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Kooperation</span>
+            <h2>Advisory Board & Forschungskooperationen</h2>
+          </div>
         </div>
-        <div>
-          <strong>Hinweise zur Nutzung</strong>
-          <ul>
-            <li>Nur aggregierte Interpretation, keine Aussagen zu Einzelbetrieben.</li>
-            <li>Verlauf und Vergleichswerte folgen k-Anonymität plus Delta-Suppression.</li>
-            <li>Bei methodischen Fragen: siehe Open-Source-Repository oder kontaktieren Sie das Entwicklerteam.</li>
-          </ul>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="grid-column: 1 / -1; --accent-color: var(--layer-schema);">
+            <p>
+              Der Handwerk Digital Reife Index (HDRI) wird derzeit als unabhängiges Observatorium von einer Privatperson aufgebaut. Für die nächsten Ausbaustufen (Jahresbericht, Peer-Review der Methodik, BFSG- und AI-Readiness-Module) suchen wir gezielt den Austausch mit Institutionen aus Forschung und Handwerk.
+            </p>
+            <p>Insbesondere interessieren uns:</p>
+            <ul>
+              <li>Hochschul- und Institutspartner mit Fokus auf Digitalisierung im Handwerk oder Mittelstand</li>
+              <li>Handwerkskammern und Fachverbände mit Interesse an k-anonymen Lagebildern und Jahresberichten</li>
+              <li>Initiativen zu Barrierefreiheit (BFSG/BITV) und digitaler Zugänglichkeit im Handwerk</li>
+            </ul>
+            <p>
+              Wenn Ihre Institution an einer Kooperation oder an einem Advisory Board-Mandat interessiert ist, freuen wir uns über eine kurze Nachricht an <a href="mailto:andrii@syrokomskyi.com">andrii@syrokomskyi.com</a>
+            </p>
+          </article>
         </div>
-      </footer>
-    </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Open Source</span>
+            <h2>Open Source & Reproduzierbarkeit</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="grid-column: 1 / -1; --accent-color: var(--layer-entities);">
+            <p>
+              Der HDRI ist als transparentes, nachvollziehbares Observatorium angelegt. Das öffentliche GitHub-Repository dokumentiert die technische Grundlage des Projekts, einschließlich Berechnungslogik, Codebook und Website-Quellcode.
+            </p>
+            <p>
+              <a href="https://github.com/syrokomskyi/hdri" target="_blank" rel="noopener noreferrer">github.com/syrokomskyi/hdri</a>
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
   </main>
 </BaseLayout>

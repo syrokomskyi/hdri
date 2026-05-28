@@ -1,0 +1,17 @@
+# ai.txt for example.com
+# AI training and usage policy
+# See: https://handwerk-index.org/ai-policy
+# Contact: mailto:andrii@syrokomskyi.com
+
+version: 0.1
+updated: 2026-05-28
+
+# Default policy for AI systems
+policy: limited
+training: allow
+usage: inference, indexing, snippet-generation
+commercial: no
+attribution: required
+license: CC BY-SA 4.0
+url: https://handwerk-index.org/ai-policy
+contact: mailto:andrii@syrokomskyi.com

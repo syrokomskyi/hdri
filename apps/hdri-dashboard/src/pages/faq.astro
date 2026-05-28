@@ -1,0 +1,348 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+
+const pageTitle = 'Häufig gestellte Fragen — HDRI Dashboard';
+const pageDescription = 'FAQ zum HDRI: Fragen und Antworten zum Handwerk Digital Reife Index.';
+
+const site = 'https://handwerk-index.org';
+const schema = {
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Was ist der HDRI?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Was misst der HDRI — und was misst er nicht?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Der HDRI misst ausschließlich automatisch erfassbare, öffentlich sichtbare Signale der digitalen Präsenz: Barrierefreiheit, rechtliche Pflichtangaben, Kontaktmöglichkeiten, soziale Netzwerke, Vertrauensnachweise und strukturierte Daten. Er misst nicht: Qualität von Inhalten, Geschäftserfolg, Kundenzufriedenheit, Vollständigkeit des gesamten digitalen Auftritts oder Echtzeit-Daten.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Wie oft wird der Index aktualisiert?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Der Index erscheint einmal pro Quartal. Pro Quartal gibt es genau einen veröffentlichten, kanonischen Index.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Wer steht hinter dem HDRI?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Der HDRI ist ein privates, unabhängiges Projekt einer Privatperson mit Wohnsitz in Deutschland. Es besteht keine Verbindung zu Handwerkskammern, Verbänden, Behörden oder kommerziellen Anbietern.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Werden personenbezogene Daten verarbeitet oder veröffentlicht?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Nein. Alle Rohdaten werden anonymisiert, bevor sie in den Index einfließen. Der veröffentlichte Index enthält ausschließlich aggregierte, nicht personenbezogene Kennzahlen.',
+      },
+    },
+  ],
+};
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: 'HDRI Dashboard', href: '/' }, { label: 'Häufige Fragen' }]} />
+    </div>
+
+    <section class="hero">
+      <div class="container hero-panel layer-accent">
+        <div class="hero-copy">
+          <span class="eyebrow">FAQ</span>
+          <h1>Häufig gestellte Fragen</h1>
+          <p>Antworten auf die wichtigsten Fragen zum HDRI — dem Handwerk Digital Reife Index.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="faq-section-title">Über den HDRI</h2>
+        <div class="faq-grid">
+          <article class="faq-card layer-accent">
+            <h3>Was ist der HDRI?</h3>
+            <p>Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht. Er dient als methodische Orientierung für Regionen, Branchen und Entwickler digitaler Infrastruktur.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Was misst der HDRI — und was misst er nicht?</h3>
+            <p>Der HDRI misst ausschließlich automatisch erfassbare, öffentlich sichtbare Signale der digitalen Präsenz von Handwerksbetrieben: Barrierefreiheit, rechtliche Pflichtangaben, Kontaktmöglichkeiten, soziale Netzwerke, Vertrauensnachweise und strukturierte Daten.</p>
+            <p>Er misst <strong>nicht</strong>: Qualität von Inhalten oder Usability, Geschäftserfolg oder Umsatz, Kundenzufriedenheit oder Bewertungen, Vollständigkeit des gesamten digitalen Auftritts, Echtzeit-Daten (nur quartalsweise Snapshots).</p>
+            <p>Der HDRI ist kein Ranking einzelner Betriebe und kein SEO-Score.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Wie oft wird der Index aktualisiert?</h3>
+            <p>Der Index erscheint einmal pro Quartal. Pro Quartal gibt es genau einen veröffentlichten, kanonischen Index. Vergleiche zwischen Quartalen werden nur dann angezeigt, wenn sie statistisch zuverlässig sind.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Wer steht hinter dem HDRI?</h3>
+            <p>Der HDRI ist ein privates, unabhängiges Projekt einer Privatperson mit Wohnsitz in Deutschland. Es besteht keine Verbindung zu Handwerkskammern, Verbänden, Behörden oder kommerziellen Anbietern.</p>
+          </article>
+        </div>
+
+        <h2 class="faq-section-title">Datengrundlage</h2>
+        <div class="faq-grid">
+          <article class="faq-card layer-accent">
+            <h3>Welche Daten liegen dem Index zugrunde?</h3>
+            <p>Grundlage sind öffentlich zugängliche Websites deutscher Handwerksbetriebe. Die Signale werden durch automatisierte Extraktoren aus HTML, strukturierten Daten (Schema.org) und Metadaten gelesen. Es werden keine Login-Seiten, internen Systeme oder bezahlten APIs verwendet.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Wie groß ist die Stichprobe?</h3>
+            <p>Aktuell (2026-Q2) umfasst die Stichprobe <strong>38.121 Websites</strong>. Die Stichprobe enthält alle öffentlich erreichbaren Handwerkswebsites, die im jeweiligen Quartal erfolgreich gecrawlt werden konnten.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Warum sind nicht alle erfassten Domains im Dashboard sichtbar?</h3>
+            <p>Im Dashboard werden ausschließlich k-anonyme Aggregate veröffentlicht (mindestens k ≥ 5 Fälle pro Slice). Einzelne Betriebe, Domains, URLs oder individuelle Scores werden nie veröffentlicht. Zu kleine Gruppen (z. B. seltene Gewerke in dünn besiedelten Regionen) werden unterdrückt.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Werden personenbezogene Daten verarbeitet oder veröffentlicht?</h3>
+            <p>Nein. Alle Rohdaten werden anonymisiert, bevor sie in den Index einfließen. Der veröffentlichte Index enthält ausschließlich aggregierte, nicht personenbezogene Kennzahlen. Keine Domains, URLs, Asset-IDs oder Einzelscores werden veröffentlicht.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Was passiert mit inaktiven Websites?</h3>
+            <p>Domains, die bei mehreren aufeinanderfolgenden Crawl-Versuchen nicht erreichbar sind, werden aus der aktiven Stichprobe entfernt.</p>
+          </article>
+        </div>
+
+        <h2 class="faq-section-title">Scoring & Berechnung</h2>
+        <div class="faq-grid">
+          <article class="faq-card layer-accent">
+            <h3>Wie wird der HDRI-Score berechnet?</h3>
+            <p>Die Berechnung erfolgt in drei Stufen:</p>
+            <ol>
+              <li><strong>Indikator-Score:</strong> Jeder Indikator übersetzt einen rohen Signalwert in einen Score zwischen 0 und 100 (Regeltypen: <code>bool</code>, <code>presence</code>, <code>countClamp</code>, <code>countClampInverse</code>, <code>enum</code>).</li>
+              <li><strong>Dimensions-Score:</strong> Gewichtetes arithmetisches Mittel aller Indikatoren einer Dimension. Fehlende Indikatoren (<code>skip</code>) reduzieren das effektive Gewicht.</li>
+              <li><strong>Overall HDRI-Score:</strong> Gewichtetes arithmetisches Mittel aller sechs Dimensions-Scores. Wenn eine Dimension vollständig fehlt, wird ihr Gewicht auf die übrigen umverteilt.</li>
+            </ol>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Welche sechs Dimensionen gibt es und wie sind sie gewichtet?</h3>
+            <div class="faq-table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Dimension</th><th class="numeric">Gewicht</th><th>Was sie misst</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Recht & Pflichtangaben</td><td class="numeric">28 %</td><td>Impressum, Datenschutz, AGB, BFSG, Widerruf, Versand</td></tr>
+                  <tr><td>Kontakt & Erreichbarkeit</td><td class="numeric">22 %</td><td>Telefon, E-Mail, Adresse, Öffnungszeiten, Kontaktformular</td></tr>
+                  <tr><td>Barrierefreiheit</td><td class="numeric">16 %</td><td>WCAG-Konformität via Axe-Core (kritische bis geringe Fehler)</td></tr>
+                  <tr><td>Strukturierte Informationen</td><td class="numeric">18 %</td><td>Schema.org-Markup, LocalBusiness, FAQ, Service, Breadcrumbs</td></tr>
+                  <tr><td>Vertrauen & Nachweise</td><td class="numeric">12 %</td><td>Zertifizierungen, Meistertitel, Auszeichnungen, Mitgliedschaften</td></tr>
+                  <tr><td>Soziale Präsenz</td><td class="numeric">4 %</td><td>Verlinkung auf Facebook, Instagram, YouTube, LinkedIn u. a.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Warum wird P75 als primäre Kennzahl verwendet und nicht der Median?</h3>
+            <p>Der Median (P50) beschreibt das „typische" Niveau der Stichprobe. P75 beschreibt das Niveau, das die besten 25 % der Websites erreichen — es ist ein ambitionierterer, aber realistischer Benchmark für Betriebe, die ihre digitale Präsenz verbessern wollen. Zudem ist P75 robuster gegenüber Ausreißern als der Mittelwert.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Was bedeutet der IQR (Interquartilsabstand)?</h3>
+            <p>Der IQR (P75 − P25) umfasst die mittleren 50 % aller Werte der Stichprobe. Ein enger IQR bedeutet, dass die meisten Websites ähnliche Scores aufweisen. Ein breiter IQR weist auf heterogene Qualität innerhalb der Gruppe hin.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Was ist die „Confidence" (Vertrauensniveau)?</h3>
+            <p>Die Confidence-Skala zeigt, wie verlässlich ein gemessener Wert ist:</p>
+            <ul>
+              <li><strong>1,0</strong> — Signal wurde direkt beobachtet und erfolgreich extrahiert</li>
+              <li><strong>0,5</strong> — Signal wurde imputiert (geschätzt) aufgrund fehlender Daten</li>
+              <li><strong>0,0</strong> — Signal wurde übersprungen (<code>skip</code>) und fließt nicht in den Score ein</li>
+            </ul>
+            <p>Confidence ≠ statistische Signifikanz — sie misst Datenverfügbarkeit, nicht Modellgüte.</p>
+          </article>
+        </div>
+
+        <h2 class="faq-section-title">Datenschutz & k-Anonymität</h2>
+        <div class="faq-grid">
+          <article class="faq-card layer-accent">
+            <h3>Werden einzelne Betriebe bewertet oder gelistet?</h3>
+            <p>Nein. Das Dashboard zeigt ausschließlich aggregierte Kennzahlen für Gruppen (Regionen, Gewerke). Einzelne Betriebe, Websites oder Scores werden weder gespeichert noch veröffentlicht.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Was ist k-Anonymität und warum wird sie eingesetzt?</h3>
+            <p>k-Anonymität bedeutet: Jeder veröffentlichte Datenpunkt muss mindestens k ≥ 5 Einzelfälle zusammenfassen. Wenn eine Gruppe (z. B. ein bestimmtes Gewerk in einem Bundesland) weniger als 5 Fälle enthält, wird sie im Dashboard nicht angezeigt. Für Kreuztabellen (Region × Gewerk) gelten noch strengere Anforderungen.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Warum werden manche Deltas (Quartalsvergleiche) nicht angezeigt?</h3>
+            <p>Ein Delta wird unterdrückt, wenn:</p>
+            <ul>
+              <li>Die Änderung kleiner als 3 Punkte <strong>oder</strong> kleiner als 3 % relativ zum Vorquartal ist</li>
+              <li>Eine der Vergleichsstichproben die k-Anonymitätsschwelle unterschreitet</li>
+              <li>Eine Kategorie in einem der Quartale nicht vorhanden war</li>
+            </ul>
+            <p>Das ist kein Fehler — es ist ein gezielter Schutzmechanismus.</p>
+          </article>
+        </div>
+
+        <h2 class="faq-section-title">Codebook & Reproduzierbarkeit</h2>
+        <div class="faq-grid">
+          <article class="faq-card layer-accent">
+            <h3>Was ist das Codebook?</h3>
+            <p>Das Codebook ist die vollständige, maschinenlesbare Scoring-Spezifikation des HDRI. Es enthält alle Dimensionen, Indikatoren, Gewichtungen, Scoring-Regeln und Missing-Value-Policies. Das aktuelle Codebook ist <code>observatory-v1</code>, Version 1.3.0 (36 Indikatoren in 6 Dimensionen).</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Wie funktioniert die Versionierung des Codebooks?</h3>
+            <p>Das Codebook folgt semantischer Versionierung (MAJOR.MINOR.PATCH):</p>
+            <ul>
+              <li><strong>MAJOR</strong> — inkompatible Änderung (Indikator entfernt, Dimension umbenannt) → Vergleiche mit Vorversionen sind nicht möglich</li>
+              <li><strong>MINOR</strong> — additive Änderung (neuer Indikator, neue Dimension) → rückwärtskompatibel</li>
+              <li><strong>PATCH</strong> — Beschreibung oder Tippfehler, keine Scoring-Auswirkung</li>
+            </ul>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Kann ich den Index selbst reproduzieren?</h3>
+            <p>Ja, theoretisch. Die Scoring-Engine, der Codebook-Parser und die Aggregationslogik sind als <code>@org/hdri-codebook</code> Open-Source verfügbar. Das Codebook steht auch als YAML-Datei zum Download bereit (<code>codebook-observatory-1.3.0.yaml</code>). Eine vollständige Reproduktion setzt den Zugang zu denselben Quelldaten voraus.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Was bedeutet „deskriptiv" — werden keine statistischen Tests durchgeführt?</h3>
+            <p>Korrekt. Der HDRI verwendet ausschließlich deskriptive Statistik — er beschreibt die vorliegende Stichprobe, macht aber keine Aussagen über die Grundgesamtheit aller deutschen Handwerksbetriebe. Es werden keine p-Werte, Konfidenzintervalle oder Hypothesentests berechnet. Die Aussagekraft basiert auf der Stichprobengröße (N > 30.000), nicht auf inferenzstatistischen Verfahren.</p>
+          </article>
+        </div>
+
+        <h2 class="faq-section-title">Bekannte Einschränkungen</h2>
+        <div class="faq-grid">
+          <article class="faq-card layer-accent">
+            <h3>Warum fehlen manche Websites in der Stichprobe?</h3>
+            <p>Websites mit starkem Bot-Schutz (z. B. HTTP-403-Fehler oder Anti-Bot-Systeme) werden unterrepräsentiert, da der Crawler keinen Zugriff erhält. Außerdem können JavaScript-lastige Single-Page-Apps (SPAs) nicht vollständig analysiert werden, da die Extraktion auf statischem HTML basiert.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Können automatisierte Messungen falsch liegen?</h3>
+            <p>Ja. Automatisierte Extraktion kann falsch-positive und falsch-negative Ergebnisse liefern. Ein fehlendes Signal bedeutet nicht immer, dass ein Merkmal tatsächlich fehlt — es kann auch bedeuten, dass es nicht automatisch erkannt wurde. Die Confidence-Werte geben einen Hinweis auf die Datenverfügbarkeit.</p>
+          </article>
+
+          <article class="faq-card layer-accent">
+            <h3>Ist der HDRI repräsentativ für alle Handwerksbetriebe in Deutschland?</h3>
+            <p>Der HDRI beschreibt seine Stichprobe (öffentlich erreichbare Handwerkswebsites), macht aber keine repräsentativen Aussagen über die Grundgesamtheit aller Betriebe — insbesondere über Betriebe ohne Website oder mit nicht-erreichbaren Websites.</p>
+          </article>
+        </div>
+
+        <p class="faq-closing">Weitere Fragen? → <a href="/impressum">Impressum</a></p>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .faq-section-title {
+    margin: 2.5rem 0 1rem;
+    font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+    letter-spacing: -0.02em;
+  }
+  .faq-section-title:first-child {
+    margin-top: 0;
+  }
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .faq-card {
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px) saturate(140%);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+  }
+  .faq-card h3 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+  }
+  .faq-card p {
+    margin: 0 0 0.6rem;
+    color: var(--muted);
+    line-height: 1.6;
+    font-size: 0.92rem;
+  }
+  .faq-card p:last-child {
+    margin-bottom: 0;
+  }
+  .faq-card ul,
+  .faq-card ol {
+    margin: 0 0 0.6rem;
+    padding-left: 1.15rem;
+    color: var(--muted);
+    line-height: 1.6;
+    font-size: 0.92rem;
+  }
+  .faq-card li {
+    margin-bottom: 0.35rem;
+  }
+  .faq-card li:last-child {
+    margin-bottom: 0;
+  }
+  .faq-card code {
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', monospace;
+    font-size: 0.9em;
+    background: var(--surface-muted);
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+  }
+  .faq-table-wrap {
+    overflow-x: auto;
+  }
+  .faq-card table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .faq-card th,
+  .faq-card td {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .faq-card th {
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+  .faq-closing {
+    margin-top: 2rem;
+    color: var(--muted);
+  }
+  .faq-closing a {
+    color: var(--layer-text);
+    text-decoration: underline;
+  }
+  @media (max-width: 960px) {
+    .faq-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

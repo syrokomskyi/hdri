@@ -204,9 +204,37 @@ function detailGrid(item: { p10: number; p25: number; p50: number; p75: number; 
     </div>
   `;
 }
+
+const site = 'https://handwerk-index.org';
+const schema = {
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      name: pageTitle,
+      description: pageDescription,
+      url: `${site}/`,
+      inLanguage: 'de-DE',
+    },
+    {
+      '@type': 'Dataset',
+      name: 'HDRI Quartalsindex',
+      description: 'Öffentlicher, deskriptiver Quartalsindex der digitalen Reife deutscher Handwerkswebsites.',
+      url: `${site}/`,
+      creator: {
+        '@type': 'Organization',
+        name: 'HDRI Observatory',
+        url: site,
+      },
+      license: 'https://creativecommons.org/licenses/by-sa/4.0/',
+      temporalCoverage: currentManifest.period,
+      spatialCoverage: 'Deutschland',
+      inLanguage: 'de-DE',
+    },
+  ],
+};
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription}>
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
   <main>
     <section class="hero">
       <div class="container hero-panel layer-accent">
@@ -253,7 +281,7 @@ function detailGrid(item: { p10: number; p25: number; p50: number; p75: number; 
       <div class="meta-card layer-accent accent-metadata">
         <div>
           <span class="credibility-line">HDRI {currentManifest.period} — Deskriptiver Quartalsindex</span>
-          <span class="meta-line">Stichprobe: N = {count(currentOverview.sampleSize)} | k-Anonymität: ≥ {count(currentManifest.kAnonymityMin)} | <a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
+          <span class="meta-line">Stichprobe: N = {count(currentOverview.sampleSize)} | k-Anonymität ≥ {count(currentManifest.kAnonymityMin)} | <a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
         </div>
         <div class="meta-line">
           {currentManifest.generatedAt ? `Export: ${formatDate(currentManifest.generatedAt)}` : ''} · <a href="/methodik">Methodik</a>
@@ -349,20 +377,20 @@ function detailGrid(item: { p10: number; p25: number; p50: number; p75: number; 
             <thead>
               <tr>
                 <th>Quartal</th>
-                <th>P75</th>
-                <th>Mittelwert</th>
-                <th>Delta</th>
-                <th>N</th>
+                <th class="numeric">P75</th>
+                <th class="numeric">Mittelwert</th>
+                <th class="numeric">Delta</th>
+                <th class="numeric">N</th>
               </tr>
             </thead>
             <tbody>
               {overviewTrendItems.map((item) => (
                 <tr>
                   <td>{item.period}</td>
-                  <td>{score(item.p75)}</td>
-                  <td>{score(item.mean)}</td>
-                  <td><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
-                  <td>{count(item.n)}</td>
+                  <td class="numeric">{score(item.p75)}</td>
+                  <td class="numeric">{score(item.mean)}</td>
+                  <td class="numeric"><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
+                  <td class="numeric">{count(item.n)}</td>
                 </tr>
               ))}
             </tbody>
@@ -395,20 +423,20 @@ function detailGrid(item: { p10: number; p25: number; p50: number; p75: number; 
               <thead>
                 <tr>
                   <th>Bundesland</th>
-                  <th>P75</th>
-                  <th>Mittelwert</th>
-                  <th>Delta</th>
-                  <th>N</th>
+                  <th class="numeric">P75</th>
+                  <th class="numeric">Mittelwert</th>
+                  <th class="numeric">Delta</th>
+                  <th class="numeric">N</th>
                 </tr>
               </thead>
               <tbody>
                 {bundeslandTrendItems.map((item) => (
                   <tr>
                     <td>{item.label}</td>
-                    <td>{score(item.p75)}</td>
-                    <td>{score(item.mean)}</td>
-                    <td><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
-                    <td>{count(item.n)}</td>
+                    <td class="numeric">{score(item.p75)}</td>
+                    <td class="numeric">{score(item.mean)}</td>
+                    <td class="numeric"><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
+                    <td class="numeric">{count(item.n)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -449,20 +477,20 @@ function detailGrid(item: { p10: number; p25: number; p50: number; p75: number; 
               <thead>
                 <tr>
                   <th>Gewerk</th>
-                  <th>P75</th>
-                  <th>Mittelwert</th>
-                  <th>Delta</th>
-                  <th>N</th>
+                  <th class="numeric">P75</th>
+                  <th class="numeric">Mittelwert</th>
+                  <th class="numeric">Delta</th>
+                  <th class="numeric">N</th>
                 </tr>
               </thead>
               <tbody>
                 {gewerkTrendItems.map((item) => (
                   <tr>
                     <td><strong>{item.label}</strong>{gewerkGroupLabel.has(item.label) ? ` ${gewerkGroupLabel.get(item.label)}` : ''}</td>
-                    <td>{score(item.p75)}</td>
-                    <td>{score(item.mean)}</td>
-                    <td><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
-                    <td>{count(item.n)}</td>
+                    <td class="numeric">{score(item.p75)}</td>
+                    <td class="numeric">{score(item.mean)}</td>
+                    <td class="numeric"><span class={reliabilityClass(item.reliability)} title={reliabilityLabel(item.reliability)}></span>{deltaLabel(item)}</td>
+                    <td class="numeric">{count(item.n)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -577,27 +605,6 @@ function detailGrid(item: { p10: number; p25: number; p50: number; p75: number; 
       </div>
     </section>
 
-    <div class="container">
-      <footer class="footer-card layer-accent accent-metadata">
-        <div>
-          <span class="eyebrow">HDRI Dashboard</span>
-          <p class="table-meta">
-            Letzter Export: {formatDate(currentManifest.generatedAt)}<br />
-            Veröffentlichte Quartale: {count(archiveEntries.length)}<br />
-            Suppression: {currentManifest.suppressionPolicy.kind}<br />
-            <a href="/methodik">Methodische Dokumentation</a> · <a href="/codebook">Codebook</a>
-          </p>
-        </div>
-        <div>
-          <strong>Öffentliche Nutzungshinweise</strong>
-          <ul>
-            <li>Nur aggregierte Interpretation, keine Aussagen zu Einzelbetrieben.</li>
-            <li>Build-Time Export für Cloudflare Pages, kein Server-Runtime erforderlich.</li>
-            <li>Verlauf und Vergleichswerte folgen k-Anonymität plus Delta-Suppression.</li>
-          </ul>
-        </div>
-      </footer>
-    </div>
   </main>
 
   <script is:inline>

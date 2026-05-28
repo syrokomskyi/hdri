@@ -2,14 +2,46 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 
-const yamlPath = new URL('src/assets/data/public/codebook-observatory-v1.3.0.yaml', 'file://' + process.cwd() + '/');
-const yamlText = readFileSync(yamlPath, 'utf-8');
+const candidates = [
+  resolve(process.cwd(), 'apps/hdri-dashboard/src/assets/data/public/codebook-observatory-1.3.0.yaml'),
+  resolve(process.cwd(), 'src/assets/data/public/codebook-observatory-1.3.0.yaml'),
+  resolve(process.cwd(), 'apps/hdri-dashboard/public/codebook-observatory-1.3.0.yaml'),
+  resolve(process.cwd(), 'public/codebook-observatory-1.3.0.yaml'),
+];
+
+let yamlText = '';
+for (const p of candidates) {
+  try {
+    yamlText = readFileSync(p, 'utf-8');
+    break;
+  } catch {
+    // try next candidate
+  }
+}
+if (!yamlText) {
+  throw new Error('codebook-observatory-1.3.0.yaml not found in any expected location');
+}
 const codebook = parseYaml(yamlText);
 
 const pageTitle = 'HDRI Codebook — Scoring-Spezifikation';
 const pageDescription = 'Vollständige Codebook-Spezifikation des HDRI: Dimensionen, Indikatoren, Gewichtungen, Scoring-Regeln und Versionsgeschichte.';
+
+const site = 'https://handwerk-index.org';
+const schema = {
+  '@type': 'TechArticle',
+  name: pageTitle,
+  description: pageDescription,
+  url: `${site}/codebook`,
+  inLanguage: 'de-DE',
+  publisher: {
+    '@type': 'Organization',
+    name: 'HDRI Observatory',
+    url: site,
+  },
+};
 
 const cb = codebook as {
   id: string;
@@ -60,7 +92,7 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
 }
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription}>
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
   <main>
     <div class="container">
       <Breadcrumbs items={[{ label: 'HDRI Dashboard', href: '/' }, { label: 'Codebook' }]} />
@@ -148,8 +180,8 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
               <tr>
                 <th>ID</th>
                 <th>Label</th>
-                <th>Gewicht</th>
-                <th>Indikatoren</th>
+                <th class="numeric">Gewicht</th>
+                <th class="numeric">Indikatoren</th>
               </tr>
             </thead>
             <tbody>
@@ -157,8 +189,8 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
                 <tr>
                   <td><code>{dim.id}</code></td>
                   <td>{dim.label}</td>
-                  <td>{pct(dim.weight)}</td>
-                  <td>{dim.indicators.length}</td>
+                  <td class="numeric">{pct(dim.weight)}</td>
+                  <td class="numeric">{dim.indicators.length}</td>
                 </tr>
               ))}
             </tbody>
@@ -183,7 +215,7 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
                 <tr>
                   <th>ID</th>
                   <th>Input Key</th>
-                  <th>Gewicht</th>
+                  <th class="numeric">Gewicht</th>
                   <th>Regel</th>
                   <th>Missing Policy</th>
                   <th>Extractor</th>
@@ -194,7 +226,7 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
                   <tr>
                     <td><code>{ind.id}</code></td>
                     <td><code>{ind.inputKey}</code></td>
-                    <td>{pct(ind.weight)}</td>
+                    <td class="numeric">{pct(ind.weight)}</td>
                     <td><span class="rule-tag">{ruleSummary(ind.rule)}</span></td>
                     <td><span class="missing-tag">{missingSummary(ind.missing)}</span></td>
                     <td>{ind.source?.extractor ?? '—'}</td>
@@ -220,6 +252,11 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
             <h3>YAML-Download</h3>
             <p>Das Codebook steht als maschinenlesbare YAML-Datei zur Verfügung. Forscher und Entwickler können damit die Scoring-Logik nachvollziehen und reproduzieren.</p>
             <a class="button" href={`/codebook-observatory-${cb.version}.yaml`} download>codebook-observatory-{cb.version}.yaml herunterladen</a>
+          </article>
+          <article class="method-card layer-accent accent-entities">
+            <h3>Repository</h3>
+            <p>Das öffentliche Repository zum HDRI mit Codebook, Scoring-Logik und Website-Quellcode:</p>
+            <a class="button" href="https://github.com/syrokomskyi/hdri" target="_blank" rel="noopener noreferrer">github.com/syrokomskyi/hdri</a>
           </article>
           <article class="method-card layer-accent accent-faq">
             <h3>Semantische Versionierung</h3>

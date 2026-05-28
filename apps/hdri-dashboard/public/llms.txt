@@ -1,0 +1,28 @@
+# HDRI Dashboard — Handwerk Digital Reife Index
+
+> Öffentliches Dashboard für veröffentlichte HDRI-Quartalsindizes, Verlauf und sichere Vergleiche der digitalen Reife deutscher Handwerksbetriebe.
+
+## Über den HDRI
+
+Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht. Er dient als methodische Orientierung für Regionen, Branchen und Entwickler digitaler Infrastruktur. Der Index ist kein Ranking einzelner Betriebe und kein SEO-Score.
+
+## Wichtige Seiten
+
+- [HDRI Dashboard](https://handwerk-index.org/) — Übersicht aktueller Quartalsindizes, Vergleiche nach Bundesland, Gewerk und Dimension, Trendanalysen und Reifegradverteilung.
+- [Methodik](https://handwerk-index.org/methodik) — Vollständige methodische Dokumentation: Datenquellen, Scoring-Formel, Privacy-Regeln (k-Anonymität), Limitationen, Pipeline-Architektur und Reproduzierbarkeit.
+- [Codebook](https://handwerk-index.org/codebook) — Scoring-Spezifikation mit allen Dimensionen, Indikatoren, Gewichtungen, Regeltypen (bool, presence, countClamp, enum) und Versionsgeschichte.
+- [FAQ](https://handwerk-index.org/faq) — Antworten auf häufige Fragen zum Index, zur Datengrundlage, zum Scoring, zur Nutzung und zu den rechtlichen Grundlagen.
+- [Impressum](https://handwerk-index.org/impressum) — Angaben gemäß § 5 TMG.
+- [Datenschutz](https://handwerk-index.org/datenschutz) — Hinweise zur Datenverarbeitung und DSGVO-Compliance.
+
+## Kernmerkmale
+
+- **K-Anonymität**: Im Dashboard werden ausschließlich k-anonyme Aggregate veröffentlicht (mindestens k ≥ 5 Fälle pro Slice). Einzelne Betriebe, Domains, URLs oder individuelle Scores werden nie veröffentlicht.
+- **Quartalsweise Aktualisierung**: Einmal pro Quartal erscheint ein veröffentlichter, kanonischer Index mit eindeutiger Run-Id und versionsgebundenem Codebook.
+- **Datenquelle**: Öffentlich zugängliche Websites deutscher Handwerksbetriebe; keine Login-Seiten, internen Systeme oder bezahlten APIs.
+- **Pipeline**: Harvest → Asset-State Ingest → Signal Extraction → Scoring → Cohort Aggregation → Dashboard Export.
+- **Aktuelle Stichprobe (2026-Q2)**: 38.121 Websites.
+
+## Lizenz & Nutzung
+
+Die veröffentlichten Index-Daten und Vergleiche sind öffentlich zugänglich. Die Rohdaten (einzelne Sites, Signale) werden nicht veröffentlicht und unterliegen strengen Privacy-Regeln.

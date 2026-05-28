@@ -1,0 +1,173 @@
+# HDRI Dashboard — Handwerk Digital Reife Index (Full)
+
+> Öffentliches Dashboard für veröffentlichte HDRI-Quartalsindizes, Verlauf und sichere Vergleiche der digitalen Reife deutscher Handwerksbetriehe.
+> Domain: https://handwerk-index.org
+
+---
+
+## 1. Über den HDRI
+
+Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht. Er dient als methodische Orientierung für Regionen, Branchen und Entwickler digitaler Infrastruktur.
+
+**Was der HDRI misst:**
+- Automatisch erfassbare, öffentlich sichtbare Signale der digitalen Präsenz: Barrierefreiheit, rechtliche Pflichtangaben, Kontaktmöglichkeiten, soziale Netzwerke, Vertrauensnachweise, strukturierte Daten.
+
+**Was der HDRI nicht misst:**
+- Qualität von Inhalten oder Usability
+- Geschäftserfolg oder Umsatz
+- Kundenzufriedenheit oder Bewertungen
+- Vollständigkeit des gesamten digitalen Auftritts
+- Echtzeit-Daten (nur quartalsweise Snapshots)
+
+Der HDRI ist **kein Ranking einzelner Betriebe** und **kein SEO-Score**.
+
+**Aktuelle Stichprobe (2026-Q2):** 38.121 Websites.
+
+---
+
+## 2. Dashboard-Übersicht (/)
+
+Die Startseite zeigt:
+- Aktuellen HDRI-Gesamtscore mit Quartalsvergleich
+- Reifegradverteilung (z. B. Beginner, Intermediate, Advanced)
+- Top-Bundesländer und Top-Gewerke
+- Bundesland × Gewerk-Matrix (sichere Vergleiche)
+- Dimensionen-Ranking mit Gewichtungen
+- Zeitverlauf über mehrere Quartale
+- Archiv aller veröffentlichten Quartalsindizes
+
+Alle Daten sind k-anonymisiert und aggregiert.
+
+---
+
+## 3. Methodik (/methodik)
+
+### 3.1 Pipeline
+
+Harvest → Asset-State Ingest → Signal Extraction → Scoring → Cohort Aggregation → Dashboard Export.
+
+Jeder Lauf produziert eine versionsgebundene Codebook-Version und einen eindeutigen Run-Id. Debug-Daten werden getrennt von öffentlichen Assets gehalten.
+
+### 3.2 Datenquellen
+
+- Öffentlich zugängliche Websites deutscher Handwerksbetriebe.
+- Keine Login-Seiten, keine internen Systeme, keine bezahlten APIs.
+- Signale werden durch automatisierte Extraktoren aus HTML, strukturierten Daten (Schema.org) und Metadaten gelesen.
+
+### 3.3 Stichprobenrahmen
+
+- Die Stichprobe umfasst alle öffentlich erreichbaren Handwerkswebsites des Quartals.
+- Nicht jede erfasste Domain ist im Dashboard sichtbar — nur k-anonyme Aggregate werden veröffentlicht.
+- Neue Domains werden beim ersten Crawl erfasst, inaktive fallen nach mehreren Fehlversuchen heraus.
+
+### 3.4 Scoring-Modell
+
+**1. Indikator-Score**
+- Jeder Indikator mappt einen rohen Signalwert auf einen Score zwischen 0 und 100.
+- Regeltypen: `bool`, `presence`, `countClamp`, `countClampInverse`, `enum`.
+- Fehlende Werte werden nach der Missing-Policy behandelt (`zero`, `skip`, `impute`, `conditional`).
+
+**2. Dimensions-Score**
+- Score = gewichtetes arithmetisches Mittel aller Indikatoren der Dimension.
+- Wenn Indikatoren fehlen (`skip`), wird das effektive Gewicht reduziert.
+- Confidence = Mittelwert der Confidence aller beitragenden Indikatoren.
+
+**3. Gesamt-Score**
+- Gesamt-Score = gewichtetes arithmetisches Mittel aller Dimensions-Scores.
+- Confidence = gewichtetes arithmetisches Mittel aller Dimensions-Confidences.
+
+### 3.5 Privacy & K-Anonymität
+
+- Im Dashboard werden ausschließlich k-anonyme Aggregate veröffentlicht (mindestens k ≥ 5 Fälle pro Slice).
+- Einzelne Betriebe, Domains, URLs oder individuelle Scores werden nie veröffentlicht.
+- Zu kleine Gruppen werden unterdrückt.
+- Alle Rohdaten werden anonymisiert, bevor sie in den Index einfließen.
+- Der veröffentlichte Index enthält ausschließlich aggregierte, nicht personenbezogene Kennzahlen.
+
+---
+
+## 4. Codebook (/codebook)
+
+Das Codebook dokumentiert die vollständige Scoring-Spezifikation.
+
+**Aktuelle Version:** v1.3.0 (Codebook ID: `observatory-1.3.0`)
+
+Das Codebook enthält:
+- Alle Dimensionen mit Gewichtungen
+- Alle Indikatoren pro Dimension mit Gewichtungen
+- Scoring-Regeln pro Indikator
+- Missing-Policy pro Indikator
+- Quell-Extractor pro Indikator
+- Remediation-Empfehlungen (Severity, Kategorie, menschenlesbare Beschreibung)
+- Versionsgeschichte (CHANGELOG)
+
+**Verfügbare Regeltypen:**
+- `bool` — binäre Zuordnung (true/false → Score)
+- `presence` — Präsenz/Absenz → Score
+- `countClamp` — Anzahl auf Min/Max clampen → Score
+- `countClampInverse` — inverse Clamp-Logik
+- `enum` — diskrete Zustände mit jeweiligem Score
+
+Das YAML-Codebook ist direkt von der Codebook-Seite herunterladbar.
+
+---
+
+## 5. FAQ (/faq)
+
+### Über den HDRI
+
+**Was ist der HDRI?**
+Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht.
+
+**Wie oft wird der Index aktualisiert?**
+Der Index erscheint einmal pro Quartal. Pro Quartal gibt es genau einen veröffentlichten, kanonischen Index. Vergleiche zwischen Quartalen werden nur dann angezeigt, wenn sie statistisch zuverlässig sind.
+
+**Wer steht hinter dem HDRI?**
+Der HDRI ist ein privates, unabhängiges Projekt einer Privatperson mit Wohnsitz in Deutschland. Es besteht keine Verbindung zu Handwerkskammern, Verbänden, Behörden oder kommerziellen Anbietern.
+
+### Datengrundlage
+
+**Welche Daten liegen dem Index zugrunde?**
+Grundlage sind öffentlich zugängliche Websites deutscher Handwerksbetriebe. Die Signale werden durch automatisierte Extraktoren aus HTML, strukturierten Daten (Schema.org) und Metadaten gelesen.
+
+**Wie groß ist die Stichprobe?**
+Aktuell (2026-Q2) umfasst die Stichprobe 38.121 Websites.
+
+**Warum sind nicht alle erfassten Domains im Dashboard sichtbar?**
+Im Dashboard werden ausschließlich k-anonyme Aggregate veröffentlicht (mindestens k ≥ 5 Fälle pro Slice). Einzelne Betriebe, Domains, URLs oder individuelle Scores werden nie veröffentlicht. Zu kleine Gruppen werden unterdrückt.
+
+**Werden personenbezogene Daten verarbeitet oder veröffentlicht?**
+Nein. Alle Rohdaten werden anonymisiert, bevor sie in den Index einfließen. Der veröffentlichte Index enthält ausschließlich aggregierte, nicht personenbezogene Kennzahlen.
+
+**Was passiert mit inaktiven Websites?**
+Domains, die bei mehreren aufeinanderfolgenden Crawl-Versuchen nicht erreichbar sind, werden aus der aktiven Stichprobe entfernt.
+
+---
+
+## 6. Rechtliches
+
+- **Impressum** (/impressum): Angaben gemäß § 5 TMG.
+- **Datenschutz** (/datenschutz): Hinweise zur Datenverarbeitung und DSGVO-Compliance. Es werden keine personenbezogenen Daten veröffentlicht.
+
+---
+
+## 7. Sitemap
+
+Alle öffentlichen Seiten:
+- https://handwerk-index.org/
+- https://handwerk-index.org/methodik
+- https://handwerk-index.org/codebook
+- https://handwerk-index.org/faq
+- https://handwerk-index.org/impressum
+- https://handwerk-index.org/datenschutz
+
+---
+
+## 8. Technischer Kontext
+
+- **Framework:** Astro (statischer Build)
+- **Deploy:** Cloudflare Pages
+- **Datenquelle:** apps/digital-observatory (observatory.db)
+- **Update-Zyklus:** Quartalsweise, nach Abschluss der Observatory-Pipeline
+- **K-Anonymitäts-Minimum:** k ≥ 5
+- **Suppression-Policy:** Zu kleine Slices werden unterdrückt

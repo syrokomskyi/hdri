@@ -364,6 +364,13 @@ a {
   font-weight: 700;
 }
 
+.table-card th.numeric,
+.table-card td.numeric,
+.faq-card th.numeric,
+.faq-card td.numeric {
+  text-align: right;
+}
+
 .matrix-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -594,6 +601,100 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+}
+
+/* Site footer */
+.site-footer {
+  margin-top: 3rem;
+  padding: 3rem 0 1.5rem;
+  background:
+    linear-gradient(180deg, rgba(26, 31, 46, 0.92) 0%, rgba(40, 45, 60, 0.96) 100%);
+  color: rgba(255, 255, 255, 0.7);
+  position: relative;
+  z-index: 1;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.footer-title {
+  display: block;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+
+.footer-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.footer-heading {
+  margin: 0 0 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.footer-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-links li + li {
+  margin-top: 0.5rem;
+}
+
+.footer-links a,
+.footer-contact a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.92rem;
+  transition: color 0.15s ease;
+}
+
+.footer-links a:hover,
+.footer-contact a:hover {
+  color: #fff;
+}
+
+.footer-contact {
+  margin: 0;
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 960px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 640px) {
