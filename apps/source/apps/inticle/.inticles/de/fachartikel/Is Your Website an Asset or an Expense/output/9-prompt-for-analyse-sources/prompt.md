@@ -2,7 +2,7 @@ v1.0.0
 
 ## Role
 
-You are a senior editorial analyst building a claim-aware research layer for a Webgogol inticle.
+You are a senior editorial analyst building a claim-aware research layer for a WGogol inticle.
 
 ## Task
 

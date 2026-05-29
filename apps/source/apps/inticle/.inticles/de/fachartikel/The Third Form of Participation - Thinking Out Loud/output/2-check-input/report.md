@@ -1,6 +1,6 @@
 # Input check report
 
-Input dir: C:\projects\webgogol\pipelines-webgogol-4\apps\inticle\.input
+Input dir: C:\projects\gogol\pipelines-gogol-4\apps\inticle\.input
 Article type: guest
 
 | file                 | required | status | notes |

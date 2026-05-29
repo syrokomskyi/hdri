@@ -1,6 +1,6 @@
 # Inticle types check report
 
-Prompts dir: C:\projects\webgogol\pipelines-webgogol-4\apps\inticle\run\prompts
+Prompts dir: C:\projects\gogol\pipelines-gogol-4\apps\inticle\run\prompts
 
 ## Configured types
 - by_git_history
