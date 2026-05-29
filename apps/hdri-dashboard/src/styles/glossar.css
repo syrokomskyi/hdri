@@ -1,4 +1,4 @@
-/* Toolbar lebt jetzt im SiteHeader-Slot → kein eigenes sticky/background nötig */
+/* Toolbar now lives in the SiteHeader slot → no separate sticky/background needed */
 .glossar-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -63,7 +63,7 @@
   font-size: 1.1rem;
   color: var(--layer-schema);
   letter-spacing: 0.04em;
-  /* Хедер = nav-строка + toolbar-строка ≈ 6.5rem */
+  /* Header = nav row + toolbar row ≈ 6.5rem */
   scroll-margin-top: 6.5rem;
 }
 

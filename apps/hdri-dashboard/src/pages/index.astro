@@ -668,13 +668,13 @@ const schema = {
       const text = host.dataset.tooltip;
       if (!text) return;
 
-      // Tastatur-/Touch-Zugänglichkeit: als Button behandeln.
+      // Keyboard/touch accessibility: treat as a button.
       host.setAttribute('tabindex', '0');
       host.setAttribute('role', 'button');
       host.setAttribute('aria-label', 'Statistische Details anzeigen');
 
       let popup = null;
-      let pinned = false; // per Klick/Tap fixiert
+      let pinned = false; // pinned by click/tap
 
       function show() {
         if (popup) return;
@@ -688,7 +688,7 @@ const schema = {
 
         let left = rect.left + rect.width / 2 - tipRect.width / 2;
         let top = rect.top - tipRect.height - 8;
-        if (top < 8) top = rect.bottom + 8; // unterhalb, wenn oben kein Platz
+        if (top < 8) top = rect.bottom + 8; // below, if no room above
 
         left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
         top = Math.max(8, top);
@@ -709,7 +709,7 @@ const schema = {
       host.addEventListener('mouseenter', () => { if (!pinned) show(); });
       host.addEventListener('mouseleave', () => { if (!pinned) hide(); });
 
-      // Klick/Tap fixiert oder löst (funktioniert auf Touch ohne Hover).
+      // Click/tap pins or releases (works on touch without hover).
       host.addEventListener('click', (e) => {
         e.stopPropagation();
         pinned = !pinned;
@@ -727,7 +727,7 @@ const schema = {
         }
       });
 
-      // Klick außerhalb schließt fixiertes Popup.
+      // Click outside closes the pinned popup.
       document.addEventListener('click', () => {
         if (pinned) { pinned = false; hide(); }
       });

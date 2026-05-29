@@ -13,7 +13,7 @@
   transform: translateY(-100%);
 }
 
-/* Zweite Header-Zeile — z. B. Glossar-Toolbar */
+/* Second header row — e.g. glossary toolbar */
 .site-header-extra {
   border-top: 1px solid var(--border);
   padding: 0.55rem 0;
@@ -72,7 +72,7 @@
 /* ── Hamburger button ───────────────────────────────────────────── */
 
 .site-nav-toggle {
-  display: none; /* nur auf Mobile */
+  display: none; /* mobile only */
   flex-direction: column;
   justify-content: center;
   align-items: center;

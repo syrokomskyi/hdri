@@ -8,20 +8,20 @@
 }
 
 /* ⓘ button — solid, bold, modern.
- * font-size задаёт размер «i»; ширина/высота кнопки в тех же em → соотношение фиксировано.
- * Чтобы буква не прилегала к краям: делаем круг в 1.7× размера «i». */
+ * font-size sets the size of «i»; button width/height in the same em → ratio is fixed.
+ * To keep the letter away from the edges: make the circle 1.7× the size of «i». */
 .term-info {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* Круг: 1.7× от размера «i» = комфортное поле вокруг буквы */
+  /* Circle: 1.7× the size of «i» = comfortable padding around the letter */
   width: 1.7em;
   height: 1.7em;
   margin-left: 0.25em;
   padding: 0;
   font-family: Georgia, 'Times New Roman', serif;
   font-style: italic;
-  font-size: 0.62em;   /* размер «i» относительно родителя */
+  font-size: 0.62em;   /* size of «i» relative to parent */
   font-weight: 800;
   line-height: 1;
   color: #fff;
@@ -52,9 +52,9 @@
 }
 
 /* Popover container (top-layer, CSS-anchored).
- * Нет display: block в базовом правиле — иначе он перебьёт UA [popover]{display:none}.
- * font-size: 1rem — сброс унаследованного размера (иначе заголовок внутри <h3>
- * получает 0.92 × ~1.3rem = слишком крупно). */
+ * No display: block in the base rule — it would override UA [popover]{display:none}.
+ * font-size: 1rem — resets inherited size (otherwise a title inside <h3>
+ * gets 0.92 × ~1.3rem = too large). */
 .term-popover {
   margin: 0;
   width: min(320px, calc(100vw - 2rem));
@@ -65,8 +65,7 @@
   backdrop-filter: blur(18px) saturate(140%);
   box-shadow: var(--shadow-lg);
   color: var(--text);
-  /* Нормализуем всё унаследованное оформление контекста */
-  font-size: 1rem;
+  /* Normalize inherited context styles (font-size is set in :popover-open) */
   text-transform: none;
   letter-spacing: normal;
   font-style: normal;
@@ -78,9 +77,15 @@
 }
 
 .term-popover:popover-open {
-  /* display: block здесь — единственное место, где он нужен.
-   * <span> по умолчанию inline; в top-layer нам нужен block. */
   display: block;
+  /* Absolute px: the only way to isolate from any
+   * inherited font-size (h2/h3 in DOM ancestors). */
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: normal;
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: normal;
   animation: term-pop-in 0.14s ease;
 }
 
@@ -91,17 +96,18 @@
 
 .term-popover-title {
   display: block;
-  margin: 0 0 0.4rem;
-  font-size: 0.92rem;
+  margin: 0 0 5px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.01em;
   text-transform: none;
+  color: var(--text);
 }
 
 .term-popover-body {
   display: block;
   margin: 0;
-  font-size: 0.84rem;
+  font-size: 12px;
   line-height: 1.55;
   color: var(--muted);
   text-transform: none;
@@ -148,7 +154,7 @@
   color: var(--layer-schema);
 }
 
-/* Fallback: Browser ohne CSS-Anchor-Positionierung */
+/* Fallback: browsers without CSS anchor positioning */
 @supports not (anchor-name: --x) {
   .term-popover {
     position: fixed;

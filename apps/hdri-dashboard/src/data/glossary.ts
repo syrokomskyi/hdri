@@ -1,35 +1,35 @@
 /**
- * Zentrale Begriffssammlung (Glossar) — einzige Quelle der Wahrheit.
+ * Central term collection (glossary) — single source of truth.
  *
- * Wird an zwei Stellen gerendert:
- *  1. Inline über das <Term/>-Komponent (ⓘ-Popover bei Klick).
- *  2. Als eigenständige Seite /glossar (alphabetisch, ohne Duplikate).
+ * Rendered in two places:
+ *  1. Inline via the <Term/> component (ⓘ popover on click).
+ *  2. As a standalone page /glossar (alphabetical, no duplicates).
  *
- * Eindeutigkeit garantiert die `id`. Neue Begriffe einfach hier ergänzen —
- * sie erscheinen automatisch im Glossar und sind über <Term id="…"/> verlinkbar.
+ * Uniqueness is guaranteed by `id`. Add new terms here —
+ * they appear automatically in the glossary and are linkable via <Term id="…"/>.
  */
 
 export type GlossaryLink = {
   label: string;
   href: string;
-  /** true = externe, weiterführende Quelle (öffnet in neuem Tab). */
+  /** true = external source (opens in a new tab). */
   external?: boolean;
 };
 
 export type GlossaryEntry = {
-  /** Stabiler Anker-/Referenz-Schlüssel, kebab-case. Anker: /glossar#<id> */
+  /** Stable anchor/reference key, kebab-case. Anchor: /glossar#<id> */
   id: string;
-  /** Anzeigename des Begriffs. */
+  /** Display name of the term. */
   term: string;
-  /** Alternative Schreibweisen/Synonyme — für Suche und Dedupe. */
+  /** Alternative spellings/synonyms — for search and deduplication. */
   aliases?: string[];
-  /** Thematische Gruppe (nur Anzeige/Filter). */
+  /** Thematic group (display/filter only). */
   category: 'Statistik' | 'Datenschutz' | 'Index' | 'Recht & Technik';
-  /** Kurzdefinition für das Inline-Popover (1–3 Sätze, klartext). */
+  /** Short definition for the inline popover (1–3 sentences, plain text). */
   short: string;
-  /** Optionaler Zusatz für die Glossar-Seite. */
+  /** Optional extended text for the glossary page. */
   long?: string;
-  /** Kuratierte, funktionierende Quellen. Interne (/methodik#…) zuerst. */
+  /** Curated, working sources. Internal (/methodik#…) first. */
   links?: GlossaryLink[];
 };
 
@@ -245,17 +245,17 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
 ];
 
-/** Begriffe alphabetisch nach `term` (deutsche Sortierung). */
+/** Terms sorted alphabetically by `term` (German locale). */
 export function sortedGlossary(): GlossaryEntry[] {
   return [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term, 'de'));
 }
 
-/** Schneller Zugriff per id für das <Term/>-Komponent. */
+/** Fast lookup by id for the <Term/> component. */
 export const glossaryById: Record<string, GlossaryEntry> = Object.fromEntries(
   GLOSSARY.map((entry) => [entry.id, entry]),
 );
 
-/** Anfangsbuchstaben (für den A–Z-Index der Glossar-Seite). */
+/** Initial letters (for the A–Z index on the glossary page). */
 export function glossaryLetters(): string[] {
   return [...new Set(sortedGlossary().map((e) => e.term[0]!.toUpperCase()))];
 }

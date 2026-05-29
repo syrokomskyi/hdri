@@ -1,15 +1,15 @@
 ---
 import '../styles/term.css';
 /**
- * Inline-Begriff mit ⓘ-Erklärung (Popover bei Klick).
+ * Inline term with ⓘ tooltip (popover on click).
  *
- * Verwendung:
- *   <Term id="p75" />          → Begriffsnamen + ⓘ
- *   <Term id="p75">P75</Term>  → eigener Anzeigetext + ⓘ
- *   <Term id="p75" iconOnly /> → nur das ⓘ (z. B. hinter einem Label)
+ * Usage:
+ *   <Term id="p75" />          → term name + ⓘ
+ *   <Term id="p75">P75</Term>  → custom display text + ⓘ
+ *   <Term id="p75" iconOnly /> → ⓘ only (e.g. after a label)
  *
- * Nur Phrasing-Content (span/strong/a) — kein div/p/ul —
- * damit <Term> sicher in <p> und anderen Inline-Kontexten eingebettet werden kann.
+ * Phrasing content only (span/strong/a — no div/p/ul) so that
+ * <Term> can safely be embedded inside <p> and other inline contexts.
  */
 import { glossaryById } from '../data/glossary';
 
@@ -44,9 +44,9 @@ const popId = `pop-${uid}`;
     <span aria-hidden="true">i</span>
   </button>
 
-  <!-- Nur Phrasing-Content (kein div/p/ul) → kein implizites <p>-Schließen durch den HTML-Parser -->
+  <!-- Phrasing content only (no div/p/ul) → no implicit <p> closing by the HTML parser -->
   <span id={popId} popover="auto" class="term-popover" style={`position-anchor: --${uid}`} role="dialog" aria-label={entry.term}>
-    <strong class="term-popover-title">{entry.term}</strong>
+    <span class="term-popover-title">{entry.term}</span>
     <span class="term-popover-body">{entry.short}</span>
     {entry.links && entry.links.length > 0 && (
       <span class="term-popover-links">
