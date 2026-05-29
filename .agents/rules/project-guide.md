@@ -1,4 +1,4 @@
-# Monorepo addendum for `pipelines-webgogol-4`
+# Monorepo addendum for `pipelines-gogol-4`
 
 Use this file only for repository-wide details that go beyond the scoped `AGENTS.md` hierarchy.
 

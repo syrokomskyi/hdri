@@ -1,4 +1,4 @@
-# `pipelines-webgogol-4` Monorepo Guidelines
+# `pipelines-gogol-4` Monorepo Guidelines
 
 ## Monorepo scope
 

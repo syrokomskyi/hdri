@@ -21,9 +21,9 @@
 </CHANGE_SUMMARY>
 */
 /* <GRACE_BLOCK id="kernel.config"> */
-import { defineKernelConfig } from "@webgogol/site-kernel";
-import { runGraceInventory, runGraceValidation, STANDARD_GRACE_PIPELINE } from "@webgogol/site-kernel-checks";
-import { runGraceAnchorBackfill, runGraceBackfill } from "@webgogol/site-kernel-codegen";
+import { defineKernelConfig } from "@gogol/site-kernel";
+import { runGraceInventory, runGraceValidation, STANDARD_GRACE_PIPELINE } from "@gogol/site-kernel-checks";
+import { runGraceAnchorBackfill, runGraceBackfill } from "@gogol/site-kernel-codegen";
 
 export default defineKernelConfig({
   name: "register-businesses",

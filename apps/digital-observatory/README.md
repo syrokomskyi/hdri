@@ -1,63 +1,65 @@
 # @org/digital-observatory
 
-Asset-centric longitudinal observatory for digital presence analysis.
+> [English Version](README.en.md)
 
-## Architecture
+Asset-zentriertes longitudinales Observatorium für die Analyse der digitalen Präsenz.
 
-Four-layer data model:
+## Architektur
 
-1. **Evidence** — raw HTML, Lighthouse JSON, axe JSON (content-addressed)
-2. **Observations** — immutable atomic signals with ontology paths and bitemporality
-3. **Interpretations** — versioned HDRI scores, cohorts, narrative anchors
-4. **Narrative & Visualization** — marts, reports, anomaly alerts
+Vier-Schichten-Datenmodell:
 
-## Pipeline phases
+1. **Evidenz** — Roh-HTML, Lighthouse-JSON, axe-JSON (inhaltsadressiert)
+2. **Beobachtungen** — Unveränderliche atomare Signale mit Ontologiepfaden und Bitemporalität
+3. **Interpretationen** — Versionierte HDRI-Scores, Kohorten, narrative Anker
+4. **Narrativ & Visualisierung** — Marts, Berichte, Anomaliealarme
 
-| Phase | Purpose |
+## Pipeline-Phasen
+
+| Phase | Zweck |
 |---|---|
-| `harvest` | Load asset states, ingest source data |
-| `observe` | Map raw signals to ontology-backed observations |
-| `interpret` | Score with HDRI codebook, build cohorts |
-| `publish` | Build privacy-safe marts, export reports |
+| `harvest` | Asset-Zustände laden, Quelldaten erfassen |
+| `observe` | Rohsignale auf ontologiegestützte Beobachtungen abbilden |
+| `interpret` | Mit HDRI-Codebook bewerten, Kohorten aufbauen |
+| `publish` | Datenschutzsichere Marts erstellen, Berichte exportieren |
 
-## Usage
+## Verwendung
 
-### Prerequisites
+### Voraussetzungen
 
-The Digital Observatory pipeline depends on upstream data from the `hdri-factory` pipeline. Before running this pipeline, ensure:
+Die Digital-Observatory-Pipeline hängt von Upstream-Daten der `hdri-factory`-Pipeline ab. Bevor Sie diese Pipeline ausführen, stellen Sie sicher:
 
-1. **hdri-factory pipelines have completed successfully**:
-   - `0-harvest-source` — generates `core.db` with sites catalog
-   - `3-extract-profile` — generates `pages_YYYY.db` with ext_* signal tables
-   - `4-audit-lighthouse` — generates `lighthouse_YYYY.db` with Lighthouse metrics
-   - `5-audit-axe` — generates `axe_YYYY.db` with Axe metrics
+1. **hdri-factory-Pipelines wurden erfolgreich abgeschlossen**:
+   - `0-harvest-source` — erzeugt `core.db` mit Website-Katalog
+   - `3-extract-profile` — erzeugt `pages_YYYY.db` mit `ext_*`-Signaltabellen
+   - `4-audit-lighthouse` — erzeugt `lighthouse_YYYY.db` mit Lighthouse-Metriken
+   - `5-audit-axe` — erzeugt `axe_YYYY.db` mit Axe-Metriken
 
-2. **Shared packages are built**:
+2. **Gemeinsame Pakete wurden gebaut**:
    ```bash
    pnpm turbo run build --filter=@org/pipeline-core --filter=@org/pipeline-node --filter=@org/pipeline-steps --filter=@org/observatory-core --filter=@org/hdri-codebook
    ```
 
-**Note:** The Digital Observatory performs its own HDRI scoring in the `interpret` phase using the codebook from `.input/codebook.yaml`. It does not use pre-computed scores from `hdri-factory/a-score-hdri`.
+**Hinweis:** Das Digital Observatory führt seine eigene HDRI-Bewertung in der `interpret`-Phase durch, unter Verwendung des Codebooks aus `.input/codebook.yaml`. Es verwendet keine vorberechneten Scores aus `hdri-factory/a-score-hdri`.
 
-### Quick Start
+### Schnellstart
 
-1. **Prepare input files** in `apps/digital-observatory/.input/`:
-   - `brief.md` — pipeline configuration (see Configuration section below)
-   - `codebook.yaml` — HDRI scoring codebook (copy from spec or create custom)
+1. **Eingabedateien vorbereiten** in `apps/digital-observatory/.input/`:
+   - `brief.md` — Pipeline-Konfiguration (siehe Konfigurationsabschnitt unten)
+   - `codebook.yaml` — HDRI-Bewertungscodebook (aus Spec kopieren oder eigenes erstellen)
 
-2. **Run the pipeline**:
+2. **Die Pipeline ausführen**:
    ```bash
-   # From monorepo root
+   # Vom Monorepo-Root
    pnpm --filter @org/digital-observatory start
    ```
 
-3. **Check output** in `apps/digital-observatory/.output/`:
-   - `observatory.db` — SQLite database with asset states, observations, scores
-   - Artifacts per gogol in `.output/step-*/`
+3. **Ausgabe prüfen** in `apps/digital-observatory/.output/`:
+   - `observatory.db` — SQLite-Datenbank mit Asset-Zuständen, Beobachtungen, Scores
+   - Artefakte pro Gogol in `.output/step-*/`
 
-### Configuration
+### Konfiguration
 
-Create `.input/brief.md`:
+Erstellen Sie `.input/brief.md`:
 
 ```yaml
 ---
@@ -71,81 +73,85 @@ skipGogols: []
 ---
 ```
 
-**Configuration fields:**
-- `outputLanguage` — Language for generated reports (e.g., `de`, `en`)
-- `period` — Analysis period identifier (e.g., `2025-Q2`)
-- `ontologyVersion` — Version of signal ontology to use (must match `signal-ontology-v{X}.json` in observatory-core)
-- `codebookVersion` — Version of HDRI codebook (must match `codebook-{version}.yaml` in .input/)
-- `sourceDbDir` — Path to hdri-factory output directory containing `core.db` (relative to .input/)
-- `publicMode` — If true, applies stricter privacy controls for public publication
-- `skipGogols` — Array of gogol IDs to skip during execution (e.g., `["export-mart"]`)
+**Konfigurationsfelder:**
+- `outputLanguage` — Sprache für generierte Berichte (z. B. `de`, `en`)
+- `period` — Kennung der Analyseperiode (z. B. `2025-Q2`)
+- `ontologyVersion` — Zu verwendende Version der Signalontologie (muss mit `signal-ontology-v{X}.json` in observatory-core übereinstimmen)
+- `codebookVersion` — Version des HDRI-Codebooks (muss mit `codebook-{version}.yaml` in .input/ übereinstimmen)
+- `sourceDbDir` — Pfad zum hdri-factory-Ausgabeverzeichnis mit `core.db` (relativ zu .input/)
+- `publicMode` — Bei `true` werden strengere Datenschutzkontrollen für die öffentliche Veröffentlichung angewendet
+- `skipGogols` — Array von Gogol-IDs, die während der Ausführung übersprungen werden sollen (z. B. `["export-mart"]`)
 
-### Data Coverage and Liveness Filtering
+### Datenabdeckung und Erreichbarkeitsfilterung
 
-The Digital Observatory only receives observations for sites that were **live** (HTTP-responsive) at crawl time. The filtering happens upstream:
+Das Digital Observatory erhält nur Beobachtungen für Websites, die zum Zeitpunkt des Crawlens **live** (HTTP-reaktiv) waren. Die Filterung erfolgt Upstream:
 
-1. **`0-harvest-source`** ingests all sites from source catalogs
-2. **`1-register-businesses`** deduplicates domains
-3. **`2-check-liveness`** checks HTTP availability; marks `is_live=false` for dead sites
-4. **`3-extract-profile`** only crawls `is_live=true` sites; dead sites never enter `pages_*.db`
-5. **`a-contract-ontology`** reads only from `pages_*.db` — dead sites are invisible
+1. **`0-harvest-source`** erfasst alle Websites aus Quellkatalogen
+2. **`1-register-businesses`** dedupliziert Domänen
+3. **`2-check-liveness`** prüft HTTP-Erreichbarkeit; markiert `is_live=false` für tote Websites
+4. **`3-extract-profile`** crawlt nur `is_live=true`-Websites; tote Websites gelangen nie in `pages_*.db`
+5. **`a-contract-ontology`** liest nur aus `pages_*.db` — tote Websites sind unsichtbar
 
-**Consequence**: The observatory has no explicit knowledge of dead or unreachable sites. A site present in the original harvest but failing liveness checks will simply be absent from all observations. There is currently no `availability.is_live` signal in the ontology.
+**Konsequenz:** Das Observatorium hat kein explizites Wissen über tote oder unerreichbare Websites. Eine Website, die in der ursprünglichen Ernte vorhanden war, aber die Erreichbarkeitsprüfungen nicht bestanden hat, fehlt einfach in allen Beobachtungen. Derzeit gibt es kein `availability.is_live`-Signal in der Ontologie.
 
-### Input Data Sources
+### Eingabedatenquellen
 
-The pipeline reads from three upstream databases (read-only, no modification):
+Die Pipeline liest aus drei Upstream-Datenbanken (nur lesend, keine Modifikation):
 
-1. **core.db** (from `sourceDbDir`):
-   - `sites` table — site catalog with gewerk_group, bundesland
-   - Used to generate asset states and track site metadata
+1. **core.db** (aus `sourceDbDir`):
+   - Tabelle `sites` — Website-Katalog mit gewerk_group, bundesland
+   - Wird verwendet, um Asset-Zustände zu generieren und Website-Metadaten zu verfolgen
 
-2. **pages_YYYY.db** (from `sourceDbDir/../3-extract-profile/.output/`):
-   - `page_observations` table — crawl log with content_sha256
-   - `ext_*` tables (42 tables) — signal extractions (phone, email, schema.org, etc.)
-   - Used to map raw signals to ontology-backed observations
+2. **pages_YYYY.db** (aus `sourceDbDir/../3-extract-profile/.output/`):
+   - Tabelle `page_observations` — Crawl-Log mit content_sha256
+   - `ext_*`-Tabellen (42 Tabellen) — Signalextraktionen (Telefon, E-Mail, schema.org usw.)
+   - Wird verwendet, um Rohsignale auf ontologiegestützte Beobachtungen abzubilden
 
-3. **audits_YYYY.db** (from `sourceDbDir/../4-audit-lighthouse/.output/` or `sourceDbDir/../5-audit-axe/.output/`):
-   - `lighthouse_runs` table — Lighthouse performance metrics
-   - `axe_runs` table — axe accessibility violation counts
-   - Used to score technical performance and accessibility
+3. **audits_YYYY.db** (aus `sourceDbDir/../4-audit-lighthouse/.output/` oder `sourceDbDir/../5-audit-axe/.output/`):
+   - Tabelle `lighthouse_runs` — Lighthouse-Leistungsmetriken
+   - Tabelle `axe_runs` — axe-Barrierefreiheitsverletzungszählungen
+   - Wird verwendet, um technische Leistung und Barrierefreiheit zu bewerten
 
-### Output
+### Ausgabe
 
-**Database:** `apps/digital-observatory/.output/observatory.db`
-- `pipeline_runs` — execution log with timestamps and metadata
-- `asset_states` — SCD-2 tracking of site asset states over time
-- `observations` — ontology-backed observations with bitemporality
+**Datenbank:** `apps/digital-observatory/.output/observatory.db`
+- `pipeline_runs` — Ausführungslog mit Zeitstempeln und Metadaten
+- `asset_states` — SCD-2-Verfolgung von Website-Asset-Zuständen über Zeit
+- `observations` — Ontologiegestützte Beobachtungen mit Bitemporalität
 
-**Artifacts:** `apps/digital-observatory/.output/step-{gogol-id}/`
-- Per-gogol JSON reports, cohort definitions, mart exports
+**Artefakte:** `apps/digital-observatory/.output/step-{gogol-id}/`
+- Pro-Gogol-JSON-Berichte, Kohortendefinitionen, Mart-Exporte
 
-### Regenerating the HDRI Dashboard after codebook changes
+### HDRI-Dashboard nach Codebook-Änderungen neu generieren
 
-The `hdri-dashboard` Astro app consumes aggregated JSON data exported from the observatory database. Changing `codebook.yaml` does **not** automatically update the dashboard — you must re-run the scoring phase and the export step.
+Die `hdri-dashboard`-Astro-App verbraucht aggregierte JSON-Daten, die aus der Observatoriumsdatenbank exportiert wurden. Die Änderung von `codebook.yaml` aktualisiert das Dashboard nicht automatisch — Sie müssen die Bewertungsphase und den Export-Schritt erneut ausführen.
 
-**Step-by-step:**
+**Schritt für Schritt:**
 
-1. **Re-run the Digital Observatory pipeline** so that `ScoreHdriGogol` re-reads `.input/codebook.yaml` and writes updated scores to `observatory.db`:
+1. **Führen Sie die Digital-Observatory-Pipeline erneut aus**, damit `ScoreHdriGogol` `.input/codebook.yaml` erneut liest und aktualisierte Scores in `observatory.db` schreibt:
    ```bash
    pnpm --filter @org/digital-observatory start
    ```
 
-2. **Export the dashboard archive** from the updated database:
+2. **Exportieren Sie das Dashboard-Archiv** aus der aktualisierten Datenbank:
    ```bash
    pnpm --filter @org/digital-observatory run export:dashboard
    ```
-   This writes public JSON payloads into `apps/hdri-dashboard/src/assets/data/`.
+   Dies schreibt öffentliche JSON-Payloads in `apps/hdri-dashboard/src/assets/data/`.
 
-3. **Build the Astro dashboard**:
+3. **Bauen Sie das Astro-Dashboard**:
    ```bash
    pnpm --filter @org/hdri-dashboard run build
    ```
 
-**Why this is required:** the dashboard only reads *published* (`status = 'published'`) runs from `observatory.db`. The codebook is loaded at scoring time (`interpret` phase), so any weight or rule change must flow through: `codebook.yaml` → `ScoreHdriGogol` → `observatory.db` → `export-hdri-dashboard-archive.ts` → `hdri-dashboard/dist/`.
+**Warum das erforderlich ist:** Das Dashboard liest nur *veröffentlichte* (`status = 'published'`) Läufe aus `observatory.db`. Das Codebook wird zum Bewertungszeitpunkt (`interpret`-Phase) geladen, daher muss jede Gewichts- oder Regeländerung durchlaufen: `codebook.yaml` → `ScoreHdriGogol` → `observatory.db` → `export-hdri-dashboard-archive.ts` → `hdri-dashboard/dist/`.
 
-## Dependencies
+## Veröffentlichung
 
-- `@org/observatory-core` — types, ontology, validation, hashing
-- `@org/hdri-codebook` — HDRI (Handwerk Digital Readiness Index) scoring engine
-- `@org/pipeline-core`, `@org/pipeline-node`, `@org/pipeline-steps` — shared pipeline engine
+Aggregierte, anonymisierte Quartalsdaten werden auf **[handwerk-index.de](https://handwerk-index.de)** veröffentlicht. Die vollständige Methodik des Index findet sich in [`METHODOLOGY.md`](../../METHODOLOGY.md).
+
+## Abhängigkeiten
+
+- `@org/observatory-core` — Typen, Ontologie, Validierung, Hashing
+- `@org/hdri-codebook` — HDRI (Handwerk Digital Readiness Index) Bewertungsengine
+- `@org/pipeline-core`, `@org/pipeline-node`, `@org/pipeline-steps` — Gemeinsame Pipeline-Engine

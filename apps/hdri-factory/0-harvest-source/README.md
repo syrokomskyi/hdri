@@ -13,6 +13,18 @@ When the same website appears in multiple catalog sources, the pipeline:
 
 **Result**: You get one clean domain record per website, with all available business data from all sources preserved and a unified industry classification.
 
+## Data sources
+
+Catalog files placed in `.input/batches/` are typically sourced from public registers and industry directories, for example:
+
+- **Handwerkskammer member directories** — public listings of chamber-member businesses
+- **IHK company registers** — publicly searchable business entries
+- **Trade-fair exhibitor lists** — publicly published participant catalogs
+- **Industry association websites** — member or service-provider listings
+- **Manual research** — direct collection from Google Maps, local business listings, or chamber websites
+
+The pipeline does not connect to these systems live; it ingests static files (CSV/HTML/MHTML) that you prepare offline.
+
 ## Getting Started
 
 1. Prepare `.input/brief.md` with `sourceToken` (format: `YYYY-Qn-CC[-extra]`).

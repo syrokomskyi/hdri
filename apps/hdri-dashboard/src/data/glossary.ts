@@ -212,6 +212,30 @@ export const GLOSSARY: GlossaryEntry[] = [
     links: [{ label: 'Codebook: Gewichtungen', href: '/codebook' }],
   },
   {
+    id: 'handwerksordnung',
+    term: 'Handwerksordnung (HWO)',
+    aliases: ['Handwerksordnung', 'HWO', 'Anlage A', 'Anlage B'],
+    category: 'Recht & Technik',
+    short:
+      'Deutsches Bundesgesetz, das die berufsständische Organisation des Handwerks regelt. Anlage A listet zulassungspflichtige Handwerke, Anlage B zulassungsfreie Handwerke. Die HDRI-Klassifizierung folgt dieser amtlichen Liste.',
+    links: [
+      { label: 'Anlage A (gesetze-im-internet.de)', href: 'https://www.gesetze-im-internet.de/hwo/anlage_a.html', external: true },
+      { label: 'Anlage B (gesetze-im-internet.de)', href: 'https://www.gesetze-im-internet.de/hwo/anlage_b.html', external: true },
+    ],
+  },
+  {
+    id: 'gewerk',
+    term: 'Gewerk',
+    aliases: ['Gewerk', 'Handwerk', 'Gewerkegruppe', 'Destatis-Gruppe'],
+    category: 'Index',
+    short:
+      'Ein Handwerk nach der amtlichen Klassifizierung der Handwerksordnung (HWO). Im Dashboard werden Gewerke in sieben Gruppen (I–VII) aggregiert, die dem Destatis-Schema entsprechen.',
+    links: [
+      { label: 'Methodik: Klassifizierung', href: '/methodik' },
+      { label: 'Destatis — Handwerksstatistiken', href: 'https://www.destatis.de', external: true },
+    ],
+  },
+  {
     id: 'schema-org',
     term: 'Schema.org / strukturierte Daten',
     aliases: ['Schema.org', 'strukturierte Daten', 'Strukturierte Informationen', 'JSON-LD'],

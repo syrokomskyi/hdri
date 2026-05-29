@@ -21,10 +21,10 @@
 </CHANGE_SUMMARY>
 */
 /* <GRACE_BLOCK id="kernel.config"> */
-import { defineKernelConfig } from "@webgogol/site-kernel";
-import { STANDARD_GRACE_PIPELINE } from "@webgogol/site-kernel-checks";
-import { runGraceBackfill, runGraceAnchorBackfill } from "@webgogol/site-kernel-codegen";
-import { runGraceInventory, runGraceValidation } from "@webgogol/site-kernel-checks";
+import { defineKernelConfig } from "@gogol/site-kernel";
+import { STANDARD_GRACE_PIPELINE } from "@gogol/site-kernel-checks";
+import { runGraceBackfill, runGraceAnchorBackfill } from "@gogol/site-kernel-codegen";
+import { runGraceInventory, runGraceValidation } from "@gogol/site-kernel-checks";
 
 export default defineKernelConfig({
   name: "digital-observatory",
