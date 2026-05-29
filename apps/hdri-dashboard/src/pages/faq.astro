@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
+import '../styles/faq.css';
+import Term from '../components/Term.astro';
 
 const pageTitle = 'Häufig gestellte Fragen — HDRI Dashboard';
 const pageDescription = 'FAQ zum HDRI: Fragen und Antworten zum Handwerk Digital Reife Index.';
@@ -104,7 +106,7 @@ const schema = {
           </article>
 
           <article class="faq-card layer-accent">
-            <h3>Wie groß ist die Stichprobe?</h3>
+            <h3>Wie groß ist die <Term id="stichprobe">Stichprobe</Term>?</h3>
             <p>Aktuell (2026-Q2) umfasst die Stichprobe <strong>38.121 Websites</strong>. Die Stichprobe enthält alle öffentlich erreichbaren Handwerkswebsites, die im jeweiligen Quartal erfolgreich gecrawlt werden konnten.</p>
           </article>
 
@@ -144,10 +146,10 @@ const schema = {
                   <tr><th>Dimension</th><th class="numeric">Gewicht</th><th>Was sie misst</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>Recht & Pflichtangaben</td><td class="numeric">28 %</td><td>Impressum, Datenschutz, AGB, BFSG, Widerruf, Versand</td></tr>
+                  <tr><td>Recht & Pflichtangaben</td><td class="numeric">28 %</td><td><Term id="impressum">Impressum</Term>, Datenschutz, AGB, BFSG, Widerruf, Versand</td></tr>
                   <tr><td>Kontakt & Erreichbarkeit</td><td class="numeric">22 %</td><td>Telefon, E-Mail, Adresse, Öffnungszeiten, Kontaktformular</td></tr>
-                  <tr><td>Barrierefreiheit</td><td class="numeric">16 %</td><td>WCAG-Konformität via Axe-Core (kritische bis geringe Fehler)</td></tr>
-                  <tr><td>Strukturierte Informationen</td><td class="numeric">18 %</td><td>Schema.org-Markup, LocalBusiness, FAQ, Service, Breadcrumbs</td></tr>
+                  <tr><td><Term id="barrierefreiheit">Barrierefreiheit</Term></td><td class="numeric">16 %</td><td>WCAG-Konformität via Axe-Core (kritische bis geringe Fehler)</td></tr>
+                  <tr><td>Strukturierte Informationen</td><td class="numeric">18 %</td><td><Term id="schema-org">Schema.org</Term>-Markup, LocalBusiness, FAQ, Service, Breadcrumbs</td></tr>
                   <tr><td>Vertrauen & Nachweise</td><td class="numeric">12 %</td><td>Zertifizierungen, Meistertitel, Auszeichnungen, Mitgliedschaften</td></tr>
                   <tr><td>Soziale Präsenz</td><td class="numeric">4 %</td><td>Verlinkung auf Facebook, Instagram, YouTube, LinkedIn u. a.</td></tr>
                 </tbody>
@@ -156,17 +158,17 @@ const schema = {
           </article>
 
           <article class="faq-card layer-accent">
-            <h3>Warum wird P75 als primäre Kennzahl verwendet und nicht der Median?</h3>
-            <p>Der Median (P50) beschreibt das „typische" Niveau der Stichprobe. P75 beschreibt das Niveau, das die besten 25 % der Websites erreichen — es ist ein ambitionierterer, aber realistischer Benchmark für Betriebe, die ihre digitale Präsenz verbessern wollen. Zudem ist P75 robuster gegenüber Ausreißern als der Mittelwert.</p>
+            <h3>Warum wird <Term id="p75">P75</Term> als primäre Kennzahl verwendet und nicht der Median?</h3>
+            <p>Der <Term id="median">Median (P50)</Term> beschreibt das „typische" Niveau der Stichprobe. P75 beschreibt das Niveau, das die besten 25 % der Websites erreichen — es ist ein ambitionierterer, aber realistischer Benchmark für Betriebe, die ihre digitale Präsenz verbessern wollen. Zudem ist P75 robuster gegenüber Ausreißern als der Mittelwert.</p>
           </article>
 
           <article class="faq-card layer-accent">
-            <h3>Was bedeutet der IQR (Interquartilsabstand)?</h3>
+            <h3>Was bedeutet der <Term id="iqr">IQR (Interquartilsabstand)</Term>?</h3>
             <p>Der IQR (P75 − P25) umfasst die mittleren 50 % aller Werte der Stichprobe. Ein enger IQR bedeutet, dass die meisten Websites ähnliche Scores aufweisen. Ein breiter IQR weist auf heterogene Qualität innerhalb der Gruppe hin.</p>
           </article>
 
           <article class="faq-card layer-accent">
-            <h3>Was ist die „Confidence" (Vertrauensniveau)?</h3>
+            <h3>Was ist die <Term id="konfidenz">„Confidence" (Vertrauensniveau)</Term>?</h3>
             <p>Die Confidence-Skala zeigt, wie verlässlich ein gemessener Wert ist:</p>
             <ul>
               <li><strong>1,0</strong> — Signal wurde direkt beobachtet und erfolgreich extrahiert</li>
@@ -185,12 +187,12 @@ const schema = {
           </article>
 
           <article class="faq-card layer-accent">
-            <h3>Was ist k-Anonymität und warum wird sie eingesetzt?</h3>
-            <p>k-Anonymität bedeutet: Jeder veröffentlichte Datenpunkt muss mindestens k ≥ 5 Einzelfälle zusammenfassen. Wenn eine Gruppe (z. B. ein bestimmtes Gewerk in einem Bundesland) weniger als 5 Fälle enthält, wird sie im Dashboard nicht angezeigt. Für Kreuztabellen (Region × Gewerk) gelten noch strengere Anforderungen.</p>
+            <h3>Was ist <Term id="k-anonymitaet">k-Anonymität</Term> und warum wird sie eingesetzt?</h3>
+            <p><Term id="k-anonymitaet" iconOnly /> Jeder veröffentlichte Datenpunkt muss mindestens k ≥ 5 Einzelfälle zusammenfassen. Wenn eine Gruppe (z. B. ein bestimmtes Gewerk in einem Bundesland) weniger als 5 Fälle enthält, wird sie im Dashboard nicht angezeigt. Für Kreuztabellen (Region × Gewerk) gelten noch strengere Anforderungen.</p>
           </article>
 
           <article class="faq-card layer-accent">
-            <h3>Warum werden manche Deltas (Quartalsvergleiche) nicht angezeigt?</h3>
+            <h3>Warum werden manche <Term id="suppression">Deltas (Quartalsvergleiche)</Term> nicht angezeigt?</h3>
             <p>Ein Delta wird unterdrückt, wenn:</p>
             <ul>
               <li>Die Änderung kleiner als 3 Punkte <strong>oder</strong> kleiner als 3 % relativ zum Vorquartal ist</li>
@@ -225,7 +227,7 @@ const schema = {
 
           <article class="faq-card layer-accent">
             <h3>Was bedeutet „deskriptiv" — werden keine statistischen Tests durchgeführt?</h3>
-            <p>Korrekt. Der HDRI verwendet ausschließlich deskriptive Statistik — er beschreibt die vorliegende Stichprobe, macht aber keine Aussagen über die Grundgesamtheit aller deutschen Handwerksbetriebe. Es werden keine p-Werte, Konfidenzintervalle oder Hypothesentests berechnet. Die Aussagekraft basiert auf der Stichprobengröße (N > 30.000), nicht auf inferenzstatistischen Verfahren.</p>
+            <p>Korrekt. Der HDRI verwendet ausschließlich <Term id="deskriptive-statistik">deskriptive Statistik</Term> — er beschreibt die vorliegende Stichprobe, macht aber keine Aussagen über die Grundgesamtheit aller deutschen Handwerksbetriebe. Es werden keine p-Werte, Konfidenzintervalle oder Hypothesentests berechnet. Die Aussagekraft basiert auf der Stichprobengröße (N > 30.000), nicht auf inferenzstatistischen Verfahren.</p>
           </article>
         </div>
 
@@ -252,97 +254,3 @@ const schema = {
     </section>
   </main>
 </BaseLayout>
-
-<style>
-  .faq-section-title {
-    margin: 2.5rem 0 1rem;
-    font-size: clamp(1.2rem, 2.2vw, 1.6rem);
-    letter-spacing: -0.02em;
-  }
-  .faq-section-title:first-child {
-    margin-top: 0;
-  }
-  .faq-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-  }
-  .faq-card {
-    background: var(--surface);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(18px) saturate(140%);
-    border-radius: var(--radius-md);
-    padding: 1.5rem;
-  }
-  .faq-card h3 {
-    margin: 0 0 0.75rem;
-    font-size: 1rem;
-    letter-spacing: -0.01em;
-  }
-  .faq-card p {
-    margin: 0 0 0.6rem;
-    color: var(--muted);
-    line-height: 1.6;
-    font-size: 0.92rem;
-  }
-  .faq-card p:last-child {
-    margin-bottom: 0;
-  }
-  .faq-card ul,
-  .faq-card ol {
-    margin: 0 0 0.6rem;
-    padding-left: 1.15rem;
-    color: var(--muted);
-    line-height: 1.6;
-    font-size: 0.92rem;
-  }
-  .faq-card li {
-    margin-bottom: 0.35rem;
-  }
-  .faq-card li:last-child {
-    margin-bottom: 0;
-  }
-  .faq-card code {
-    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', monospace;
-    font-size: 0.9em;
-    background: var(--surface-muted);
-    padding: 0.15rem 0.35rem;
-    border-radius: 4px;
-  }
-  .faq-table-wrap {
-    overflow-x: auto;
-  }
-  .faq-card table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-  }
-  .faq-card th,
-  .faq-card td {
-    text-align: left;
-    padding: 0.5rem 0.6rem;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-  }
-  .faq-card th {
-    color: var(--muted);
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 700;
-  }
-  .faq-closing {
-    margin-top: 2rem;
-    color: var(--muted);
-  }
-  .faq-closing a {
-    color: var(--layer-text);
-    text-decoration: underline;
-  }
-  @media (max-width: 960px) {
-    .faq-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>

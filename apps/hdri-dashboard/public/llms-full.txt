@@ -114,7 +114,37 @@ Das YAML-Codebook ist direkt von der Codebook-Seite herunterladbar.
 
 ## 5. FAQ (/faq)
 
-### Über den HDRI
+Antworten auf häufige Fragen zum Index, zur Datengrundlage, zum Scoring, zur Nutzung und zu den rechtlichen Grundlagen.
+
+---
+
+## 6. Glossar (/glossar)
+
+Begriffslexikon mit Definitionen der wichtigsten Fachbegriffe, Dimensionen und Indikatoren des HDRI. Erläutert verwendete Termini für nicht-technische Leser und gewährleistet konsistente Verwendung in Berichten und Analysen.
+
+---
+
+## 7. Rechtliches
+
+- **Impressum** (/impressum): Angaben gemäß § 5 TMG.
+- **Datenschutz** (/datenschutz): Hinweise zur Datenverarbeitung und DSGVO-Compliance. Es werden keine personenbezogenen Daten veröffentlicht.
+
+---
+
+## 8. Sitemap
+
+Alle öffentlichen Seiten:
+- https://handwerk-index.org/
+- https://handwerk-index.org/methodik
+- https://handwerk-index.org/codebook
+- https://handwerk-index.org/faq
+- https://handwerk-index.org/glossar
+- https://handwerk-index.org/impressum
+- https://handwerk-index.org/datenschutz
+
+---
+
+## 9. Technischer Kontext
 
 **Was ist der HDRI?**
 Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht.

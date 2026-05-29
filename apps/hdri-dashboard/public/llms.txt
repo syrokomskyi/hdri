@@ -12,6 +12,7 @@ Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quar
 - [Methodik](https://handwerk-index.org/methodik) — Vollständige methodische Dokumentation: Datenquellen, Scoring-Formel, Privacy-Regeln (k-Anonymität), Limitationen, Pipeline-Architektur und Reproduzierbarkeit.
 - [Codebook](https://handwerk-index.org/codebook) — Scoring-Spezifikation mit allen Dimensionen, Indikatoren, Gewichtungen, Regeltypen (bool, presence, countClamp, enum) und Versionsgeschichte.
 - [FAQ](https://handwerk-index.org/faq) — Antworten auf häufige Fragen zum Index, zur Datengrundlage, zum Scoring, zur Nutzung und zu den rechtlichen Grundlagen.
+- [Glossar](https://handwerk-index.org/glossar) — Begriffslexikon mit Definitionen der wichtigsten Fachbegriffe, Dimensionen und Indikatoren.
 - [Impressum](https://handwerk-index.org/impressum) — Angaben gemäß § 5 TMG.
 - [Datenschutz](https://handwerk-index.org/datenschutz) — Hinweise zur Datenverarbeitung und DSGVO-Compliance.
 

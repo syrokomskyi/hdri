@@ -1,3 +1,5 @@
+/* ─── Design tokens ─────────────────────────────────────────────────────────── */
+
 :root {
   color-scheme: light;
   --bg: #eef1f5;
@@ -29,12 +31,21 @@
   --layer-entities-soft: rgba(248, 113, 113, 0.12);
 }
 
+/* ─── Reset / Base ──────────────────────────────────────────────────────────── */
+
 * {
   box-sizing: border-box;
 }
 
 html {
-  scroll-behavior: smooth;
+  /* scroll-behavior управляется Lenis */
+}
+
+/* Sticky-header offset for anchor jumps */
+.section[id],
+h2[id],
+h3[id] {
+  scroll-margin-top: 5rem;
 }
 
 body {
@@ -74,6 +85,8 @@ a {
   color: inherit;
 }
 
+/* ─── Layout utilities ──────────────────────────────────────────────────────── */
+
 .container {
   width: min(calc(100% - 2rem), var(--content));
   margin: 0 auto;
@@ -83,27 +96,12 @@ a {
   padding: 2.5rem 0;
 }
 
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 0.85rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface-strong);
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.72rem;
-  font-weight: 700;
-  backdrop-filter: blur(8px);
+.section-stack-top {
+  margin-top: 1.5rem;
 }
 
-.hero {
-  padding: 2.5rem 0 1.5rem;
-}
+/* ─── Glass morphism surface ────────────────────────────────────────────────── */
 
-/* Glass morphism base */
 .hero-panel,
 .card,
 .table-card,
@@ -117,7 +115,8 @@ a {
   backdrop-filter: blur(18px) saturate(140%);
 }
 
-/* Layer accent indicators */
+/* ─── Layer accent strip ────────────────────────────────────────────────────── */
+
 .layer-accent {
   position: relative;
   overflow: hidden;
@@ -132,6 +131,20 @@ a {
   height: 3px;
   background: var(--accent-color, var(--layer-text));
   opacity: 0.8;
+}
+
+.accent-metadata { --accent-color: var(--layer-metadata); }
+.accent-shtama   { --accent-color: var(--layer-shtama); }
+.accent-schema   { --accent-color: var(--layer-schema); --accent-soft: var(--layer-schema-soft); }
+.accent-faq      { --accent-color: var(--layer-faq); }
+.accent-entities { --accent-color: var(--layer-entities); }
+.accent-text     { --accent-color: var(--layer-text); }
+.share-archive   { --share: 0.55; }
+
+/* ─── Hero ──────────────────────────────────────────────────────────────────── */
+
+.hero {
+  padding: 2.5rem 0 1.5rem;
 }
 
 .hero-panel {
@@ -165,6 +178,14 @@ a {
   gap: 0.75rem;
   margin-top: 1.5rem;
 }
+
+.hero-aside {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────────────────── */
 
 .button,
 .button-secondary {
@@ -202,11 +223,51 @@ a {
   color: var(--muted);
 }
 
-.hero-aside {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+/* ─── Eyebrow label ─────────────────────────────────────────────────────────── */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
 }
+
+/* ─── Section header ────────────────────────────────────────────────────────── */
+
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.4rem;
+}
+
+.section-head h2 {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.5rem, 2.8vw, 2.2rem);
+  letter-spacing: -0.02em;
+}
+
+.section-head p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.section-head-top {
+  margin-top: 2rem;
+}
+
+/* ─── Stat / KPI cards ──────────────────────────────────────────────────────── */
 
 .stat-card,
 .kpi-card,
@@ -237,42 +298,16 @@ a {
   letter-spacing: -0.04em;
 }
 
-.section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: flex-start;
-  margin-bottom: 1.4rem;
+/* ─── Metric chip ───────────────────────────────────────────────────────────── */
+
+.metric-chip {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
 }
 
-.section-head h2 {
-  margin: 0.25rem 0 0;
-  font-size: clamp(1.5rem, 2.8vw, 2.2rem);
-  letter-spacing: -0.02em;
-}
-
-.section-head p {
-  margin: 0;
-  max-width: 52ch;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.section-head-top { margin-top: 2rem; }
-
-.accent-metadata { --accent-color: var(--layer-metadata); }
-.accent-shtama { --accent-color: var(--layer-shtama); }
-.accent-schema { --accent-color: var(--layer-schema); --accent-soft: var(--layer-schema-soft); }
-.accent-faq { --accent-color: var(--layer-faq); }
-.accent-entities { --accent-color: var(--layer-entities); }
-.accent-text { --accent-color: var(--layer-text); }
-.share-archive { --share: 0.55; }
-
-.detail-row-caption {
-  font-size: 0.8rem;
-  margin: 0.25rem 0;
-  color: var(--muted);
-}
+/* ─── Grids ─────────────────────────────────────────────────────────────────── */
 
 .cards-grid {
   display: grid;
@@ -292,18 +327,25 @@ a {
   margin-top: 1rem;
 }
 
-.metric-chip {
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-sm);
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-}
-
 .bands-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 1rem;
 }
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+/* ─── Maturity card fill ────────────────────────────────────────────────────── */
 
 .maturity-card {
   position: relative;
@@ -318,6 +360,8 @@ a {
   background: linear-gradient(180deg, transparent 0%, var(--accent-soft, var(--layer-text-soft)) 100%);
   pointer-events: none;
 }
+
+/* ─── Table card ────────────────────────────────────────────────────────────── */
 
 .table-wrap {
   overflow-x: auto;
@@ -356,22 +400,12 @@ a {
   text-align: right;
 }
 
-.matrix-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
+/* ─── Method card ───────────────────────────────────────────────────────────── */
 
 .method-card,
 .footer-card {
   border-radius: var(--radius-lg);
   padding: 1.5rem;
-}
-
-.method-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
 }
 
 .method-card ul,
@@ -390,9 +424,7 @@ a {
   margin: 2.5rem 0 3rem;
 }
 
-.section-stack-top {
-  margin-top: 1.5rem;
-}
+/* ─── Meta card ─────────────────────────────────────────────────────────────── */
 
 .meta-card {
   display: flex;
@@ -415,6 +447,8 @@ a {
   font-size: 0.85rem;
 }
 
+/* ─── Score bar ─────────────────────────────────────────────────────────────── */
+
 .bar-track {
   position: relative;
   margin-top: 1rem;
@@ -431,9 +465,9 @@ a {
   background: #9ca3af;
 }
 
-.bar-poor { background: #ef4444; }
-.bar-fair { background: #f59e0b; }
-.bar-good { background: #84cc16; }
+.bar-poor      { background: #ef4444; }
+.bar-fair      { background: #f59e0b; }
+.bar-good      { background: #84cc16; }
 .bar-excellent { background: #22c55e; }
 
 .bar-iqr {
@@ -453,6 +487,8 @@ a {
   border-radius: 2px;
 }
 
+/* ─── Reliability indicator ─────────────────────────────────────────────────── */
+
 .reliability-dot {
   display: inline-block;
   width: 0.55rem;
@@ -462,9 +498,11 @@ a {
   vertical-align: middle;
 }
 
-.reliability-reliable { background: #22c55e; }
-.reliability-caution { background: #f59e0b; }
+.reliability-reliable   { background: #22c55e; }
+.reliability-caution    { background: #f59e0b; }
 .reliability-suppressed { background: #9ca3af; }
+
+/* ─── Provenance badge ──────────────────────────────────────────────────────── */
 
 .provenance-badge {
   margin-top: 0.6rem;
@@ -475,6 +513,8 @@ a {
   font-size: 0.75rem;
   color: var(--muted);
 }
+
+/* ─── Details / Percentile expand ──────────────────────────────────────────── */
 
 .details-row {
   margin-top: 0.75rem;
@@ -526,8 +566,22 @@ a {
   font-size: 0.9rem;
 }
 
+.detail-row-caption {
+  font-size: 0.8rem;
+  margin: 0.25rem 0;
+  color: var(--muted);
+}
+
+/* ─── Data tooltip (click/tap) ──────────────────────────────────────────────── */
+
 .tooltip-host {
-  cursor: help;
+  cursor: pointer;
+}
+
+.tooltip-host:focus-visible {
+  outline: 2px solid var(--layer-schema);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .tooltip-popup {
@@ -567,6 +621,8 @@ a {
   border-color: var(--text) transparent transparent transparent;
 }
 
+/* ─── Empty state ───────────────────────────────────────────────────────────── */
+
 .empty-state {
   padding: 1.2rem;
   border: 1px dashed var(--border);
@@ -576,23 +632,8 @@ a {
   backdrop-filter: blur(8px);
 }
 
-@media (max-width: 960px) {
-  .hero-panel,
-  .cards-grid,
-  .bands-grid,
-  .matrix-grid,
-  .method-grid {
-    grid-template-columns: 1fr;
-  }
+/* ─── Site footer ───────────────────────────────────────────────────────────── */
 
-  .hero-aside,
-  .card-grid-meta {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-}
-
-/* Site footer */
 .site-footer {
   margin-top: 3rem;
   padding: 3rem 0 1.5rem;
@@ -676,7 +717,22 @@ a {
   color: rgba(255, 255, 255, 0.45);
 }
 
+/* ─── Responsive ────────────────────────────────────────────────────────────── */
+
 @media (max-width: 960px) {
+  .hero-panel,
+  .cards-grid,
+  .bands-grid,
+  .matrix-grid,
+  .method-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-aside,
+  .card-grid-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .footer-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -720,5 +776,4 @@ a {
     align-items: flex-start;
     gap: 0.5rem;
   }
-
 }

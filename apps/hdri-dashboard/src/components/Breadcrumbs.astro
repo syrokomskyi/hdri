@@ -1,4 +1,6 @@
 ---
+import '../styles/breadcrumbs.css';
+
 export type Crumb = {
   label: string;
   href?: string;
@@ -29,56 +31,3 @@ const { items } = Astro.props;
     }
   </ol>
 </nav>
-
-<style>
-  .breadcrumbs {
-    padding: 1rem 0 0;
-    font-size: 0.82rem;
-    color: var(--muted);
-  }
-
-  .breadcrumbs ol {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
-    list-style: none;
-    margin: 0;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-sm);
-    background: var(--surface-strong);
-    border: 1px solid var(--border);
-    width: fit-content;
-    backdrop-filter: blur(8px);
-  }
-
-  .breadcrumbs li {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
-
-  .breadcrumbs li:not(:last-child)::after {
-    content: '›';
-    margin-left: 0.35rem;
-    opacity: 0.5;
-    font-size: 0.9rem;
-  }
-
-  .breadcrumbs a {
-    color: var(--muted);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.15s ease;
-  }
-
-  .breadcrumbs a:hover {
-    color: var(--text);
-    text-decoration: underline;
-  }
-
-  .breadcrumbs [aria-current='page'] {
-    color: var(--text);
-    font-weight: 600;
-  }
-</style>

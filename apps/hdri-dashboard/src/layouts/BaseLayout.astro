@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import Footer from '../components/Footer.astro';
+import SiteHeader from '../components/SiteHeader.astro';
 
 type Props = {
   title: string;
@@ -47,7 +48,36 @@ const robotsContent = noIndex ? 'noindex, nofollow' : 'index, follow';
     )}
   </head>
   <body>
+    <SiteHeader>
+      <!-- Пробрасываем slot "header-extra" страницы в slot "extra" хедера -->
+      <slot name="header-extra" slot="extra" />
+    </SiteHeader>
     <slot />
     <Footer />
   </body>
+
+  <script>
+    import Lenis from 'lenis';
+
+    const lenis = new Lenis({ duration: 1.1, smoothWheel: true });
+
+    // Плавный скролл по якорям: перехватываем все клики <a href="#...">
+    document.addEventListener('click', (e) => {
+      const a = (e.target as Element).closest('a[href^="#"]');
+      if (!a) return;
+      const hash = a.getAttribute('href');
+      if (!hash || hash === '#') return;
+      let target: Element | null;
+      try { target = document.querySelector(hash); } catch { return; }
+      if (!target) return;
+      e.preventDefault();
+      // Вычитаем высоту sticky-хедера, чтобы цель не скрывалась за ним
+      const header = document.querySelector<HTMLElement>('.site-header');
+      const offset = header ? -(header.offsetHeight + 8) : -8;
+      lenis.scrollTo(target as HTMLElement, { offset, duration: 1.1 });
+    });
+
+    function raf(time: number) { lenis.raf(time); requestAnimationFrame(raf); }
+    requestAnimationFrame(raf);
+  </script>
 </html>

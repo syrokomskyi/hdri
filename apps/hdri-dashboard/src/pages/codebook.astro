@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
+import '../styles/codebook.css';
+import Term from '../components/Term.astro';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
@@ -171,7 +173,7 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
         <div class="section-head">
           <div>
             <span class="eyebrow">Scoring-Rahmen</span>
-            <h2>Dimensionen & Gewichtungen</h2>
+            <h2><Term id="dimension">Dimensionen</Term> & <Term id="gewicht">Gewichtungen</Term></h2>
           </div>
         </div>
         <div class="table-card table-wrap layer-accent accent-schema">
@@ -180,8 +182,8 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
               <tr>
                 <th>ID</th>
                 <th>Label</th>
-                <th class="numeric">Gewicht</th>
-                <th class="numeric">Indikatoren</th>
+                <th class="numeric"><Term id="gewicht">Gewicht</Term></th>
+                <th class="numeric"><Term id="indikator">Indikatoren</Term></th>
               </tr>
             </thead>
             <tbody>
@@ -204,7 +206,7 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
         <div class="section-head">
           <div>
             <span class="eyebrow">Indikatoren</span>
-            <h2>Alle Scoring-Regeln pro Dimension</h2>
+            <h2>Alle Scoring-Regeln pro <Term id="dimension">Dimension</Term></h2>
           </div>
         </div>
         {cb.dimensions.map((dim) => (
@@ -272,65 +274,3 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
     </section>
   </main>
 </BaseLayout>
-
-<style>
-  .changelog-body {
-    font-size: 0.95rem;
-    line-height: 1.7;
-    color: var(--text);
-  }
-  .changelog-body p {
-    margin: 0 0 0.75rem 0;
-  }
-  .changelog-body p:last-child {
-    margin-bottom: 0;
-  }
-  .changelog-entry {
-    margin-bottom: 0.75rem;
-  }
-  .changelog-entry:last-child {
-    margin-bottom: 0;
-  }
-  .changelog-entry p {
-    margin: 0.25rem 0 0 0;
-  }
-  .version-tag {
-    display: inline-block;
-    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', 'Fira Code', monospace;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.15rem 0.5rem;
-    border-radius: var(--radius-sm);
-    background: var(--surface-2);
-    color: var(--muted);
-  }
-  .dimension-title {
-    margin: 0 0 0.75rem 0;
-    font-size: 1.1rem;
-    padding: 0 1rem;
-  }
-  .weight-badge {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.15rem 0.5rem;
-    border-radius: var(--radius-sm);
-    background: var(--surface-2);
-    color: var(--muted);
-    vertical-align: middle;
-    margin-left: 0.5rem;
-  }
-  .rule-tag, .missing-tag {
-    font-size: 0.78rem;
-    font-family: ui-monospace, 'SF Mono', monospace;
-    color: var(--muted);
-  }
-  .button-secondary {
-    background: var(--surface-2);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-  .button-secondary:hover {
-    background: var(--surface-3);
-  }
-</style>

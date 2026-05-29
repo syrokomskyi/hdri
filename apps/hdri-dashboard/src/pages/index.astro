@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Term from '../components/Term.astro';
+import '../styles/index.css';
 import archive from '../assets/data/public/archive.json';
 import latest from '../assets/data/public/latest.json';
 import overviewTrends from '../assets/data/public/comparisons/overview-trends.json';
@@ -249,7 +251,7 @@ const schema = {
           <span class="eyebrow">Öffentlicher HDRI-Überblick</span>
           <h1>Digitale Reife im deutschen Handwerk sichtbar machen.</h1>
           <p>
-            Dieses Dashboard zeigt nur aggregierte und anonymisierte Kennzahlen aus dem HDRI Observatory.
+            Dieses Dashboard zeigt nur aggregierte und anonymisierte Kennzahlen aus dem HDRI (Handwerk Digital Reife Index) Observatory.
             Es dient als transparente Orientierung für Regionen, Gewerke und methodische Entwicklungen —
             ohne Veröffentlichung einzelner Betriebe.
           </p>
@@ -261,9 +263,9 @@ const schema = {
         </div>
         <div class="hero-aside">
           <article class="stat-card">
-            <small>P75 HDRI</small>
+            <small>P75 HDRI <Term id="p75" iconOnly /></small>
             <strong>{score(summary.p75)}</strong>
-            <span class="caption">Interquartilsbereich {axisRange(summary)}</span>
+            <span class="caption">Interquartilsbereich {axisRange(summary)} <Term id="iqr" iconOnly /></span>
           </article>
           <article class="stat-card">
             <small>Beobachtete Websites</small>
@@ -276,7 +278,7 @@ const schema = {
             <span class="caption"><a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
           </article>
           <article class="stat-card">
-            <small>Vertrauensniveau der Signale</small>
+            <small>Vertrauensniveau der Signale <Term id="konfidenz" iconOnly /></small>
             <strong>{score(confidence.mean)}</strong>
             <span class="caption">mittlere Scoring-Konfidenz</span>
           </article>
@@ -288,19 +290,66 @@ const schema = {
       <div class="meta-card layer-accent accent-metadata">
         <div>
           <span class="credibility-line">HDRI {currentManifest.period} — Deskriptiver Quartalsindex</span>
-          <span class="meta-line">Stichprobe N = {count(currentOverview.sampleSize)} | k-Anonymität ≥ {count(currentManifest.kAnonymityMin)} | <a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
+          <span class="meta-line">Stichprobe N = {count(currentOverview.sampleSize)} <Term id="stichprobe" iconOnly /> | k-Anonymität ≥ {count(currentManifest.kAnonymityMin)} <Term id="k-anonymitaet" iconOnly /> | <a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span>
         </div>
         <div class="meta-line">
           {currentManifest.generatedAt ? `Export: ${formatDate(currentManifest.generatedAt)}` : ''} · <a href="/methodik">Methodik</a>
         </div>
       </div>
+
+      <details class="reading-guide layer-accent accent-schema" open>
+        <summary>
+          <span class="reading-guide-title">Wie Sie dieses Dashboard lesen</span>
+          <span class="reading-guide-hint">Kurzanleitung & Legende</span>
+        </summary>
+        <div class="reading-guide-body">
+          <div class="reading-guide-grid">
+            <div class="reading-guide-item">
+              <h3>Primäre Kennzahl: <Term id="p75">P75</Term></h3>
+              <p>
+                75 % der gemessenen Websites liegen unter diesem Wert. P75 ist robuster gegen
+                Ausreißer als der <Term id="mittelwert">Mittelwert</Term> und zeigt ein
+                ambitioniertes, aber erreichbares Niveau.
+              </p>
+            </div>
+            <div class="reading-guide-item">
+              <h3>Streuung: <Term id="iqr">IQR</Term></h3>
+              <p>
+                Die Spannweite P25–P75 umfasst die mittleren 50 %. Auf den Karten als Balken-Overlay
+                sichtbar; ein schmaler Bereich = einheitliche Qualität, ein breiter = heterogen.
+              </p>
+            </div>
+            <div class="reading-guide-item">
+              <h3>Schutz: <Term id="k-anonymitaet">k-Anonymität</Term> & <Term id="suppression">Suppression</Term></h3>
+              <p>
+                Nur Aggregate mit ausreichender Fallzahl werden gezeigt. Unsichere oder zu kleine
+                <Term id="delta">Deltas</Term> werden bewusst unterdrückt — das ist kein Fehler.
+              </p>
+            </div>
+          </div>
+
+          <div class="legend">
+            <div class="legend-group">
+              <span class="legend-caption">Verlässlichkeit des Vergleichs</span>
+              <span class="legend-chip"><span class="reliability-dot reliability-reliable"></span>Zuverlässig</span>
+              <span class="legend-chip"><span class="reliability-dot reliability-caution"></span>Mit Vorsicht</span>
+              <span class="legend-chip"><span class="reliability-dot reliability-suppressed"></span>Unterdrückt</span>
+            </div>
+            <div class="legend-group">
+              <span class="legend-caption">Karten-Marker</span>
+              <span class="legend-chip"><span class="legend-swatch legend-iqr"></span>IQR-Bereich (P25–P75)</span>
+              <span class="legend-chip"><span class="legend-swatch legend-mean"></span>Mittelwert</span>
+            </div>
+          </div>
+        </div>
+      </details>
     </div>
 
     <section class="section" id="dimensionen">
       <div class="container">
         <div class="section-head">
           <div>
-            <span class="eyebrow">Sechs operative Dimensionen</span>
+            <span class="eyebrow">Sechs operative Dimensionen <Term id="dimension" iconOnly /></span>
             <h2>Was der aktuelle HDRI im MVP tatsächlich misst</h2>
           </div>
           <p>
@@ -316,7 +365,7 @@ const schema = {
                 <small>{item.id}</small>
                 <h3>{item.label}</h3>
                 <div class="metric-value tooltip-host" data-tooltip={percentileTooltip(item)}>{score(item.p75)}</div>
-                <span class="metric-label">P75-Wert bei Gewicht {new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(item.weight)}</span>
+                <span class="metric-label">P75-Wert bei Gewicht {new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(item.weight)} <Term id="gewicht" iconOnly /></span>
                 <div class="bar-track" aria-hidden="true">
                   <div class={`bar-fill ${barColorClass(item.p75)}`} style={`width: ${Math.min(item.p75, 100)}%`}></div>
                   <div class="bar-iqr" style={`left: ${Math.min(item.p25, 100)}%; width: ${Math.min(Math.max(item.p75 - item.p25, 0), 100)}%`}></div>
@@ -353,7 +402,7 @@ const schema = {
             <h2>Veröffentlichte Quartale und Gesamttrend</h2>
           </div>
           <p>
-            Pro Quartal gibt es genau einen veröffentlichten, canonical Index. Vergleiche zeigen nur sichere, veröffentlichbare Deltas.
+            Pro Quartal gibt es genau einen veröffentlichten, <Term id="canonical">canonical</Term> Index. Vergleiche zeigen nur sichere, veröffentlichbare <Term id="delta">Deltas</Term>.
           </p>
         </div>
         <div class="bands-grid">
@@ -540,7 +589,7 @@ const schema = {
               <article class="card layer-accent accent-metadata">
                 <small>{item.bundesland}</small>
                 <h3>{item.gewerk}{gewerkGroupLabel.has(item.gewerk) ? ` ${gewerkGroupLabel.get(item.gewerk)}` : ''}</h3>
-                <div class="metric-value">{score(item.p75)}</div>
+                <div class="metric-value tooltip-host" data-tooltip={percentileTooltip(item)}>{score(item.p75)}</div>
                 <span class="metric-label">P75 bei {count(item.n)} Fällen</span>
                 <div class="card-grid-meta">
                   <div class="metric-chip">
@@ -619,9 +668,16 @@ const schema = {
       const text = host.dataset.tooltip;
       if (!text) return;
 
-      let popup = null;
+      // Tastatur-/Touch-Zugänglichkeit: als Button behandeln.
+      host.setAttribute('tabindex', '0');
+      host.setAttribute('role', 'button');
+      host.setAttribute('aria-label', 'Statistische Details anzeigen');
 
-      host.addEventListener('mouseenter', () => {
+      let popup = null;
+      let pinned = false; // per Klick/Tap fixiert
+
+      function show() {
+        if (popup) return;
         popup = document.createElement('div');
         popup.className = 'tooltip-popup';
         popup.textContent = text;
@@ -632,22 +688,48 @@ const schema = {
 
         let left = rect.left + rect.width / 2 - tipRect.width / 2;
         let top = rect.top - tipRect.height - 8;
+        if (top < 8) top = rect.bottom + 8; // unterhalb, wenn oben kein Platz
 
-        // Clamp to viewport
         left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
         top = Math.max(8, top);
 
         popup.style.left = left + 'px';
         popup.style.top = top + 'px';
-        requestAnimationFrame(() => popup.classList.add('visible'));
+        requestAnimationFrame(() => popup && popup.classList.add('visible'));
+      }
+
+      function hide() {
+        if (!popup) return;
+        const p = popup;
+        popup = null;
+        p.classList.remove('visible');
+        p.addEventListener('transitionend', () => p.remove(), { once: true });
+      }
+
+      host.addEventListener('mouseenter', () => { if (!pinned) show(); });
+      host.addEventListener('mouseleave', () => { if (!pinned) hide(); });
+
+      // Klick/Tap fixiert oder löst (funktioniert auf Touch ohne Hover).
+      host.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pinned = !pinned;
+        if (pinned) show(); else hide();
       });
 
-      host.addEventListener('mouseleave', () => {
-        if (popup) {
-          popup.classList.remove('visible');
-          popup.addEventListener('transitionend', () => popup.remove(), { once: true });
-          popup = null;
+      host.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          pinned = !pinned;
+          if (pinned) show(); else hide();
+        } else if (e.key === 'Escape') {
+          pinned = false;
+          hide();
         }
+      });
+
+      // Klick außerhalb schließt fixiertes Popup.
+      document.addEventListener('click', () => {
+        if (pinned) { pinned = false; hide(); }
       });
     });
   </script>

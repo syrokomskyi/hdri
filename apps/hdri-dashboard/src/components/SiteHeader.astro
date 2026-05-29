@@ -1,0 +1,125 @@
+---
+import '../styles/site-header.css';
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+const links = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/methodik', label: 'Methodik' },
+  { href: '/codebook', label: 'Codebook' },
+  { href: '/glossar', label: 'Glossar' },
+  { href: '/faq', label: 'Häufige Fragen' },
+];
+
+function isActive(href: string): boolean {
+  if (href === '/') return path === '/';
+  return path === href || path.startsWith(`${href}/`);
+}
+---
+
+<header class="site-header">
+  <div class="container site-header-inner">
+    <a class="site-header-brand" href="/">
+      <span class="site-header-brand-row">
+        <span class="site-header-mark">HDRI</span>
+        <span class="site-header-sub">Dashboard</span>
+      </span>
+      <span class="site-header-full">Handwerk Digital Reife Index</span>
+    </a>
+
+    <!-- Hamburger — nur auf Mobile sichtbar -->
+    <button
+      class="site-nav-toggle"
+      type="button"
+      aria-label="Menü öffnen"
+      aria-expanded="false"
+      aria-controls="site-nav"
+    >
+      <span class="site-nav-toggle-bar"></span>
+      <span class="site-nav-toggle-bar"></span>
+      <span class="site-nav-toggle-bar"></span>
+    </button>
+
+    <nav id="site-nav" aria-label="Hauptnavigation" class="site-nav">
+      {links.map((link) => (
+        <a
+          href={link.href}
+          class={`site-nav-link${isActive(link.href) ? ' is-active' : ''}`}
+          aria-current={isActive(link.href) ? 'page' : undefined}
+        >
+          {link.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+
+  {Astro.slots.has('extra') && (
+    <div class="site-header-extra">
+      <div class="container">
+        <slot name="extra" />
+      </div>
+    </div>
+  )}
+</header>
+
+<script>
+  (function () {
+    const header   = document.querySelector<HTMLElement>('.site-header');
+    const toggle   = header?.querySelector<HTMLButtonElement>('.site-nav-toggle');
+    const nav      = header?.querySelector<HTMLElement>('.site-nav');
+    if (!header || !toggle || !nav) return;
+
+    /* ── Hamburger-Toggle ───────────────────────────────────────── */
+    function openMenu() {
+      header!.classList.add('nav-open');
+      toggle!.setAttribute('aria-expanded', 'true');
+      toggle!.setAttribute('aria-label', 'Menü schließen');
+    }
+    function closeMenu() {
+      header!.classList.remove('nav-open');
+      toggle!.setAttribute('aria-expanded', 'false');
+      toggle!.setAttribute('aria-label', 'Menü öffnen');
+    }
+
+    toggle.addEventListener('click', () => {
+      header.classList.contains('nav-open') ? closeMenu() : openMenu();
+    });
+
+    // Klick auf Link → Menü schließen
+    nav.querySelectorAll('.site-nav-link').forEach((a) =>
+      a.addEventListener('click', closeMenu)
+    );
+
+    // Klick außerhalb → schließen
+    document.addEventListener('click', (e) => {
+      if (!header.contains(e.target as Node)) closeMenu();
+    });
+
+    // Escape → schließen
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMenu();
+    });
+
+    /* ── Scroll-Hide / Show ─────────────────────────────────────── */
+    const HIDE_AFTER_PX  = 80;
+    const SHOW_THRESHOLD = 96;
+    let lastY   = window.scrollY;
+    let upAccum = 0;
+
+    window.addEventListener('scroll', () => {
+      const y     = window.scrollY;
+      const delta = y - lastY;
+
+      if (delta > 0) {
+        upAccum = 0;
+        if (y > HIDE_AFTER_PX) {
+          header.classList.add('is-hidden');
+          closeMenu(); // меню закрывается при скролле вниз
+        }
+      } else {
+        upAccum += -delta;
+        if (upAccum >= SHOW_THRESHOLD) header.classList.remove('is-hidden');
+      }
+      lastY = y;
+    }, { passive: true });
+  })();
+</script>

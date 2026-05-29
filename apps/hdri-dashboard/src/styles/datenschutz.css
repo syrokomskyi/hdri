@@ -1,0 +1,46 @@
+.legal-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-radius: var(--radius-lg);
+  padding: 2.2rem;
+  max-width: 800px;
+  line-height: 1.7;
+}
+
+.legal-card h2 {
+  margin: 2rem 0 0.75rem;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+
+.legal-card h2:first-child {
+  margin-top: 0;
+}
+
+.legal-card p {
+  margin: 0 0 1rem;
+}
+
+.legal-card ul {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.legal-card li {
+  margin-bottom: 0.4rem;
+}
+
+.legal-card a {
+  color: var(--layer-text);
+  text-decoration: underline;
+}
+
+.legal-card code {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', monospace;
+  font-size: 0.9em;
+  background: var(--surface-muted);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+}

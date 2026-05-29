@@ -1,0 +1,185 @@
+/* Toolbar lebt jetzt im SiteHeader-Slot → kein eigenes sticky/background nötig */
+.glossar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.glossar-search {
+  flex: 1 1 260px;
+}
+
+.glossar-search input {
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  outline: none;
+}
+
+.glossar-search input:focus-visible {
+  border-color: var(--layer-schema);
+  box-shadow: 0 0 0 3px var(--layer-schema-soft);
+}
+
+.glossar-az {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.glossar-az-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.7rem;
+  height: 1.7rem;
+  padding: 0 0.35rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: none;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+}
+
+.glossar-az-link:hover {
+  color: var(--text);
+  background: var(--surface-strong);
+}
+
+.glossar-list {
+  margin: 1.5rem 0 0;
+}
+
+.glossar-letter {
+  margin: 1.75rem 0 0.75rem;
+  font-size: 1.1rem;
+  color: var(--layer-schema);
+  letter-spacing: 0.04em;
+  /* Хедер = nav-строка + toolbar-строка ≈ 6.5rem */
+  scroll-margin-top: 6.5rem;
+}
+
+.glossar-entry {
+  padding: 1.2rem 1.3rem;
+  margin-bottom: 0.85rem;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  scroll-margin-top: 6.5rem;
+}
+
+.glossar-entry dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.glossar-term {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.glossar-cat {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+}
+
+.glossar-entry dd {
+  margin: 0;
+}
+
+.glossar-short {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.glossar-long {
+  margin: 0.6rem 0 0;
+  line-height: 1.55;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.glossar-aliases {
+  margin: 0.6rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.glossar-links {
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.glossar-links a {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--layer-schema);
+  text-decoration: none;
+}
+
+.glossar-links a:hover {
+  text-decoration: underline;
+}
+
+/* Anchor highlight — fires when navigating from a Term popover */
+.glossar-entry.is-highlighted {
+  outline: 2px solid var(--layer-schema);
+  outline-offset: 2px;
+  animation: glossar-highlight-pulse 1.6s ease forwards;
+}
+
+@keyframes glossar-highlight-pulse {
+  0%   { background: color-mix(in srgb, var(--layer-schema) 18%, var(--surface)); }
+  60%  { background: color-mix(in srgb, var(--layer-schema) 10%, var(--surface)); }
+  100% { background: var(--surface); outline-color: transparent; }
+}
+
+.glossar-empty {
+  margin-top: 1.5rem;
+  padding: 1.2rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  background: var(--surface);
+}
+
+/* Shared utility used only on glossar */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

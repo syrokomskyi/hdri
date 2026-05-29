@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Term from '../components/Term.astro';
 
 const pageTitle = 'HDRI Methodik — Handwerk Digital Reife Index';
 const pageDescription = 'Methodische Dokumentation des HDRI: Datenquellen, Scoring-Formel, Privacy-Regeln, Limitationen und Reproduzierbarkeit.';
@@ -157,7 +158,7 @@ const schema = {
         </div>
         <div class="method-grid">
           <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
-            <h3>Barrierefreiheit</h3>
+            <h3><Term id="barrierefreiheit">Barrierefreiheit</Term></h3>
             <p><strong>Gewicht:</strong> 0,16</p>
             <ul>
               <li>Automatisierte Axe-Core-Prüfung auf WCAG-Konformität.</li>
@@ -169,7 +170,7 @@ const schema = {
             <h3>Recht & Pflichtangaben</h3>
             <p><strong>Gewicht:</strong> 0,28</p>
             <ul>
-              <li>Prüft Pflichtangaben nach deutschem Recht (Impressum, Datenschutz, Widerruf, Versandbedingungen).</li>
+              <li>Prüft Pflichtangaben nach deutschem Recht (<Term id="impressum">Impressum</Term>, Datenschutz, Widerruf, Versandbedingungen).</li>
               <li>Misst strukturierte Rechtssignale aus HTML und Schema.org.</li>
               <li>Keine Rechtsberatung — nur statistische Erfassung vorhandener Elemente.</li>
             </ul>
@@ -205,7 +206,7 @@ const schema = {
             <h3>Strukturierte Informationen</h3>
             <p><strong>Gewicht:</strong> 0,18</p>
             <ul>
-              <li>Schema.org-Markup, strukturierte Daten, Breadcrumbs, Opening Hours.</li>
+              <li><Term id="schema-org">Schema.org</Term>-Markup, strukturierte Daten, Breadcrumbs, Opening Hours.</li>
               <li>Bewertet Reichhaltigkeit und Korrektheit der semantischen Auszeichnung.</li>
               <li>Starke Korrelation mit Suchmaschinen-Verständlichkeit, aber kein SEO-Score.</li>
             </ul>
@@ -224,7 +225,7 @@ const schema = {
         </div>
         <div class="method-grid">
           <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
-            <h3>k-Anonymität</h3>
+            <h3><Term id="k-anonymitaet">k-Anonymität</Term></h3>
             <ul>
               <li>Jeder veröffentlichte Slice muss mindestens <code>k ≥ 5</code> Fälle enthalten.</li>
               <li>Wenn ein Bundesland oder Gewerk zu wenige Fälle hat, wird es nicht angezeigt.</li>
@@ -232,7 +233,7 @@ const schema = {
             </ul>
           </article>
           <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
-            <h3>Delta-Suppression</h3>
+            <h3><Term id="suppression">Delta-Suppression</Term></h3>
             <ul>
               <li><code>delta_below_absolute_threshold</code>: Änderung kleiner als definierter absoluter Mindestwert.</li>
               <li><code>delta_below_relative_threshold</code>: Relative Änderung zu gering im Vergleich zum Vorquartal.</li>
@@ -263,7 +264,7 @@ const schema = {
         </div>
         <div class="method-grid">
           <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
-            <h3>Confidence-Skala</h3>
+            <h3><Term id="konfidenz">Confidence</Term>-Skala</h3>
             <ul>
               <li><strong>1,0</strong> = Signal wurde direkt beobachtet und erfolgreich extrahiert.</li>
               <li><strong>0,5</strong> = Signal wurde imputiert (geschätzt) aufgrund fehlender Daten.</li>
@@ -283,7 +284,7 @@ const schema = {
           <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
             <h3>Statistische Einordnung</h3>
             <ul>
-              <li>Der HDRI verwendet <strong>deskriptive Statistik</strong> — er beschreibt die Stichprobe, nicht die Grundgesamtheit.</li>
+              <li>Der HDRI verwendet <strong><Term id="deskriptive-statistik">deskriptive Statistik</Term></strong> — er beschreibt die Stichprobe, nicht die Grundgesamtheit.</li>
               <li>Es werden keine p-Werte, Konfidenzintervalle oder Hypothesentests berechnet.</li>
               <li>Die Aussagekraft kommt aus der Stichprobengröße (N &gt; 30 000), nicht aus inferenzstatistischen Verfahren.</li>
               <li>P75 ist robust gegenüber Ausreißern und spiegelt das „erreichbare Niveau" wider.</li>
@@ -303,7 +304,7 @@ const schema = {
         </div>
         <div class="method-grid">
           <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
-            <h3>P75 — Primäre Kennzahl</h3>
+            <h3><Term id="p75">P75</Term> — Primäre Kennzahl</h3>
             <ul>
               <li>P75 ist der <strong>75. Perzentil</strong>: 75 % der gemessenen Websites liegen unter diesem Wert, 25 % darüber.</li>
               <li>Berechnung via <strong>lineare Interpolation (Type 7, R-Standard)</strong>: <code>pos = (n − 1) × 0,75</code>, linear interpoliert zwischen den benachbarten Rangplätzen.</li>
@@ -312,7 +313,7 @@ const schema = {
             </ul>
           </article>
           <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
-            <h3>Mittelwert & Median (P50)</h3>
+            <h3><Term id="mittelwert">Mittelwert</Term> & <Term id="median">Median (P50)</Term></h3>
             <ul>
               <li>Der <strong>Mittelwert</strong> (arithmetisches Mittel) zeigt die „Schwerpunktlage" der Verteilung.</li>
               <li>Wenn Mittelwert deutlich unter P75 liegt, ist die Verteilung linksschief: viele niedrige Werte, wenige hohe.</li>
@@ -321,7 +322,7 @@ const schema = {
             </ul>
           </article>
           <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
-            <h3>IQR und Quartile</h3>
+            <h3><Term id="iqr">IQR</Term> und Quartile</h3>
             <ul>
               <li><strong>IQR</strong> = Interquartilsabstand = P75 − P25. Er umfasst die mittleren 50 % aller Werte.</li>
               <li>Ein enger IQR bedeutet, dass die meisten Websites ähnliche Scores haben.</li>

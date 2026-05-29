@@ -1,0 +1,178 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import '../styles/glossar.css';
+import { sortedGlossary, glossaryLetters } from '../data/glossary';
+
+const entries = sortedGlossary();
+const letters = glossaryLetters();
+
+const pageTitle = 'HDRI Glossar — Begriffe & Kennzahlen erklärt';
+const pageDescription =
+  'Alphabetisches Glossar zum HDRI: Perzentile, IQR, k-Anonymität, Suppression, Dimensionen und weitere Begriffe — mit weiterführenden Quellen.';
+
+const site = 'https://handwerk-index.org';
+const schema = {
+  '@type': 'DefinedTermSet',
+  name: 'HDRI Glossar',
+  description: pageDescription,
+  url: `${site}/glossar`,
+  inLanguage: 'de-DE',
+  hasDefinedTerm: entries.map((e) => ({
+    '@type': 'DefinedTerm',
+    '@id': `${site}/glossar#${e.id}`,
+    name: e.term,
+    description: e.short,
+  })),
+};
+
+function firstLetter(term: string): string {
+  return term[0]!.toUpperCase();
+}
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
+
+  <!-- Toolbar lebt im Header-Slot → sticky mit dem Header, kein zweiter sticky-Block -->
+  <div slot="header-extra" class="glossar-toolbar">
+    <label class="glossar-search">
+      <span class="visually-hidden">Begriff suchen</span>
+      <input
+        type="search"
+        id="glossar-search"
+        placeholder="Begriff suchen … (z. B. Perzentil, k-Anonymität)"
+        autocomplete="off"
+      />
+    </label>
+    <nav class="glossar-az" aria-label="Alphabetischer Index">
+      {letters.map((letter) => (
+        <a href={`#letter-${letter}`} class="glossar-az-link">{letter}</a>
+      ))}
+    </nav>
+  </div>
+
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: 'HDRI Dashboard', href: '/' }, { label: 'Glossar' }]} />
+    </div>
+
+    <section class="hero">
+      <div class="container hero-panel layer-accent accent-schema">
+        <div class="hero-copy">
+          <span class="eyebrow">Begriffe & Kennzahlen</span>
+          <h1>Glossar</h1>
+          <p>
+            Alle im Dashboard verwendeten statistischen, methodischen und rechtlichen Begriffe —
+            kurz erklärt, alphabetisch geordnet und mit kuratierten, weiterführenden Quellen.
+            Dieselben Definitionen erscheinen kontextbezogen über das ⓘ-Symbol direkt im Dashboard.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="glossar-empty" id="glossar-empty" hidden>Kein Begriff gefunden.</p>
+
+        <dl class="glossar-list" id="glossar-list">
+          {entries.map((entry, index) => {
+            const letter = firstLetter(entry.term);
+            const prevLetter = index > 0 ? firstLetter(entries[index - 1]!.term) : '';
+            const showLetterHead = letter !== prevLetter;
+            return (
+              <>
+                {showLetterHead && (
+                  <h2 class="glossar-letter" id={`letter-${letter}`}>{letter}</h2>
+                )}
+                <div
+                  class="glossar-entry layer-accent accent-schema"
+                  id={entry.id}
+                  data-search={`${entry.term} ${(entry.aliases ?? []).join(' ')} ${entry.short}`.toLowerCase()}
+                >
+                  <dt>
+                    <span class="glossar-term">{entry.term}</span>
+                    <span class="glossar-cat">{entry.category}</span>
+                  </dt>
+                  <dd>
+                    <p class="glossar-short">{entry.short}</p>
+                    {entry.long && <p class="glossar-long">{entry.long}</p>}
+                    {entry.aliases && entry.aliases.length > 0 && (
+                      <p class="glossar-aliases">Auch: {entry.aliases.join(', ')}</p>
+                    )}
+                    {entry.links && entry.links.length > 0 && (
+                      <ul class="glossar-links">
+                        {entry.links.map((link) => (
+                          <li>
+                            <a
+                              href={link.href}
+                              {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                            >
+                              {link.label}{link.external ? ' ↗' : ''}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </dd>
+                </div>
+              </>
+            );
+          })}
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <script is:inline>
+    /* Anchor highlight — triggered by "Im Glossar ansehen →" from a Term popover */
+    (function () {
+      function highlightAnchor(hash) {
+        document.querySelectorAll('.glossar-entry.is-highlighted').forEach((el) => {
+          el.classList.remove('is-highlighted');
+        });
+        if (!hash) return;
+        const id = hash.replace(/^#/, '');
+        const target = document.getElementById(id);
+        if (target && target.classList.contains('glossar-entry')) {
+          target.classList.add('is-highlighted');
+          target.scrollIntoView({ block: 'center' });
+          target.addEventListener('animationend', () => target.classList.remove('is-highlighted'), { once: true });
+        }
+      }
+      if (location.hash) highlightAnchor(location.hash);
+      window.addEventListener('hashchange', () => highlightAnchor(location.hash));
+    })();
+  </script>
+
+  <script is:inline>
+    (function () {
+      const input = document.getElementById('glossar-search');
+      const entries = Array.from(document.querySelectorAll('.glossar-entry'));
+      const letters = Array.from(document.querySelectorAll('.glossar-letter'));
+      const empty = document.getElementById('glossar-empty');
+      if (!input) return;
+
+      function apply() {
+        const q = input.value.trim().toLowerCase();
+        let visible = 0;
+        entries.forEach((el) => {
+          const hit = !q || (el.dataset.search || '').includes(q);
+          el.hidden = !hit;
+          if (hit) visible++;
+        });
+        letters.forEach((head) => {
+          let node = head.nextElementSibling;
+          let any = false;
+          while (node && !node.classList.contains('glossar-letter')) {
+            if (node.classList.contains('glossar-entry') && !node.hidden) any = true;
+            node = node.nextElementSibling;
+          }
+          head.hidden = !any;
+        });
+        if (empty) empty.hidden = visible !== 0;
+      }
+
+      input.addEventListener('input', apply);
+    })();
+  </script>
+</BaseLayout>

@@ -28,7 +28,7 @@
     "gray-matter": "^4.0.3",
     "lighthouse": "^13.3.0",
     "markdown-table": "^3.0.4",
-    "systeminformation": "^5.31.6",
+    "systeminformation": "^5.31.7",
     "tsx": "^4.22.3"
   }
 }
