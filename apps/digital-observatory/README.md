@@ -4,7 +4,7 @@ Asset-centric longitudinal observatory for digital presence analysis.
 
 ## Architecture
 
-Four-layer data model (see `spec/011-020/13-digital-observatory/1-concept.md`):
+Four-layer data model:
 
 1. **Evidence** — raw HTML, Lighthouse JSON, axe JSON (content-addressed)
 2. **Observations** — immutable atomic signals with ontology paths and bitemporality

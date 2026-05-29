@@ -22,14 +22,14 @@ This package provides core utilities that are shared across all other packages:
 
 - Common helper functions
 - Shared types and interfaces
-- Base utilities used by `@org/strings`, `@org/async`, and `@org/colors`
+- Base utilities used by other packages in the workspace
 
 ## 📝 Usage
 
 This package is automatically available to all other packages in the monorepo:
 
 ```typescript
-// In any other package (strings, async, colors)
+// In any other package
 import { someUtility } from '@org/utils';
 
 // Use the shared functionality
@@ -55,7 +55,7 @@ pnpm --dir packages/utils lint     # Lint the package
 ## 🔒 Module Boundaries
 
 This package has the tag `scope:shared` which means:
-- **Can be imported by**: All packages (`scope:strings`, `scope:async`, `scope:colors`)
+- **Can be imported by**: All packages in the workspace
 - **Can import from**: Nothing (it's the base layer)
 
 This ensures a clean dependency hierarchy where `utils` serves as the foundation without creating circular dependencies.
@@ -63,10 +63,9 @@ This ensures a clean dependency hierarchy where `utils` serves as the foundation
 ## 🏛️ Architecture Role
 
 As the shared foundation of the monorepo:
-1. Contains no business logic specific to strings, async, or colors
-2. Provides only generic, reusable utilities
-3. Has no external dependencies beyond TypeScript's standard library
-4. Ensures consistency across all packages
+1. Provides only generic, reusable utilities
+2. Has no external dependencies beyond TypeScript's standard library
+3. Ensures consistency across all packages
 
 ## ⚠️ Important Notes
 

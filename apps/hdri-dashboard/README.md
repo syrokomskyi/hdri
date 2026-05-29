@@ -1,42 +1,41 @@
 # HDRI Dashboard
 
-Statisches Astro-Dashboard für aggregierte und anonymisierte HDRI (Handwerk Digital Readiness Index) Daten aus `apps/digital-observatory`.
+Static Astro dashboard for aggregated, anonymised HDRI (Handwerk Digital Readiness Index) data produced by `apps/digital-observatory`.
 
-## Befehle
+## Commands
 
 ```bash
-# Build (führt automatisch Daten-Export aus)
+# Build (also runs the data-export step automatically)
 pnpm --filter @org/hdri-dashboard run build
 
-# Dev-Modus mit Live-Reload
+# Dev mode with live reload
 pnpm --filter @org/hdri-dashboard run dev
 
-# TypeScript-Prüfung
+# Type-check
 pnpm --filter @org/hdri-dashboard run typecheck
 ```
 
-## Deploy auf Cloudflare Pages
+## Deploy
 
 - Build command: `pnpm --filter @org/hdri-dashboard run build`
 - Output directory: `apps/hdri-dashboard/dist`
 
-## Datenquelle & Aktualisierung
+## Data source & refresh
 
-Vor dem Astro-Build wird automatisch `apps/digital-observatory/tools/export-hdri-dashboard-archive.ts` ausgeführt.
-Dieser Schritt liest die aktuelle `observatory.db` und schreibt öffentliche JSON-Dateien nach `src/assets/data/public/`.
+Before the Astro build, the export script in `apps/digital-observatory/tools/export-hdri-dashboard-archive.ts` runs automatically. It reads the current `observatory.db` and writes public JSON files into `src/assets/data/public/`.
 
-### Wichtig: Pipeline neu starten nach Codebook-Änderung
+### Important: re-run the pipeline after any codebook change
 
-Änderungen an `apps/digital-observatory/.input/codebook.yaml` wirken sich erst aus, wenn das Scoring neu läuft:
+Changes to `apps/digital-observatory/.input/codebook.yaml` only take effect after the scoring phase re-runs:
 
-1. **Observatory-Pipeline ausführen** (ScoreHdriGogol liest das aktuelle Codebook):
+1. **Run the observatory pipeline** (ScoreHdriGogol reads the current codebook):
    ```bash
    pnpm --filter @org/digital-observatory start
    ```
 
-2. **Dashboard-Build** (führt automatisch den Export-Schritt aus):
+2. **Build the dashboard** (automatically triggers the export step):
    ```bash
    pnpm --filter @org/hdri-dashboard run build
    ```
 
-Ohne Schritt 1 arbeitet der Dashboard-Export mit den alten Scores aus der Datenbank.
+Skipping step 1 means the dashboard export continues to use the old scores from the database.

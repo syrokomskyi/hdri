@@ -1,7 +1,7 @@
 # @org/pipeline-steps
 
 Reusable abstract **step base classes** extracted from recurring patterns
-across the six webgogol apps. Each class encapsulates one cross-cutting
+across the pipeline apps. Each class encapsulates one cross-cutting
 concern (rate limiting, browser pooling, cross-DB reads, DSGVO k-anonymity,
 human pauses) so consumer gogols can focus on business logic.
 

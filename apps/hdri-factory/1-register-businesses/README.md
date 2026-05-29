@@ -40,4 +40,4 @@ audit-*) would have to discover sibling devices independently, duplicating logic
 Centralising dedup here means downstream apps simply read `registry_<sourceToken>.db`
 and never see the multi-device complexity.
 
-See `MIGRATION-NEXT-STEPS.md` at the repo root for the Phase B implementation plan.
+See the root README for the overall factory pipeline order and prerequisites.

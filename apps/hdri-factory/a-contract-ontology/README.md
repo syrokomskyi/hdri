@@ -65,4 +65,4 @@ all sibling `<deviceId>/` folders except those starting with `-`.
 `cutoffAt` is **not** specified — the period (`YYYY-Qn`) is itself a hard
 boundary and computes the date range deterministically.
 
-See `MIGRATION-NEXT-STEPS.md` at the repo root for the Phase B implementation plan.
+See the root README for the overall factory pipeline order and prerequisites.
