@@ -1,0 +1,277 @@
+.germany-map-section {
+  padding: 2.5rem 0;
+}
+
+.germany-map-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  border-radius: var(--radius-lg);
+  padding: 1.8rem;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  position: relative;
+  overflow: hidden;
+}
+
+.germany-map-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--layer-schema);
+  opacity: 0.8;
+}
+
+.germany-map-container {
+  position: relative;
+}
+
+.germany-map-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.germany-map-path {
+  stroke: #fff;
+  stroke-width: 0.75;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  cursor: pointer;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.germany-map-path:hover {
+  filter: brightness(0.92);
+  opacity: 0.85;
+}
+
+.germany-map-path.active {
+  filter: brightness(0.85);
+  stroke-width: 1.5;
+}
+
+.germany-map-label {
+  position: absolute;
+  pointer-events: none;
+  font-size: 0.55rem;
+  font-weight: 700;
+  fill: rgba(0, 0, 0, 0.55);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.germany-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.germany-legend-bar {
+  width: 120px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgb(247, 251, 255), rgb(100, 110, 145));
+}
+
+/* Ranking rail */
+.germany-ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 0.3rem;
+}
+
+.germany-ranking-header {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.4rem;
+}
+
+.germany-ranking-rank {
+  width: 1.8rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.germany-ranking-name {
+  flex: 1;
+  min-width: 0;
+  padding: 0 0.4rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.germany-ranking-mean {
+  width: 3rem;
+  text-align: right;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.germany-ranking-p50 {
+  width: 3rem;
+  text-align: right;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.germany-ranking-n {
+  width: 3.5rem;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.germany-ranking-dot {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.germany-ranking-row {
+  display: flex;
+  align-items: center;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.germany-ranking-row:hover {
+  background: var(--surface-muted);
+}
+
+.germany-ranking-row.active {
+  background: var(--surface-strong);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* tooltip popover */
+.germany-boxplot-tooltip {
+  position: fixed;
+  padding: 1rem 1.2rem;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: #fff;
+  font-size: 0.82rem;
+  line-height: 1.8;
+  white-space: pre;
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', 'Fira Code', 'DejaVu Sans Mono', monospace;
+  letter-spacing: 0.04em;
+  z-index: 1000;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateY(6px);
+}
+
+.germany-boxplot-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.germany-boxplot-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--text) transparent transparent transparent;
+}
+
+.germany-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.germany-map-legend-caption {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.germany-map-legend-bar {
+  width: 140px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.germany-map-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 140px;
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* mini boxplot in tooltip */
+.boxplot-vis {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.boxplot-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+.boxplot-marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: #fff;
+}
+
+@media (max-width: 960px) {
+  .germany-map-panel {
+    grid-template-columns: 1fr;
+  }
+  .germany-ranking {
+    max-height: none;
+  }
+}

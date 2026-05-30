@@ -12,11 +12,13 @@ const pageDescription =
   'Alphabetisches Glossar zum HDRI: Perzentile, IQR, k-Anonymität, Suppression, Dimensionen und weitere Begriffe — mit weiterführenden Quellen.';
 
 const site = 'https://handwerk-index.org';
+const ogImage = `${site}/og-image.webp`;
 const schema = {
   '@type': 'DefinedTermSet',
   name: 'HDRI Glossar',
   description: pageDescription,
   url: `${site}/glossar`,
+  image: ogImage,
   inLanguage: 'de-DE',
   hasDefinedTerm: entries.map((e) => ({
     '@type': 'DefinedTerm',

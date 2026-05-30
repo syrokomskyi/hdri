@@ -1,0 +1,237 @@
+---
+import { geoMercator, geoPath } from 'd3-geo';
+import { scaleSequential } from 'd3-scale';
+import { interpolateBlues } from 'd3-scale-chromatic';
+import germanyGeo from '../assets/data/germany-states.geo.json';
+import '../styles/germany-map.css';
+
+type SliceItem = {
+  id: string;
+  label: string;
+  n: number;
+  mean: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+};
+
+type Summary = {
+  n: number;
+  mean: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+};
+
+type Props = {
+  bundeslaender: SliceItem[];
+  summary: Summary;
+  kAnonymityMin: number;
+};
+
+const { bundeslaender, summary, kAnonymityMin } = Astro.props;
+
+const stateData = new Map(bundeslaender.map((d) => [d.label, d]));
+const means = bundeslaender.map((d) => d.mean);
+const minMean = Math.min(...means);
+const maxMean = Math.max(...means);
+const colorScale = scaleSequential(interpolateBlues).domain([minMean, maxMean]);
+
+const mapWidth = 420;
+const mapHeight = 520;
+const projection = geoMercator().fitSize([mapWidth, mapHeight], germanyGeo as any);
+const pathGen = geoPath(projection);
+
+interface PathEntry {
+  name: string;
+  d: string | null;
+  data: SliceItem | undefined;
+  fill: string;
+}
+
+const pathEntries: PathEntry[] = (germanyGeo as any).features.map((f: any) => {
+  const name = f.properties.name;
+  const data = stateData.get(name);
+  const mean = data?.mean ?? null;
+  return {
+    name,
+    d: pathGen(f),
+    data,
+    fill: mean !== null ? colorScale(mean) : '#e5e7eb',
+  };
+});
+
+const sorted = [...bundeslaender].sort((a, b) => b.mean - a.mean);
+
+const LOCALE = 'de-DE';
+const score = (v: number) => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1, minimumFractionDigits: 1 }).format(v);
+const count = (v: number) => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 }).format(v);
+---
+
+<section class="germany-map-section" id="bundeslaender">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Regionale Perspektive</span>
+        <h2>Bundesländer im Vergleich</h2>
+      </div>
+      <p>
+        Die Karte zeigt die mittlere Punktzahl (Mittelwert) je Bundesland.
+        Klicken Sie auf ein Land oder einen Eintrag in der Rangliste, um die Perzentil-Verteilung zu sehen.
+      </p>
+    </div>
+
+    <div class="germany-map-panel">
+      <div class="germany-map-container">
+        <svg class="germany-map-svg" viewBox={`0 0 ${mapWidth} ${mapHeight}`} xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Choroplethenkarte Deutschlands mit HDRI-Mittelwerten pro Bundesland">
+          {pathEntries.map(
+            (entry) =>
+              entry.d && (
+                <path
+                  class="germany-map-path"
+                  d={entry.d}
+                  fill={entry.fill}
+                  data-name={entry.name}
+                  data-tooltip={
+                    entry.data
+                      ? [
+                          `P90 = ${score(entry.data.p90)}`,
+                          `P75 = ${score(entry.data.p75)}`,
+                          `P50 = ${score(entry.data.p50)}`,
+                          `P25 = ${score(entry.data.p25)}`,
+                          `P10 = ${score(entry.data.p10)}`,
+                          `MW  = ${score(entry.data.mean)}`,
+                          `N   = ${count(entry.data.n)}`,
+                        ].join('\n')
+                      : ''
+                  }
+                />
+              ),
+          )}
+        </svg>
+        <div class="germany-map-legend">
+          <span class="germany-map-legend-caption">Mittelwert</span>
+          <div class="germany-map-legend-bar" style="background: linear-gradient(90deg, rgb(247,251,255), rgb(100,110,145))"></div>
+          <div class="germany-map-legend-labels">
+            <span>{score(minMean)}</span>
+            <span>{score(maxMean)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="germany-ranking-header">
+          <span class="germany-ranking-rank">#</span>
+          <span class="germany-ranking-name">Bundesland</span>
+          <span class="germany-ranking-mean">MW</span>
+          <span class="germany-ranking-p50">P50</span>
+          <span class="germany-ranking-n">N</span>
+        </div>
+        <div class="germany-ranking">
+          {sorted.map((item, i) => (
+            <button
+              class="germany-ranking-row"
+              type="button"
+              data-name={item.label}
+              data-tooltip={[
+                `P90 = ${score(item.p90)}`,
+                `P75 = ${score(item.p75)}`,
+                `P50 = ${score(item.p50)}`,
+                `P25 = ${score(item.p25)}`,
+                `P10 = ${score(item.p10)}`,
+                `MW  = ${score(item.mean)}`,
+                `N   = ${count(item.n)}`,
+              ].join('\n')}
+            >
+              <span class="germany-ranking-rank">{i + 1}</span>
+              <div class="germany-ranking-dot" style={`background: ${colorScale(item.mean)}`}></div>
+              <span class="germany-ranking-name">{item.label}</span>
+              <span class="germany-ranking-mean">{score(item.mean)}</span>
+              <span class="germany-ranking-p50">{score(item.p50)}</span>
+              <span class="germany-ranking-n">{count(item.n)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div class="provenance-badge" style="margin-top: 0.75rem;">
+      Quelle: @org/digital-observatory · k ≥ {count(kAnonymityMin)}
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.germany-map-path, .germany-ranking-row').forEach((el) => {
+    const tooltipText = el.getAttribute('data-tooltip');
+    if (!tooltipText) return;
+
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', 'Statistische Details anzeigen');
+
+    let popup: HTMLDivElement | null = null;
+    let pinned = false;
+
+    function show() {
+      if (popup) return;
+      popup = document.createElement('div');
+      popup.className = 'germany-boxplot-tooltip';
+      popup.textContent = tooltipText;
+      document.body.appendChild(popup);
+
+      const rect = el.getBoundingClientRect();
+      const popRect = popup.getBoundingClientRect();
+
+      let left = rect.left + rect.width / 2 - popRect.width / 2;
+      let top = rect.top - popRect.height - 10;
+      if (top < 10) top = rect.bottom + 10;
+
+      left = Math.max(10, Math.min(left, window.innerWidth - popRect.width - 10));
+      top = Math.max(10, top);
+
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+      requestAnimationFrame(() => popup && popup.classList.add('visible'));
+
+      el.classList.add('active');
+    }
+
+    function hide() {
+      if (!popup) return;
+      const p = popup;
+      popup = null;
+      p.classList.remove('visible');
+      p.addEventListener('transitionend', () => p.remove(), { once: true });
+      el.classList.remove('active');
+    }
+
+    el.addEventListener('mouseenter', () => { if (!pinned) show(); });
+    el.addEventListener('mouseleave', () => { if (!pinned) hide(); });
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pinned = !pinned;
+      if (pinned) show(); else hide();
+    });
+
+    el.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        pinned = !pinned;
+        if (pinned) show(); else hide();
+      } else if (e.key === 'Escape') {
+        pinned = false;
+        hide();
+      }
+    });
+
+    document.addEventListener('click', () => {
+      if (pinned) { pinned = false; hide(); }
+    });
+  });
+</script>

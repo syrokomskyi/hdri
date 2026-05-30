@@ -9,11 +9,13 @@ type Props = {
   canonical?: string;
   noIndex?: boolean;
   schema?: Record<string, unknown>;
+  image?: string;
 };
 
-const { title, description, canonical, noIndex = false, schema } = Astro.props;
+const { title, description, canonical, noIndex = false, schema, image = '/og-image.webp' } = Astro.props;
 const site = 'https://handwerk-index.org';
 const canonicalUrl = canonical ?? new URL(Astro.url.pathname, site).href;
+const imageUrl = new URL(image, site).href;
 const robotsContent = noIndex ? 'noindex, nofollow' : 'index, follow';
 ---
 
@@ -37,11 +39,14 @@ const robotsContent = noIndex ? 'noindex, nofollow' : 'index, follow';
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:type" content="image/webp" />
     <meta property="og:locale" content="de_DE" />
 
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
 
     {schema && (
       <script type="application/ld+json" set:html={JSON.stringify({ '@context': 'https://schema.org', ...schema })} />

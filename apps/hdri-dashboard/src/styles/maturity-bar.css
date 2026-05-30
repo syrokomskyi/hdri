@@ -1,0 +1,144 @@
+.maturity-bar-section {
+  padding: 1rem 0 2.5rem;
+}
+
+.maturity-bar-panel {
+  border-radius: var(--radius-lg);
+  padding: 1.8rem;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  position: relative;
+  overflow: hidden;
+}
+
+.maturity-bar-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--layer-text);
+  opacity: 0.8;
+}
+
+.maturity-bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.maturity-bar-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.maturity-bar-head .caption {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.maturity-bar-track {
+  display: flex;
+  height: 2.2rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-muted);
+}
+
+.maturity-bar-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.maturity-bar-segment:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.maturity-bar-segment:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.maturity-bar-segment:hover {
+  filter: brightness(1.1);
+}
+
+.maturity-bar-segment-label {
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.maturity-bar-segment-share {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  font-size: 0.68rem;
+  opacity: 0.85;
+  z-index: 1;
+}
+
+.maturity-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.maturity-bar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+}
+
+.maturity-bar-legend-swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.maturity-bar-legend-count {
+  color: var(--muted);
+  margin-left: 0.15rem;
+}
+
+.maturity-bar-summary {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.maturity-bar-summary strong {
+  color: var(--text);
+}
+
+@media (max-width: 640px) {
+  .maturity-bar-track {
+    height: 1.6rem;
+  }
+  .maturity-bar-segment {
+    font-size: 0.6rem;
+  }
+  .maturity-bar-summary {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

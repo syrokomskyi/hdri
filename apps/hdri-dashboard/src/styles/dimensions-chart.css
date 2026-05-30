@@ -1,0 +1,150 @@
+.dimensions-chart-section {
+  padding: 1rem 0 2.5rem;
+}
+
+.dimensions-chart-panel {
+  border-radius: var(--radius-lg);
+  padding: 1.8rem;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  position: relative;
+  overflow: hidden;
+}
+
+.dimensions-chart-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--layer-shtama);
+  opacity: 0.8;
+}
+
+.dimensions-chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.dimensions-chart-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.dimensions-chart-head .caption {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.dimensions-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.dimensions-chart-bar-bg {
+  fill: var(--surface-muted);
+  rx: 4;
+  ry: 4;
+}
+
+.dimensions-chart-bar {
+  rx: 4;
+  ry: 4;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+
+.dimensions-chart-bar:hover {
+  opacity: 0.8;
+}
+
+.dimensions-chart-label {
+  font-size: 0.78rem;
+  fill: var(--text);
+  font-weight: 600;
+}
+
+.dimensions-chart-value {
+  font-size: 0.78rem;
+  fill: var(--muted);
+  text-anchor: end;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.dimensions-chart-mean-value {
+  font-size: 0.72rem;
+  fill: var(--muted);
+  text-anchor: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.dimensions-chart-weight-marker {
+  font-size: 0.62rem;
+  fill: rgba(0, 0, 0, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+.dimensions-chart-marker {
+  stroke: var(--text);
+  stroke-width: 1.5;
+  stroke-dasharray: 3, 3;
+  opacity: 0.5;
+}
+
+.dimensions-chart-p50-label {
+  font-size: 0.62rem;
+  fill: var(--muted);
+  text-anchor: middle;
+}
+
+.dimensions-chart-axis-label {
+  font-size: 0.62rem;
+  fill: var(--muted);
+  text-anchor: end;
+}
+
+.dimensions-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  align-items: center;
+}
+
+.dimensions-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.dimensions-chart-legend-line {
+  width: 1.2rem;
+  height: 2px;
+  border-top: 2px dashed var(--text);
+  opacity: 0.5;
+}
+
+.dimensions-chart-legend-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--text);
+  opacity: 0.5;
+}
+
+.dimensions-chart-legend-weight {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+}

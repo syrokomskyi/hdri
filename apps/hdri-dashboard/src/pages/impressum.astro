@@ -7,11 +7,13 @@ const pageTitle = 'Impressum — HDRI Dashboard';
 const pageDescription = 'Impressum des HDRI Dashboard: Angaben gemäß § 5 DDG.';
 
 const site = 'https://handwerk-index.org';
+const ogImage = `${site}/og-image.webp`;
 const schema = {
   '@type': 'AboutPage',
   name: pageTitle,
   description: pageDescription,
   url: `${site}/impressum`,
+  image: ogImage,
   inLanguage: 'de-DE',
   publisher: {
     '@type': 'Organization',

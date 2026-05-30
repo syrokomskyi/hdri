@@ -1,0 +1,138 @@
+---
+import '../styles/dimensions-chart.css';
+
+type DimensionItem = {
+  id: string;
+  label: string;
+  weight: number;
+  n: number;
+  mean: number;
+  p50: number;
+};
+
+type Props = {
+  dimensions: DimensionItem[];
+};
+
+const { dimensions } = Astro.props;
+
+const sorted = [...dimensions].sort((a, b) => b.mean - a.mean);
+
+const LOCALE = 'de-DE';
+const score = (v: number) => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1, minimumFractionDigits: 1 }).format(v);
+const wt = (v: number) => new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: 0 }).format(v);
+
+const marginTop = 20;
+const marginBottom = 8;
+const barHeight = 28;
+const gap = 10;
+const labelWidth = 140;
+const valueWidth = 40;
+const chartWidth = 600;
+const barMaxWidth = chartWidth - labelWidth - valueWidth - 10;
+const totalHeight = sorted.length * (barHeight + gap) + marginTop + marginBottom;
+
+const maxMean = 100;
+
+function barWidth(mean: number): number {
+  return (mean / maxMean) * barMaxWidth;
+}
+
+function weightOpacity(w: number): number {
+  return 0.4 + w * 1.6; // maps 0.04→0.46, 0.28→0.85
+}
+
+function weightColor(w: number): string {
+  const t = (w - 0.04) / (0.28 - 0.04);
+  const r = Math.round(15 + t * 40);
+  const g = Math.round(85 + t * 50);
+  const b = Math.round(170 - t * 30);
+  return `rgb(${r},${g},${b})`;
+}
+---
+
+<section class="dimensions-chart-section">
+  <div class="container">
+    <div class="dimensions-chart-panel">
+      <div class="dimensions-chart-head">
+        <h3>Dimensions-Profil: Mittelwert und Gewichtung</h3>
+        <span class="caption">Balken = Mittelwert ∘ Farbsättigung = Gewicht</span>
+      </div>
+
+      <svg class="dimensions-chart-svg" viewBox={`0 0 ${chartWidth} ${totalHeight}`} xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Waagerechte Lollipop-Diagramme der sechs HDRI-Dimensionen nach Mittelwert sortiert">
+        <line x1={labelWidth + 2} y1={0} x2={labelWidth + 2} y2={totalHeight} stroke="var(--border)" stroke-width="1" />
+
+        {sorted.map((item, i) => {
+          const y = marginTop + i * (barHeight + gap);
+          const bw = barWidth(item.mean);
+          const wOp = weightOpacity(item.weight);
+
+          return (
+            <g key={item.id}>
+              <rect
+                class="dimensions-chart-bar-bg"
+                x={labelWidth + 4}
+                y={y + 4}
+                width={barMaxWidth}
+                height={barHeight - 8}
+              />
+              <rect
+                class="dimensions-chart-bar"
+                x={labelWidth + 4}
+                y={y + 4}
+                width={bw}
+                height={barHeight - 8}
+                fill={weightColor(item.weight)}
+                opacity={wOp}
+              />
+              <circle
+                cx={labelWidth + 4 + bw}
+                cy={y + barHeight / 2}
+                r={6}
+                fill={weightColor(item.weight)}
+                opacity={wOp}
+              />
+              <text class="dimensions-chart-label" x={labelWidth - 6} y={y + barHeight / 2 + 1} text-anchor="end" dominant-baseline="central">
+                {item.label}
+              </text>
+              <text class="dimensions-chart-mean-value" x={labelWidth + 8 + barMaxWidth} y={y + barHeight / 2 + 1} dominant-baseline="central">
+                {score(item.mean)}
+              </text>
+              <text class="dimensions-chart-weight-marker" x={labelWidth + 8 + barMaxWidth} y={y + barHeight / 2 + 14} text-anchor="end">
+                Gewicht {wt(item.weight)}
+              </text>
+              {item.p50 != null && (
+                <>
+                  <line
+                    class="dimensions-chart-marker"
+                    x1={labelWidth + 4 + barWidth(item.p50)}
+                    y1={y}
+                    x2={labelWidth + 4 + barWidth(item.p50)}
+                    y2={y + barHeight}
+                  />
+                </>
+              )}
+            </g>
+          );
+        })}
+
+        <text class="dimensions-chart-axis-label" x={labelWidth + 4 + barMaxWidth} y={totalHeight - 4}>100</text>
+      </svg>
+
+      <div class="dimensions-chart-legend">
+        <span class="dimensions-chart-legend-item">
+          <span class="dimensions-chart-legend-weight" style="background: rgb(15, 85, 170)"></span>
+          Gewicht stark
+        </span>
+        <span class="dimensions-chart-legend-item">
+          <span class="dimensions-chart-legend-weight" style="background: rgb(55, 135, 140)"></span>
+          Gewicht schwach
+        </span>
+        <span class="dimensions-chart-legend-item">
+          <span class="dimensions-chart-legend-line"></span>
+          P50 (Median)
+        </span>
+      </div>
+    </div>
+  </div>
+</section>

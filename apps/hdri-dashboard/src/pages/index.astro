@@ -10,6 +10,7 @@ import bundeslandTrends from '../assets/data/public/comparisons/bundesland-trend
 import gewerkTrends from '../assets/data/public/comparisons/gewerk-trends.json';
 import destatisMapping from '../../../../packages/business-core/src/gewerk/data/destatis-mapping.json';
 import matrixTrends from '../assets/data/public/comparisons/matrix-trends.json';
+import MaturityBar from '../components/MaturityBar.astro';
 
 type Summary = {
   n: number;
@@ -197,7 +198,7 @@ function reliabilityClass(r: 'reliable' | 'caution' | 'suppressed'): string {
   return `reliability-dot reliability-${r}`;
 }
 
-function percentileTooltip(item: Summary): string {
+function percentileTooltip(item: { n: number; mean: number; p25: number; p50: number; p75: number }): string {
   const pad = (s: string) => s.padEnd(13, ' ');
   return `${pad('P75')} = ${score(item.p75)}\n${pad('P50 (Median)')} = ${score(item.p50)}\n${pad('P25')} = ${score(item.p25)}\n${pad('Mittelwert')} = ${score(item.mean)}\n${pad('N')} = ${count(item.n)}`;
 }
@@ -215,6 +216,7 @@ function detailGrid(item: { p10: number; p25: number; p50: number; p75: number; 
 }
 
 const site = 'https://handwerk-index.org';
+const ogImage = `${site}/og-image.webp`;
 const schema = {
   '@graph': [
     {
@@ -222,6 +224,7 @@ const schema = {
       name: pageTitle,
       description: pageDescription,
       url: `${site}/`,
+      image: ogImage,
       inLanguage: 'de-DE',
     },
     {
@@ -229,6 +232,7 @@ const schema = {
       name: 'HDRI Quartalsindex',
       description: 'Öffentlicher, deskriptiver Quartalsindex der digitalen Reife deutscher Handwerkswebsites.',
       url: `${site}/`,
+      image: ogImage,
       creator: {
         '@type': 'Organization',
         name: 'HDRI Observatory',
@@ -345,6 +349,8 @@ const schema = {
       </details>
     </div>
 
+    <MaturityBar maturity={maturity} sampleSize={currentOverview.sampleSize} />
+
     <section class="section" id="dimensionen">
       <div class="container">
         <div class="section-head">
@@ -391,6 +397,7 @@ const schema = {
         ) : (
           <div class="empty-state">Noch keine publizierbaren Dimensionsdaten vorhanden.</div>
         )}
+
       </div>
     </section>
 
@@ -414,19 +421,6 @@ const schema = {
             </article>
           ))}
         </div>
-        {maturity.length > 0 ? (
-          <div class="bands-grid section-stack-top">
-            {maturity.map((band) => (
-              <article class="maturity-card layer-accent accent-schema" style={`--share: ${band.share};`}>
-                <small>{band.label}</small>
-                <strong>{count(band.count)}</strong>
-                <span class="caption">{pct(band.share)} der Stichprobe</span>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div class="empty-state">Noch keine Reifestufen vorhanden.</div>
-        )}
 
         <div class="table-card table-wrap section-stack-top layer-accent accent-schema">
           <table>

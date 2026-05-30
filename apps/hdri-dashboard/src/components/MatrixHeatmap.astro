@@ -1,0 +1,134 @@
+---
+import '../styles/matrix-heatmap.css';
+
+type MatrixItem = {
+  bundesland: string;
+  gewerk: string;
+  n: number;
+  mean: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+};
+
+type Props = {
+  matrix: MatrixItem[];
+  kAnonymityMin: number;
+};
+
+const { matrix, kAnonymityMin } = Astro.props;
+
+const gewerke = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+const allBundeslaender = [...new Set(matrix.map((m) => m.bundesland))].sort();
+const meansByBl = allBundeslaender.map((bl) => {
+  const items = matrix.filter((m) => m.bundesland === bl);
+  return { label: bl, mean: items.reduce((s, m) => s + m.mean, 0) / items.length };
+});
+meansByBl.sort((a, b) => b.mean - a.mean);
+const sortedBundeslaender = meansByBl.map((b) => b.label);
+
+const allMeans = matrix.map((m) => m.mean);
+const minMean = Math.min(...allMeans);
+const maxMean = Math.max(...allMeans);
+const meanRange = maxMean - minMean || 1;
+
+const maxN = Math.max(...matrix.map((m) => m.n));
+
+function interpBlues(t: number): string {
+  const clamped = Math.max(0, Math.min(1, t));
+  const r = Math.round(247 - clamped * 147);
+  const g = Math.round(251 - clamped * 141);
+  const b = Math.round(255 - clamped * 110);
+  return `rgb(${r},${g},${b})`;
+}
+
+function cellColor(mean: number): string {
+  return interpBlues((mean - minMean) / meanRange);
+}
+
+function cellOpacity(n: number): string {
+  if (n < kAnonymityMin) return '0.3';
+  const t = Math.min(1, n / 200);
+  return String(0.35 + t * 0.65);
+}
+
+const LOCALE = 'de-DE';
+const score = (v: number) => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1, minimumFractionDigits: 1 }).format(v);
+const count = (v: number) => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 }).format(v);
+
+const matrixMap = new Map<string, MatrixItem>();
+matrix.forEach((m) => {
+  matrixMap.set(`${m.bundesland}__${m.gewerk}`, m);
+});
+
+function getCell(bl: string, gew: string): MatrixItem | undefined {
+  return matrixMap.get(`${bl}__${gew}`);
+}
+---
+
+<section class="matrix-heatmap-section" id="matrix">
+  <div class="container">
+    <div class="matrix-heatmap-panel">
+      <div class="matrix-heatmap-head">
+        <h3>Bundesland × Gewerk – Mittelwert-Matrix</h3>
+        <span class="caption">Farbe = Mittelwert · Transparenz = Fallzahl · k ≥ {count(kAnonymityMin)}</span>
+      </div>
+
+      <div class="matrix-heatmap-wrap">
+        <table class="matrix-heatmap-table">
+          <thead>
+            <tr>
+              <th></th>
+              {gewerke.map((g) => <th>{g}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedBundeslaender.map((bl) => (
+              <tr key={bl}>
+                <td class="matrix-heatmap-row-label">{bl}</td>
+                {gewerke.map((g) => {
+                  const cell = getCell(bl, g);
+                  if (!cell) {
+                    return <td class="matrix-heatmap-cell-empty">–</td>;
+                  }
+                  const suppressed = cell.n < kAnonymityMin;
+                  return (
+                    <td
+                      class={`matrix-heatmap-cell ${suppressed ? 'matrix-heatmap-cell-suppressed' : ''}`}
+                      style={`background: ${cellColor(cell.mean)}; opacity: ${cellOpacity(cell.n)};`}
+                      title={`${bl} · ${g}\nMW = ${score(cell.mean)}\nN = ${count(cell.n)}\nP50 = ${score(cell.p50)}\nIQR = ${score(cell.p25)}–${score(cell.p75)}`}
+                    >
+                      <span class="matrix-heatmap-cell-mean">{score(cell.mean)}</span>
+                      <span class="matrix-heatmap-cell-n">N = {count(cell.n)}</span>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="matrix-heatmap-legend">
+        <span class="matrix-heatmap-legend-item">
+          Mittelwert:
+        </span>
+        <span class="matrix-heatmap-legend-scale">
+          <span class="matrix-heatmap-legend-swatch" style={`background: ${interpBlues(0)}`}></span>
+          <span class="matrix-heatmap-legend-labels">
+            <span>{score(minMean)}</span>
+            <span>{score(maxMean)}</span>
+          </span>
+          <span class="matrix-heatmap-legend-swatch" style={`background: ${interpBlues(1)}`}></span>
+        </span>
+        <span class="matrix-heatmap-legend-item">
+          <span class="matrix-heatmap-legend-swatch" style="background: rgba(100,110,145,0.3)"></span>
+          ≤ {count(kAnonymityMin)} Fälle (unterdrückt)
+        </span>
+      </div>
+    </div>
+  </div>
+</section>

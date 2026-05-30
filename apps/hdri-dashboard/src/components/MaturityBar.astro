@@ -1,0 +1,76 @@
+---
+import '../styles/maturity-bar.css';
+
+type Maturity = {
+  id: string;
+  label: string;
+  count: number;
+  share: number;
+};
+
+type Props = {
+  maturity: Maturity[];
+  sampleSize: number;
+};
+
+const { maturity, sampleSize } = Astro.props;
+
+const colors: Record<string, string> = {
+  kritisch: '#ef4444',
+  basis: '#f59e0b',
+  aufbau: '#3b82f6',
+  fortgeschritten: '#22c55e',
+  vorbild: '#8b5cf6',
+};
+
+const total = maturity.reduce((s, m) => s + m.count, 0);
+const segments = maturity.filter((m) => m.share > 0);
+
+const LOCALE = 'de-DE';
+const pct = (v: number) => new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: 1 }).format(v);
+const count = (v: number) => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 }).format(v);
+
+const basisShare = maturity.find((m) => m.id === 'basis')?.share ?? 0;
+const advancedShare = maturity.filter((m) => m.id === 'fortgeschritten' || m.id === 'vorbild').reduce((s, m) => s + m.share, 0);
+const basisPct = pct(basisShare);
+const advancedPct = pct(advancedShare);
+---
+
+<section class="maturity-bar-section">
+  <div class="container">
+    <div class="maturity-bar-panel">
+      <div class="maturity-bar-head">
+        <h3>Reifegrad-Verteilung der Stichprobe</h3>
+        <span class="caption">N = {count(total)}</span>
+      </div>
+
+      <div class="maturity-bar-track">
+        {segments.map((m) => (
+          <div
+            class="maturity-bar-segment"
+            style={`width: ${m.share * 100}%; background: ${colors[m.id] ?? '#9ca3af'};`}
+          >
+            <span class="maturity-bar-segment-label">
+              {m.share >= 0.04 ? `${m.label}  ${pct(m.share)}` : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div class="maturity-bar-legend">
+        {segments.map((m) => (
+          <div class="maturity-bar-legend-item">
+            <span class="maturity-bar-legend-swatch" style={`background: ${colors[m.id] ?? '#9ca3af'}`}></span>
+            <span>{m.label}</span>
+            <span class="maturity-bar-legend-count">{pct(m.share)} · {count(m.count)}</span>
+          </div>
+        ))}
+      </div>
+
+      <div class="maturity-bar-summary">
+        <span><strong>{basisPct}</strong> der Websites liegen auf Basis-Niveau</span>
+        <span>Nur <strong>{advancedPct}</strong> erreichen Fortgeschritten oder höher</span>
+      </div>
+    </div>
+  </div>
+</section>
