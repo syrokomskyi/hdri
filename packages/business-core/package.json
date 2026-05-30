@@ -7,9 +7,9 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "pnpm exec tsc -p tsconfig.lib.json",
+    "build": "pnpm exec tsc -p tsconfig.json",
     "lint": "pnpm exec eslint src --ext .ts",
-    "typecheck": "pnpm exec tsc -p tsconfig.lib.json --noEmit",
+    "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit",
     "upgrade-packages": "pnpm up --latest"
   },
   "exports": {
