@@ -42,4 +42,4 @@ jobs:
 
       # Governance gates
       - run: pnpm --filter @org/hdri-codebook run test
-      - run: pnpm --filter @org/hdri-codebook exec tsx scripts/validate-signatories.ts apps/digital-observatory/.input/codebook.yaml --enforce
+      - run: pnpm exec tsx packages/hdri-codebook/scripts/validate-signatories.ts apps/digital-observatory/.input/codebook.yaml --enforce
