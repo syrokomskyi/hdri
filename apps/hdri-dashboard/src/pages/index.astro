@@ -228,20 +228,44 @@ const schema = {
       inLanguage: 'de-DE',
     },
     {
+      '@type': 'StatisticalPopulation',
+      name: `HDRI Stichprobe — Deutschland (${currentManifest.period})`,
+      populationType: 'WebSite',
+      description: 'Öffentlich erreichbare Handwerkswebsites in Deutschland',
+      numConstraints: 0,
+      statVariable: [
+        { '@type': 'PropertyValue', name: 'Stichprobengröße', value: currentOverview.sampleSize, unitText: 'Websites' },
+        { '@type': 'PropertyValue', name: 'HDRI Overall Score P75', value: summary.p75, unitText: 'Score 0–100' },
+        { '@type': 'PropertyValue', name: 'HDRI Overall Score Mean', value: summary.mean, unitText: 'Score 0–100' },
+        { '@type': 'PropertyValue', name: 'HDRI Overall Score Median', value: summary.p50, unitText: 'Score 0–100' },
+        { '@type': 'PropertyValue', name: 'Vertrauensniveau (Confidence)', value: confidence.mean, unitText: 'Score 0–1' },
+      ],
+    },
+    {
       '@type': 'Dataset',
       name: 'HDRI Quartalsindex',
       description: 'Öffentlicher, deskriptiver Quartalsindex der digitalen Reife deutscher Handwerkswebsites.',
       url: `${site}/`,
       image: ogImage,
       creator: {
-        '@type': 'Organization',
-        name: 'HDRI Observatory',
+        '@type': 'Person',
+        name: 'Andrii Syrokomskyi',
         url: site,
       },
-      license: 'https://creativecommons.org/licenses/by-sa/4.0/',
+      license: 'https://www.apache.org/licenses/LICENSE-2.0',
       temporalCoverage: currentManifest.period,
       spatialCoverage: 'Deutschland',
       inLanguage: 'de-DE',
+      variableMeasured: [
+        { '@type': 'PropertyValue', name: 'HDRI Overall Score P75', value: summary.p75, unitText: 'Score 0–100' },
+        { '@type': 'PropertyValue', name: 'HDRI Overall Mean', value: summary.mean, unitText: 'Score 0–100' },
+        { '@type': 'PropertyValue', name: 'Stichprobengröße', value: currentOverview.sampleSize, unitText: 'Websites' },
+        { '@type': 'PropertyValue', name: 'Reifegrad Kritisch', value: maturity.find((m) => m.id === 'kritisch')?.count ?? 0, unitText: 'Websites' },
+        { '@type': 'PropertyValue', name: 'Reifegrad Basis', value: maturity.find((m) => m.id === 'basis')?.count ?? 0, unitText: 'Websites' },
+        { '@type': 'PropertyValue', name: 'Reifegrad Aufbau', value: maturity.find((m) => m.id === 'aufbau')?.count ?? 0, unitText: 'Websites' },
+        { '@type': 'PropertyValue', name: 'Reifegrad Fortgeschritten', value: maturity.find((m) => m.id === 'fortgeschritten')?.count ?? 0, unitText: 'Websites' },
+        { '@type': 'PropertyValue', name: 'Reifegrad Vorbild', value: maturity.find((m) => m.id === 'vorbild')?.count ?? 0, unitText: 'Websites' },
+      ],
     },
   ],
 };
@@ -301,6 +325,8 @@ const schema = {
         </div>
       </div>
 
+      <MaturityBar maturity={maturity} sampleSize={currentOverview.sampleSize} />
+
       <details class="reading-guide layer-accent accent-schema" open>
         <summary>
           <span class="reading-guide-title">Wie Sie dieses Dashboard lesen</span>
@@ -348,8 +374,6 @@ const schema = {
         </div>
       </details>
     </div>
-
-    <MaturityBar maturity={maturity} sampleSize={currentOverview.sampleSize} />
 
     <section class="section" id="dimensionen">
       <div class="container">
@@ -422,7 +446,7 @@ const schema = {
           ))}
         </div>
 
-        <div class="table-card table-wrap section-stack-top layer-accent accent-schema">
+        <div class="table-card table-wrap section-stack-top layer-accent accent-schema" tabindex="0">
           <table>
             <thead>
               <tr>
@@ -468,7 +492,7 @@ const schema = {
           <p>Gezeigt werden nur Länder mit ausreichend großer Stichprobe. Deltas werden unterdrückt, wenn die Vergleichsregeln es verlangen.</p>
         </div>
         {topBundeslaender.length > 0 ? (
-          <div class="table-card table-wrap layer-accent accent-faq">
+          <div class="table-card table-wrap layer-accent accent-faq" tabindex="0">
             <table>
               <thead>
                 <tr>
@@ -522,7 +546,7 @@ const schema = {
           <p>Die veröffentlichten Gewerkeschnitte helfen bei der Einordnung von Handlungsfeldern, ohne Ranglisten einzelner Unternehmen zu erzeugen. Die Klassifizierung folgt der <a href="https://www.gesetze-im-internet.de/hwo/anlage_a.html" target="_blank" rel="noopener noreferrer">Handwerksordnung (HWO)</a> und den <a href="https://www.destatis.de" target="_blank" rel="noopener noreferrer">Destatis-Gewerbegruppen I–VII</a>.</p>
         </div>
         {gewerkTrendItems.length > 0 ? (
-          <div class="table-card table-wrap layer-accent accent-entities">
+          <div class="table-card table-wrap layer-accent accent-entities" tabindex="0">
             <table>
               <thead>
                 <tr>

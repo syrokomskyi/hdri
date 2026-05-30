@@ -21,6 +21,20 @@ Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quar
 
 Der HDRI ist **kein Ranking einzelner Betriebe** und **kein SEO-Score**.
 
+**Reifegrad-Klassifizierung:** Fünf Stufen basierend auf dem HDRI-Score (0–100):
+  - Kritisch (0 – <20): Kritische Mängel, fundamentale Anforderungen nicht erfüllt
+  - Basis (20 – <40): Grundlegende Anforderungen überwiegend erfüllt
+  - Aufbau (40 – <60): Fortgeschrittene Massnahmen teilweise umgesetzt
+  - Fortgeschritten (60 – <80): Moderne Best Practices weitgehend implementiert
+  - Vorbild (80 – 100): Hervorragende digitale Präsenz, Best-Practice-Niveau
+  Die Einteilung ist ein nachgelagerter Orientierungsrahmen, kein Bestandteil des Score-Modells.
+  Die Verteilung wird auf der Startseite als horizontaler Balken visualisiert.
+
+**Scoring-Formel:**
+  - Dimensions-Score = gewichtetes Mittel der Indikator-Scores einer Dimension
+  - Overall-Score = 0.16 × Barrierefreiheit + 0.28 × Recht & Pflichtangaben + 0.22 × Kontakt & Erreichbarkeit + 0.04 × Soziale Präsenz + 0.12 × Vertrauen & Nachweise + 0.18 × Strukturierte Informationen
+  - Die Formel ist auf der Methodik-Seite als KaTeX-Darstellung verfügbar.
+
 **Aktuelle Stichprobe (2026-Q2):** 38.121 Websites.
 
 ---
@@ -29,7 +43,7 @@ Der HDRI ist **kein Ranking einzelner Betriebe** und **kein SEO-Score**.
 
 Die Startseite zeigt:
 - Aktuellen HDRI-Gesamtscore mit Quartalsvergleich
-- Reifegradverteilung (z. B. Beginner, Intermediate, Advanced)
+- Reifegradverteilung (Kritisch, Basis, Aufbau, Fortgeschritten & Vorbild)
 - Top-Bundesländer und Top-Gewerke
 - Bundesland × Gewerk-Matrix (sichere Vergleiche)
 - Dimensionen-Ranking mit Gewichtungen
@@ -75,8 +89,22 @@ Jeder Lauf produziert eine versionsgebundene Codebook-Version und einen eindeuti
 **3. Gesamt-Score**
 - Gesamt-Score = gewichtetes arithmetisches Mittel aller Dimensions-Scores.
 - Confidence = gewichtetes arithmetisches Mittel aller Dimensions-Confidences.
+- Die vollständige Formel ist auf der Methodik-Seite als KaTeX-Darstellung verfügbar: `Overall = 0.16·D_Barrierefreiheit + 0.28·D_Recht + 0.22·D_Kontakt + 0.04·D_Sozial + 0.12·D_Vertrauen + 0.18·D_Strukturiert`.
 
-### 3.5 Privacy & K-Anonymität
+### 3.5 Reifegrad-Klassifizierung
+Der HDRI-Score (0–100) jeder Website wird in fünf Reifegrad-Stufen eingeteilt (nachgelagerter Schritt):
+
+| Stufe | Score | Bedeutung |
+|---|---|---|
+| Kritisch | <20 | Kritische Mängel, fundamentale Anforderungen nicht erfüllt |
+| Basis | 20–40 | Grundlegende Anforderungen überwiegend erfüllt |
+| Aufbau | 40–60 | Fortgeschrittene Massnahmen teilweise umgesetzt |
+| Fortgeschritten | 60–80 | Moderne Best Practices weitgehend implementiert |
+| Vorbild | 80–100 | Hervorragende digitale Präsenz, Best-Practice-Niveau |
+
+Die Band-Grenzen (20, 40, 60, 80) sind feste Schwellen. Die Stufe «Vorbild» wird in der aktuellen Stichprobe nicht erreicht. Die Verteilung wird im Dashboard als Balken visualisiert.
+
+### 3.6 Privacy & K-Anonymität
 
 - Im Dashboard werden ausschließlich k-anonyme Aggregate veröffentlicht (mindestens k ≥ 5 Fälle pro Slice).
 - Einzelne Betriebe, Domains, URLs oder individuelle Scores werden nie veröffentlicht.
@@ -144,7 +172,21 @@ Alle öffentlichen Seiten:
 
 ---
 
-## 9. Technischer Kontext
+## 9. Schema.org Structured Data
+
+Jede Seite enthält JSON-LD-Markup. Die verwendeten Schema-Typen:
+
+- **Startseite** (`/`): `WebSite` (allgemeine Seiteninfo) + `Dataset` (HDRI-Quartalsindex mit räumlicher und zeitlicher Abdeckung)
+- **Methodik** (`/methodik`): `WebPage` mit Publisher (HDRI Observatory)
+- **Codebook** (`/codebook`): `TechArticle` mit Publisher
+- **FAQ** (`/faq`): `FAQPage` mit `Question`/`Answer`-Paaren
+- **Glossar** (`/glossar`): `DefinedTermSet` mit `DefinedTerm`-Einträgen
+- **Impressum** (`/impressum`): `AboutPage` mit Publisher
+- **Datenschutz** (`/datenschutz`): `WebPage` mit Publisher
+
+Das Markup wird im `<head>` via `BaseLayout.astro` als `application/ld+json` injiziert.
+
+## 10. Technischer Kontext
 
 **Was ist der HDRI?**
 Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht.
@@ -172,32 +214,4 @@ Nein. Alle Rohdaten werden anonymisiert, bevor sie in den Index einfließen. Der
 **Was passiert mit inaktiven Websites?**
 Domains, die bei mehreren aufeinanderfolgenden Crawl-Versuchen nicht erreichbar sind, werden aus der aktiven Stichprobe entfernt.
 
----
 
-## 6. Rechtliches
-
-- **Impressum** (/impressum): Angaben gemäß § 5 TMG.
-- **Datenschutz** (/datenschutz): Hinweise zur Datenverarbeitung und DSGVO-Compliance. Es werden keine personenbezogenen Daten veröffentlicht.
-
----
-
-## 7. Sitemap
-
-Alle öffentlichen Seiten:
-- https://handwerk-index.org/
-- https://handwerk-index.org/methodik
-- https://handwerk-index.org/codebook
-- https://handwerk-index.org/faq
-- https://handwerk-index.org/impressum
-- https://handwerk-index.org/datenschutz
-
----
-
-## 8. Technischer Kontext
-
-- **Framework:** Astro (statischer Build)
-- **Deploy:** Cloudflare Pages
-- **Datenquelle:** apps/digital-observatory (observatory.db)
-- **Update-Zyklus:** Quartalsweise, nach Abschluss der Observatory-Pipeline
-- **K-Anonymitäts-Minimum:** k ≥ 5
-- **Suppression-Policy:** Zu kleine Slices werden unterdrückt

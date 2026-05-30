@@ -208,13 +208,13 @@ a {
 }
 
 .button {
-  background: var(--layer-text);
+  background: #b85a24;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(224, 122, 61, 0.25);
+  box-shadow: 0 4px 12px rgba(184, 90, 36, 0.25);
 }
 
 .button:hover {
-  box-shadow: 0 6px 16px rgba(224, 122, 61, 0.35);
+  box-shadow: 0 6px 16px rgba(184, 90, 36, 0.35);
 }
 
 .button-secondary {
@@ -422,6 +422,103 @@ a {
   justify-content: space-between;
   gap: 1rem;
   margin: 2.5rem 0 3rem;
+}
+
+.method-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.method-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.method-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.method-table tr:last-child td {
+  border-bottom: none;
+}
+
+.method-swatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 0.4rem;
+}
+
+.method-card-footnote {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.75rem;
+  line-height: 1.6;
+}
+
+.method-formula {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow);
+}
+
+.method-formula h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.method-formula > p {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 1rem 0 0.5rem;
+  line-height: 1.5;
+}
+
+.method-formula > p:first-of-type {
+  margin-top: 0;
+}
+
+.method-formula .katex-display {
+  margin: 1rem 0;
+}
+
+.method-formula .katex-display > .katex {
+  white-space: nowrap;
+}
+
+.method-formula .katex-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+}
+
+/* On narrow screens, also make the formula block scrollable so the right
+   edge of wide expressions is reachable without zooming. */
+@media (max-width: 640px) {
+  .method-formula {
+    padding: 1rem;
+  }
+
+  .method-formula .katex-display {
+    font-size: 0.85rem;
+  }
 }
 
 /* ─── Meta card ─────────────────────────────────────────────────────────────── */

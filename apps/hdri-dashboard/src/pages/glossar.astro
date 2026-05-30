@@ -20,12 +20,18 @@ const schema = {
   url: `${site}/glossar`,
   image: ogImage,
   inLanguage: 'de-DE',
-  hasDefinedTerm: entries.map((e) => ({
-    '@type': 'DefinedTerm',
-    '@id': `${site}/glossar#${e.id}`,
-    name: e.term,
-    description: e.short,
-  })),
+  hasDefinedTerm: entries.map((e) => {
+    const description = e.long ? `${e.short}\n\n${e.long}` : e.short;
+    return {
+      '@type': 'DefinedTerm',
+      '@id': `${site}/glossar#${e.id}`,
+      name: e.term,
+      description,
+      url: `${site}/glossar#${e.id}`,
+      inDefinedTermSet: `${site}/glossar`,
+      ...(e.aliases?.length ? { termCode: e.aliases.join(', ') } : {}),
+    };
+  }),
 };
 
 function firstLetter(term: string): string {
@@ -76,7 +82,7 @@ function firstLetter(term: string): string {
       <div class="container">
         <p class="glossar-empty" id="glossar-empty" hidden>Kein Begriff gefunden.</p>
 
-        <dl class="glossar-list" id="glossar-list">
+        <div class="glossar-list" id="glossar-list">
           {entries.map((entry, index) => {
             const letter = firstLetter(entry.term);
             const prevLetter = index > 0 ? firstLetter(entries[index - 1]!.term) : '';
@@ -86,7 +92,7 @@ function firstLetter(term: string): string {
                 {showLetterHead && (
                   <h2 class="glossar-letter" id={`letter-${letter}`}>{letter}</h2>
                 )}
-                <div
+                <dl
                   class="glossar-entry layer-accent accent-schema"
                   id={entry.id}
                   data-search={`${entry.term} ${(entry.aliases ?? []).join(' ')} ${entry.short}`.toLowerCase()}
@@ -116,11 +122,11 @@ function firstLetter(term: string): string {
                       </ul>
                     )}
                   </dd>
-                </div>
+                </dl>
               </>
             );
           })}
-        </dl>
+        </div>
       </div>
     </section>
   </main>

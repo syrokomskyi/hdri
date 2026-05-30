@@ -23,15 +23,33 @@ const colors: Record<string, string> = {
   vorbild: '#8b5cf6',
 };
 
-const total = maturity.reduce((s, m) => s + m.count, 0);
-const segments = maturity.filter((m) => m.share > 0);
+const merged = maturity
+  .filter((m) => m.id !== 'vorbild' || m.count > 0)
+  .map((m) => {
+    if (m.id === 'fortgeschritten') {
+      const vorbild = maturity.find((v) => v.id === 'vorbild');
+      return { ...m, label: 'Fortgeschritten & Vorbild', count: m.count + (vorbild?.count ?? 0), share: m.share + (vorbild?.share ?? 0) };
+    }
+    return m;
+  });
+
+const total = merged.reduce((s, m) => s + m.count, 0);
+const segments = merged.filter((m) => m.share > 0);
 
 const LOCALE = 'de-DE';
 const pct = (v: number) => new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: 1 }).format(v);
 const count = (v: number) => new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 }).format(v);
 
-const basisShare = maturity.find((m) => m.id === 'basis')?.share ?? 0;
-const advancedShare = maturity.filter((m) => m.id === 'fortgeschritten' || m.id === 'vorbild').reduce((s, m) => s + m.share, 0);
+const BANDS: Array<{ id: string; range: string; meaning: string }> = [
+  { id: 'kritisch', range: '0 – <20', meaning: 'Kritische Mängel, fundamentale Anforderungen nicht erfüllt' },
+  { id: 'basis', range: '20 – <40', meaning: 'Grundlegende Anforderungen überwiegend erfüllt' },
+  { id: 'aufbau', range: '40 – <60', meaning: 'Fortgeschrittene Massnahmen teilweise umgesetzt' },
+  { id: 'fortgeschritten', range: '60 – <80', meaning: 'Moderne Best Practices weitgehend implementiert' },
+  { id: 'vorbild', range: '80 – 100', meaning: 'Hervorragende digitale Präsenz, Best-Practice-Niveau' },
+];
+
+const basisShare = merged.find((m) => m.id === 'basis')?.share ?? 0;
+const advancedShare = merged.filter((m) => m.id === 'fortgeschritten').reduce((s, m) => s + m.share, 0);
 const basisPct = pct(basisShare);
 const advancedPct = pct(advancedShare);
 ---
@@ -71,6 +89,43 @@ const advancedPct = pct(advancedShare);
         <span><strong>{basisPct}</strong> der Websites liegen auf Basis-Niveau</span>
         <span>Nur <strong>{advancedPct}</strong> erreichen Fortgeschritten oder höher</span>
       </div>
+      <details class="details-row maturity-bar-details">
+        <summary>Wie wird der Reifegrad ermittelt?</summary>
+        <div class="maturity-bar-bands">
+          <p class="maturity-bar-bands-intro">
+            Der HDRI-Score (0–100) jeder Website wird in fünf Reifegrad-Stufen eingeteilt.
+            Die folgende Tabelle zeigt die Score-Bereiche und ihre Bedeutung:
+          </p>
+          <table class="maturity-bands-table">
+            <thead>
+              <tr>
+                <th>Stufe</th>
+                <th>Score</th>
+                <th>Bedeutung</th>
+              </tr>
+            </thead>
+            <tbody>
+              {maturity.map((m) => {
+                const band = BANDS.find((b) => b.id === m.id) ?? BANDS[BANDS.length - 1];
+                return (
+                  <tr>
+                    <td>
+                      <span class="maturity-bar-legend-swatch" style={`background: ${colors[m.id] ?? '#9ca3af'}`}></span>
+                      {m.label}
+                    </td>
+                    <td>{band.range}</td>
+                    <td>{band.meaning}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p class="maturity-bar-bands-footnote">
+            Die Einteilung ist ein nachgelagerter Orientierungsrahmen und kein Bestandteil des Score-Modells.
+            Ausführliche Methodik: <a href="/methodik#scoring">HDRI-Methodik → Scoring-Formel</a>.
+          </p>
+        </div>
+      </details>
     </div>
   </div>
 </section>

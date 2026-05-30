@@ -18,7 +18,7 @@ const schema = {
       name: 'Was ist der HDRI?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht.',
+        text: 'Der HDRI (Handwerk Digital Reife Index) ist ein öffentlicher, deskriptiver Quartalsindex, der die digitale Reife von Handwerkswebsites in Deutschland auf Basis öffentlich zugänglicher Signale messbar macht. Er dient als methodische Orientierung für Regionen, Branchen und Entwickler digitaler Infrastruktur.',
       },
     },
     {
@@ -26,7 +26,7 @@ const schema = {
       name: 'Was misst der HDRI — und was misst er nicht?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Der HDRI misst ausschließlich automatisch erfassbare, öffentlich sichtbare Signale der digitalen Präsenz: Barrierefreiheit, rechtliche Pflichtangaben, Kontaktmöglichkeiten, soziale Netzwerke, Vertrauensnachweise und strukturierte Daten. Er misst nicht: Qualität von Inhalten, Geschäftserfolg, Kundenzufriedenheit, Vollständigkeit des gesamten digitalen Auftritts oder Echtzeit-Daten.',
+        text: 'Der HDRI misst ausschließlich automatisch erfassbare, öffentlich sichtbare Signale der digitalen Präsenz von Handwerksbetrieben: Barrierefreiheit, rechtliche Pflichtangaben, Kontaktmöglichkeiten, soziale Netzwerke, Vertrauensnachweise und strukturierte Daten. Er misst nicht: Qualität von Inhalten oder Usability, Geschäftserfolg oder Umsatz, Kundenzufriedenheit oder Bewertungen, Vollständigkeit des gesamten digitalen Auftritts, Echtzeit-Daten (nur quartalsweise Snapshots). Der HDRI ist kein Ranking einzelner Betriebe und kein SEO-Score.',
       },
     },
     {
@@ -34,7 +34,7 @@ const schema = {
       name: 'Wie oft wird der Index aktualisiert?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Der Index erscheint einmal pro Quartal. Pro Quartal gibt es genau einen veröffentlichten, kanonischen Index.',
+        text: 'Der Index erscheint einmal pro Quartal. Pro Quartal gibt es genau einen veröffentlichten, kanonischen Index. Vergleiche zwischen Quartalen werden nur dann angezeigt, wenn sie statistisch zuverlässig sind.',
       },
     },
     {
@@ -47,10 +47,162 @@ const schema = {
     },
     {
       '@type': 'Question',
+      name: 'Welche Daten liegen dem Index zugrunde?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Grundlage sind öffentlich zugängliche Websites deutscher Handwerksbetriebe. Die Signale werden durch automatisierte Extraktoren aus HTML, strukturierten Daten (Schema.org) und Metadaten gelesen. Es werden keine Login-Seiten, internen Systeme oder bezahlten APIs verwendet.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Wie groß ist die Stichprobe?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Aktuell (2026-Q2) umfasst die Stichprobe 38.121 Websites. Die Stichprobe enthält alle öffentlich erreichbaren Handwerkswebsites, die im jeweiligen Quartal erfolgreich gecrawlt werden konnten.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Warum sind nicht alle erfassten Domains im Dashboard sichtbar?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Im Dashboard werden ausschließlich k-anonyme Aggregate veröffentlicht (mindestens k ≥ 5 Fälle pro Slice). Einzelne Betriebe, Domains, URLs oder individuelle Scores werden nie veröffentlicht. Zu kleine Gruppen (z. B. seltene Gewerke in dünn besiedelten Regionen) werden unterdrückt.',
+      },
+    },
+    {
+      '@type': 'Question',
       name: 'Werden personenbezogene Daten verarbeitet oder veröffentlicht?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Nein. Alle Rohdaten werden anonymisiert, bevor sie in den Index einfließen. Der veröffentlichte Index enthält ausschließlich aggregierte, nicht personenbezogene Kennzahlen.',
+        text: 'Nein. Alle Rohdaten werden anonymisiert, bevor sie in den Index einfließen. Der veröffentlichte Index enthält ausschließlich aggregierte, nicht personenbezogene Kennzahlen. Keine Domains, URLs, Asset-IDs oder Einzelscores werden veröffentlicht.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Was passiert mit inaktiven Websites?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Domains, die bei mehreren aufeinanderfolgenden Crawl-Versuchen nicht erreichbar sind, werden aus der aktiven Stichprobe entfernt.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Wie wird der HDRI-Score berechnet?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Die Berechnung erfolgt in drei Stufen: 1. Indikator-Score: Jeder Indikator übersetzt einen rohen Signalwert in einen Score zwischen 0 und 100 (Regeltypen: bool, presence, countClamp, countClampInverse, enum). 2. Dimensions-Score: Gewichtetes arithmetisches Mittel aller Indikatoren einer Dimension. Fehlende Indikatoren (skip) reduzieren das effektive Gewicht. 3. Overall HDRI-Score: Gewichtetes arithmetisches Mittel aller sechs Dimensions-Scores. Wenn eine Dimension vollständig fehlt, wird ihr Gewicht auf die übrigen umverteilt.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Welche sechs Dimensionen gibt es und wie sind sie gewichtet?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Recht und Pflichtangaben (28 %): Impressum, Datenschutz, AGB, BFSG, Widerruf, Versand. Kontakt und Erreichbarkeit (22 %): Telefon, E-Mail, Adresse, Öffnungszeiten, Kontaktformular. Barrierefreiheit (16 %): WCAG-Konformität via Axe-Core (kritische bis geringe Fehler). Strukturierte Informationen (18 %): Schema.org-Markup, LocalBusiness, FAQ, Service, Breadcrumbs. Vertrauen und Nachweise (12 %): Zertifizierungen, Meistertitel, Auszeichnungen, Mitgliedschaften. Soziale Präsenz (4 %): Verlinkung auf Facebook, Instagram, YouTube, LinkedIn u. a.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Warum wird P75 als primäre Kennzahl verwendet und nicht der Median?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Der Median (P50) beschreibt das typische Niveau der Stichprobe. P75 beschreibt das Niveau, das die besten 25 % der Websites erreichen — es ist ein ambitionierterer, aber realistischer Benchmark für Betriebe, die ihre digitale Präsenz verbessern wollen. Zudem ist P75 robuster gegenüber Ausreißern als der Mittelwert.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Was bedeutet der IQR (Interquartilsabstand)?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Der IQR (P75 − P25) umfasst die mittleren 50 % aller Werte der Stichprobe. Ein enger IQR bedeutet, dass die meisten Websites ähnliche Scores aufweisen. Ein breiter IQR weist auf heterogene Qualität innerhalb der Gruppe hin.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Was ist die Confidence (Vertrauensniveau)?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Die Confidence-Skala zeigt, wie verlässlich ein gemessener Wert ist: 1,0 bedeutet Signal wurde direkt beobachtet und erfolgreich extrahiert. 0,5 bedeutet Signal wurde imputiert (geschätzt) aufgrund fehlender Daten. 0,0 bedeutet Signal wurde übersprungen und fließt nicht in den Score ein. Confidence ist nicht gleich statistische Signifikanz — sie misst Datenverfügbarkeit, nicht Modellgüte.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Werden einzelne Betriebe bewertet oder gelistet?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Nein. Das Dashboard zeigt ausschließlich aggregierte Kennzahlen für Gruppen (Regionen, Gewerke). Einzelne Betriebe, Websites oder Scores werden weder gespeichert noch veröffentlicht.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Was ist k-Anonymität und warum wird sie eingesetzt?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Jeder veröffentlichte Datenpunkt muss mindestens k ≥ 5 Einzelfälle zusammenfassen. Wenn eine Gruppe (z. B. ein bestimmtes Gewerk in einem Bundesland) weniger als 5 Fälle enthält, wird sie im Dashboard nicht angezeigt. Für Kreuztabellen (Region × Gewerk) gelten noch strengere Anforderungen.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Warum werden manche Deltas (Quartalsvergleiche) nicht angezeigt?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Ein Delta wird unterdrückt, wenn: die Änderung kleiner als 3 Punkte oder kleiner als 3 % relativ zum Vorquartal ist, eine der Vergleichsstichproben die k-Anonymitätsschwelle unterschreitet, oder eine Kategorie in einem der Quartale nicht vorhanden war. Das ist kein Fehler — es ist ein gezielter Schutzmechanismus.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Was ist das Codebook?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Das Codebook ist die vollständige, maschinenlesbare Scoring-Spezifikation des HDRI. Es enthält alle Dimensionen, Indikatoren, Gewichtungen, Scoring-Regeln und Missing-Value-Policies. Das aktuelle Codebook ist observatory-v1, Version 1.3.0 (36 Indikatoren in 6 Dimensionen).',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Wie funktioniert die Versionierung des Codebooks?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Das Codebook folgt semantischer Versionierung (MAJOR.MINOR.PATCH): MAJOR bedeutet inkompatible Änderung (Indikator entfernt, Dimension umbenannt) — Vergleiche mit Vorversionen sind nicht möglich. MINOR bedeutet additive Änderung (neuer Indikator, neue Dimension) — rückwärtskompatibel. PATCH bedeutet Beschreibung oder Tippfehler, keine Scoring-Auswirkung.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Kann ich den Index selbst reproduzieren?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Ja, theoretisch. Die Scoring-Engine, der Codebook-Parser und die Aggregationslogik sind als @org/hdri-codebook Open-Source verfügbar. Das Codebook steht auch als YAML-Datei zum Download bereit (codebook-observatory-1.3.0.yaml). Eine vollständige Reproduktion setzt den Zugang zu denselben Quelldaten voraus.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Was bedeutet deskriptiv — werden keine statistischen Tests durchgeführt?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Korrekt. Der HDRI verwendet ausschließlich deskriptive Statistik — er beschreibt die vorliegende Stichprobe, macht aber keine Aussagen über die Grundgesamtheit aller deutschen Handwerksbetriebe. Es werden keine p-Werte, Konfidenzintervalle oder Hypothesentests berechnet. Die Aussagekraft basiert auf der Stichprobengröße (N > 30.000), nicht auf inferenzstatistischen Verfahren.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Warum fehlen manche Websites in der Stichprobe?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Websites mit starkem Bot-Schutz (z. B. HTTP-403-Fehler oder Anti-Bot-Systeme) werden unterrepräsentiert, da der Crawler keinen Zugriff erhält. Außerdem können JavaScript-lastige Single-Page-Apps (SPAs) nicht vollständig analysiert werden, da die Extraktion auf statischem HTML basiert.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Können automatisierte Messungen falsch liegen?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Ja. Automatisierte Extraktion kann falsch-positive und falsch-negative Ergebnisse liefern. Ein fehlendes Signal bedeutet nicht immer, dass ein Merkmal tatsächlich fehlt — es kann auch bedeuten, dass es nicht automatisch erkannt wurde. Die Confidence-Werte geben einen Hinweis auf die Datenverfügbarkeit.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Ist der HDRI repräsentativ für alle Handwerksbetriebe in Deutschland?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Der HDRI beschreibt seine Stichprobe (öffentlich erreichbare Handwerkswebsites), macht aber keine repräsentativen Aussagen über die Grundgesamtheit aller Betriebe — insbesondere über Betriebe ohne Website oder mit nicht-erreichbaren Websites.',
       },
     },
   ],
@@ -142,7 +294,7 @@ const schema = {
 
           <article class="faq-card layer-accent">
             <h3>Welche sechs Dimensionen gibt es und wie sind sie gewichtet?</h3>
-            <div class="faq-table-wrap">
+            <div class="faq-table-wrap" tabindex="0">
               <table>
                 <thead>
                   <tr><th>Dimension</th><th class="numeric">Gewicht</th><th>Was sie misst</th></tr>

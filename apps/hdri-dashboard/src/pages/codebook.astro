@@ -33,19 +33,6 @@ const pageDescription = 'Vollständige Codebook-Spezifikation des HDRI: Dimensio
 
 const site = 'https://handwerk-index.org';
 const ogImage = `${site}/og-image.webp`;
-const schema = {
-  '@type': 'TechArticle',
-  name: pageTitle,
-  description: pageDescription,
-  url: `${site}/codebook`,
-  image: ogImage,
-  inLanguage: 'de-DE',
-  publisher: {
-    '@type': 'Organization',
-    name: 'HDRI Observatory',
-    url: site,
-  },
-};
 
 const cb = codebook as {
   id: string;
@@ -72,6 +59,43 @@ const cb = codebook as {
       };
     }>;
   }>;
+};
+
+const schema = {
+  '@graph': [
+    {
+      '@type': 'TechArticle',
+      name: pageTitle,
+      description: pageDescription,
+      url: `${site}/codebook`,
+      image: ogImage,
+      inLanguage: 'de-DE',
+      publisher: {
+        '@type': 'Person',
+        name: 'Andrii Syrokomskyi',
+        url: site,
+      },
+    },
+    {
+      '@type': 'SoftwareSourceCode',
+      name: 'HDRI Open Source Repository',
+      url: 'https://github.com/syrokomskyi/hdri',
+      codeRepository: 'https://github.com/syrokomskyi/hdri',
+      programmingLanguage: 'TypeScript',
+      license: 'https://www.apache.org/licenses/LICENSE-2.0',
+      description: 'Öffentliches Repository zum HDRI mit Codebook, Scoring-Logik und Dashboard-Quellcode',
+    },
+    {
+      '@type': 'DataDownload',
+      name: `HDRI Codebook v${cb.version} (YAML)`,
+      description: 'Maschinenlesbare Codebook-Spezifikation des HDRI als YAML-Datei',
+      contentUrl: `${site}/codebook-observatory-${cb.version}.yaml`,
+      encodingFormat: 'application/x-yaml',
+      inLanguage: 'de-DE',
+      version: cb.version,
+      license: 'https://www.apache.org/licenses/LICENSE-2.0',
+    },
+  ],
 };
 
 const LOCALE = 'de-DE';
@@ -178,7 +202,7 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
             <h2><Term id="dimension">Dimensionen</Term> & <Term id="gewicht">Gewichtungen</Term></h2>
           </div>
         </div>
-        <div class="table-card table-wrap layer-accent accent-schema">
+        <div class="table-card table-wrap layer-accent accent-schema" tabindex="0">
           <table>
             <thead>
               <tr>
@@ -212,7 +236,7 @@ function missingSummary(m: Record<string, unknown> | undefined): string {
           </div>
         </div>
         {cb.dimensions.map((dim) => (
-          <div class="table-card table-wrap section-stack-top layer-accent accent-shtama">
+          <div class="table-card table-wrap section-stack-top layer-accent accent-shtama" tabindex="0">
             <h3 class="dimension-title">{dim.label} <span class="weight-badge">{pct(dim.weight)}</span></h3>
             <table>
               <thead>

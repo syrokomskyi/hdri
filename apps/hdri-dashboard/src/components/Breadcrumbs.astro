@@ -11,6 +11,17 @@ type Props = {
 };
 
 const { items } = Astro.props;
+const site = 'https://handwerk-index.org';
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.label,
+    ...(item.href ? { item: `${site}${item.href}` } : {}),
+  })),
+};
 ---
 
 <nav aria-label="Breadcrumb" class="breadcrumbs">
@@ -31,3 +42,4 @@ const { items } = Astro.props;
     }
   </ol>
 </nav>
+<script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
