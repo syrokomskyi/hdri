@@ -34,8 +34,8 @@ jobs:
           --filter=@org/site-axe-audit
           --filter=@org/contract-ontology
 
-      # Observatory — typecheck, build, tests (lint excluded: eslint not in exported packages)
-      - run: npx turbo run typecheck build test --filter=@org/digital-observatory
+      # Observatory — typecheck, build (lint/test excluded: exported repo is source-only)
+      - run: npx turbo run typecheck build --filter=@org/digital-observatory
 
       # Dashboard — typecheck (build needs runtime observatory output)
       - run: npx turbo run typecheck --filter=@org/hdri-dashboard
