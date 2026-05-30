@@ -28,6 +28,8 @@ Das bedeutet:
 
 Dieses Modell entspricht der aktuellen Größe und Reife des Projekts. Es ist bewusst schlank gehalten und schafft zugleich klare Verantwortlichkeiten.
 
+**Unabhängigkeit:** In der aktuellen Phase agiert HDRI unabhängig und ist von keiner öffentlichen Stelle, Handwerkskammer oder sonstigen Institution mandatiert, genehmigt oder kontrolliert.
+
 ## 3. Rollen
 
 ### 3.1 Project Lead
@@ -126,6 +128,8 @@ Release Notes sollen wesentliche Änderungen, mögliche Migrationsfolgen sowie r
 HDRI ist offen für die Zusammenarbeit mit öffentlichen Institutionen, Handwerksorganisationen, Forschungseinrichtungen, Civic-Tech-Akteuren und Unternehmen.
 
 Eine solche Zusammenarbeit führt nicht automatisch zu Governance-Rechten über Repository oder Projektausrichtung.
+
+Datenschutz- und Sicherheitsaspekte werden in [`SECURITY.md`](SECURITY.md) dokumentiert.
 
 Falls sich aus einer Zusammenarbeit künftig eine formalisierte Struktur ergibt — etwa in Form von Beiratsfunktionen, Co-Maintainership oder einer Steering Group — wird dies ausdrücklich in diesem Dokument oder in einer Nachfolgefassung festgehalten.
 

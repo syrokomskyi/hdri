@@ -6,6 +6,8 @@
 
 > [Deutsche Version](README.md) · [🌐 handwerk-index.de](https://handwerk-index.de)
 
+HDRI is a measurement tool that regularly checks how craft businesses in Germany present themselves online, using automated website audits and a transparent scoring model. It helps chambers, ministries, and researchers see where digital support is most needed.
+
 A Turborepo monorepo for collecting, analysing, and publishing the **Handwerk Digital Readiness Index (HDRI)** — a longitudinal, signal-based assessment of how craft-industry businesses present themselves online.
 
 ## What this project does
@@ -17,6 +19,16 @@ The platform consists of three layers:
 3. **Dashboard** ([`apps/hdri-dashboard`](apps/hdri-dashboard/README.md)) — a static Astro site that visualises the scored, anonymised data for public consumption.
 
 Engineers and analysts can run the pipelines locally, inspect intermediate SQLite databases, and rebuild the dashboard after any scoring or codebook change.
+
+## Methodology (high-level)
+
+- HDRI uses signals from public business websites (availability, performance, accessibility, content).
+- Each signal is mapped to an ontology (e.g. contactability, device readiness, accessibility).
+- A transparent codebook assigns weights and thresholds for each signal.
+- Scores are computed per business and aggregated per region or cohort.
+- No personal data or individual business names are published in the public dashboard.
+
+The complete scoring logic and weights are maintained in [`packages/hdri-codebook`](packages/hdri-codebook).
 
 ## Workspace layout
 
@@ -105,6 +117,7 @@ See the individual README files linked below for detailed configuration of each 
 - [`METHODOLOGY.en.md`](METHODOLOGY.en.md) — Scientific methodology of the HDRI (weights, signals, sampling)
 - [`GOVERNANCE.en.md`](GOVERNANCE.en.md) — Project governance and roles
 - [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — Contributor Code of Conduct
+- [`SECURITY.md`](SECURITY.md) — Privacy and security notes
 
 ## Useful commands
 
@@ -140,11 +153,22 @@ Environment variables are loaded from the app-local `.env` file when the app sta
 - [Turborepo Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
 - [Turborepo Caching](https://turborepo.com/docs/crafting-your-repository/caching)
 
+## Contact and institutional use
+
+Institutions (e.g. chambers of crafts, ministries, research organisations) interested in piloting HDRI, validating the methodology, or co-developing modules are invited to get in touch via GitHub issues or by contacting the Project Lead directly.
+
+See [`CONTACT.en.md`](CONTACT.en.md) for collaboration paths and response times.
+
 ## Public mission
 
 The **Handwerk Digital Readiness Index (HDRI)** is built as a public good.
 
-Germany's craft sector — over one million businesses employing roughly five million people - forms the backbone of the country's regional economies. Yet the digital presence of most Handwerk businesses remains understudied, fragmented, and difficult to assess at scale. HDRI exists to change that.
+**Scope and focus:**
+- Target group: **craft businesses in Germany** (over one million businesses, roughly five million employees).
+- Purpose: **benchmarking digital presence**, **identifying regional gaps in digital readiness**, and **tracking progress over time**.
+- Use case: evidence-based policy advice and targeted digital-support programmes.
+
+Germany's craft sector forms the backbone of the country's regional economies. Yet the digital presence of most Handwerk businesses remains understudied, fragmented, and difficult to assess at scale. HDRI exists to change that.
 
 This platform is intentionally open: every pipeline, scoring rule, and codebook weight is version-controlled and auditable. Aggregated, anonymised quarterly data are published on **[handwerk-index.de](https://handwerk-index.de)**. Any researcher, chamber of commerce, ministry, or civic technologist can inspect how the index is constructed, challenge its assumptions, extend its methodology, or rerun its analysis on new data. Opacity has no place in a tool designed to inform public policy.
 

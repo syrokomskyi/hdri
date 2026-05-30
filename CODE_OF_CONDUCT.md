@@ -44,6 +44,8 @@ Instances of abusive, harassing, or otherwise unacceptable behaviour may be repo
 
 All complaints will be reviewed and investigated promptly and fairly. The Project Lead is obligated to respect the privacy and security of the reporter of any incident. In cases where the Project Lead is involved in the complaint, the reporter may escalate to an independent mediator agreed upon by the community.
 
+For institutional partners (e.g. chambers, ministries, research institutes), formal complaints or concerns about community behaviour can also be raised via the channels listed in [CONTACT.md](CONTACT.md). They will be acknowledged and handled with the same care.
+
 ## Enforcement guidelines
 
 Project maintainers will follow these Community Impact Guidelines in determining the consequences for any action they deem in violation of this Code of Conduct:

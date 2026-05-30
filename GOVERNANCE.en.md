@@ -28,6 +28,8 @@ This means that:
 
 This model reflects the current size and maturity of the project. It is intentionally lightweight, while still providing clear accountability.
 
+**Independence:** At this stage, HDRI operates independently and is not mandated, approved or controlled by any public authority, chamber, or other institution.
+
 ## 3. Roles
 
 ### 3.1 Project Lead
@@ -126,6 +128,8 @@ Release notes should document major changes, migration implications, and any rel
 HDRI is open to cooperation with public institutions, chambers, research organisations, civic-technology groups, and commercial partners.
 
 Such cooperation does not automatically confer governance authority over the repository or project direction.
+
+Privacy and security aspects are documented in [`SECURITY.md`](SECURITY.md).
 
 If institutional cooperation develops into a more formal structure — for example through advisory roles, co-maintainership, or a steering group — this will be documented explicitly in this file or in a successor governance document.
 

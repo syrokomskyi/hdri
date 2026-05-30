@@ -6,6 +6,8 @@
 
 > [English Version](README.en.md) · [🌐 handwerk-index.de](https://handwerk-index.de)
 
+HDRI ist ein Messinstrument, das regelmäßig prüft, wie sich Handwerksunternehmen in Deutschland online präsentieren — mit automatisierten Website-Audits und einem transparenten Scoring-Modell. Es hilft Handwerkskammern, Ministerien und Forschungseinrichtungen zu erkennen, wo digitale Unterstützung am dringendsten gebraucht wird.
+
 Ein Turborepo-Monorepo zum Sammeln, Analysieren und Veröffentlichen des **Handwerk Digital Readiness Index (HDRI)** — eine longitudinale, signalbasierte Bewertung der Online-Präsenz von Handwerksunternehmen.
 
 ## Was dieses Projekt leistet
@@ -17,6 +19,16 @@ Die Plattform besteht aus drei Ebenen:
 3. **Dashboard** ([`apps/hdri-dashboard`](apps/hdri-dashboard/README.md)) — Eine statische Astro-Website, die die bewerteten, anonymisierten Daten für die Öffentlichkeit visualisiert.
 
 Ingenieure und Analysten können die Pipelines lokal ausführen, Zwischenspeicher von SQLite-Datenbanken prüfen und das Dashboard nach jeder Bewertungs- oder Codebook-Änderung neu aufbauen.
+
+## Methodik (Überblick)
+
+- HDRI verwendet Signale aus öffentlichen Unternehmenswebsites (Erreichbarkeit, Performance, Barrierefreiheit, Inhalt).
+- Jedes Signal wird einer Ontologie zugeordnet (z. B. Erreichbarkeit, Gerätebereitschaft, Barrierefreiheit).
+- Ein transparentes Codebook weist jedem Signal Gewichte und Schwellenwerte zu.
+- Scores werden pro Unternehmen berechnet und nach Region oder Kohorte aggregiert.
+- Im öffentlichen Dashboard werden keine personenbezogenen Daten oder einzelnen Unternehmensnamen veröffentlicht.
+
+Die vollständige Bewertungslogik und Gewichtung finden sich im [`packages/hdri-codebook`](packages/hdri-codebook).
 
 ## Arbeitsbereich-Layout
 
@@ -105,6 +117,7 @@ Die einzelnen README-Dateien unten verlinkt enthalten die detaillierte Konfigura
 - [`METHODOLOGY.md`](METHODOLOGY.md) — Wissenschaftliche Methodik des HDRI (Gewichte, Signale, Sampling)
 - [`GOVERNANCE.md`](GOVERNANCE.md) — Projekt-Governance und Rollen
 - [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — Verhaltensregeln für Mitwirkende
+- [`SECURITY.md`](SECURITY.md) — Datenschutz und Sicherheitshinweise
 
 ## Nützliche Befehle
 
@@ -140,11 +153,22 @@ Umgebungsvariablen werden aus der App-lokalen `.env`-Datei geladen, wenn die App
 - [Turborepo-Aufgaben](https://turborepo.com/docs/crafting-your-repository/running-tasks)
 - [Turborepo-Caching](https://turborepo.com/docs/crafting-your-repository/caching)
 
+## Kontakt und institutionelle Nutzung
+
+Institutionen (z. B. Handwerkskammern, Ministerien, Forschungseinrichtungen), die HDRI als Pilot validieren, die Methodik prüfen oder Module mitentwickeln möchten, sind eingeladen, Kontakt aufzunehmen — über GitHub-Issues oder direkt an den Project Lead.
+
+Siehe [`CONTACT.md`](CONTACT.md) für Kooperationswege und Antwortzeiten.
+
 ## Öffentliche Mission
 
 Der **Handwerk Digital Readiness Index (HDRI)** wird als öffentliches Gut entwickelt.
 
-Der deutsche Handwerkssektor — über eine Million Unternehmen mit etwa fünf Millionen Beschäftigten — bildet das Rückgrat der regionalen Wirtschaft des Landes. Dennoch bleibt die digitale Präsenz der meisten Handwerksunternehmen untererforscht, fragmentiert und schwer skalierbar zu bewerten. Der HDRI wurde geschaffen, um das zu ändern.
+**Scope und Fokus:**
+- Zielgruppe: **Handwerksunternehmen in Deutschland** (über eine Million Betriebe, ca. fünf Millionen Beschäftigte).
+- Zweck: **Benchmarking der digitalen Präsenz**, **Identifizierung regionaler Lücken in der Digitalbereitschaft** und **Fortschrittsverfolgung über die Zeit**.
+- Anwendung: Evidenzbasierte Politikberatung und gezielte Unterstützung der Digitalisierung.
+
+Der deutsche Handwerkssektor bildet das Rückgrat der regionalen Wirtschaft des Landes. Dennoch bleibt die digitale Präsenz der meisten Handwerksunternehmen untererforscht, fragmentiert und schwer skalierbar zu bewerten. Der HDRI wurde geschaffen, um das zu ändern.
 
 Diese Plattform ist bewusst offen: Jede Pipeline, jede Bewertungsregel und jedes Codebook-Gewicht sind versioniert und nachvollziehbar. Aggregierte, anonymisierte Quartalsdaten werden auf **[handwerk-index.de](https://handwerk-index.de)** veröffentlicht. Jeder Forscher, jede Handelskammer, jedes Ministerium und jeder Civic Technologist können prüfen, wie der Index konstruiert ist, seine Annahmen in Frage stellen, seine Methodik erweitern oder seine Analyse auf neuen Daten neu ausführen. Undurchsichtigkeit hat in einem Werkzeug, das der öffentlichen Politikberatung dienen soll, keinen Platz.
 
