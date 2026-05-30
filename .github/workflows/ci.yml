@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hdri:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      # Factory chain (7 packages) — typecheck only; build = tsc --noEmit
+      - run: >
+          pnpm turbo run typecheck build
+          --filter=@org/catalog-harvest
+          --filter=@org/register-businesses
+          --filter=@org/site-liveness
+          --filter=@org/site-profile
+          --filter=@org/site-lighthouse-audit
+          --filter=@org/site-axe-audit
+          --filter=@org/contract-ontology
+
+      # Observatory — lint, typecheck, build, tests
+      - run: pnpm turbo run lint typecheck build test --filter=@org/digital-observatory
+
+      # Dashboard — typecheck (build needs runtime observatory output)
+      - run: pnpm turbo run typecheck --filter=@org/hdri-dashboard
+
+      # Governance gates
+      - run: pnpm --filter @org/hdri-codebook run test
+      - run: pnpm --filter @org/hdri-codebook exec tsx scripts/validate-signatories.ts --enforce
