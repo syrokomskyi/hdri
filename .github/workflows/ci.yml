@@ -25,7 +25,7 @@ jobs:
 
       # Factory chain (7 packages) — typecheck only; build = tsc --noEmit
       - run: >
-          pnpm turbo run typecheck build
+          npx turbo run typecheck build
           --filter=@org/catalog-harvest
           --filter=@org/register-businesses
           --filter=@org/site-liveness
@@ -35,10 +35,10 @@ jobs:
           --filter=@org/contract-ontology
 
       # Observatory — lint, typecheck, build, tests
-      - run: pnpm turbo run lint typecheck build test --filter=@org/digital-observatory
+      - run: npx turbo run lint typecheck build test --filter=@org/digital-observatory
 
       # Dashboard — typecheck (build needs runtime observatory output)
-      - run: pnpm turbo run typecheck --filter=@org/hdri-dashboard
+      - run: npx turbo run typecheck --filter=@org/hdri-dashboard
 
       # Governance gates
       - run: pnpm --filter @org/hdri-codebook run test
