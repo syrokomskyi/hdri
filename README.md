@@ -1,6 +1,10 @@
 # HDRI-Analyseplattform
 
-> [English Version](README.en.md)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/syrokomskyi/hdri/ci.yml?logo=github-actions&logoColor=white)](https://github.com/syrokomskyi/hdri/actions)
+[![Issues](https://img.shields.io/github/issues/syrokomskyi/hdri?logo=github&logoColor=white)](https://github.com/syrokomskyi/hdri/issues)
+
+> [English Version](README.en.md) · [🌐 handwerk-index.de](https://handwerk-index.de)
 
 Ein Turborepo-Monorepo zum Sammeln, Analysieren und Veröffentlichen des **Handwerk Digital Readiness Index (HDRI)** — eine longitudinale, signalbasierte Bewertung der Online-Präsenz von Handwerksunternehmen.
 
