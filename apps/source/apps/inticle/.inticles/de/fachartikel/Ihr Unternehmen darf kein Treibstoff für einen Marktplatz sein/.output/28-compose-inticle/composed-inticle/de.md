@@ -175,3 +175,7 @@ Bauen Sie heute so auf, dass Sie in einem solchen Moment etwas mitnehmen können
 Beantworten Sie einige kurze Fragen und erhalten Sie ein nüchternes Risikoprofil: Was unter Ihrer Kontrolle steht, wo die Schwachstellen liegen und womit Sie beginnen können, ohne abrupte Umstellungen. Ohne Wachstumsversprechen, ohne Anrufe, ohne Druck.
 
 **Nächster Schritt:** Den Selbstcheck zur Abhängigkeit durchführen
+
+---
+
+https://grow.syrokomskyi.com/ihr-unternehmen-darf-kein-treibstoff-fur-einen-marktplatz-sein

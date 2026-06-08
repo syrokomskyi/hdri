@@ -23,3 +23,11 @@ Inwieweit ist die digitale Infrastruktur Ihres Unternehmens heute nicht nur für
 #Digitalstrategie #SEO #Mittelstand
 
 ---
+
+🟦 EN https://linkedin.com/pulse/your-business-should-fuel-marketplace-andrii-syrokomskyi-s6c3e
+
+🟨 DE https://grow.syrokomskyi.com/ihr-unternehmen-darf-kein-treibstoff-fur-einen-marktplatz-sein
+
+---
+
+https://www.xing.com/discover/detail-activities/6749307585.715207

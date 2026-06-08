@@ -23,3 +23,7 @@ For me, honest infrastructure begins where the exit is defined in advance and ow
 To what extent is your business's digital footprint today built as property rather than rent?
 
 ---
+
+🟦 EN https://linkedin.com/pulse/your-business-should-fuel-marketplace-andrii-syrokomskyi-s6c3e
+
+🟨 DE https://grow.syrokomskyi.com/ihr-unternehmen-darf-kein-treibstoff-fur-einen-marktplatz-sein
