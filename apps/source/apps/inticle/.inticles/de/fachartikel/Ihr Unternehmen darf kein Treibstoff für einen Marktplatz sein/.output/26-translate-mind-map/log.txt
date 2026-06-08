@@ -1,0 +1,36 @@
+{"timestamp":"2026-06-06T18:52:53.496Z","event":"step_started","stepId":"translate-mind-map","stepNumber":26,"status":"started"}
+{"timestamp":"2026-06-06T18:52:53.496Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:55:04.146Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:55:04.148Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:55:04.151Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:55:04.155Z","stepId":"translate-mind-map","stepNumber":26,"event":"phase_completed","status":"completed","details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-06T18:55:30.282Z","event":"step_started","stepId":"translate-mind-map","stepNumber":26,"status":"started"}
+{"timestamp":"2026-06-06T18:55:30.284Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:55:30.309Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:55:30.312Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:55:30.319Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:55:30.324Z","stepId":"translate-mind-map","stepNumber":26,"event":"phase_completed","status":"completed","details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-06T18:59:11.697Z","event":"step_started","stepId":"translate-mind-map","stepNumber":26,"status":"started"}
+{"timestamp":"2026-06-06T18:59:11.703Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:59:11.732Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:59:11.735Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:59:11.739Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:59:11.742Z","stepId":"translate-mind-map","stepNumber":26,"event":"phase_completed","status":"completed","details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-06T19:07:19.626Z","event":"step_started","stepId":"translate-mind-map","stepNumber":26,"status":"started"}
+{"timestamp":"2026-06-06T19:07:19.628Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:07:19.644Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:07:19.646Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:07:19.648Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:07:19.653Z","stepId":"translate-mind-map","stepNumber":26,"event":"phase_completed","status":"completed","details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-06T19:10:41.915Z","event":"step_started","stepId":"translate-mind-map","stepNumber":26,"status":"started"}
+{"timestamp":"2026-06-06T19:10:41.917Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:10:41.934Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:10:41.937Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:10:41.941Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:10:41.944Z","stepId":"translate-mind-map","stepNumber":26,"event":"phase_completed","status":"completed","details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-06T19:15:42.193Z","event":"step_started","stepId":"translate-mind-map","stepNumber":26,"status":"started"}
+{"timestamp":"2026-06-06T19:15:42.195Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:15:42.214Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:15:42.216Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:15:42.219Z","stepId":"translate-mind-map","stepNumber":26,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:15:42.222Z","stepId":"translate-mind-map","stepNumber":26,"event":"phase_completed","status":"completed","details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}

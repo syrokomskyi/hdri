@@ -1,0 +1,19 @@
+## What to Do About It
+
+If this article resonated with you, don’t rush to buy anything. Do something more useful instead: run a simple audit of your own dependency.
+
+1/ Check whose name your domain is registered under.  
+2/ Ask your current provider whether you can receive a full export of the site, content, and history within 72 hours.  
+3/ Calculate your actual costs over 12 months — all retainer fees and charges for access to leads, not just the nominal commission.
+
+These three actions cost nothing and commit you to nothing. They give you a sober picture: do you own your digital presence, or are you renting it without noticing it — and without noticing the consequences?
+
+If, after that review, you want to look deeper, I’m open to a short **written** conversation. I choose a written format. And I choose it deliberately: it forces commitments to be stated in words that can later be reread and verified — which is exactly the quality so often missing today from verbal promises.
+
+In that conversation, I can help with specific things: check who owns the domain, assess how portable your site is, and compile a list of dependencies on external channels.
+
+That conversation is especially appropriate if one external channel generates most of your leads, or if you are not sure who owns the domain and access credentials. If the timing is not right, you can simply join the waiting list for a diagnostic review — with no obligations and no pressure.
+
+The main conclusion I want to leave you with is this: the resilience of a small business in the digital era is measured not by how quickly you grew on someone else’s platform, but by what remains in your hands if tomorrow you decide to leave.
+
+Build now in a way that ensures you have something to take with you when that moment comes.

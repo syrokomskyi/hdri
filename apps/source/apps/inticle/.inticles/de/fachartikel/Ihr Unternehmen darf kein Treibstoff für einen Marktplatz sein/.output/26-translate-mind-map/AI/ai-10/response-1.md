@@ -1,0 +1,41 @@
+# For a family business, the asset must be transferable
+
+## Business transfer
+### Inheritance
+### Future sale
+### Digital continuity
+
+## The website as an asset
+### Not a technical issue
+### Part of the business
+### Transferability is essential
+
+## What must be transferable
+### Domain
+### History and structure
+### Reporting
+### Lead channel
+### Access credentials
+
+## Main risks
+### Platform dependency
+### Agency dependency
+### Closed website builder
+### Inaccessibility to the heir
+
+## The value of documentation
+### Reducing uncertainty
+### Simplifying transfer
+### Fewer transaction risks
+
+## Diaspora context
+### Verifiability of terms
+### Contract language
+### Rights to the domain and access credentials
+### Hidden penalties
+### Intermediary in the first contact
+
+## The foundation of trust
+### Written terms
+### Clear language
+### Ability to verify independently

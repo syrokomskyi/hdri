@@ -1,0 +1,41 @@
+# A marketplace is a channel, not a foundation
+
+## The role of platforms
+### A source of orders
+### A rational channel
+### Not an object of criticism
+
+## The key problem
+### Loss of direct contact with the Client
+### Dependence on the platform
+### Someone else’s rules
+
+## Product marketplace
+### Commissions and paid promotion
+### Returns and penalties
+### Storage and rating
+### Costs that are difficult to plan
+
+## Service platform
+### Access to leads
+### Someone else’s flow of Clients
+### Control of the first contact
+### No history and no relationship
+
+## Risks for the tradesperson
+### The leads do not belong to you
+### The rating is not under your control
+### The right to contact belongs to the platform
+
+## The dependency pattern
+### Easy entry
+### Growing costs and rules
+### High cost of exit
+#### Organizational
+#### Technical
+#### Reputational
+
+## Conclusion
+### Not a catastrophe
+### Recognize the risk
+### Distribute the dependency

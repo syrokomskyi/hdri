@@ -1,0 +1,69 @@
+{"timestamp":"2026-06-06T17:56:34.224Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T17:56:34.225Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T17:56:34.229Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_failed","attempt":1,"status":"failed","details":{"error":"Pipeline paused by wait-phase-analysis-frame-accepted.\n# wait-phase-analysis-frame-accepted\n\nFill the required outputs below and then re-run the pipeline.\n\n## Required outputs\n\n- `phase-analysis-frame-accepted.md` (file)\n\n## Instruction\n\nPhase · ANALYSIS FRAME complete.\nReview the synthesis and the documented knowledge gaps before editorial drafting starts.\nConfirm the intended framing, the level of confidence, and the open questions that the article must preserve.\nIf you can resolve any knowledge gaps, write those answers directly in `phase-analysis-frame-accepted.md` together with the framing note.\nRecord what is now confirmed, what must remain qualified, and what is still unresolved.\nDownstream editorial gogols will read this file and use it as an additional editorial constraint.\nThen replace `TBD` in `phase-analysis-frame-accepted.md` with the final note and rerun the pipeline.\n\n## Notes\n\n- Files are pre-created with `TBD` when missing.\n- Replace any `TBD` or `TODO` markers with the final content before re-running the pipeline.\n"}}
+{"timestamp":"2026-06-06T18:02:57.535Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T18:02:57.536Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:02:57.539Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:02:57.540Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:02:57.541Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:02:57.542Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T18:05:51.275Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T18:05:51.276Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:05:51.284Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:05:51.287Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:05:51.290Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:05:51.292Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T18:08:47.649Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T18:08:47.650Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:08:47.661Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:08:47.663Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:08:47.667Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:08:47.670Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T18:11:54.687Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T18:11:54.688Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:11:54.698Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:11:54.700Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:11:54.704Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:11:54.707Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T18:43:42.324Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T18:43:42.334Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:43:42.361Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:43:42.366Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:43:42.369Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:43:42.372Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T18:50:59.201Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T18:50:59.204Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:50:59.218Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:50:59.221Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:50:59.227Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:50:59.230Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T18:55:29.998Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T18:55:30.000Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:55:30.012Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:55:30.014Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:55:30.018Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:55:30.022Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T18:59:11.209Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T18:59:11.211Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:59:11.240Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:59:11.245Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:59:11.253Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:59:11.260Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T19:07:19.120Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T19:07:19.123Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:07:19.252Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:07:19.290Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:07:19.337Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:07:19.364Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T19:10:41.577Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T19:10:41.584Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:10:41.596Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:10:41.599Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:10:41.603Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:10:41.607Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-06-06T19:15:41.881Z","event":"step_started","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"status":"started"}
+{"timestamp":"2026-06-06T19:15:41.885Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:15:41.903Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:15:41.906Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T19:15:41.915Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T19:15:41.921Z","stepId":"wait-phase-analysis-frame-accepted","stepNumber":7,"event":"phase_completed","status":"completed","details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}

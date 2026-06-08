@@ -1,0 +1,14 @@
+{"timestamp":"2026-06-06T18:11:54.739Z","event":"step_started","stepId":"draft","stepNumber":10,"status":"started"}
+{"timestamp":"2026-06-06T18:11:54.741Z","stepId":"draft","stepNumber":10,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:11:54.762Z","stepId":"draft","stepNumber":10,"event":"llm_call_started","status":"running","operation":"createAnthropicAiText","provider":"anthropic","model":"claude-opus-4-8","details":{"maxTokens":18000}}
+{"timestamp":"2026-06-06T18:13:04.298Z","stepId":"draft","stepNumber":10,"event":"llm_call_finished","status":"completed","operation":"createAnthropicAiText","provider":"anthropic","model":"claude-opus-4-8"}
+{"timestamp":"2026-06-06T18:13:04.410Z","stepId":"draft","stepNumber":10,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:13:04.411Z","stepId":"draft","stepNumber":10,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-06T18:13:04.412Z","stepId":"draft","stepNumber":10,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-06T18:43:42.396Z","stepId":"draft","stepNumber":10,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-06T18:50:59.256Z","stepId":"draft","stepNumber":10,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-06T18:55:30.047Z","stepId":"draft","stepNumber":10,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-06T18:59:11.317Z","stepId":"draft","stepNumber":10,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-06T19:07:19.384Z","stepId":"draft","stepNumber":10,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-06T19:10:41.652Z","stepId":"draft","stepNumber":10,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-06T19:15:41.955Z","stepId":"draft","stepNumber":10,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

@@ -1,0 +1,9 @@
+Small and family-run businesses have a digital problem that is often underestimated because it does not look dramatic in day-to-day operations. Orders are coming in, the platform profile is active, the website exists, messages are arriving. But when the company is handed over, the provider is changed, or a conflict arises, it suddenly becomes clear: critical elements of the company’s presence do not belong to the business in any practical sense of the word.
+
+- I would view this not as a marketing issue, but as an issue of operational control. If the domain is not registered to the owner, the content cannot be quickly retrieved in a portable format, and the inquiry history remains in someone else’s system, then the company is using a digital infrastructure without actually owning it. This creates hidden exit costs and increases uncertainty around any strategic decision.
+- Platforms and external services are not a problem in themselves. They can be a rational sales or lead generation channel. The problem begins when the channel replaces the foundation. If the business does not control the first contact with the customer, its own service structure, and the key access credentials, it becomes dependent on someone else’s rules, which change without its involvement.
+- For family businesses and companies with a succession horizon, this is especially sensitive. What is being transferred is not only equipment, the customer base, and processes, but also the digital layer. If it is non-transparent, poorly documented, or locked into an external system, negotiations around succession, sale, or reorganization become more difficult and more expensive simply because of the lack of clarity.
+
+How is control over digital assets structured in your company today: as ownership, or rather as a set of external services that happen to be working for now?
+
+---
