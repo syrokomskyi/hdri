@@ -1,0 +1,9 @@
+In SEO, people still often argue about visibility, markup, and how best to "make a site work" with agents. But the sense is that the fundamental mistake runs deeper: many are discussing how to adapt the facade, while the site's actual function is changing. If selection and comparison are increasingly being done by AI agents, a site can no longer be understood only as a surface of persuasion.
+
+- A useful distinction here is this: there are comparable facts, and there are trusted claims. Facts can be read by an agent as structure: services, constraints, prices, service areas, timelines. But claims about qualifications, guarantees, origin, or accountability do not become reliable simply because they are well written in a paragraph. For agent-focused SEO, this shifts the center of gravity: it is not enough to be readable; you need to understand what actually makes sense to render machine-distinguishable in the first place.
+- This leads to an uncomfortable but important conclusion. If a site makes only commoditizable attributes visible, it accelerates its own reduction to a commodity. In that case, "agent readiness" works against the business. So the question is not whether to be machine-readable, but what exactly to be machine-readable as. For SEO, this is already closer to info architecture and entity modeling than to conventional page optimization.
+- The most sensible part of this framework, in my view, is the requirement for a single source of truth. A separate layer for humans and another for agents is a direct path to drift. If a person sees one thing while an agent receives another, i.e. not a feature but a system defect. This is where SEO intersects with engineering discipline far more strongly than is usually acknowledged.
+
+How are you currently drawing the line between a merely machine-readable SEO layer and something that already requires a separate trust mechanism?
+
+---

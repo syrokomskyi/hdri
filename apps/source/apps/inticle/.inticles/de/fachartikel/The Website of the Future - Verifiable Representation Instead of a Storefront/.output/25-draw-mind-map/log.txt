@@ -1,0 +1,13 @@
+{"timestamp":"2026-06-12T16:59:43.487Z","event":"step_started","stepId":"draw-mind-map","stepNumber":25,"status":"started"}
+{"timestamp":"2026-06-12T16:59:43.492Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-12T17:00:09.188Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-12T17:00:09.189Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-12T17:00:09.191Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-12T17:02:46.995Z","stepId":"draw-mind-map","stepNumber":25,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-12T17:02:47.000Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-12T17:08:50.358Z","stepId":"draw-mind-map","stepNumber":25,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-12T17:08:50.364Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-12T17:09:42.813Z","stepId":"draw-mind-map","stepNumber":25,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-12T17:09:42.818Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-12T17:19:08.236Z","stepId":"draw-mind-map","stepNumber":25,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-06-12T17:19:08.241Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

@@ -1,0 +1,34 @@
+# The Point of Irreversibility Runs Through the Human
+
+## The Role of the AI Agent
+### Independent Preparation
+#### Search and Verification
+#### Configuration and Calculation
+#### Drafts and Documents
+
+## The Point of Irreversibility
+### Human Confirmation
+### Connecting Actions
+### Financial Actions
+### Legally Significant Actions
+
+## The Basic Formula
+### The Agent Prepares
+### The Human Connects
+
+## Website Architecture
+### Not a Replacement for the Human
+### Confirmation Point
+### Recording Actions
+
+## Responsibility
+### A Permanent Boundary
+### Not a Temporary Limitation
+### Jurisdictional Uncertainty
+
+## The Evidentiary Function of the Website
+### Mandate
+### Scope of Authority
+### Confirmation
+### Signed Receipt
+### Production of Evidence

@@ -1,0 +1,9 @@
+In agency work, a corporate client's website is often discussed by inertia as a matter of design, page structure, and conversion. But if the early stages of vendor selection are increasingly handled by AI agents, that level of description is no longer enough. The site begins to serve a different function: not to impress, but to represent the business in a form suitable for machine comparison and partial verification.
+
+- From an agency operations perspective, one thing here seems especially useful: not building a separate "website for people" and a separate "layer for agents". That almost guarantees data divergence, conflicting terms, and higher maintenance costs. It is far more rational to think of the site as two projections of the same core: human-readable and machine-readable. In that case, the agency's work shifts from decorative assembly to managing the canonical model of the business.
+- The second point concerns the client's positioning. If only price, lead time, and availability are structurally distinguishable, the client's agent will almost inevitably reduce the supplier to a product-level comparison. That means it is not enough for the agency to simply "improve visibility". What is needed is work on verifiable, non-commoditizable attributes: qualifications, origin, history of completed work, boundaries of responsibility, confirmed terms. This is no longer copywriting, but trust architecture.
+- And third: the human layer does not disappear. It shifts to the point of confirming irreversible actions. For the agency, this creates a useful framework in automation projects: the agent prepares, the human commits. That boundary reduces chaos in client expectations and helps avoid selling the fantasy of full autonomy where real responsibility still remains with people.
+
+How would you redesign the agency service if we accept that the client's website is no longer a storefront, but a digital representation with a single source of truth?
+
+---

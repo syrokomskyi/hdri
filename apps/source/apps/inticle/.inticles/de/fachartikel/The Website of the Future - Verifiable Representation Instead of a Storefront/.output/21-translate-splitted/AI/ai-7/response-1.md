@@ -1,0 +1,9 @@
+## Die Grenze der Irreversibilität verläuft über den Menschen
+
+Ich schließe mich bewusst nicht der radikalen These an, „KI-Agenten werden Websites und Menschen ersetzen“.
+
+Ein Agent kann einen Großteil des Weges selbst zurücklegen: finden, die Passung prüfen, eine Konfiguration zusammenstellen, einen Preis berechnen, einen Entwurf vorbereiten, Unterlagen zusammenstellen. Aber eine verbindende, finanzielle, rechtlich relevante oder irreversible Handlung erfordert eine menschliche Bestätigung. Das ist keine vorübergehende Einschränkung im Sinne von „solange die Technologie noch nicht ausgereift ist“. Das ist eine dauerhafte Grenze der Verantwortung.
+
+Die Formel, die ich als Axiom festhalte, lautet: **Der Agent bereitet vor – der Mensch bindet**.
+
+Ich spreche hier über die Architektur der Website, nicht über rechtliche Eindeutigkeit. Wer genau für den Fehler eines autonomen Agenten haften wird – der Nutzer, das Unternehmen, der Modellanbieter oder die Plattform –, hängt von der Jurisdiktion und der künftigen Praxis ab. Hier Gewissheit zu versprechen, ist kaum möglich. Aber der architektonische Beitrag der Website ist real: Sie kann Verantwortung zuweisbar machen, indem sie Mandat, Umfang der Befugnisse, Bestätigung und die signierte Quittung jeder Handlung festhält. Die Aufgabe der Website ist es nicht, Streitigkeiten zu entscheiden, sondern Belege zu erzeugen.

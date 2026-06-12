@@ -1,0 +1,9 @@
+In the IT environment, a corporate website is often perceived as an external layer: CMS, template, markup, a bit of structured data, and integrations. But if more and more preliminary actions are performed by AI agents, it becomes clear that the problem runs deeper. A website is no longer just a set of pages, but a potential anchor point for identity, the data model, and provable claims about the business.
+
+- The most important technical idea here is that you should not build a separate human interface and a separate machine contract. That is an architecturally weak pattern. It creates two state models, two sets of conditions, and an inevitable loss of synchronization. It is far more resilient to maintain a single canonical source of truth and render two projections from it: a page for the human and a structured response for the agent. From an engineering perspective, this is simply good integrity control.
+- The second aspect is distinguishing ordinary data from claims for which provenance verification matters. Price, timeline, availability, or catalog are read as data. But identity, qualifications, liability, and warranty claims already require a different trust model. Otherwise, the agent sees only text, not confirmation. This is where signatures, domain binding, action logging, and the separation of verifiable evidence from descriptive content become relevant.
+- The third point: this is not an argument for yet another “magic” overlay. The basic value comes from the discipline familiar to any good web development practice: semantic structure, accessibility, a clean entity model, moderate dependence on JS, predictable HTML, stable data interfaces. In such a model, machine readability is a consequence of correct construction, not a separate trick.
+
+If you look at a corporate website as part of a trust system, what minimum technical layer would you consider sufficient for machine verification of meaningful claims?
+
+---

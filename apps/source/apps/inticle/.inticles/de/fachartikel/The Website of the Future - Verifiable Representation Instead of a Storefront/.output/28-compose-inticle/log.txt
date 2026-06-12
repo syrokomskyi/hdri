@@ -1,0 +1,11 @@
+{"timestamp":"2026-06-12T17:02:47.077Z","event":"step_started","stepId":"compose-inticle","stepNumber":28,"status":"started"}
+{"timestamp":"2026-06-12T17:02:47.082Z","stepId":"compose-inticle","stepNumber":28,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-12T17:02:47.675Z","stepId":"compose-inticle","stepNumber":28,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-12T17:02:47.678Z","stepId":"compose-inticle","stepNumber":28,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-12T17:02:47.682Z","stepId":"compose-inticle","stepNumber":28,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-12T17:08:50.421Z","stepId":"compose-inticle","stepNumber":28,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"publication-packaging","phaseTitle":"Publication packaging"}}
+{"timestamp":"2026-06-12T17:08:50.427Z","stepId":"compose-inticle","stepNumber":28,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-12T17:09:42.882Z","stepId":"compose-inticle","stepNumber":28,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"publication-packaging","phaseTitle":"Publication packaging"}}
+{"timestamp":"2026-06-12T17:09:42.887Z","stepId":"compose-inticle","stepNumber":28,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-12T17:19:08.337Z","stepId":"compose-inticle","stepNumber":28,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"publication-packaging","phaseTitle":"Publication packaging"}}
+{"timestamp":"2026-06-12T17:19:08.344Z","stepId":"compose-inticle","stepNumber":28,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
