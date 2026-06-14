@@ -25,3 +25,9 @@ Which part of your website today actually functions as representation rather tha
 #DigitalStrategy #SEO #B2B
 
 ---
+
+🟦 EN https://linkedin.com/pulse/website-future-verifiable-representation-instead-andrii-syrokomskyi-wlu6e
+
+🟨 DE https://grow.syrokomskyi.com/die-website-der-zukunft-verifizierbare-reprasentanz-statt-schaufenster
+
+---

@@ -23,3 +23,7 @@ In the article, I examine this logic as an engineering invariant, not as just an
 If interfaces change, what in your business will survive that change: presentation or verifiability?
 
 ---
+
+🟦 EN https://linkedin.com/pulse/website-future-verifiable-representation-instead-andrii-syrokomskyi-wlu6e
+
+🟨 DE https://grow.syrokomskyi.com/die-website-der-zukunft-verifizierbare-reprasentanz-statt-schaufenster
