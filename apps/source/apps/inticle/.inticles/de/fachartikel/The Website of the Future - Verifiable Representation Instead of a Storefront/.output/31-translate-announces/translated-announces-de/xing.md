@@ -25,3 +25,11 @@ Welcher Teil Ihrer Website funktioniert heute tatsächlich als Repräsentation u
 #Digitalstrategie #SEO #B2B
 
 ---
+
+🟦 EN https://linkedin.com/pulse/website-future-verifiable-representation-instead-andrii-syrokomskyi-wlu6e
+
+🟨 DE https://grow.syrokomskyi.com/die-website-der-zukunft-verifizierbare-reprasentanz-statt-schaufenster
+
+---
+
+https://www.xing.com/discover/detail-activities/6749334275.10c4e6
