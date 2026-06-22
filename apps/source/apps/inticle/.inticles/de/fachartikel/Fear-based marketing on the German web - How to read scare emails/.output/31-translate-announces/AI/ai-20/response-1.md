@@ -1,0 +1,9 @@
+Für Selbständige und kleine Unternehmen bleibt die Website oft ein Bereich, in dem sich besonders leicht Verunsicherung auslösen lässt. Es kommt eine E-Mail: Sie haben keinen Cookie-Banner, also könnte Ihre Website gegen das Gesetz verstoßen. Für jemanden, der nicht täglich in Web/IT/DSGVO-Themen lebt, klingt das plausibel. Genau deshalb ist es wichtig, zwischen Faktenprüfung und dem Verkauf von Angst zu unterscheiden.
+
+- Das Fehlen eines Banners allein reicht noch nicht für eine belastbare Schlussfolgerung. Zuerst muss man verstehen, welche externen Dienste auf der Website überhaupt eingebunden sind: Analytics, Karten, Videos, Formulare, Captcha, Chats, Buchungstools und andere Elemente. Je nach dieser Konfiguration kann die Bewertung unterschiedlich ausfallen. Eine universelle Formel vereinfacht die Situation hier meist stärker, als es die Realität zulässt.
+- Für Selbständige ist die praktische Orientierung recht einfach. Ein guter Dienstleister erklärt zuerst, was genau er geprüft hat: welche Skripte geladen werden, was eine Einwilligung erfordert und wo dies in der Datenschutzerklärung abgebildet ist. Ein schlechter Dienstleister geht sofort zur Drohung über und bietet erst danach Betreuung an. Der Unterschied liegt nicht in der Höflichkeit, sondern in der Qualität des Denkens.
+- Sinnvoll ist es außerdem, intern eine minimale Ordnung zu haben: eine Liste der externen Dienste auf der Website, Klarheit darüber, wer sie eingebunden hat, und eine dokumentierte Entscheidung, ob ein Consent-Mechanismus erforderlich ist oder nicht. Das hilft, auf solche Schreiben ruhig zu reagieren und keine Entscheidungen unter Druck zu treffen. Wenn die Situation strittig ist, ergibt es erst dann Sinn, sie mit einem spezialisierten Juristen zu besprechen.
+
+Woran erkennen Sie normalerweise, dass ein Dienstleister Ihre Website tatsächlich inhaltlich prüft und nicht nur die Unsicherheit verstärkt?
+
+---

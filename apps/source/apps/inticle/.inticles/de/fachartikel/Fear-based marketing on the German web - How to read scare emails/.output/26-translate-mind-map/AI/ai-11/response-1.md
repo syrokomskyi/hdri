@@ -1,0 +1,34 @@
+# Anatomy of a Fear-Mongering Letter
+
+## Example of a Letter
+### False concern
+### Legal vulnerability
+### Fear of an Abmahnung
+### Soft sell
+
+## Typical Structure
+### Imitation of personal contact
+### Universalization of the violation
+### Appeal to fear
+### Pressure through vulnerability
+### Rhetorical closure
+
+## Key Triggers
+### Law and compliance
+### Small business
+### Absence of lawyers
+### Risk of claims
+
+## Commercial Objective
+### Selling support services
+### Warming up through anxiety
+### Cold outreach
+
+## What It Is Not
+### Not a notification from authorities
+### Not a lawyer’s letter
+### Not a fine
+
+## Main Conclusion
+### The anxiety is created by the seller
+### The source is not the state

@@ -1,0 +1,35 @@
+# Ruhige Antwort statt Panik
+
+## Antwort an den Kunden
+### Faktenprüfung
+### Rechtlicher Rahmen
+### Motiv des Schreibens
+### Option mit Banner
+
+## Position zum Gesetz
+### Transparenz und Einwilligung
+### Kein Banner nur um des Banners willen
+### Abhängigkeit von der Datenverarbeitung
+
+## Antwort an den Absender
+### Kurz und neutral
+### Tatsächliche Prüfung der Website
+### Ablehnung einer Beratung
+### Werbeverbot und Löschung der Daten
+
+## Systematischer Ansatz
+### Erfassung von Cookies und Tracking
+### Dokumentation externer Skripte
+### Klare Entscheidung zur CMP
+### Regelmäßiges Privacy Review
+#### Mit spezialisiertem Rechtsanwalt
+
+## Merkmal von Professionalität
+### Sprache der Bedingungen
+#### Wenn X, ist Y erforderlich
+### Überprüfbare Kriterien
+
+## Manipulative Verkaufspraktiken
+### Sprache universeller Drohungen
+### Druck durch Angst
+### Weder Anordnung noch Bußgeld

@@ -1,0 +1,18 @@
+=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. ===
+=== BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. ===
+CONTENT_START
+## Анатомия письма-"страшилки"
+
+Чтобы не спорить с пересказом, приведу реальный текст одного такого письма (отправитель - SENOVATE для style-expert.online):
+
+> Damit du es nochmal vor Augen hast: Kein Cookie-Banner / keine Einwilligung. Das ist bei Websites rechtlich vorgeschrieben - und ohne ist man angreifbar. Bei kleinen Unternehmen wird sowas leider öfter abgemahnt, einfach weil die meisten keine Rechtsabteilung haben, die drauf achtet.
+>
+> Falls du irgendwann magst, dass sich jemand laufend drum kümmert, sind wir da. Kein Druck, keine weiteren Mails - du weißt jetzt, wo wir sind.
+
+Это - один пример. Но типовая структура на нём просматривается хорошо.
+
+Сначала - имитация заботы и личного контакта: "это моя последняя почта, не хочу тебя спамить". Затем - утверждение о юридической уязвимости, поданное как универсальное правило: "нет баннера - значит, нарушаешь закон". Потом - апелляция к страху перед Abmahnung, усиленная напоминанием, что у малого бизнеса нет юридического отдела. И в конце - мягкая продажа сопровождения с риторическим закрывателем: "никакого давления, никаких дальнейших писем".
+
+Чем это письмо не является. Это не уведомление от Behörde, не письмо адвоката и не штраф. Это коммерческий холодный аутрич. Тревогу создаёт продавец услуги, а не государство.
+
+CONTENT_END

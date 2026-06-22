@@ -1,0 +1,9 @@
+Im Digitalmarketing gibt es ein altes Problem: Komplexe Themen lassen sich zu leicht in eine einzige abschreckende, aber bequeme Formel verpacken. Im deutschen Web zeigt sich das häufig beim Thema DSGVO: Statt die Konfiguration der Website zu analysieren, wird dem Inhaber mitgeteilt, dass das Fehlen eines Cookie-Banners die Website bereits angreifbar mache. Für die praktische Arbeit ist das ein schlechter Ausgangspunkt.
+
+- Wenn man eine Website als System betrachtet, beginnt die Frage mit den Fakten. Welche Marketing- und Drittanbieter-Elemente sind tatsächlich vorhanden: Analytics, GTM, Pixel, Video-Embeds, Maps, reCAPTCHA, Formulare, Chat, Booking? Was wird vor der Einwilligung geladen, und was wird blockiert? Ohne das lässt sich nicht ehrlich bestimmen, ob eine CMP erforderlich ist oder ob das Problem überhaupt falsch formuliert wurde.
+- Für Marketer liegt hier auch eine disziplinäre Lehre. Jedes Tag oder Widget ist nicht einfach nur ein "Tool", sondern eine Abhängigkeit mit rechtlichen, analytischen und UX-bezogenen Folgen. Wenn diese Abhängigkeiten nicht dokumentiert sind, verliert das Team die Steuerbarkeit: Daten werden auf unklare Weise erhoben, die Website verändert sich fragmentarisch, und der Kunde erhält externe Interpretationen, die anschließend im Nachhinein aufgearbeitet werden müssen.
+- Ich halte es für sinnvoll, zwei Arten der Kommunikation zu unterscheiden. Die erste erklärt die Bedingungen: Wenn X vorhanden ist, ist Y erforderlich. Die zweite erzeugt eine allgemeine Verunsicherung. Die erste baut Vertrauen und funktionierende Prozesse auf. Die zweite erzeugt Lärm und einen kurzfristigen kommerziellen Impuls. Für die Branche ist das ein grundlegender Unterschied.
+
+Wie dokumentieren Sie auf Projekten consent-relevante Tools, damit Marketing, Entwicklung und Website-Inhaber dasselbe Bild sehen?
+
+---

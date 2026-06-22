@@ -1,0 +1,9 @@
+In der Agenturarbeit gibt es ein unangenehmes, aber sehr stabiles Muster: Ein Teil des Marktes verkauft nicht Expertise, sondern Angst. Besonders gut zeigt sich das bei Themen wie DSGVO, Cookie-Consent und den "rechtlichen Risiken" von Websites kleiner Unternehmen in Deutschland. Der Kunde erhält ein Schreiben mit einer fast universellen These: Sie haben keinen Banner, also ist Ihre Website angreifbar. Danach folgt ein zurückhaltendes Angebot zur Betreuung.
+
+- Das operative Problem ist hier nicht nur ethischer, sondern auch architektonischer Natur. Wenn eine Agentur eine pauschale Schlussfolgerung verkauft, ohne die tatsächliche Konfiguration der Website zu inventarisieren, beschädigt sie den gesamten Diagnoseprozess. Es geht nicht um das Vorhandensein eines Banners als Interface-Element, sondern darum, welche Skripte, Embeds, Karten, Videos, Formulare, Captchas oder Analysedienste tatsächlich vor der Einwilligung geladen werden.
+- Für eine Agentur sieht ein reifer Ansatz langweiliger aus, ist aber verlässlicher: Third-Party-Dependencies bereits im Onboarding erfassen, technisch notwendige und einwilligungsrelevante Technologien trennen, die Entscheidung zur CMP dokumentieren und sie bei Änderungen an der Website überprüfen. Das ist keine "Angst-getriebene Dienstleistungsverkaufslogik" mehr, sondern eine steuerbare Service-Infrastruktur.
+- Es gibt auch einen Management-Effekt. Wenn sich ein Team daran gewöhnt, in Bedingungen zu sprechen - "wenn X verwendet wird, ist Y erforderlich" -, sinkt die Zahl der Konflikte mit Kunden, es gibt weniger unnötige Implementierungen und das Vertrauen in die Schlussfolgerungen steigt. Pauschale Drohkulissen erzeugen schnelle Reaktionen, zerstören aber auf lange Sicht den Ruf und vermüllen den Markt.
+
+Wie ist in Ihrer Agentur die Grenze zwischen ehrlicher Risikokommunikation und der Kommerzialisierung von Angst organisiert?
+
+---

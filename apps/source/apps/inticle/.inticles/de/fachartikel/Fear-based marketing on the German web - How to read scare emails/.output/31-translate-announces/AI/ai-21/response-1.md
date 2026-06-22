@@ -1,0 +1,9 @@
+Im deutschen SEO-Segment wird das Thema Consent häufig entweder als reine Legal-Schicht oder als UX-Element diskutiert. Für die Praxis reicht das jedoch nicht aus. Im Markt ist ein wiederkehrendes Muster erkennbar: Dem Website-Betreiber wird mitgeteilt, dass das Fehlen eines Cookie-Banners bereits einen rechtlichen Mangel darstellt. Aus professioneller Sicht ist eine solche Aussage zu grob und hält einer Prüfung anhand der Fakten nur schlecht stand.
+
+- Eine korrekte Analyse beginnt mit der Konfiguration der Website. Man muss nicht auf das Vorhandensein eines Banners schauen, sondern auf das Vorhandensein consent-relevanter Technologien: Analytics, GTM, Meta-/andere Pixel, eingebettetes YouTube/Vimeo, Maps, reCAPTCHA, Chat, Booking, Drittanbieter-Formulare und weitere externe Abhängigkeiten. Erst danach ist es sinnvoll, über CMP, Blockierung vor Einwilligung und den Text des Privacy-Bereichs zu sprechen.
+- Für SEO in Deutschland ist das auch deshalb wichtig, weil viele Websites kleiner Unternehmen in einer hybriden Umgebung leben: etwas lokale Sichtbarkeit, etwas Tracking, etwas Service-Widgets, oft ohne vollständige Dokumentation. In solchen Systemen ist es sehr leicht, zu einer falschen Schlussfolgerung zu kommen — sowohl in Richtung einer überflüssig aufgeblähten Consent-Schicht als auch in Richtung einer Unterschätzung des Problems. Genau deshalb wirken universelle Anschreiben besonders fragwürdig.
+- Gesondert sehe ich die Frage der professionellen Sprache. Ein seriöser SEO-Spezialist beschreibt Bedingungen und Einschränkungen. Ein unseriöser nutzt die rechtliche Sensibilität des Marktes als Verstärker kommerzieller Dramaturgie. Das ist nicht einfach nur schlechte Kommunikation. Das ist der Ersatz von Diagnostik durch Rhetorik.
+
+Welches ist Ihr minimales technisches Prüfprotokoll für consent-relevante Elemente, bevor Sie mit dem Kunden überhaupt über ein Banner sprechen?
+
+---

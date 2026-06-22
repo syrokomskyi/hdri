@@ -1,0 +1,9 @@
+Im fortgeschrittenen SEO wird häufig über Daten, Attribution und Tools diskutiert, deutlich seltener jedoch über die Qualität der architektonischen Ausgangsdiagnostik. Auf dem deutschen Markt zeigt sich das besonders beim Thema Cookie-Consent: Ein Teil der Dienstleister beginnt nicht mit einer Bestandsaufnahme der Website, sondern mit der fertigen These „kein Banner = Verstoß“. Für eine ernsthafte Praxis ist das ein schlechter Standard.
+
+- Consent lässt sich nicht losgelöst von der realen Konfiguration diskutieren. Erforderlich ist eine Analyse dessen, was tatsächlich geladen wird: Analytics, Marketing-Tags, GTM, Social Pixels, eingebettete Videos, Maps, Captcha, Chat-Widgets, Formulare, Fonts und andere Third-Party-Komponenten. Solange der Abhängigkeits-Stack und der Zeitpunkt ihrer Aktivierung nicht beschrieben sind, ist jede kategorische Aussage zum Banner methodisch schwach.
+- Für Big SEO ist das nicht nur wegen Compliance wichtig. Es geht um Governance: Wer verantwortet die Tag-Layer, wie werden externe Skripte dokumentiert, wo sind die Bedingungen für die Blockierung bis zum Consent festgehalten, wie werden Data Collection, UX und rechtliche Constraints miteinander in Einklang gebracht. Andernfalls entsteht die typische Situation: Das Marketing hat etwas implementiert, die Entwicklung hat es nicht dokumentiert, und später erhält der Client ein Schreiben mit einer externen Interpretation der eigenen Website.
+- Eine eigene Frage ist die der professionellen Sprache. Wenn ein Dienstleister über Bedingungen erklärt, ist das in der Regel ein Zeichen eines reifen Denksystems. Wenn er über eine universelle Verwundbarkeit verkauft, bedeutet das oft, dass die Diagnostik durch Rhetorik ersetzt wurde. Auf lange Sicht zerstört das sowohl Vertrauen als auch die Qualität der Entscheidungen.
+
+Wie ist in Ihren Teams die Source of Truth für consent-relevante Skripte und Third-Party-Dependencies organisiert?
+
+---

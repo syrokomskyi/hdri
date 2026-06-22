@@ -1,0 +1,9 @@
+In Digitalagenturen wird das Thema Vertrauen oft abstrakt diskutiert, in der Praxis ist es jedoch sehr konkret: in welcher Sprache die Agentur Risiko beschreibt. Ein guter Test sind Schreiben zu DSGVO und Cookie-Consent, die Betreiber von Websites kleiner Unternehmen erhalten. Wenn die Kommunikation mit einer nahezu pauschalen Drohung beginnt, ist das bereits ein Symptom für ein schwaches professionelles Modell.
+
+- Das Problem ist nicht nur ethischer Natur. Wenn eine Agentur sagt: „Sie haben kein Banner, also verstößt die Website gegen das Gesetz“, überspringt sie die wichtigste Phase überhaupt — das Audit der tatsächlichen Konfiguration. Die Lösung hängt jedoch von den realen Third-Party-Dependencies ab: Analytics, Pixels, Maps, Video-Embeds, Formulare, Captcha, Chat, Booking-Tools und andere Elemente, die vor der Einwilligung aktiv sein können.
+- Für eine reife operative Aufstellung auf Agenturseite ist ein strengeres Schema sinnvoll: ein Inventory im Onboarding, eine Karte externer Services, eine klare Klassifizierung in technically necessary vs. consent-relevant, eine dokumentierte Entscheidung zur CMP, eine Überprüfung nach jeder wesentlichen Änderung an der Website. Das ist langweilig. Aber gerade langweilige Prozesse schützen den Client in der Regel am besten.
+- Auch auf Ebene der Marktpositionierung ist das wichtig. Wenn eine Agentur über Bedingungen und Einschränkungen erklärt, stärkt sie Vertrauen. Wenn sie über eine universelle Verwundbarkeit erklärt, kann sie kurzfristig einen kommerziellen Effekt erzielen, senkt aber zugleich den Standard der Branche. Langfristig trifft das sowohl die Reputation als auch die Servicequalität.
+
+Wie ist in Ihrer Agentur die Policy für communication about risk organisiert, damit sie nicht in den Verkauf von Angst abrutscht?
+
+---

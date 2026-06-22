@@ -1,0 +1,41 @@
+# Wenn bereits das Schreiben selbst angreifbar ist
+
+## Rechtliche Angreifbarkeit des Schreibens
+### Das Drohschreiben
+### Gegenläufiges Risiko für den Absender
+
+## Grenzen des E-Mail-Marketings
+### Unverlangte Werbung
+### Beschränkungen in Deutschland
+### Risiko auch im B2B
+### Rechtliche Grundlage erforderlich
+### Bewertung nach Kontext
+
+## Mögliche rechtliche Risiken
+### Risiko einer Abmahnung
+### Schon bei einer einzigen E-Mail
+### Keine automatische Folge
+### Juristische Prüfung erforderlich
+
+## Probleme bei der Erhebung von E-Mail-Adressen
+### Daten von fremden Websites
+### Risiken nach der DSGVO
+#### Rechtliche Grundlage
+#### Information des Adressaten
+### Nicht immer ein Verstoß
+
+## Überzogene Drohungen
+### Druck durch Formulierungen
+### Irreführende Werbung möglich
+### Analyse des Textes erforderlich
+
+## Ruhige Reaktion des Empfängers
+### Widerspruch
+### Löschung der Daten
+### Beschwerde bei der Datenschutzbehörde
+### Abmahnung durch einen Anwalt
+### Prüfung durch die zuständige Behörde
+
+## Grundprinzip
+### Zuerst die Fakten prüfen
+### Keine Panik

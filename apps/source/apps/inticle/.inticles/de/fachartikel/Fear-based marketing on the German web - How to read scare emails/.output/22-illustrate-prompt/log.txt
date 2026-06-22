@@ -1,0 +1,31 @@
+{"timestamp":"2026-06-22T10:00:14.870Z","event":"step_started","stepId":"illustrate-prompt","stepNumber":22,"status":"started"}
+{"timestamp":"2026-06-22T10:00:14.895Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-22T10:00:14.918Z","stepId":"illustrate-prompt","stepNumber":22,"event":"llm_call_started","status":"running","operation":"createOpenAiText","provider":"openai","model":"gpt-5.4","details":{}}
+{"timestamp":"2026-06-22T10:00:19.835Z","stepId":"illustrate-prompt","stepNumber":22,"event":"llm_call_finished","status":"completed","operation":"createOpenAiText","provider":"openai","model":"gpt-5.4"}
+{"timestamp":"2026-06-22T10:00:19.881Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-22T10:00:19.909Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-22T10:00:19.918Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-22T10:03:33.903Z","stepId":"illustrate-prompt","stepNumber":22,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"cover-assets","phaseTitle":"Cover assets"}}
+{"timestamp":"2026-06-22T10:03:33.923Z","event":"step_started","stepId":"illustrate-prompt","stepNumber":22,"status":"started"}
+{"timestamp":"2026-06-22T10:03:33.926Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-22T10:03:33.941Z","stepId":"illustrate-prompt","stepNumber":22,"event":"llm_call_started","status":"running","operation":"createOpenAiText","provider":"openai","model":"gpt-5.4","details":{}}
+{"timestamp":"2026-06-22T10:03:39.502Z","stepId":"illustrate-prompt","stepNumber":22,"event":"llm_call_finished","status":"completed","operation":"createOpenAiText","provider":"openai","model":"gpt-5.4"}
+{"timestamp":"2026-06-22T10:03:39.508Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-22T10:03:39.509Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-22T10:03:39.511Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-22T10:05:38.172Z","stepId":"illustrate-prompt","stepNumber":22,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"cover-assets","phaseTitle":"Cover assets"}}
+{"timestamp":"2026-06-22T10:05:38.327Z","event":"step_started","stepId":"illustrate-prompt","stepNumber":22,"status":"started"}
+{"timestamp":"2026-06-22T10:05:38.329Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-22T10:05:38.364Z","stepId":"illustrate-prompt","stepNumber":22,"event":"llm_call_started","status":"running","operation":"createOpenAiText","provider":"openai","model":"gpt-5.4","details":{}}
+{"timestamp":"2026-06-22T10:05:43.410Z","stepId":"illustrate-prompt","stepNumber":22,"event":"llm_call_finished","status":"completed","operation":"createOpenAiText","provider":"openai","model":"gpt-5.4"}
+{"timestamp":"2026-06-22T10:05:43.464Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-22T10:05:43.483Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-06-22T10:05:43.548Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-06-22T10:13:18.949Z","stepId":"illustrate-prompt","stepNumber":22,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"cover-assets","phaseTitle":"Cover assets"}}
+{"timestamp":"2026-06-22T10:13:18.963Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-22T12:45:40.101Z","stepId":"illustrate-prompt","stepNumber":22,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"cover-assets","phaseTitle":"Cover assets"}}
+{"timestamp":"2026-06-22T12:45:40.163Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-22T13:08:23.925Z","stepId":"illustrate-prompt","stepNumber":22,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"cover-assets","phaseTitle":"Cover assets"}}
+{"timestamp":"2026-06-22T13:08:23.948Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-06-22T13:38:24.768Z","stepId":"illustrate-prompt","stepNumber":22,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"cover-assets","phaseTitle":"Cover assets"}}
+{"timestamp":"2026-06-22T13:38:24.931Z","stepId":"illustrate-prompt","stepNumber":22,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

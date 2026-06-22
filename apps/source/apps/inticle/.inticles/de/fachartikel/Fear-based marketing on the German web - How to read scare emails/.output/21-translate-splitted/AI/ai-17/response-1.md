@@ -1,0 +1,15 @@
+## When the Email Itself Is Vulnerable
+
+There is also a reverse side that recipients rarely know about: the scare-email itself may be legally vulnerable. I am keeping this section short so as not to replace one scare tactic with another.
+
+Unsolicited promotional email outreach in Germany is restricted under § 7 para. 2 no. 2 UWG, including in B2B, without the recipient’s prior consent. This is a legally nuanced area: much depends on the context and on possible legal bases. Based on the practice indicated in the materials available to me (BGH, 2009), the risk of an Abmahnung may in principle arise from a single unsolicited promotional email — but this is a potential risk, not an automatic consequence, and the qualification must be made by a lawyer based on the specific facts.
+
+Collecting email addresses from third-party websites without a legal basis and without informing the data subjects may also be problematic from a DSGVO perspective (Art. 6 and Art. 13 are relevant). I am not presenting this as an automatic violation: different legal bases may be possible. And if legal threats are deliberately exaggerated to create pressure, the wording of the email may fall within the scope of §§ 5, 5a UWG on misleading advertising — this is a possible qualification, not an established fact, and it requires an assessment of the specific text.
+
+What a recipient can do if they want to respond calmly, without escalation:
+
+- State an objection (Widerspruch) and demand deletion of the data (Art. 17, 21 DSGVO).
+- If necessary, consider an Abmahnung through a lawyer or the Wettbewerbszentrale.
+- File a complaint with the **competent state data protection authority** (this is determined by the location of the controller; for Baden-Württemberg, this is its own state authority, not the Bavarian BayLDA — the appropriate channel should be verified for the specific case).
+
+The first step is not panic, but checking the facts.

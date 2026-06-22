@@ -1,0 +1,9 @@
+Im Social Media Marketing sind viele daran gewöhnt, bei Consent nur am Punkt von Pixel und Attribution zu denken. Ich habe jedoch zunehmend das Gefühl, dass das eigentliche Problem früher beginnt - nämlich darin, wie Dienstleister das Risiko für den Website-Inhaber überhaupt formulieren. Besonders auf dem deutschen Markt, wo das Fehlen eines Cookie-Banners nicht selten als universelle rechtliche Schwachstelle dargestellt wird, ohne das konkrete System zu differenzieren.
+
+- Für SMM ist das kein externer Legal-Lärm, sondern Teil der operativen Realität. Meta Pixel, eingebettete Social-Content-Elemente, Lead-Formulare, Remarketing-Skripte und Tag-Management existieren nicht isoliert, sondern innerhalb einer Website mit weiteren externen Abhängigkeiten. Wenn niemand eine Karte dieser Komponenten führt, wird die Consent-Diskussion zu einem Rätselraten statt zu einem steuerbaren Prozess.
+- Das zweite Problem ist kommunikativ. Wenn eine Agentur oder ein Spezialist sagt: "Ohne Banner verstoßen Sie gegen das Gesetz", überspringt sie oder er oft den entscheidenden Schritt: das Audit der tatsächlichen Konfiguration. Benötigt wird kein Slogan, sondern eine Antwort auf die Fragen: Was wird tatsächlich vor der Einwilligung geladen, wodurch wird das blockiert, wo ist das in der Privacy-Dok beschrieben und wie wirkt sich das auf die Erhebung von Marketingdaten aus?
+- Meiner Ansicht nach zeigt sich die Reife eines SMM-Teams daran, wie es über technische Einschränkungen spricht. Wenn es eine Sprache der Bedingungen gibt, besteht auch die Chance auf eine funktionierende bereichsübergreifende Zusammenarbeit mit Entwicklung, SEO und Legal. Wenn es nur eine universelle Alarmrhetorik gibt, verliert das Team noch vor der Strategiediskussion Vertrauen.
+
+Wie ist bei Ihnen das Zusammenspiel zwischen Social Tracking, Consent-Logik und der allgemeinen Website-Dok organisiert?
+
+---

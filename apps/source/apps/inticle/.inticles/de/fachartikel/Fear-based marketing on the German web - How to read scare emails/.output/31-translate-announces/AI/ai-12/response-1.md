@@ -1,0 +1,9 @@
+Im Digitalmarketing gibt es eine Kategorie von Botschaften, die wie ein hilfreicher Warnhinweis wirken, tatsächlich aber den Verkauf von Angst betreiben. Auf dem deutschen Markt ist das besonders beim Thema DSGVO und Cookie-Consent zu beobachten: Website-Betreibern wird geschrieben, dass das Fehlen eines Cookie-Banners bereits einen Verstoß darstelle. Meiner Ansicht nach untergräbt eine solche Sprache den professionellen Standard der Risikodiskussion.
+
+- Ein korrekter Ansatz beginnt nicht mit dem Banner, sondern mit einer Bestandsaufnahme. Man muss verstehen, welche Daten tatsächlich verarbeitet werden und über welche Technologien: Analytics, Marketing-Tags, Social Pixels, Embeds, Karten, Captcha, Formulare, Chat-Tools und andere externe Abhängigkeiten. Entscheidend dafür, ob ein Consent-Mechanismus erforderlich ist, ist die tatsächliche Konfiguration der Website — nicht eine abstrakte Formel aus einem Anschreiben.
+- Für Marketing-Teams ergibt sich daraus auch eine prozessuale Konsequenz. Third-Party-Komponenten müssen als Teil der Infrastruktur erfasst werden: Wer hat sie implementiert, wo sind sie dokumentiert, wann werden sie aktiviert, wodurch werden sie bis zur Einwilligung blockiert, wie ist das mit der Privacy-Dokumentation abgestimmt. Ohne das wird der Marketing-Stack selbst für das eigene Team intransparent.
+- Ebenfalls wichtig ist der Kommunikationsstil mit dem Client. Wenn ein Dienstleister in der Sprache von Bedingungen und Einschränkungen spricht, lässt er Raum für Prüfung und Verifikation. Wenn er in der Sprache einer universellen Bedrohung spricht, ersetzt er Analyse durch Rhetorik. Das kann schnelle Reaktionen erzeugen, ist aber mit professioneller Reife nur schwer vereinbar.
+
+Wie ist in Ihren Projekten der Audit-Prozess für consent-relevante Marketing-Technologien organisiert?
+
+---
