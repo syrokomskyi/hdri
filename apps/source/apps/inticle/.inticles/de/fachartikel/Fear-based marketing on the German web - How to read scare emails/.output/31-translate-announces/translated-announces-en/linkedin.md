@@ -27,3 +27,7 @@ That, in my view, is what distinguishes professional infrastructure from market 
 If a contractor speaks of a "violation of the law" but does not start with the website's actual config, what exactly are they selling-compliance or anxiety?
 
 ---
+
+🟦 EN https://linkedin.com/pulse/fear-based-marketing-german-web-how-read-scare-emails-syrokomskyi-vb0re
+
+🟨 DE https://grow.syrokomskyi.com/angstmache-im-deutschen-webmarketing-wie-man-solche-warnschreiben-liest

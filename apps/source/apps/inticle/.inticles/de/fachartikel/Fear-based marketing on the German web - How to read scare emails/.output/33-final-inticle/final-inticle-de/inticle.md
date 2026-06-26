@@ -146,3 +146,7 @@ Der wichtigste praktische Orientierungspunkt ist die Sprache, in der mit Ihnen g
 Beantworten Sie ein paar Fragen zu Ihrer Website und erhalten Sie eine vorsichtige erste Einschätzung: Brauchen Sie voraussichtlich ein Consent-Banner, was sollten Sie sonst noch prüfen und wie können Sie ruhig auf ein "Angstschreiben" reagieren. Das ist keine rechtliche Bewertung, sondern eine praktische Bestandsaufnahme nach der Logik des Artikels.
 
 **Nächster Schritt:** Diagnose starten
+
+---
+
+https://grow.syrokomskyi.com/angstmache-im-deutschen-webmarketing-wie-man-solche-warnschreiben-liest/
