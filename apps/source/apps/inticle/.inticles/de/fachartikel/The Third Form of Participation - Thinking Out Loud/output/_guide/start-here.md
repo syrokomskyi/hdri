@@ -6,7 +6,7 @@ Self-explained article pipeline for article type `guest`. Evidence profile: `ope
 
 - Prepare `.input/brief.md` and all required article inputs before starting the run.
 - In `.input/brief.md`, set narratorPerspective to control author-facing prose: use first_person_singular for 'first person singular' or first_person_plural for 'first person plural'.
-- Start the pipeline from the monorepo root with `pnpm turbo run start --filter=@org/inticle`.
+- Start the pipeline from the monorepo root with `pnpm turbo run start --filter=@syrokomskyi/inticle`.
 - Read `.output/_guide/start-here.md` for the route and each step's `step-guide.md` for the local contract.
 - Confirm the route decision in the `route-pipeline` step output directory (`pipeline-route.md`) before expecting discovery or editorial-envelope branches to run.
 - If a step pauses, satisfy the requested files in that step output directory and rerun the pipeline.
