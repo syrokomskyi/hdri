@@ -1,54 +1,91 @@
 # What It Looks Like
 
 ## Workshop Format
+
 ### Not a Job Opening
+
 ### Not an Internship
+
 ### One Completed Thing of Your Own
+
 ### Working Alongside an Engineer
+
 ### Organizational Framework
 
 ## Working Principle
+
 ### One Product of Your Own
+
 ### From Start to Finish
+
 ### Clear Area of Responsibility
+
 ### No Scattering Across Different Things
 
 ## Possible Werkstück
+
 ### Design System
+
 ### Audit Methodology
+
 ### Component Library
+
 ### Another Completed Product
 
 ## Work Discipline
+
 ### Separate Workplace
+
 ### Your Own Space
+
 ### Clear Boundaries
+
 ### Handover of the Finished Product
+
 ### Wholeness Through Responsibility
 
 ## Acceptance and Authorship
+
 ### Written Criteria
+
 ### Acceptance Agreed Before the Start
+
 ### Authorship Document
+
 #### Signed
+
 #### In the Author’s Name
+
 #### Evidentiary Trail
 
 ## Rights After the Collaboration
+
 ### The Document Remains
+
 ### Regardless of Whether the Collaboration Ends
+
 ### Regardless of the Studio’s Fate
+
 ### Not a Substitute for Court or Contract
 
 ## Share of Sales
+
 ### As Long as the Product Is Sold
+
 ### Author’s Share
+
 ### Experimental Model
+
 #### High Share at First
+
 #### Smaller Share Over Time
+
 #### Indefinite Residual Share
 
 ## Limits of the Model
+
 ### Working Figures
+
 ### Requires Validation
+
 ### Economic Viability

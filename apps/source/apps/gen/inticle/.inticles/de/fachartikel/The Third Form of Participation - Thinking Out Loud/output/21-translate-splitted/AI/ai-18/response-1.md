@@ -5,6 +5,7 @@ This is not a job opening. Not an internship. It is a workshop—a place where a
 A fine line we are trying to hold.
 
 You lead one product of your own—**Werkstück**. Not “helping with various things,” but being responsible for something specific from start to finish. This could be:
+
 - a design system for a specific type of project
 - a methodology for auditing a business’s presence in AI systems
 - a component library

@@ -8,10 +8,7 @@ Fill the required outputs below and then re-run the pipeline.
 
 ## Instruction
 
-Phase · EXPERIENCE ASSETS complete.
-Review the interaction design, the branded article, the translated section set, and any enabled cover or mind-map assets.
-Confirm that the enriched article package is coherent enough to enter final packaging.
-Then replace `TBD` in `phase-experience-assets-accepted.md` with a short approval note and rerun the pipeline.
+Phase · EXPERIENCE ASSETS complete. Review the interaction design, the branded article, the translated section set, and any enabled cover or mind-map assets. Confirm that the enriched article package is coherent enough to enter final packaging. Then replace `TBD` in `phase-experience-assets-accepted.md` with a short approval note and rerun the pipeline.
 
 ## Notes
 

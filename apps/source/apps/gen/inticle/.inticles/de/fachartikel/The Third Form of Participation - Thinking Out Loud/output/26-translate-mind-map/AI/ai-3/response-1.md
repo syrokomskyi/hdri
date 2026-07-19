@@ -1,33 +1,53 @@
 # Werk und Wirkung: zwei Naturen des Beitrags
 
 ## Werk
+
 ### Zustand und Ganzheit
+
 ### Nachweisbarkeit im Moment
+
 ### Kumulativer Wert
+
 ### Dauerhafter Nutzen
 
 ## Wirkung
+
 ### Wirkung über die Zeit
+
 ### Nachweisbarkeit durch Dynamik
+
 ### Verblassender Effekt
+
 ### Zeitlich begrenzter Beitrag
 
 ## Unterschied in der Mechanik
+
 ### Zwei Naturen von Wert
+
 ### Objekt versus Einfluss
+
 ### Akkumulation versus Streuung
 
 ## Rechtliche Grundlage von Werk
+
 ### Möglicher urheberrechtlicher Schutz
+
 ### Angemessene Beteiligung am Erfolg
+
 ### Erfordernis einer gesonderten Prüfung
+
 #### Nicht jedes Werk ist ein schutzfähiges Werk
 
 ## Rechtlicher Status von Wirkung
+
 ### Kein schutzfähiges Werk
+
 ### Stützt sich nicht auf das Urheberrecht
+
 ### Ein dauerhafter Anteil ist nicht begründbar
 
 ## Praktische Schlussfolgerung
+
 ### Der Anteil hängt von der Natur des Beitrags ab
+
 ### Die Schlüsselfrage ist die Akkumulation von Wert

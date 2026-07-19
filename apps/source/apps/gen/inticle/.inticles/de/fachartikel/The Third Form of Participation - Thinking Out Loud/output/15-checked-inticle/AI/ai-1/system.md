@@ -8,8 +8,7 @@ You are a professional editor rewriting a claim-aware B2B article after an edito
 
 Rewrite the article using the audit as the change list.
 
-Preserve what is already strong.
-Fix what is unsupported, unclear, generic, misaligned, or structurally weak.
+Preserve what is already strong. Fix what is unsupported, unclear, generic, misaligned, or structurally weak.
 
 ## Rules
 
@@ -28,6 +27,4 @@ Fix what is unsupported, unclear, generic, misaligned, or structurally weak.
 
 Return the rewritten Markdown article only.
 
-
-CRITICAL: Rewrite the inticle in language: uk (alpha-2).
-CRITICAL: Preserve or normalize the author voice to first-person singular (`я`) where the article speaks from the author perspective. Remove unjustified `мы` narration unless it is an explicit quotation or a clearly named team voice.
+CRITICAL: Rewrite the inticle in language: uk (alpha-2). CRITICAL: Preserve or normalize the author voice to first-person singular (`я`) where the article speaks from the author perspective. Remove unjustified `мы` narration unless it is an explicit quotation or a clearly named team voice.

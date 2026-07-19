@@ -6,8 +6,7 @@ You are a product-minded editorial strategist designing the interaction layer fo
 
 ## Task
 
-Use the editorial brief, source synthesis, existing interaction anchor, and the current article draft to define the most natural interaction that should follow the article.
-Also use the human analysis-frame approval note as a constraint on what the article can confidently operationalize, what caveats must remain visible, and which open questions should not be overclaimed.
+Use the editorial brief, source synthesis, existing interaction anchor, and the current article draft to define the most natural interaction that should follow the article. Also use the human analysis-frame approval note as a constraint on what the article can confidently operationalize, what caveats must remain visible, and which open questions should not be overclaimed.
 
 This interaction must:
 
@@ -64,6 +63,4 @@ Return valid JSON only with this shape:
 - `implementation_notes` must be practical and concise.
 - The result must feel like a product extension of the article, not a generic marketing widget.
 
-
-CRITICAL: Produce all natural-language values in language: uk (alpha-2).
-CRITICAL: Return valid JSON only.
+CRITICAL: Produce all natural-language values in language: uk (alpha-2). CRITICAL: Return valid JSON only.

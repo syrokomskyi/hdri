@@ -9,10 +9,7 @@ Fill the required outputs below and then re-run the pipeline.
 
 ## Instruction
 
-Editorial approval required.
-Review `soul-inticle` together with the synthesis and contradiction context.
-If the article is acceptable, place the approved version into `hip-soul-inticle/inticle.md`.
-If you revise the text manually, treat that file as the authoritative downstream handoff and rerun the pipeline.
+Editorial approval required. Review `soul-inticle` together with the synthesis and contradiction context. If the article is acceptable, place the approved version into `hip-soul-inticle/inticle.md`. If you revise the text manually, treat that file as the authoritative downstream handoff and rerun the pipeline.
 
 ## Notes
 

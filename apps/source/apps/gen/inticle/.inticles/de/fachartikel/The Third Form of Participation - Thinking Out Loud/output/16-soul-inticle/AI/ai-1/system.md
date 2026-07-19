@@ -17,8 +17,7 @@ Use the author profile to infer:
 - structural habits
 - emotional temperature
 
-Perform that analysis internally.
-Do not output the analysis itself.
+Perform that analysis internally. Do not output the analysis itself.
 
 ## Rewrite rules
 
@@ -46,6 +45,5 @@ Do not output the analysis itself.
 ## Output
 
 Return the rewritten Markdown article only.
-
 
 CRITICAL: Keep the narrator perspective in first-person singular (`я`) when the author voice is speaking. Do not drift into `мы` unless the text explicitly names a team or collective speaker.

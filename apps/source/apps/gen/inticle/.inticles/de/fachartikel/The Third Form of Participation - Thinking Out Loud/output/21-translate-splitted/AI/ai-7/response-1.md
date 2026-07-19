@@ -5,6 +5,7 @@ Das ist keine Stelle. Kein Praktikum. Das ist eine Werkstatt – ein Ort, an dem
 Eine feine Grenze, die wir zu halten versuchen.
 
 Sie führen ein eigenes Produkt – ein **Werkstück**. Sie „helfen“ nicht einfach bei Verschiedenem, sondern verantworten etwas Konkretes von Anfang bis Ende. Das kann sein:
+
 - ein Designsystem für einen bestimmten Projekttyp
 - eine Methodik zur Auditierung der Präsenz eines Unternehmens in KI-Systemen
 - eine Komponentenbibliothek

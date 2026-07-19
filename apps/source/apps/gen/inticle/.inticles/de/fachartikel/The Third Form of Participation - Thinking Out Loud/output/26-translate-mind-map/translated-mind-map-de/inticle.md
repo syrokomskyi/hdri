@@ -47,6 +47,7 @@ Das ist keine Stelle. Kein Praktikum. Es ist eine Werkstatt - ein Ort, an dem ei
 Eine feine Grenze, die wir zu halten versuchen.
 
 Sie führen ein eigenes Werk - ein **Werkstück**. Sie "helfen" nicht bei Verschiedenem mit, sondern verantworten etwas Konkretes von Anfang bis Ende. Das kann sein:
+
 - ein Design-System für einen bestimmten Projekttyp
 - eine Methodik für das Audit der Präsenz eines Unternehmens in KI-Systemen
 - eine Komponentenbibliothek
@@ -78,29 +79,31 @@ Das filtert Teilnehmer nach Privilegiertheit. Finanzpolster, Partner mit Einkomm
 
 Ohne minimale Schutzmechanismen wird das Modell wie … romantisierte unbezahlte Arbeit aussehen. Das sind die nächsten notwendigen Schichten, die ich sehe. Die meisten davon sind bisher nur geplant.
 
-**Mindest-Stipendiengrant** *(geplant)*. Ein zinsloser Grant (z.B. 900-1200 €/Monat für 3-6 Monate), den der Urheber aus den ersten 50 % des künftigen Umsatzes zurückzahlt. Oder nicht zurückzahlt, wenn es keinen Umsatz gab. Das ist kein Lohn. Es ist eine Investition des Studios in den Urheber und seinen Schutz.
+**Mindest-Stipendiengrant** _(geplant)_. Ein zinsloser Grant (z.B. 900-1200 €/Monat für 3-6 Monate), den der Urheber aus den ersten 50 % des künftigen Umsatzes zurückzahlt. Oder nicht zurückzahlt, wenn es keinen Umsatz gab. Das ist kein Lohn. Es ist eine Investition des Studios in den Urheber und seinen Schutz.
 
-**Portfoliofonds zur gegenseitigen Risikoabsicherung** *(im Entwurf)*. 10 % des Umsatzes jedes erfolgreichen Produkts fließen in einen gemeinsamen Fonds. Daraus wird eine feste Vergütung für ein fertiggestelltes, aber nicht verkauftes Werk gezahlt. Das verteilt das Risiko auf alle Urheber.
+**Portfoliofonds zur gegenseitigen Risikoabsicherung** _(im Entwurf)_. 10 % des Umsatzes jedes erfolgreichen Produkts fließen in einen gemeinsamen Fonds. Daraus wird eine feste Vergütung für ein fertiggestelltes, aber nicht verkauftes Werk gezahlt. Das verteilt das Risiko auf alle Urheber.
 
-**Beidseitig faire Buyout-Option** *(teilweise im Entwurf)*. In der frühen Logik war ein einseitiger Buyout die Schwachstelle. In der neuen Version versuche ich, ihn beidseitig zu gestalten: Auch der Urheber kann einen Buyout nach derselben Formel initiieren. Der Multiplikator 24 ist ein Arbeitskompromiss. Er muss geprüft werden.
+**Beidseitig faire Buyout-Option** _(teilweise im Entwurf)_. In der frühen Logik war ein einseitiger Buyout die Schwachstelle. In der neuen Version versuche ich, ihn beidseitig zu gestalten: Auch der Urheber kann einen Buyout nach derselben Formel initiieren. Der Multiplikator 24 ist ein Arbeitskompromiss. Er muss geprüft werden.
 
-**Garantie eines Verkaufsversuchs** *(geplant)*. Das Studio verpflichtet sich, innerhalb eines bestimmten Zeitraums wirtschaftlich angemessene Anstrengungen für den Verkauf zu unternehmen. Wenn innerhalb eines Jahres kein einziger Verkauf stattfindet, kann der Urheber das Werkstück zurückholen. Einer der wichtigsten Schutzmechanismen gegen Abhängigkeit vom Studio.
+**Garantie eines Verkaufsversuchs** _(geplant)_. Das Studio verpflichtet sich, innerhalb eines bestimmten Zeitraums wirtschaftlich angemessene Anstrengungen für den Verkauf zu unternehmen. Wenn innerhalb eines Jahres kein einziger Verkauf stattfindet, kann der Urheber das Werkstück zurückholen. Einer der wichtigsten Schutzmechanismen gegen Abhängigkeit vom Studio.
 
-**Transparente Berichterstattung** *(teilweise umgesetzt)*. Der Urheber muss Verkäufe, Umsätze und Rückerstattungen sehen können. Ohne transparente Berichterstattung schafft die Umsatzverteilung kein Vertrauen.
+**Transparente Berichterstattung** _(teilweise umgesetzt)_. Der Urheber muss Verkäufe, Umsätze und Rückerstattungen sehen können. Ohne transparente Berichterstattung schafft die Umsatzverteilung kein Vertrauen.
 
-**Drei faire Ausgänge** *(in Entwicklung)*. Das Modell muss drei Abschlussszenarien vorsehen: erfolgreichen Verkauf mit Auszahlungen, Rückgabe des Werkstücks an den Urheber bei Nichtverkauf, Buyout durch eine der Parteien nach einer fairen Formel. Jeder Ausstieg muss vor Arbeitsbeginn festgeschrieben werden.
+**Drei faire Ausgänge** _(in Entwicklung)_. Das Modell muss drei Abschlussszenarien vorsehen: erfolgreichen Verkauf mit Auszahlungen, Rückgabe des Werkstücks an den Urheber bei Nichtverkauf, Buyout durch eine der Parteien nach einer fairen Formel. Jeder Ausstieg muss vor Arbeitsbeginn festgeschrieben werden.
 
 ## Für wen das funktionieren kann
 
 Das Modell passt nicht für alle. Ich sehe seine Grenzen ziemlich klar.
 
 **Für wen es passen kann:**
+
 - Für Fachleute mit abgeschlossenem Portfolio, die ein eigenes Produkt schaffen wollen.
 - Für Menschen mit einem finanziellen Polster für 3-6 Monate.
 - Für Personen, die zu unternehmerischem Risiko bereit sind, aber kein Kapital für ein eigenes Unternehmen haben.
 - Für Urheber von Methoden, Systemen, Werkzeugen - von Dingen, die lange leben können.
 
 **Für wen es nicht passt:**
+
 - Für Einsteiger, die Mentoring und Lernen brauchen (vermutlich).
 - Für Menschen ohne finanzielles Polster.
 - Für diejenigen, die in den nächsten Monaten ein stabiles Einkommen suchen.
@@ -123,6 +126,7 @@ Vielleicht bleibt das eine intime Praxis eines einzelnen Studios. Auch das ist i
 Die wichtigste Frage, die ich mir stelle: Wodurch unterscheidet sich diese "Werkstatt" von einer nur schön benannten unbezahlten Zusammenarbeit?
 
 Die Antwort ist bisher unvollständig. Was das Modell von gewöhnlicher Ausbeutung unterscheidet:
+
 - Schriftliche Abnahmekriterien vor Arbeitsbeginn.
 - Ein Dokument der Urheberschaft, das beim Urheber bleibt.
 - Die Garantie eines Verkaufsversuchs (geplant).

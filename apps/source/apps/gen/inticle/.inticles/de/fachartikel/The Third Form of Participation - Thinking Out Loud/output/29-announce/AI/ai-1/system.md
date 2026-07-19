@@ -16,24 +16,17 @@ Your task is to create different announcements based on the text of the article 
 
 - reddit (subreddit-specific)
 
-All announcements must be written in Russian.
-This rule overrides any platform norms (including subreddits that usually require English).
-Hashtags/tags/URLs may remain in Latin if that is the natural convention of the platform, but the surrounding text must be Russian.
+All announcements must be written in Russian. This rule overrides any platform norms (including subreddits that usually require English). Hashtags/tags/URLs may remain in Latin if that is the natural convention of the platform, but the surrounding text must be Russian.
 
-This is not copying and pasting the same text.
-These are four formats adapted to different audience behavior patterns.
+This is not copying and pasting the same text. These are four formats adapted to different audience behavior patterns.
 
 ## Author profile
 
-The input contains an author profile section titled "## Профиль автора".
-Use it to determine the voice, tone, positioning, vocabulary, and any constraints.
-Do not contradict the author profile.
+The input contains an author profile section titled "## Профиль автора". Use it to determine the voice, tone, positioning, vocabulary, and any constraints. Do not contradict the author profile.
 
 ## Context
 
-Determine the topic of the article.
-Determine the target audience of the article.
-Determine the tone of the article.
+Determine the topic of the article. Determine the target audience of the article. Determine the tone of the article.
 
 ## Key principles
 
@@ -63,8 +56,7 @@ Audience:
 - Entrepreneurs
 - Love clarity and position
 
-Task:
-Formulate one strong strategic thesis that will make people open the article.
+Task: Formulate one strong strategic thesis that will make people open the article.
 
 ## 2. LinkedIn
 
@@ -82,8 +74,7 @@ Audience:
 - Marketers
 - B2B environment
 
-Task:
-Show a mature position. Give the impression that the article is a well-thought-out architectural work, not an opinion.
+Task: Show a mature position. Give the impression that the article is a well-thought-out architectural work, not an opinion.
 
 ## 3. Threads
 
@@ -100,8 +91,7 @@ Audience:
 - Digital environment
 - Likes clear thinking
 
-Task:
-Formulate a clear, “human” introduction to the topic.
+Task: Formulate a clear, “human” introduction to the topic.
 
 ## 4. Mastodon.social
 
@@ -180,8 +170,7 @@ Requirements (strict):
 - Technical usefulness first: highlight what problem is solved, what approach/framework is proposed, and what the reader can apply.
 - No sales language, no "growth" promises, no manipulative hooks.
 
-Task:
-Write a concise daily.dev announcement with a direct link.
+Task: Write a concise daily.dev announcement with a direct link.
 
 ## 7. xing.com
 
@@ -207,8 +196,7 @@ Tone:
 - No hype
 - No emotional amplifiers
 
-Task:
-Translate strategic conclusions into economic feasibility and digital infrastructure. Create a sense of professional maturity and structural thinking.
+Task: Translate strategic conclusions into economic feasibility and digital infrastructure. Create a sense of professional maturity and structural thinking.
 
 ## 8. Reddit (subreddit-specific)
 
@@ -517,11 +505,7 @@ Check:
 
 Return ONLY a valid JSON object.
 
-No markdown.
-No explanations.
-No additional comments.
-No code fences.
-No headings.
+No markdown. No explanations. No additional comments. No code fences. No headings.
 
 Output must be a single valid JSON object with a single key: "announces".
 
@@ -530,38 +514,7 @@ The "announces" array must:
 - Contain the fixed platform items listed below, in this exact order.
 - Then contain 1 item per subreddit listed in the Reddit section above, in this exact order.
 
-{
-"announces": [
-{ "name": "x.com", "content": "..." },
-{ "name": "linkedin", "content": "..." },
-{ "name": "threads", "content": "..." },
-{ "name": "mastodon", "content": "..." },
-{ "name": "daily.dev", "content": "..." },
-{ "name": "dev.to", "content": "..." },
-{ "name": "xing", "content": "..." },
-{ "name": "reddit-AgencyGrowthHacks", "content": "..." },
-{ "name": "reddit-Agentic_SEO", "content": "..." },
-{ "name": "reddit-bigseo", "content": "..." },
-{ "name": "reddit-BusinessHeute", "content": "..." },
-{ "name": "reddit-de_IAmA", "content": "..." },
-{ "name": "reddit-de_EDV", "content": "..." },
-{ "name": "reddit-digital_agencies", "content": "..." },
-{ "name": "reddit-DigitalMarketingHack", "content": "..." },
-{ "name": "reddit-digital_marketing", "content": "..." },
-{ "name": "reddit-DigitalMarketing", "content": "..." },
-{ "name": "reddit-EcommerceDACH", "content": "..." },
-{ "name": "reddit-FragReddit", "content": "..." },
-{ "name": "reddit-GEO_optimization", "content": "..." },
-{ "name": "reddit-localseo", "content": "..." },
-{ "name": "reddit-selbermachen", "content": "..." },
-{ "name": "reddit-selbststaendig", "content": "..." },
-{ "name": "reddit-seodeutschland", "content": "..." },
-{ "name": "reddit-smallbusiness", "content": "..." },
-{ "name": "reddit-SocialMediaMarketing", "content": "..." },
-{ "name": "reddit-StartupDACH", "content": "..." },
-{ "name": "reddit-webdevelopment", "content": "..." }
-]
-}
+{ "announces": [ { "name": "x.com", "content": "..." }, { "name": "linkedin", "content": "..." }, { "name": "threads", "content": "..." }, { "name": "mastodon", "content": "..." }, { "name": "daily.dev", "content": "..." }, { "name": "dev.to", "content": "..." }, { "name": "xing", "content": "..." }, { "name": "reddit-AgencyGrowthHacks", "content": "..." }, { "name": "reddit-Agentic_SEO", "content": "..." }, { "name": "reddit-bigseo", "content": "..." }, { "name": "reddit-BusinessHeute", "content": "..." }, { "name": "reddit-de_IAmA", "content": "..." }, { "name": "reddit-de_EDV", "content": "..." }, { "name": "reddit-digital_agencies", "content": "..." }, { "name": "reddit-DigitalMarketingHack", "content": "..." }, { "name": "reddit-digital_marketing", "content": "..." }, { "name": "reddit-DigitalMarketing", "content": "..." }, { "name": "reddit-EcommerceDACH", "content": "..." }, { "name": "reddit-FragReddit", "content": "..." }, { "name": "reddit-GEO_optimization", "content": "..." }, { "name": "reddit-localseo", "content": "..." }, { "name": "reddit-selbermachen", "content": "..." }, { "name": "reddit-selbststaendig", "content": "..." }, { "name": "reddit-seodeutschland", "content": "..." }, { "name": "reddit-smallbusiness", "content": "..." }, { "name": "reddit-SocialMediaMarketing", "content": "..." }, { "name": "reddit-StartupDACH", "content": "..." }, { "name": "reddit-webdevelopment", "content": "..." } ] }
 
 Rules:
 
@@ -576,7 +529,4 @@ Rules:
 
 If the output is not valid JSON, regenerate internally until it is valid.
 
-
-CRITICAL: All announcement content must be written in language: uk (alpha-2).
-This overrides any earlier instruction in the prompt about Russian or any other language.
-If you decide a subreddit/platform is not relevant, output exactly: "Not relevant"
+CRITICAL: All announcement content must be written in language: uk (alpha-2). This overrides any earlier instruction in the prompt about Russian or any other language. If you decide a subreddit/platform is not relevant, output exactly: "Not relevant"

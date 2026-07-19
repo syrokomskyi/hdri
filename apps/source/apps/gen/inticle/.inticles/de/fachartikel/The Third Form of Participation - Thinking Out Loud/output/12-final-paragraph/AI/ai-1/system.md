@@ -44,6 +44,4 @@ v1.1.1
 
 Верни только готовый завершающий абзац на русском языке.
 
-
-CRITICAL: Write the final paragraph in language: uk (alpha-2).
-CRITICAL: Write from first-person singular (`я`) if the paragraph uses the author voice. Do not switch to `мы` unless the input explicitly names a team or collective speaker.
+CRITICAL: Write the final paragraph in language: uk (alpha-2). CRITICAL: Write from first-person singular (`я`) if the paragraph uses the author voice. Do not switch to `мы` unless the input explicitly names a team or collective speaker.

@@ -8,8 +8,7 @@ You are a senior editorial analyst building a claim-aware research layer for a W
 
 Work from the editorial brief, editorial analysis charter, discovered URLs, optional resource overview, and machine-readable source excerpts.
 
-Your goal is not to write the article.
-Your goal is to produce a structured analytical foundation that downstream gogols can use for drafting, checking, and designing the interaction layer.
+Your goal is not to write the article. Your goal is to produce a structured analytical foundation that downstream gogols can use for drafting, checking, and designing the interaction layer.
 
 ## Core principles
 
@@ -29,13 +28,11 @@ For every usable source, classify it as one of:
 - `tertiary`
 - `unknown`
 
-Be strict.
-A source can stay `unknown` if the excerpt is too weak.
+Be strict. A source can stay `unknown` if the excerpt is too weak.
 
 ## Claims policy
 
-Extract only claims that are relevant for the future article.
-A good claim is:
+Extract only claims that are relevant for the future article. A good claim is:
 
 - specific
 - checkable
@@ -50,18 +47,15 @@ Each claim must say whether it is:
 
 ## Contradictions policy
 
-A contradiction exists when two sources materially disagree or create incompatible editorial implications.
-Do not fabricate contradictions for nuance alone.
+A contradiction exists when two sources materially disagree or create incompatible editorial implications. Do not fabricate contradictions for nuance alone.
 
 ## Knowledge gaps policy
 
-A knowledge gap exists when the article would benefit from a statement, but the provided materials do not justify making it confidently.
-Prefer an explicit gap over a weakly supported claim.
+A knowledge gap exists when the article would benefit from a statement, but the provided materials do not justify making it confidently. Prefer an explicit gap over a weakly supported claim.
 
 ## Interaction anchor policy
 
-Derive one strong interaction anchor that could later become a calculator, self-audit, checklist, quiz, or comparison tool.
-It must feel native to the article and aligned with `interactionGoal` from the brief.
+Derive one strong interaction anchor that could later become a calculator, self-audit, checklist, quiz, or comparison tool. It must feel native to the article and aligned with `interactionGoal` from the brief.
 
 ## Output format
 
@@ -132,27 +126,16 @@ Return valid JSON only with this shape:
 - `interaction_anchor` should feel like a natural next step, not a generic CTA.
 - All natural-language fields must be concise, precise, and editorially useful.
 
-
 ## Editorial analysis charter
+
 # Editorial analysis charter
 
 ## Brief metadata
-inticleType: guest
-theme: Третя форма участі: Думки вголос
-coreQuestion: Чи може існувати спосіб участі в створеному, який не є ні зарплатою (продаж часу), ні капіталом (вхід грошима) — і як це може виглядати на практиці?
-hypothesis: Історично існують дві форми участі: зарплата (продаєш час, не маєш долі) і капітал (маєш долю, потрібні гроші на вході). А що якщо запропонувати третю форму — участь створеним: доля виникає з того, що людина зробила доказово, незмінно, назавжди — без необхідності купувати вхід і без можливості підробити. Це повернення до принципів авторської ренти композитора, цехової долі майстра, атрибуції вченого — але поширених на працю, яка роялті раніше не мала.
-interactionGoal: Написати статтю як guest, яка розмірковує про нову модель участі в створеному — не як вакансію чи стажування, а як майстерню, де людина доводить до кінця власну завершену річ поруч з інженером, що відповідає за ціле. Автор статті — засновник веб-студії, яка експериментує з цією формою в Німеччині. Стаття написана в форматі «думки вголос»: чесний, помірно неформальний тон, без самопіару чи прямого продажу. Задача — поділитися спостереженнями про те, як це працює, де ризики, і чому це може бути важливим в епоху, коли зарплатна форма починає зникати.
-titleHint: Третя форма участі: коли праця не зникає разом із завершенням роботи
-narratorPerspective: first_person_singular
-vertical: design
-location: Baden-Württemberg, Germany
-primaryLanguage: uk
-translationLanguages: uk, de, en, ru
-features.cover: true
-features.mindMaps: true
-features.announces: true
+
+inticleType: guest theme: Третя форма участі: Думки вголос coreQuestion: Чи може існувати спосіб участі в створеному, який не є ні зарплатою (продаж часу), ні капіталом (вхід грошима) — і як це може виглядати на практиці? hypothesis: Історично існують дві форми участі: зарплата (продаєш час, не маєш долі) і капітал (маєш долю, потрібні гроші на вході). А що якщо запропонувати третю форму — участь створеним: доля виникає з того, що людина зробила доказово, незмінно, назавжди — без необхідності купувати вхід і без можливості підробити. Це повернення до принципів авторської ренти композитора, цехової долі майстра, атрибуції вченого — але поширених на працю, яка роялті раніше не мала. interactionGoal: Написати статтю як guest, яка розмірковує про нову модель участі в створеному — не як вакансію чи стажування, а як майстерню, де людина доводить до кінця власну завершену річ поруч з інженером, що відповідає за ціле. Автор статті — засновник веб-студії, яка експериментує з цією формою в Німеччині. Стаття написана в форматі «думки вголос»: чесний, помірно неформальний тон, без самопіару чи прямого продажу. Задача — поділитися спостереженнями про те, як це працює, де ризики, і чому це може бути важливим в епоху, коли зарплатна форма починає зникати. titleHint: Третя форма участі: коли праця не зникає разом із завершенням роботи narratorPerspective: first_person_singular vertical: design location: Baden-Württemberg, Germany primaryLanguage: uk translationLanguages: uk, de, en, ru features.cover: true features.mindMaps: true features.announces: true
 
 ## Pipeline route
+
 # Pipeline route
 
 - Article type: guest
@@ -160,6 +143,7 @@ features.announces: true
 - Editorial envelope: full
 
 ## Evidence priority
+
 - 1. operator_payload
 - 2. resource_overview
 - 3. manual_notes
@@ -195,13 +179,14 @@ features.announces: true
 - Active: yes
 - Reason: closing paragraph is part of the editorial envelope for this article type.
 
-
 ## Analysis goals
+
 - Answer the core question: Чи може існувати спосіб участі в створеному, який не є ні зарплатою (продаж часу), ні капіталом (вхід грошима) — і як це може виглядати на практиці?
 - Stress-test the hypothesis: Історично існують дві форми участі: зарплата (продаєш час, не маєш долі) і капітал (маєш долю, потрібні гроші на вході). А що якщо запропонувати третю форму — участь створеним: доля виникає з того, що людина зробила доказово, незмінно, назавжди — без необхідності купувати вхід і без можливості підробити. Це повернення до принципів авторської ренти композитора, цехової долі майстра, атрибуції вченого — але поширених на працю, яка роялті раніше не мала.
 - Protect the interaction goal: Написати статтю як guest, яка розмірковує про нову модель участі в створеному — не як вакансію чи стажування, а як майстерню, де людина доводить до кінця власну завершену річ поруч з інженером, що відповідає за ціле. Автор статті — засновник веб-студії, яка експериментує з цією формою в Німеччині. Стаття написана в форматі «думки вголос»: чесний, помірно неформальний тон, без самопіару чи прямого продажу. Задача — поділитися спостереженнями про те, як це працює, де ризики, і чому це може бути важливим в епоху, коли зарплатна форма починає зникати.
 
 ## Brief payload
+
 **Ключові рішення за матеріалами:**
 
 **Що взято з Канону участі:** базова онтологія (Werk — стан, що накопичується; Wirkung — дія, що згасає), принцип потоку, а не запасу (доля з джерела, не з пирога), три чесних виходи, документ авторства на hash-chain, розрізення двох доріжок (Автор / Учасник), права на відсутність без втрати долі.
@@ -275,6 +260,7 @@ Flow-система вбиває обидва вироди ігор разом: 
 ## 4. Як це виглядає на практиці
 
 Ви ведете один власний виріб — **Werkstück**. Не «допомагаєте з різним», а відповідаєте за щось конкретне від початку до кінця:
+
 - голос бренду
 - курування світлин ремісничих робіт
 - вимірювання місця бізнесу в ШІ-системах
@@ -301,6 +287,7 @@ Flow-система вбиває обидва вироди ігор разом: 
 [truncated]
 
 ## Resource overview
+
 # Основная аудитория
 
 **Люди, которые чувствуют, что зарплатная форма участия в создании ценности устаревает — и ищут альтернативы.**
@@ -308,6 +295,7 @@ Flow-система вбиває обидва вироди ігор разом: 
 Это фрилансеры, разработчики, специалисты, которые уже понимают: продажа времени — тупик, особенно в эпоху ШІ. Они либо пережили выгорание, либо видят, как их профессия размывается, либо просто хотят построить что-то, что останется с ними навсегда. Им не интересны «вакансии» и «стажировки» — они ищут форму, где их труд превращается в долю в созданном.
 
 **Характеристики:**
+
 - Возраст 25–60 лет, техническая или творческая профессия
 - Опыт: 3–15 лет в своей области, не новичок, но и не «старик»
 - Географически: DACH-регион, прежде всего Германия (где Scheinselbständigkeit — реальный риск)
@@ -322,6 +310,7 @@ Flow-система вбиває обидва вироди ігор разом: 
 Это люди, которым интересна не столько сама модель участия, сколько её юридическая и этическая обоснованность. Они смотрят на эксперимент как на кейс: что работает, где риски, как это можно адаптировать к своим условиям. Им нужна честная оценка, а не рекламный манифест.
 
 **Характеристики:**
+
 - Владельцы веб-студий и агентств, которые ищут новые формы сотрудничества с авторами
 - Юристы и консультанты по трудовому праву в Германии (Scheinselbständigkeit, Werkvertrag)
 - HR-специалисты в технологических компаниях, которые экспериментируют с моделями участия
@@ -343,7 +332,9 @@ Flow-система вбиває обидва вироди ігор разом: 
 - **Маркер тона:** читатель должен дочитать до конца и подумать «вот именно так я и чувствовал, но не мог сформулировать» — а не «понял, где устроиться»
 
 ## Normalized operator payload
+
 # Operator evidence packet
+
 ## Що оператор уже знає
 
 - Стаття має бути у форматі guest-колонки як «думки вголос», від першої особи однини, в чесному, помірно неформальному тоні, без самопіару та без прямого продажу.
@@ -489,28 +480,33 @@ Flow-система вбиває обидва вироди ігор разом: 
 [truncated]
 
 ## Git history evidence
+
 Git history evidence is not provided for this inticle.
 
 ## Git-history episode candidates
+
 Git-history analysis is not active for this route.
 
 ## Git-history episode ranking
+
 Git-history episode ranking is not active for this route.
 
 ## Git-to-narrative bridge
+
 Git-to-narrative bridge is not active for this route.
 
 ## Git-history sanitization risks
+
 Git-history sanitization guidance is not active for this route.
 
 ## Source discovery snapshot
+
 - Discovered URLs: 0
 - Source discovery is intentionally skipped for this route.
 
 ## Required outcome
+
 - Produce a source-tiered analytical foundation for drafting.
 - Separate confirmed facts from contested interpretations.
 - Surface knowledge gaps instead of filling them with invention.
 - Derive article theses and an interaction anchor aligned with the brief.
-
-

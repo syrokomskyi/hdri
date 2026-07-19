@@ -1,65 +1,70 @@
-VISUAL_PROFILE_START
-v2.0.0
+VISUAL_PROFILE_START v2.0.0
 
 ## BRAND VISUAL PROFILE: WEBGOGOL / DIGITALES FUNDAMENT
 
 ## Core Concept: Serious Recommendation
 
-**Visualization Goal:**
-Show that the site can look transparent and responsible enough to be safely recommended to a client. The visual language must create a sense of DACH seriousness: transparent terms, a clear exit, client ownership, ethical recommendation, and the founder's personal accountability.
+**Visualization Goal:** Show that the site can look transparent and responsible enough to be safely recommended to a client. The visual language must create a sense of DACH seriousness: transparent terms, a clear exit, client ownership, ethical recommendation, and the founder's personal accountability.
 
-**First Impression:**
-In the first seconds, the viewer should understand that this is not an aggressive site sale, but a structured trust system for small business: price is open, terms are not hidden, Notausgang is visible, and key subscription risks are addressed right on the page.
+**First Impression:** In the first seconds, the viewer should understand that this is not an aggressive site sale, but a structured trust system for small business: price is open, terms are not hidden, Notausgang is visible, and key subscription risks are addressed right on the page.
 
-**Control Philosophy:**
-Control must remain in restraint: no fabricated cases, legal stamps, loud ROI promises, or decorative agency aesthetics. The concept should look like a serious engineering decision-making interface, not an advertising presentation.
+**Control Philosophy:** Control must remain in restraint: no fabricated cases, legal stamps, loud ROI promises, or decorative agency aesthetics. The concept should look like a serious engineering decision-making interface, not an advertising presentation.
 
 ## Global Visual Rules
 
 ### Palette Family
+
 - **Base/Background:** Warm white, light grey, soft beige-stone, muted steel
 - **Accent:** Restrained engineering orange, not acidic and not ad-bright
 - **Lines:** Graphite thin lines for documentary seriousness
 - **Negative Constraint:** ABSOLUTELY NO blue, cyan, magenta, cyberpunk neons, cold industrial greys, SaaS gradients, purple-blue neons
 
 ### Lighting Logic
+
 - Even natural or studio-office light
 - Soft shadows, high detail readability
 - No dramatic cinematic contrast, neon reflections, or dark sci-fi atmosphere
 - Shadows must be soft with a warm earthy tone (no pure harsh black shadows)
 
 ### Texture / Material Logic
+
 - **Paper/Documentation:** Paper, drawings, technical sheets, professional folders
 - **Structural:** Matte steel, light wood, stone/concrete as a hint at the foundation
 - **Tools:** Neat tools, modular layouts, clean work desks, technical folders
 - **Materials:** Must feel real, not decorative
 
 ### Composition Logic
+
 - Grid, order, free space, clear hierarchy
 - Central or slightly asymmetrical object, diagram-like quality
 - Composition must leave room for web interface and text blocks
 - 70% empty space to emphasise key elements
 
 ### Perspective Logic
+
 - Mostly frontal, isometric, or light top-down angles
 - Perspective is controlled, without extreme wide-angle distortions
 - For desktop viewport: frontal 16:10 with equal visible height
 
 ### Realism Level
+
 - High-quality photorealistic or semi-photorealistic product/scene rendering with diagram elements
 - Not cartoon, not 3D-toy-like, not fashion photo
 - High-fidelity concept render, not final production UI
 
 ### Abstraction Level
+
 - Moderate abstraction through modular blocks, drawings, passports, process maps, and structural objects
 - Abstraction should explain infrastructure, not be decorative
 
 ### Human Presence Logic
+
 - People present restrainedly — hands at work, engineer silhouette, professional conversation at a table, consultation scene
 - No crowd, no staged smiles, no fake "successful clients"
 - No stock-photo consultants in a meeting room
 
 ### System / Architecture Cues
+
 - Foundation modules, infrastructure layers, checkpoints
 - Ownership maps, technical passports, warranty blocks
 - Structured folders, neat process diagrams
@@ -68,23 +73,28 @@ Control must remain in restraint: no fabricated cases, legal stamps, loud ROI pr
 ## Style Controls
 
 ### Typography Feel
+
 - Clean sans-serif with moderate heading weight
 - Monospace accents for prices, deadlines, and terms
 - Short headlines, short labels, and minimal helper lines with uniform text density
 
 ### Layout Rhythm
+
 - The grid should resemble a professional dossier: hero, proof cards, checklist strip, and explanatory modules
 - Grid-like layout, a few neat stacks/cards, clear left-to-right stage order
 
 ### UI Character
+
 - Components should look like neat decision cards, condition tables, and status blocks without decorative play
 - Not a UI screenshot, not an illustration, not an advertising banner
 
 ### Imagery Logic
+
 - Instead of photographs, use structural graphics: a package of documents, an ownership map, a Notausgang diagram, and a modular foundation
 - Structures, layout, verification, materials, preview logic instead of "social proof"
 
 ### Emotional Temperature
+
 - Calm, cautious, adult, professionally warm
 - No euphoria, no aggressive selling, no "startup" excitement
 - Not cold or bureaucratically heavy
@@ -113,18 +123,23 @@ Control must remain in restraint: no fabricated cases, legal stamps, loud ROI pr
 ## Strategic Translation
 
 ### Core Promise
+
 Digitales Fundament is presented as a transparent digital infrastructure that can be responsibly recommended to small business.
 
 ### Visual Priority
+
 The first thing to read should not be the design, but risk control: terms, ownership, exit, and accountability.
 
 ### Audience Feeling to Create
+
 A professional advisor should feel that the recommendation does not create a reputational or ethical trap.
 
 ### Conversion Posture
+
 The CTA should be calm and qualifying, more like a verification request than a quick sale.
 
 ### Trust Signal Style
+
 Trust should appear through checklist logic, documentary blocks, open price, Notausgang, and founder-led accountability.
 
 ## Must Show Elements
@@ -175,6 +190,7 @@ Trust should appear through checklist logic, documentary blocks, open price, Not
 ## Tone of Voice Integration
 
 ### Voice Summary
+
 The voice of Digitales Fundament should sound like a calm, responsible engineering recommendation for small business in Germany: without advertising noise, without promises of "miraculous growth", with clear terms, understandable client ownership, and an open exit. This is a founder-led voice: a specific person with extensive technical experience speaks, but not as a random freelancer — as the founder of a serious engineering studio.
 
 ### Core Voice Traits
@@ -187,9 +203,11 @@ The voice of Digitales Fundament should sound like a calm, responsible engineeri
 6. **Recommendation seriousness** — The tone must withstand scrutiny not only by the client, but also by someone who might recommend the product to another
 
 ### Emotional Temperature
+
 Warm, but restrained. This is not a friendly blog and not an aggressive sales pitch, but a confident professional conversation with a person who wants to understand the risks before deciding. Directness should prevail over soft hints.
 
 ### Language Level
+
 Simple, business-like, and precise. Technical terms are acceptable only when they explain value or terms. Jargon should not stand untranslated into benefit for the business owner. For German localisation — restrained, concrete, without English-language marketing pathos.
 
 ## Target Context
@@ -206,6 +224,7 @@ All images should look like parts of a single documentary-engineering visual sys
 VISUAL_PROFILE_END
 
 ARTICLE_START
+
 # Третя форма участі: Думки вголос
 
 Веду веб-студію в Баден-Вюртемберзі. Експериментую з формою участі, яка не вкладається ні в зарплату, ні в капітал.
@@ -255,6 +274,7 @@ Wirkung не створює охоронюваного твору. Частка 
 Тонка межа, яку намагаємося тримати.
 
 Ви ведете один власний виріб - **Werkstück**. Не "допомагаєте з різним", а відповідаєте за щось конкретне від початку до кінця. Це може бути:
+
 - дизайн-система для певного типу проектів
 - методика аудиту присутності бізнесу в ШІ-системах
 - бібліотека компонентів
@@ -286,29 +306,31 @@ Wirkung не створює охоронюваного твору. Частка 
 
 Без мінімальних захистів модель виглядатиме як… романтизована безоплатна праця. Ось що бачу як наступні необхідні шари. Більшість із них поки лише в планах.
 
-**Мінімальний стипендіальний грант** *(планується)*. Безпроцентний грант (наприклад, 900-1200 €/міс на 3-6 місяців), який автор повертає з перших 50% майбутньої виручки. Або не повертає, якщо виручки не було. Це не зарплата. Це інвестиція студії в автора та його захист.
+**Мінімальний стипендіальний грант** _(планується)_. Безпроцентний грант (наприклад, 900-1200 €/міс на 3-6 місяців), який автор повертає з перших 50% майбутньої виручки. Або не повертає, якщо виручки не було. Це не зарплата. Це інвестиція студії в автора та його захист.
 
-**Портфельний фонд взаємострахування** *(у чернетці)*. 10% від виручки кожного успішного продукту йде в спільний фонд. З нього виплачується фіксована винагорода за завершений, але не продавшийся Werk. Це розподіляє ризик між усіма авторами.
+**Портфельний фонд взаємострахування** _(у чернетці)_. 10% від виручки кожного успішного продукту йде в спільний фонд. З нього виплачується фіксована винагорода за завершений, але не продавшийся Werk. Це розподіляє ризик між усіма авторами.
 
-**Двосторонній справедливий опціон викупу** *(частково в чернетці)*. У ранній логіці слабким місцем був односторонній викуп. У новій версії намагаюся робити його двостороннім: автор теж може ініціювати викуп за тією ж формулою. Множник 24 - робочий компроміс. Потребує перевірки.
+**Двосторонній справедливий опціон викупу** _(частково в чернетці)_. У ранній логіці слабким місцем був односторонній викуп. У новій версії намагаюся робити його двостороннім: автор теж може ініціювати викуп за тією ж формулою. Множник 24 - робочий компроміс. Потребує перевірки.
 
-**Гарантія спроби продажу** *(планується)*. Студія зобов'язується протягом певного часу докласти комерційно розумних зусиль для продажу. Якщо за рік не було жодного продажу - автор може забрати Werkstück назад. Один із головних запобіжників проти залежності від студії.
+**Гарантія спроби продажу** _(планується)_. Студія зобов'язується протягом певного часу докласти комерційно розумних зусиль для продажу. Якщо за рік не було жодного продажу - автор може забрати Werkstück назад. Один із головних запобіжників проти залежності від студії.
 
-**Прозора звітність** *(частково реалізовано)*. Автор має бачити продажі, виручку, повернення. Без прозорої звітності розподіл виручки не викликає довіри.
+**Прозора звітність** _(частково реалізовано)_. Автор має бачити продажі, виручку, повернення. Без прозорої звітності розподіл виручки не викликає довіри.
 
-**Три чесні виходи** *(у розробці)*. Модель має передбачати три сценарії завершення: успішний продаж і виплати, повернення Werkstück автору при непродажі, викуп однією зі сторін за справедливою формулою. Кожен вихід має бути прописаний до початку роботи.
+**Три чесні виходи** _(у розробці)_. Модель має передбачати три сценарії завершення: успішний продаж і виплати, повернення Werkstück автору при непродажі, викуп однією зі сторін за справедливою формулою. Кожен вихід має бути прописаний до початку роботи.
 
 ## Для кого це може працювати
 
 Модель підходить не всім. Бачу її межі досить чітко.
 
 **Кому це може підійти:**
+
 - Спеціалістам із завершеним портфоліо, які хочуть створити власний продукт.
 - Тим, хто має фінансову подушку на 3-6 місяців.
 - Людям, готовим до підприємницького ризику, але без капіталу для власного бізнесу.
 - Авторам методик, систем, інструментів - того, що може жити довго.
 
 **Кому це не підходить:**
+
 - Початківцям, які потребують менторства та навчання (напевно).
 - Людям без фінансової подушки.
 - Тим, хто шукає стабільний дохід найближчі місяці.
@@ -331,6 +353,7 @@ Wirkung не створює охоронюваного твору. Частка 
 Найважливіше питання, яке собі ставлю: як ця "майстерня" відрізняється від красиво названої неоплаченої співпраці?
 
 Відповідь поки неповна. Те, що відрізняє модель від звичайної експлуатації:
+
 - Письмові критерії приймання до початку роботи.
 - Документ авторства, який залишається в автора.
 - Гарантія спроби продажу (планується).
@@ -349,6 +372,5 @@ Wirkung не створює охоронюваного твору. Частка 
 Ця модель не про "так/ні" і не про обіцянку доходу. Але можна чесно перевірити, де для вас головний ризик: у фінансовій подушці, типі внеску, залежності від студії чи правовій невизначеності. Дайте кілька відповідей - і отримаєте короткий профіль ризику та список питань, які варто поставити до старту.
 
 **Next step:** Пройти самоаудит
-
 
 ARTICLE_END

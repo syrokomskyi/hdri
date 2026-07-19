@@ -1,19 +1,29 @@
-=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. ===
-=== BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
+=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. === === BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START
+
 # Для кого це може працювати
+
 ## Кому підходить
+
 ### Досвідчені спеціалісти
+
 ### Власний продукт
+
 ### Фінансова подушка
+
 ### Готовність до ризику
+
 ### Автори методик та систем
 
 ## Кому не підходить
+
 ### Початківці
+
 ### Потреба в менторстві
+
 ### Відсутність запасу коштів
+
 ### Потреба у швидкому доході
+
 ### Невіддільний результат від процесу
 
 CONTENT_END

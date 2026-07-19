@@ -1,6 +1,5 @@
-=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. ===
-=== BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
+=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. === === BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START
+
 ## Чому це важливо саме зараз
 
 Робоча гіпотеза: зарплатна форма відчуває тиск. Продаж часу стає менш надійною стратегією. Особливо в дизайні та розробці програм, де ШІ починає автоматизувати рутинні задачі. Це не факт. Це моє відчуття тренду.

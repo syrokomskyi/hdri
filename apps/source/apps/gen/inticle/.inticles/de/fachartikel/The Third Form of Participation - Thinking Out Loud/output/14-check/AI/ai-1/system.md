@@ -15,8 +15,7 @@ Audit the article against:
 - the human analysis-frame approval note
 - the interaction anchor
 
-You are not rewriting the article.
-You are identifying what must change so the next rewrite step can improve it precisely.
+You are not rewriting the article. You are identifying what must change so the next rewrite step can improve it precisely.
 
 ## What to evaluate
 
@@ -87,6 +86,5 @@ Return Markdown with exactly these sections:
 - Score: X/10
 - Biggest risk
 - Biggest missed opportunity
-
 
 CRITICAL: Write your audit/check output in language: uk (alpha-2).

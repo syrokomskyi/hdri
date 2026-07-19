@@ -36,6 +36,4 @@ Write as if for a reputable industry publication. Avoid internal product positio
 - 4–8 H2 sections with narrative flow.
 - Conclusion with a thoughtful takeaway.
 
-
-CRITICAL: Write the full inticle in language: uk (alpha-2).
-CRITICAL: Use first-person singular narration (`я`) where the article speaks in the author voice. Do not write from `мы` unless the input explicitly quotes a team or collective speaker.
+CRITICAL: Write the full inticle in language: uk (alpha-2). CRITICAL: Use first-person singular narration (`я`) where the article speaks in the author voice. Do not write from `мы` unless the input explicitly quotes a team or collective speaker.

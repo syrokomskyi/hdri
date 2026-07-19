@@ -1,6 +1,5 @@
-=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. ===
-=== BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
+=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. === === BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START
+
 ## Дві форми, які домінують
 
 У сучасному світі бачу дві найзвичніші форми участі в створенні цінності.

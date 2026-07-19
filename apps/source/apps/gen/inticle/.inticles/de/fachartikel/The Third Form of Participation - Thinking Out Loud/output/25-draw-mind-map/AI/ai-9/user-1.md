@@ -1,11 +1,11 @@
-=== INSTRUCTIONS ABOVE. DO NOT INCLUDE THEM IN OUTPUT. ===
-=== BELOW IS THE INPUT TEXT. USE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
+=== INSTRUCTIONS ABOVE. DO NOT INCLUDE THEM IN OUTPUT. === === BELOW IS THE INPUT TEXT. USE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START
+
 ## Межа з неоплаченою працею
 
 Найважливіше питання, яке собі ставлю: як ця "майстерня" відрізняється від красиво названої неоплаченої співпраці?
 
 Відповідь поки неповна. Те, що відрізняє модель від звичайної експлуатації:
+
 - Письмові критерії приймання до початку роботи.
 - Документ авторства, який залишається в автора.
 - Гарантія спроби продажу (планується).

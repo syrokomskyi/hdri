@@ -1,6 +1,5 @@
-=== INSTRUCTIONS ABOVE. DO NOT INCLUDE THEM IN OUTPUT. ===
-=== BELOW IS THE INPUT TEXT. USE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
+=== INSTRUCTIONS ABOVE. DO NOT INCLUDE THEM IN OUTPUT. === === BELOW IS THE INPUT TEXT. USE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START
+
 ## Чесні ризики
 
 Я визнаю асиметрію ризику. Автор вкладає час і життя без гарантій. Студія теж витрачає ресурси - інфраструктуру, час інженера, продажі. Але ризик автора пряміший і болючіший.

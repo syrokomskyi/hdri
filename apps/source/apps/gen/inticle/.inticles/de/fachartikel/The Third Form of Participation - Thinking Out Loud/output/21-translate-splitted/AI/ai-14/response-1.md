@@ -3,6 +3,7 @@
 The most important question I ask myself is: how is this "workshop" different from unpaid collaboration with a nicer name?
 
 The answer is still incomplete. What distinguishes this model from ordinary exploitation:
+
 - Written acceptance criteria before the work begins.
 - A document of authorship that remains with the author.
 - A guaranteed attempt to sell it (planned).

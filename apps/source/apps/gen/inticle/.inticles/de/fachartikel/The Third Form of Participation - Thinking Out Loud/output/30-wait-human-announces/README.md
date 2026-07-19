@@ -9,10 +9,7 @@ Fill the required outputs below and then re-run the pipeline.
 
 ## Instruction
 
-Announcement approval required.
-Review the drafted announcement variants and place the approved `.md` files into `hip-announces/`.
-Then replace `TBD` in `hip-announces/-approval.md` with a short approval note and rerun the pipeline.
-Files starting with `-` are ignored by translation and exist only to formalize the approval handoff.
+Announcement approval required. Review the drafted announcement variants and place the approved `.md` files into `hip-announces/`. Then replace `TBD` in `hip-announces/-approval.md` with a short approval note and rerun the pipeline. Files starting with `-` are ignored by translation and exist only to formalize the approval handoff.
 
 ## Notes
 

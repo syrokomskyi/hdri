@@ -1,6 +1,5 @@
-=== INSTRUCTIONS ABOVE. DO NOT INCLUDE THEM IN OUTPUT. ===
-=== BELOW IS THE INPUT TEXT. USE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
+=== INSTRUCTIONS ABOVE. DO NOT INCLUDE THEM IN OUTPUT. === === BELOW IS THE INPUT TEXT. USE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START
+
 ## Werk і Wirkung: дві природи внеску
 
 У цій моделі розрізняю дві природи внеску. Два типи цінності з різною механікою.

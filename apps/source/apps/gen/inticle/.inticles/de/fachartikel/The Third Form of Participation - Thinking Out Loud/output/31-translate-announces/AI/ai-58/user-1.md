@@ -1,7 +1,4 @@
-=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. ===
-=== BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
-Пишу про модель участі, яка лежить між зарплатою і капіталом, але не зводиться ні до однієї з цих форм.
+=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. === === BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START Пишу про модель участі, яка лежить між зарплатою і капіталом, але не зводиться ні до однієї з цих форм.
 
 Мова не про мотивацію команди і не про чергову схему винагороди. Мова про архітектуру внеску: коли частка виникає з того, що спеціаліст створив як завершений цифровий об'єкт, а не з факту присутності або інвестиції грошима.
 

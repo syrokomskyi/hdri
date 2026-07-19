@@ -55,6 +55,7 @@ This is not a job opening. Not an internship. It is a workshop-a place where a p
 A fine line we are trying to hold.
 
 You lead one product of your own-**Werkstück**. Not "helping with various things", but being responsible for something specific from start to finish. This could be:
+
 - a design system for a specific type of project
 - a methodology for auditing a business's presence in AI systems
 - a component library
@@ -90,17 +91,17 @@ This filters participants by privilege. A financial cushion, a partner with inco
 
 Without min safeguards, the model will look like… romanticized unpaid labor. Here is what I see as the next necessary layers. Most of them are still only plans.
 
-**Min stipend grant** *(planned)*. An interest-free grant (e.g., €900-1200/month for 3-6 months) that the author repays from the first 50% of future revenue. Or does not repay if there was no revenue. This is not a salary. It is the studio's investment in the author and their protection.
+**Min stipend grant** _(planned)_. An interest-free grant (e.g., €900-1200/month for 3-6 months) that the author repays from the first 50% of future revenue. Or does not repay if there was no revenue. This is not a salary. It is the studio's investment in the author and their protection.
 
-**Portfolio mutual insurance fund** *(in draft)*. 10% of the revenue from each successful product goes into a shared fund. From it, a fixed compensation is paid for a completed but unsold Werk. This distributes risk across all authors.
+**Portfolio mutual insurance fund** _(in draft)_. 10% of the revenue from each successful product goes into a shared fund. From it, a fixed compensation is paid for a completed but unsold Werk. This distributes risk across all authors.
 
-**Bilateral fair buyout option** *(partly in draft)*. In the earlier logic, the weak point was a unilateral buyout. In the new version, I am trying to make it bilateral: the author can also initiate a buyout using the same formula. A multiplier of 24 is a working compromise. It needs validation.
+**Bilateral fair buyout option** _(partly in draft)_. In the earlier logic, the weak point was a unilateral buyout. In the new version, I am trying to make it bilateral: the author can also initiate a buyout using the same formula. A multiplier of 24 is a working compromise. It needs validation.
 
-**Guaranteed sales effort** *(planned)*. The studio commits, for a defined period, to making commercially reasonable efforts to sell. If there has not been a single sale within a year, the author can take the Werkstück back. One of the main safeguards against dependence on the studio.
+**Guaranteed sales effort** _(planned)_. The studio commits, for a defined period, to making commercially reasonable efforts to sell. If there has not been a single sale within a year, the author can take the Werkstück back. One of the main safeguards against dependence on the studio.
 
-**Transparent reporting** *(partly implemented)*. The author must be able to see sales, revenue, returns. Without transparent reporting, revenue sharing does not inspire trust.
+**Transparent reporting** _(partly implemented)_. The author must be able to see sales, revenue, returns. Without transparent reporting, revenue sharing does not inspire trust.
 
-**Three fair exits** *(in development)*. The model must provide for three end scenarios: a successful sale and payouts, return of the Werkstück to the author if it remains unsold, or a buyout by either party under a fair formula. Each exit must be defined before the work begins.
+**Three fair exits** _(in development)_. The model must provide for three end scenarios: a successful sale and payouts, return of the Werkstück to the author if it remains unsold, or a buyout by either party under a fair formula. Each exit must be defined before the work begins.
 
 ---
 
@@ -109,12 +110,14 @@ Without min safeguards, the model will look like… romanticized unpaid labor. H
 This model is not suitable for everyone. I see its boundaries quite clearly.
 
 **Who it may suit:**
+
 - Specialists with an established portfolio who want to create their own product.
 - Those who have a financial buffer for 3-6 months.
 - People who are ready for entrepreneurial risk but do not have the capital to start their own business.
 - Authors of methods, systems, and tools - things that can endure over time.
 
 **Who it is not suitable for:**
+
 - Beginners who need mentorship and training (probably).
 - People without a financial buffer.
 - Those looking for stable income in the coming months.
@@ -141,6 +144,7 @@ Perhaps this will remain a small-scale practice within a single studio. I.e. als
 The most important question I ask myself is: how is this "workshop" different from unpaid collaboration with a nicer name?
 
 The answer is still incomplete. What distinguishes this model from ordinary exploitation:
+
 - Written acceptance criteria before the work begins.
 - A document of authorship that remains with the author.
 - A guaranteed attempt to sell it (planned).

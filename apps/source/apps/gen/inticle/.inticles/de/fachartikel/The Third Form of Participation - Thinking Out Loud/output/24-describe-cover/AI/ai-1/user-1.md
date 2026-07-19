@@ -20,8 +20,7 @@ The texts are intended for:
 - structural understanding of the image
 - CMS media structuring
 
-This is NOT an artistic description.
-This is an accurate functional description of the meaning.
+This is NOT an artistic description. This is an accurate functional description of the meaning.
 
 ## Input data
 
@@ -50,8 +49,7 @@ Used:
 
 [Main object] + [structural type] + [function or context]
 
-Example structure (do not copy verbatim):
-Modular Network Architecture Diagram
+Example structure (do not copy verbatim): Modular Network Architecture Diagram
 
 # 2. Alt text (HTML alt)
 
@@ -79,8 +77,7 @@ Modular Network Architecture Diagram
 
 ### Alt text formula
 
-[Main object] + [structural characteristics] +
-[visual accents] + [semantic function]
+[Main object] + [structural characteristics] + [visual accents] + [semantic function]
 
 # 3. Caption (image caption)
 
@@ -101,8 +98,7 @@ Brief explanation for humans: the caption should make it clear what is depicted.
 
 [What is depicted] + [what structure] + [what meaning/context]
 
-Example structure (do not copy):
-Diagram of a modular digital system with interconnected blocks.
+Example structure (do not copy): Diagram of a modular digital system with interconnected blocks.
 
 # General style
 
@@ -141,7 +137,4 @@ Return strictly in the following format in English:
 
 <caption text>
 
-No comments.
-No explanations.
-No quotation marks.
-
+No comments. No explanations. No quotation marks.

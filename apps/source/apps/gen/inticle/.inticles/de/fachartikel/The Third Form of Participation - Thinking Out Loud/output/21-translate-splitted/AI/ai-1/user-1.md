@@ -1,6 +1,5 @@
-=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. ===
-=== BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
+=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. === === BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START
+
 # Третя форма участі: Думки вголос
 
 Веду веб-студію в Баден-Вюртемберзі. Експериментую з формою участі, яка не вкладається ні в зарплату, ні в капітал.

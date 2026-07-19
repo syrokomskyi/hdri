@@ -5,6 +5,7 @@
 - Editorial envelope: full
 
 ## Evidence priority
+
 - 1. operator_payload
 - 2. resource_overview
 - 3. manual_notes
@@ -39,4 +40,3 @@
 
 - Active: yes
 - Reason: closing paragraph is part of the editorial envelope for this article type.
-

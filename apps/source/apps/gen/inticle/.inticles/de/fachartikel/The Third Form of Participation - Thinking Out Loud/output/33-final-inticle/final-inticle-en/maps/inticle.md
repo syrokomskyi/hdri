@@ -47,6 +47,7 @@ This is not a job opening. Not an internship. It is a workshop-a place where a p
 A fine line that we are trying to maintain.
 
 You lead one product of your own - a **Werkstück**. Not "helping with various things", but being responsible for something specific from start to finish. This may be:
+
 - a design system for a specific type of project
 - a methodology for auditing a business's presence in AI systems
 - a component library
@@ -66,7 +67,7 @@ I acknowledge the asymmetry of risk. The author invests time and life without gu
 
 This filters participants by privilege. A financial cushion, a partner with income, savings… We risk selecting not the most capable, but those who can afford to wait. Without addressing this, we reproduce the class-based entry barrier we claim to resist.
 
-**Legal risk in Germany.** In the draft agreement, I am looking in the direction of a Werkvertrag. But German regulators look at the actual indicators. Integration into the workshop, discipline, acceptance control-all this can be interpreted as concealed subordination (*Scheinselbständigkeit*). This has to be checked at the level of how the work is actually organized.
+**Legal risk in Germany.** In the draft agreement, I am looking in the direction of a Werkvertrag. But German regulators look at the actual indicators. Integration into the workshop, discipline, acceptance control-all this can be interpreted as concealed subordination (_Scheinselbständigkeit_). This has to be checked at the level of how the work is actually organized.
 
 **Deferred revenue may never arrive.** Some Werkstücke may never bring in money. If 1 out of 10 sells, then 9 authors worked for free. I.e. not fraud if everything is stated honestly. But it is asymmetric risk.
 
@@ -78,29 +79,31 @@ This filters participants by privilege. A financial cushion, a partner with inco
 
 Without min protections, the model will look like… romanticized unpaid labor. Here is what I see as the next necessary layers. Most of them are still only plans.
 
-**Min stipend grant** *(planned)*. An interest-free grant (e.g., €900-1,200/month for 3-6 months), which the author repays from the first 50% of future revenue. Or does not repay if no revenue appears. This is not a wage. It is the studio's investment in the author and in their protection.
+**Min stipend grant** _(planned)_. An interest-free grant (e.g., €900-1,200/month for 3-6 months), which the author repays from the first 50% of future revenue. Or does not repay if no revenue appears. This is not a wage. It is the studio's investment in the author and in their protection.
 
-**Portfolio mutual-insurance fund** *(in draft)*. 10% of revenue from each successful product goes into a common fund. From it, a fixed payment is made for a completed but unsold Werk. This distributes risk across all authors.
+**Portfolio mutual-insurance fund** _(in draft)_. 10% of revenue from each successful product goes into a common fund. From it, a fixed payment is made for a completed but unsold Werk. This distributes risk across all authors.
 
-**Two-sided fair buyout option** *(partly in draft)*. In the earlier logic, the weak point was a one-sided buyout. In the new version, I am trying to make it two-sided: the author can also initiate a buyout under the same formula. A multiplier of 24 is a working compromise. It needs testing.
+**Two-sided fair buyout option** _(partly in draft)_. In the earlier logic, the weak point was a one-sided buyout. In the new version, I am trying to make it two-sided: the author can also initiate a buyout under the same formula. A multiplier of 24 is a working compromise. It needs testing.
 
-**Guaranteed attempt to sell** *(planned)*. The studio commits, over a defined period, to making commercially reasonable efforts to sell the product. If there are no sales within a year, the author may take the Werkstück back. One of the main safeguards against dependence on the studio.
+**Guaranteed attempt to sell** _(planned)_. The studio commits, over a defined period, to making commercially reasonable efforts to sell the product. If there are no sales within a year, the author may take the Werkstück back. One of the main safeguards against dependence on the studio.
 
-**Transparent reporting** *(partly implemented)*. The author must be able to see sales, revenue, returns. Without transparent reporting, revenue sharing does not inspire trust.
+**Transparent reporting** _(partly implemented)_. The author must be able to see sales, revenue, returns. Without transparent reporting, revenue sharing does not inspire trust.
 
-**Three honest exits** *(in development)*. The model should provide for three end scenarios: successful sale and payouts, return of the Werkstück to the author if it does not sell, buyout by either side under a fair formula. Each exit should be defined before the work begins.
+**Three honest exits** _(in development)_. The model should provide for three end scenarios: successful sale and payouts, return of the Werkstück to the author if it does not sell, buyout by either side under a fair formula. Each exit should be defined before the work begins.
 
 ## Who this may work for
 
 The model is not suitable for everyone. I see its boundaries fairly clearly.
 
 **Who this may suit:**
+
 - Specialists with a finished portfolio who want to create a product of their own.
 - Those who have a financial cushion for 3-6 months.
 - People ready for entrepreneurial risk, but without capital for their own business.
 - Authors of methodologies, systems, tools-things that can live a long time.
 
 **Who this does not suit:**
+
 - Beginners who need mentoring and training (most likely).
 - People without a financial cushion.
 - Those seeking stable income in the coming months.
@@ -123,6 +126,7 @@ Perhaps this will remain the small-scale practice of a single studio. I.e. also 
 The most important question I ask myself is this: how is this "workshop" different from unpaid collaboration with a nicer name?
 
 The answer is still incomplete. What distinguishes the model from ordinary exploitation:
+
 - Written acceptance criteria before the work begins.
 - An authorship document that remains with the author.
 - A guaranteed attempt to sell (planned).

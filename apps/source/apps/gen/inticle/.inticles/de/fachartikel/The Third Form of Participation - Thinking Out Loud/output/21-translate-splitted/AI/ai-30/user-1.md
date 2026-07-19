@@ -1,6 +1,5 @@
-=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. ===
-=== BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. ===
-CONTENT_START
+=== INSTRUCTIONS ABOVE. DO NOT TRANSLATE. === === BELOW IS THE INPUT TEXT. TRANSLATE ONLY WHAT IS BETWEEN MARKERS. === CONTENT_START
+
 ## Чесні ризики
 
 Я визнаю асиметрію ризику. Автор вкладає час і життя без гарантій. Студія теж витрачає ресурси - інфраструктуру, час інженера, продажі. Але ризик автора пряміший і болючіший.

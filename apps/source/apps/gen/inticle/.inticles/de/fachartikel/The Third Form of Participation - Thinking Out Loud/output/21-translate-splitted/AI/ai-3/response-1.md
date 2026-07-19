@@ -3,6 +3,7 @@
 Die wichtigste Frage, die ich mir stelle, lautet: Wodurch unterscheidet sich diese „Werkstatt“ von einer schön benannten unbezahlten Zusammenarbeit?
 
 Die Antwort ist bislang unvollständig. Was dieses Modell von gewöhnlicher Ausbeutung unterscheidet:
+
 - Schriftlich festgehaltene Abnahmekriterien vor Beginn der Arbeit.
 - Ein Autorenschaftsdokument, das beim Urheber verbleibt.
 - Eine Garantie des Verkaufsversuchs (geplant).
