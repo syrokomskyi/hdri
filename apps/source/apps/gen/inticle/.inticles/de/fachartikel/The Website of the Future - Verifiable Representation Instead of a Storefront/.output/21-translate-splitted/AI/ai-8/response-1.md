@@ -1,9 +1,0 @@
-## Minimales Modell der Vertrauensebene
-
-Damit die Vertrauensebene nicht abstrakt klingt, beschreibe ich sie über drei Rollen. Das sind **meine eigenen Metaphern, keine Branchenstandards**. Ich habe sie auf drei verdichtet, weil sie drei unterschiedliche Fragen eines KI-Agenten abdecken: Wer sind Sie, was wurde getan und worauf kann man sich in eingehendem Text verlassen.
-
-- **Vertrauensa usweis.** Eine Ebene verifizierbarer Identität und Reputation: Wer ist dieses Unternehmen, welche nachweisbare Qualifikation hat es, und lässt sie sich an reale institutionelle Wurzeln anbinden. Der Agent vergleicht Anbieter nicht nur nach Preis, sondern auch nach einem überprüfbaren Leistungsausweis.
-- **Bordbuch.** Rechenschaftspflicht und schriftliche Spur: Was wurde getan, von wem, wann, in welchem Umfang an Befugnissen und mit welcher Bestätigung.
-- **Herkunftsregister.** Schutz vor der Einschleusung fremder Anweisungen. Als strategisches Ideal stützt sich der eingehende Agent auf kryptografisch beglaubigte Angebote und Fakten, nicht auf beliebigen Seitentext. In einer Welt, in der ein kompromittiertes CMS, gefälschte Bewertungen oder ein Drittanbieter-Widget zur Waffe werden können, wirkt signierte Herkunft als Schutzmechanismus. Das ist eines von mehreren möglichen Schutzprinzipien.
-
-Auf diesem Gerüst liegen Zugriffsebenen naheliegend auf: offene Auffindbarkeit von Verzeichnis und Richtlinien, authentifiziertes Lesen personalisierter Bedingungen und schließlich Ausführung – jedoch nur nach menschlicher Bestätigung.

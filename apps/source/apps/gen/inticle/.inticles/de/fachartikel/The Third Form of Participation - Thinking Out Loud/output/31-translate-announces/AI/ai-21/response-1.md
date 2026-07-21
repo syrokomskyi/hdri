@@ -1,9 +1,0 @@
-Bei SEO für den deutschen Markt wird aus meiner Sicht zu wenig über die Natur des eigentlichen Beitrags gesprochen. Wir diskutieren leicht über Sichtbarkeit, Leads, Content-Systeme, interne Verlinkung, stellen aber seltener die harte Frage: Was genau wurde geschaffen – ein Asset oder nur ein Effekt über die Zeit? Ohne diese Unterscheidung ist es fast unmöglich, ehrlich über eine langfristige Beteiligung am Ergebnis zu sprechen.
-
-- Ein Typ von Beitrag ist ein Artefakt. Zum Beispiel eine formalisierte SEO-Architektur, eine Methodik zur Auditierung der Präsenz in AI-Systemen, ein standardisiertes Set von Templates, eine Komponentenbibliothek für skalierbare Seiten oder ein anderes wiederverwendbares Ergebnis. So etwas kann anhand von Kriterien abgenommen, dokumentiert und anschließend als Teil der digitalen Infrastruktur weiter genutzt werden.
-- Der andere Typ ist Wirkung: Wachstum der Sichtbarkeit, Sicherung des Traffics, der Effekt von Optimierungen, Einfluss auf die Nachfrage, Unterstützung über die Zeit. Ein solcher Beitrag kann sehr wertvoll sein, verfügt aber nicht über dieselbe strukturelle Autonomie. Im deutschen Markt, in dem Fragen von Verträgen, Attribution und Verantwortung besonders sensibel sind, wird dieser Unterschied nicht akademisch, sondern ganz praktisch.
-- Für mich ist die zentrale Schlussfolgerung folgende: Solange diese beiden Wertmodi nicht getrennt werden, bleibt jedes Modell eines „Anteils am SEO-Ergebnis“ schwach. Entweder ist es dem Auftragnehmer gegenüber unfair, oder es ist für das Unternehmen wirtschaftlich riskant, oder es hält einer ernsthaften Prüfung auf Transparenz und Attribution schlicht nicht stand.
-
-Wo würden Sie in der DACH-SEO-Praxis die Grenze zwischen einem geschaffenen Asset und einer Wirkung ziehen, die nur als Teil der laufenden Dynamik existiert?
-
----

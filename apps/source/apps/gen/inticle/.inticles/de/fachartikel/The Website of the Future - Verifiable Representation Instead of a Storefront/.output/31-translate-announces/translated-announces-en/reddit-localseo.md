@@ -1,9 +1,0 @@
-In local SEO, a corporate website and a business profile are often seen as visibility tools for a person: find, evaluate, compare, call, visit. But if AI agents start handling part of that journey, local businesses will face a tougher question. Not just how visible they are, but how machine-distinguishable and verifiable they are as real local entities.
-
-- For a local provider, this is especially important because an agent can easily read simple signals: address, hours, service area, basic services, sometimes prices. But if i.e. where it ends, the business becomes an interchangeable option on the map for the system. Meanwhile, local value often lies elsewhere: verifiable qualifications, institutional roots, reputation, work history, real constraints, and accountability. Without that, the agent sees too flat a picture.
-- This leads to a second conclusion: it is not enough to simply "mark up the site". You need to understand which properties of a local business should exist at all as a separate verifiable layer. E.g., not just a list of services, but a verifiable right to perform them, clear areas of responsibility, the provenance of reviews, or at least the anchoring of significant claims to a more reliable source than arbitrary marketing copy.
-- The third point concerns architecture. Maintaining a separate local storefront for people and a separate layer for agents is a risky idea. Local SEO already has plenty of room for desynchronization between the site, profiles, directories, and operational reality. If you add another independent data layer, error is almost guaranteed. A single source of truth here looks less like a luxury and more like a hygiene standard.
-
-Which local trust signal do you think should be the first to move from plain website text into a more verifiable form?
-
----

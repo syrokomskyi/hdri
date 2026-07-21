@@ -1,9 +1,0 @@
-For the self-employed, one of the most difficult issues is not the hourly rate itself, but the form of participation in the value created. Most often, there are two scenarios: either you sell your time, or you risk your own capital. But there is also a third question: is it possible to participate through what you created as a standalone result?
-
-- It seems useful to me to distinguish between two types of contribution. The first is a completed artifact: a methodology, a system, a library, a templatized digital product, or another result that has boundaries, acceptance criteria, and can continue to exist after the work is finished. The second is influence over time: support, sales, ongoing assistance, coordination, operational facilitation. Both types are important, but for long-term participation they are fundamentally unequal.
-- For a self-employed person, the issue of risk is especially acute here. If you invest months of work without a base income, and revenue may never appear at all, this is no longer simply entrepreneurial freedom. It is a very specific filter based on financial resilience. Without a cushion, this model can turn out to be a trap, even if it is fairly documented on paper.
-- There is another uncomfortable side to this: dependence on the other party's infrastructure. Even if you truly created a valuable result, its commercial fate may depend entirely on someone else's sales, brand, market access, and reporting. Therefore, without transparent rules, the right to reclaim the result, and clearly defined exit options, participation through what was created remains a very vulnerable arrangement.
-
-Would you consider for yourself a model in which part of the compensation is tied not to hours, but to the life of the digital product you created after delivery?
-
----

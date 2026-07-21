@@ -1,9 +1,0 @@
-Es gibt einen Aspekt, der in professionellen Digital-Diskussionen meiner Ansicht nach systematisch unterschätzt wird: der Unterschied zwischen einem funktionierenden Kanal und einem digitalen Asset. Für kleine Unternehmen ist dieser Unterschied nicht theoretisch. Solange der Anfragenstrom läuft, wirkt alles normal. Doch sobald sich der Dienstleister ändert, die Plattformregeln angepasst werden oder die Aufgabe entsteht, das Unternehmen zu übergeben, zeigt sich, dass ein Teil des zentralen Unternehmenswerts ihm faktisch gar nicht gehört.
-
-- Es ist sinnvoll, nicht nur darauf zu schauen, wie viele Anfragen ein System liefert, sondern auch darauf, wo Domain, Content, Historie, Leistungsstruktur und das Recht auf den Erstkontakt mit dem Kunden verbleiben. Wenn alles Kritische von einer externen Plattform oder einem Dienstleister kontrolliert wird, kann das Marketing taktisch effektiv sein, schafft strategisch aber kein eigenes Fundament für das Unternehmen.
-- Das ist besonders deutlich in Service-Nischen zu sehen, in denen externe Plattformen den Zugang zu Leads verkaufen. Nach außen wirkt das Modell wie eine bequeme Form der Leadgenerierung. In der Praxis gibt das Unternehmen jedoch schrittweise Bewertung, Interaktionshistorie und die Steuerung des ersten Kontakts aus der Hand. Es entsteht eine Abhängigkeit, die in der Kanalkalkulation selten berücksichtigt wird, weil sie sich nur schwer auf eine einzelne Kennzahl reduzieren lässt.
-- Daraus ergibt sich für mich ein reiferes Kriterium digitaler Infrastruktur: Übertragbarkeit. Lassen sich Content, Zugänge, Struktur und Daten schnell übernehmen? Gibt es eine Dok? Ist klar, wem was gehört? Wenn nicht, liegt das Problem bereits nicht mehr im Creative und nicht im Mediamix, sondern in der Architektur der Präsenz selbst.
-
-Wie häufig beziehen Sie die Frage digitaler Eigentümerschaft und der Exit-Kosten in ein reguläres Audit des Marketingsystems ein?
-
----

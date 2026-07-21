@@ -1,9 +1,0 @@
-Im lokalen SEO für kleinere Unternehmen überschneiden sich oft drei Ebenen: die Website als Visitenkarte, die Website als Quelle für Leads und die Website als Gegenstand rechtlicher Verunsicherung. Die letzte Ebene kommt meist von außen: Dem Inhaber eines lokalen Unternehmens wird geschrieben, dass schon das Fehlen eines Cookie-Banners seine Website problematisch mache. In der Praxis ist das für das lokale Segment nicht selten eine zu grobe und ungenaue Formel.
-
-- Bei den meisten lokalen Websites lässt sich die Frage nicht abstrakt beantworten, sondern über den tatsächlichen Stack. Gibt es Google Maps, eingebettetes YouTube, reCAPTCHA, ein Booking-Tool, Analytics, GTM, Pixel oder andere Drittanbieter-Services? Was davon beginnt schon vor der Einwilligung zu arbeiten? Solange diese Inventarisierung nicht vorliegt, kann man nicht seriös sagen, ob ein CMP nötig ist oder ob eine saubere Privacy-Dokumentation ohne unnötiges Banner ausreicht.
-- Für Local SEO ist das auch deshalb wichtig, weil solche Websites oft nach Vorlage gebaut werden und jahrelang ohne systematischen Audit bestehen. Karte, Video, Formular, Call-Tracking, externer Font, Chat – jedes Element wird scheinbar separat hinzugefügt. Am Ende versteht selbst ein gutes lokales Unternehmen seine eigene technische Konfiguration nicht mehr und erhält dann eine externe „Bewertung“ in Form einer universellen Warnung.
-- Ich denke, ein vernünftiger Standard in der Arbeit mit Local Clients sollte sehr bodenständig sein: Third-Party-Services erfassen, die Privacy-Logik dokumentieren, Fakten von Interpretationen trennen und nicht über Angst verkaufen. Im lokalen Markt ist Vertrauen besonders sensibel, und hier bedeutet die Sprache des Dienstleisters fast genauso viel wie seine technische Lösung.
-
-Wie prüfen Sie in einem Local-SEO-Audit consent-relevante Elemente auf typischen Websites kleiner Unternehmen?
-
----

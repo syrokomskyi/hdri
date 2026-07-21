@@ -1,9 +1,0 @@
-Im professionellen Digital Marketing interessiert mich zunehmend nicht das Instrumentarium selbst, sondern die Qualität der Logik, auf deren Grundlage es implementiert wird. Ein gutes Bsp. ist das Thema Cookie-Consent in Deutschland. Im Markt begegnet man regelmäßig einer sehr groben Formel: Wenn eine Website keinen Banner hat, liegt also ein rechtliches Problem vor. Für eine Marketingpraxis ist ein solches Maß an Verallgemeinerung schlicht schwach.
-
-- Die eigentliche Frage ist immer eine infrastrukturelle. Welche Technologien sind auf der Website konkret im Einsatz: Analytics, GTM, Pixels, externe Videos, Maps, Captcha, Formulare, Chat, Booking-Tools? Welche davon beginnen bereits vor der Einwilligung mit einer Interaktion? Gibt es einen belastbaren Mechanismus zur Blockierung? Solange diese Abhängigkeitskarte nicht aufgeschlüsselt ist, bleibt die Schlussfolgerung, dass eine CMP erforderlich sei, keine professionelle Bewertung, sondern eine Annahme.
-- Für Teams ist das auch deshalb wichtig, weil der Marketing-Stack oft fragmentiert aufgebaut wird. Ein Dienstleister implementiert die Analytics, ein anderer das Formular, ein dritter den Werbe-Tag, und anschließend hat niemand mehr das vollständige Bild. Genau in solchen Systemen entstehen dann Konflikte, unnötige Implementierungen und merkwürdige externe "Warnungen" vor Risiken, die sich durch eine gewöhnliche Inventarisierung hätten ausräumen lassen.
-- Meiner Ansicht nach zeigt sich die Reife eines Dienstleisters sehr gut an seiner Sprache. Wenn er über Bedingungen, Ausnahmen und überprüfbare Fakten erklärt, haben Sie es wahrscheinlich mit einem systemisch denkenden Spezialisten zu tun. Wenn er mit einer universellen Drohung beginnt, ist das ein Zeichen dafür, dass die Diagnose der kommerziellen Dramaturgie gewichen ist.
-
-Was ist Ihr Minimalstandard an Dok für consent-relevante Marketing-Infrastruktur auf Kundenwebsites?
-
----

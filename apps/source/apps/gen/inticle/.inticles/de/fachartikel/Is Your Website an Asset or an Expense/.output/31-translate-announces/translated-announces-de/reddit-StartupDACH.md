@@ -1,9 +1,0 @@
-Bei Start-ups wird die Website oft als schnelles Instrument verstanden: in den Markt gehen, erste Signale einsammeln, die Nachfrage testen. Das ist nachvollziehbar. Aber je länger ein Unternehmen besteht, desto wichtiger wird eine andere Frage: Bleibt die Website ein Kostenfaktor oder beginnt sie, zu einem Asset zu werden. Im DACH-Kontext ist das besonders dort sichtbar, wo Investoren, Partner und künftige Käufer auf die Stabilität des Systems schauen und nicht nur auf die Präsentation.
-
-- Das erste Kriterium ist die Kumulation von Wirkung. Wenn die Website nach jedem Sprint lediglich "aktualisiert" wurde, aber nicht besser messbar ist, nicht besser indexiert wird, das Produkt nicht besser erklärt und sich nicht besser in Prozesse einfügt, bleibt sie eine Oberfläche ohne Gedächtnis. Ein Asset beginnt dort, wo das digitale Umfeld sich im Laufe der Zeit verstärkt: durch Content, Daten, Reputationssignale, Wiederverwendbarkeit und eine klarer verständliche Struktur.
-- Das zweite Kriterium ist Kontrolle und Übertragbarkeit. Start-ups leben oft von Geschwindigkeit, und deshalb können Zugänge, Domains, Analytics, CRM-Verknüpfungen und die Codebasis lange in einem halbformalen Zustand bleiben. Das ist bequem bis zum ersten Konflikt, zur Due Diligence oder zum Wechsel des Dienstleisters. Danach zeigt sich, dass das Unternehmen seine eigene Web-Infrastruktur nicht als reifes Objekt beherrscht.
-- Das dritte Kriterium ist die Eignung für die neue Search Layer. Wenn Produkt, Kategorien, Pricing, Geography und Trust Markers nicht strukturiert dargestellt sind, fällt es KI-Systemen und Suchinterfaces schwerer zu verstehen, was das Unternehmen genau macht. Für ein Start-up bedeutet das den Verlust eines Teils der Discoverability genau dort, wo sie sich erst noch herausbildet.
-
-Welche Merkmale von Website-Reife halten Sie für ein Start-up nach der Phase "wir müssen einfach nur schnell live gehen" für kritisch?
-
----

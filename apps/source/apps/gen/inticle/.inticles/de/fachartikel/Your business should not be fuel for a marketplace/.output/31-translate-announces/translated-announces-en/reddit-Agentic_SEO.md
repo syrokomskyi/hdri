@@ -1,9 +1,0 @@
-In SEO for small businesses, people often discuss pages, leads, visibility, and platforms. But all of i.e. secondary if the digital perimeter itself does not belong to the business. I am increasingly interested not only in indexability or demand structure, but in the question of ownership: who controls the domain, the content, the history, and the right of first contact with the customer. Without that, even a strong SEO layer may be serving someone else's infrastructure rather than the owner's asset.
-
-- For local and service-based businesses, a very simple test is useful: if tomorrow you need to leave an agency, website builder, or platform, can you quickly take the site, the texts, the URL structure, the access credentials, and the history with you without destroying the underlying logic. If not, then the SEO foundation has most likely been built as a dependency. Visibility exists, but it is not being capitalized into an owned asset.
-- The second problem is the conflation of the channel and the foundation. A lead platform, directory, or intermediary service may generate inquiries, and that can be rational. But when they control the ranking, the first contact, and the actual access to demand, SEO on your own site stops being an ownership architecture and becomes a decorative layer next to someone else's system.
-- This leads to a practical conclusion: when evaluating a project, it is worth analyzing not only clusters, page templates, and internal links, but also portability. In whose name is the domain registered. Who owns the content. Whether export is available. Whether the asset's condition is documented. Otherwise, you may spend a long time improving an organic system that cannot be transferred when it matters most.
-
-In your own practice, do you evaluate an SEO project as a business asset, or mainly as a channel for capturing current demand?
-
----

@@ -1,9 +1,0 @@
-Das Thema Sichtbarkeit in generativen Systemen wird üblicherweise über Content, Entitäten und Quellen diskutiert. Es gibt jedoch eine grundlegendere Ebene: das Vertrauen in die zugrunde liegende technische und rechtliche Struktur einer Website. Vor diesem Hintergrund erscheint mir ein Bsp. aus dem deutschen Web interessant, in dem die Frage des Cookie-Consents oft zu einer universellen Bedrohung gemacht wird, statt die tatsächliche Konfiguration der Ressource zu analysieren.
-
-- Für GEO ist das indirekt, aber wesentlich mit der Qualität der digitalen Infrastruktur verbunden. Wenn eine Website ihre external dependencies, ihre Privacy-Logik und ihr Data-Handling selbst weder dokumentiert noch kontrolliert, wird sie im weiteren Sinne als Bewertungsobjekt weniger transparent. Es geht nicht um einen direkten Ranking-Faktor, sondern um die Reife des Umfelds, aus dem generative Systeme Signale und Kontext beziehen.
-- Es gibt auch eine methodologische Parallele. So wie es im GEO schädlich ist, Interpretation mit bestätigter Tatsache zu verwechseln, ist es auch beim Consent-Thema schädlich, die Analyse einer Website durch die universelle These "Kein Banner - also ein Verstoß" zu ersetzen. In beiden Fällen ist das Problem dasselbe: Der Markt belohnt eine wirkungsvolle Formel stärker als die überprüfbare Unterscheidung von Bedingungen.
-- Deshalb liegt mir nicht die Debatte über Banner näher, sondern ein Verifikationsstandard: Technology Inventory, die Trennung von Beobachtung und Interpretation, das Datum der Feststellung, die Reproduzierbarkeit des Tests, das Recht auf Korrektur. Das ist sowohl für Privacy nützlich als auch für jede Disziplin, in der Systeme nicht Worten, sondern Strukturen vertrauen müssen.
-
-Wie wichtig ist für Sie im GEO gerade die technische Transparenz einer Website als Teil eines allgemeinen Vertrauensmodells und nicht nur content-level Signale?
-
----

@@ -1,9 +1,0 @@
-Bei der Arbeit mit kleinen Unternehmen fällt mir immer häufiger derselbe operative Fehler auf: Die Agentur oder der Dienstleister baut für den Kunden keinen digitalen Vermögenswert auf, sondern eine Abhängigkeit, getarnt als komfortabler Service. Von außen wirkt das wie eine normale Dienstleistung. Intern aber läuft die Domain nicht auf den Kunden, ein Export ist nicht ohne Weiteres möglich, die Historie der Anfragen ist über fremde Systeme verstreut, und die Kosten des Ausstiegs werden genau dann zu hoch, wenn das Unternehmen Flexibilität braucht.
-
-- Aus Agenturperspektive geht es dabei nicht um "Bindung", sondern um ein Vertrauensmodell. Wenn der Kunde nur deshalb bleibt, weil der Weggang schwierig ist, ist das eine schwache Beziehungsinfrastruktur. Sie erzeugt kurzfristige Trägheit, verschlechtert aber die Reputation, senkt die Qualität der Entscheidungen und macht die Dienstleistung selbst auf der Ebene ihres Werts schwerer verteidigbar.
-- Ein reiferes Modell basiert meines Erachtens auf nachweisbarem Eigentum. Die Domain ist auf den Kunden registriert. Content und Struktur sind nicht im System eingeschlossen. Ein Export ist innerhalb einer klaren Frist und in einem brauchbaren Format möglich. Das Exit-Verfahren ist im Voraus beschrieben und taucht nicht erst im Konfliktfall auf. Das diszipliniert sowohl den Dienstleister als auch die Architektur des Projekts selbst.
-- Auch für den Agenturbetrieb gibt es hier einen internen Vorteil: Wenn Prozesse von Anfang an so konzipiert werden, dass sie übertragbar sind, ist das Team gezwungen, Zugänge, Struktur, Verantwortungsbereiche und den Zustand des Assets besser zu dokumentieren. Dadurch nimmt das Chaos ab, die Abhängigkeit von einzelnen Mitarbeitenden sinkt, und es wird klarer, wo der Service endet und das Eigentum des Kunden beginnt.
-
-Wie ist bei Ihnen intern in der Agentur das Exit-Prinzip organisiert: als reales Architekturelement oder als Thema, das man lieber nicht anspricht?
-
----

@@ -1,7 +1,0 @@
-## The Sender’s Paradox
-
-This is the most revealing twist in the genre. I present it strictly as an observation that must be verified as of a specific date. On the date I recorded it, the sender’s website contained Google Tag Manager (`GTM-535Q5FKJ`) and Meta Pixel (`1625519162058978`)—the very marketing trackers whose use without consent is being held against others. The site also had a consent-based blocking mechanism (`senovate_cookie_consent`).
-
-I present this cautiously: websites change, and any such claim should be confirmed by a reproducible technical test with a stated date, not by a one-off glance.
-
-But even if confirmed, the contradiction is subtler than “they themselves do what they warn others about.” If the sender has both trackers and a functioning consent mechanism, then they do in fact know how to implement consent technically. The problem lies elsewhere. Knowing this logic, they create the impression among small businesses that the absence of a banner is unlawful in itself—even where there is no analytics or marketing at all. What is being exploited is a false universal generalization. This is not a personal attack, but a flaw in the method itself.

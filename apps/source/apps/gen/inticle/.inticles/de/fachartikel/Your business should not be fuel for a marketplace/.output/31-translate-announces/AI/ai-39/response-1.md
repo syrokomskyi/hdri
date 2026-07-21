@@ -1,9 +1,0 @@
-In agency work, there is one topic people usually try not to bring to the center of the conversation: the Client’s right to a clear exit. And yet this is precisely what shows whether an agency is building a digital asset or simply maintaining dependency under the guise of service. As long as the relationship is stable, the difference is barely visible. In a stressful moment, that difference becomes decisive.
-
-- If the domain is not registered to the Client, the content is assembled inside a system that is difficult to migrate from, and the handover procedure has not been defined in advance, the agency gains a technical advantage but loses the professional integrity of its model. This setup makes retention easier, but it undermines trust and distorts decision-making itself: what becomes more convenient is not what is better for the Client’s business, but what is harder to take away.
-- In a more mature approach, exit is treated as an element of service architecture. From day one, the Client understands what belongs to them, within what timeframe export is possible, which handover formats are used, and where the boundaries of responsibility lie. This does not weaken the agency. On the contrary, it forces the agency to build processes more carefully and to prove its value through the quality of its work rather than through lock-in.
-- This is also useful for the agency’s internal operations. As soon as the team builds in portability and documentation, dependence on individual managers and specialists decreases, access structures become cleaner, onboarding becomes easier, and there are fewer conflicts at the intersection of account management, development, and SEO. In other words, the ethics issue here is directly connected to the issue of manageability.
-
-Does your Client exit procedure exist as a formal contract clause, or as a genuinely thought-through part of the agency’s infrastructure?
-
----

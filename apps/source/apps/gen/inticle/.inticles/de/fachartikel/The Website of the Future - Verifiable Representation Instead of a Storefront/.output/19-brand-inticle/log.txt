@@ -1,9 +1,0 @@
-{"timestamp":"2026-06-12T16:57:38.770Z","event":"step_started","stepId":"brand-inticle","stepNumber":19,"status":"started"}
-{"timestamp":"2026-06-12T16:57:38.771Z","stepId":"brand-inticle","stepNumber":19,"event":"step_run_started","attempt":1,"status":"running"}
-{"timestamp":"2026-06-12T16:57:38.903Z","stepId":"brand-inticle","stepNumber":19,"event":"step_run_finished","attempt":1,"status":"completed"}
-{"timestamp":"2026-06-12T16:57:38.904Z","stepId":"brand-inticle","stepNumber":19,"event":"step_validation_started","attempt":1,"status":"running"}
-{"timestamp":"2026-06-12T16:57:38.905Z","stepId":"brand-inticle","stepNumber":19,"event":"step_validation_finished","attempt":1,"status":"completed"}
-{"timestamp":"2026-06-12T17:02:46.897Z","stepId":"brand-inticle","stepNumber":19,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
-{"timestamp":"2026-06-12T17:08:50.233Z","stepId":"brand-inticle","stepNumber":19,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
-{"timestamp":"2026-06-12T17:09:42.726Z","stepId":"brand-inticle","stepNumber":19,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
-{"timestamp":"2026-06-12T17:19:08.097Z","stepId":"brand-inticle","stepNumber":19,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

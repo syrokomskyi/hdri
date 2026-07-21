@@ -1,9 +1,0 @@
-In der deutschen IT-Praxis entsteht rund um Websites kleiner Unternehmen oft eine merkwürdige Schieflage: Diskutiert wird nicht die tatsächliche Systemkonfiguration, sondern ein symbolisches Objekt im Interface - der Cookie-Banner. Dadurch verkommt das technische Gespräch zu dem Muster "Kein Banner, also gibt es ein Problem". Für einen EDV-Ansatz ist das zu grob und methodisch zu schwach.
-
-- Aus technischer Sicht braucht es zuerst ein Inventory. Welche Third-Party-Skripte werden geladen? Gibt es Analytics, GTM, Social Pixels, eingebettete Videos, Maps, reCAPTCHA, Chat-Widgets, Booking-Tools, externe Formulare? Was davon greift vor einem ausdrücklichen Consent auf das Gerät zu? Solange es auf diese Fragen keine Antwort gibt, bleibt die Schlussfolgerung, dass eine CMP notwendig ist, eine Annahme und kein technisches Fazit.
-- Das zweite Problem ist die fehlende Dok. Auf vielen kleineren Websites sammeln sich externe Services aus historischen Gründen an: Etwas hat ein Freelancer hinzugefügt, etwas kam aus dem Template, etwas wurde "vorübergehend" implementiert. Am Ende versteht der Inhaber selbst nicht, welche Abhängigkeiten tatsächlich im System leben. Hier ist es sinnvoller, nicht über Formulierungen in Schreiben zu streiten, sondern Ordnung in der Source of Truth für Skripte und Embeds zu schaffen.
-- Und noch ein Punkt. Ein gewissenhafter IT-Dienstleister formuliert die Lösung über Bedingungen: Bei einem solchen Set an Services ist eine CMP nötig, bei einem anderen nicht, aber die Privacy-Dok bleibt in jedem Fall verpflichtend. Wenn stattdessen pauschale Alarmrhetorik verkauft wird, ist das Problem nicht mehr nur rechtlicher, sondern auch professioneller Natur: Rhetorik ersetzt Diagnostik.
-
-Wie ist bei Ihnen die technische Prüfung consent-relevanter Dependencies auf den Websites kleinerer Unternehmen organisiert?
-
----
