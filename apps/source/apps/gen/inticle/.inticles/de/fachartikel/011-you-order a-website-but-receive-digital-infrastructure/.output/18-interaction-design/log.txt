@@ -1,0 +1,17 @@
+{"timestamp":"2026-07-21T19:39:21.717Z","event":"step_started","stepId":"interaction-design","stepNumber":18,"status":"started"}
+{"timestamp":"2026-07-21T19:39:21.717Z","stepId":"interaction-design","stepNumber":18,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:39:21.719Z","stepId":"interaction-design","stepNumber":18,"event":"llm_call_started","status":"running","operation":"createOpenAiText","provider":"openai","model":"gpt-5.5","details":{}}
+{"timestamp":"2026-07-21T19:40:03.742Z","stepId":"interaction-design","stepNumber":18,"event":"llm_call_finished","status":"completed","operation":"createOpenAiText","provider":"openai","model":"gpt-5.5","details":{"promptTokens":10443,"completionTokens":2251,"totalTokens":12694}}
+{"timestamp":"2026-07-21T19:40:03.743Z","stepId":"interaction-design","stepNumber":18,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:40:03.744Z","stepId":"interaction-design","stepNumber":18,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:40:03.744Z","stepId":"interaction-design","stepNumber":18,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:44:49.068Z","stepId":"interaction-design","stepNumber":18,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"experience-assets","phaseTitle":"Experience and assets"}}
+{"timestamp":"2026-07-21T19:44:49.068Z","stepId":"interaction-design","stepNumber":18,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:51:02.456Z","stepId":"interaction-design","stepNumber":18,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"experience-assets","phaseTitle":"Experience and assets"}}
+{"timestamp":"2026-07-21T19:51:02.456Z","stepId":"interaction-design","stepNumber":18,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:56:47.053Z","stepId":"interaction-design","stepNumber":18,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"experience-assets","phaseTitle":"Experience and assets"}}
+{"timestamp":"2026-07-21T19:56:47.053Z","stepId":"interaction-design","stepNumber":18,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T20:06:03.046Z","stepId":"interaction-design","stepNumber":18,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"experience-assets","phaseTitle":"Experience and assets"}}
+{"timestamp":"2026-07-21T20:06:03.046Z","stepId":"interaction-design","stepNumber":18,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T20:29:06.478Z","stepId":"interaction-design","stepNumber":18,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"experience-assets","phaseTitle":"Experience and assets"}}
+{"timestamp":"2026-07-21T20:29:06.478Z","stepId":"interaction-design","stepNumber":18,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

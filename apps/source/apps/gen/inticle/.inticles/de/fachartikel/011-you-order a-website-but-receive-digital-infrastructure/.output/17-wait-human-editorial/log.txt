@@ -1,0 +1,39 @@
+{"timestamp":"2026-07-21T19:03:39.568Z","event":"step_started","stepId":"wait-human-editorial","stepNumber":17,"status":"started"}
+{"timestamp":"2026-07-21T19:03:39.568Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:03:39.569Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_failed","attempt":1,"status":"failed","details":{"error":"Pipeline paused by wait-human-editorial.\n# wait-human-editorial\n\nFill the required outputs below and then re-run the pipeline.\n\n## Required outputs\n\n- `hip-soul-inticle` (dir)\n- `hip-soul-inticle/inticle.md` (file)\n\n## Instruction\n\nEditorial approval required.\nReview `soul-inticle` together with the synthesis and contradiction context.\nIf the article is acceptable, place the approved version into `hip-soul-inticle/inticle.md`.\nIf you revise the text manually, treat that file as the authoritative downstream handoff and rerun the pipeline.\n\n## Notes\n\n- Files are pre-created with `TBD` when missing.\n- Replace any `TBD` or `TODO` markers with the final content before re-running the pipeline.\n"}}
+{"timestamp":"2026-07-21T19:39:21.715Z","event":"step_started","stepId":"wait-human-editorial","stepNumber":17,"status":"started"}
+{"timestamp":"2026-07-21T19:39:21.715Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:39:21.716Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:39:21.716Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:39:21.716Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:39:21.716Z","stepId":"wait-human-editorial","stepNumber":17,"event":"phase_completed","status":"completed","details":{"phaseId":"editorial-production","phaseTitle":"Editorial production"}}
+{"timestamp":"2026-07-21T19:44:49.067Z","event":"step_started","stepId":"wait-human-editorial","stepNumber":17,"status":"started"}
+{"timestamp":"2026-07-21T19:44:49.067Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:44:49.068Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:44:49.068Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:44:49.068Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:44:49.068Z","stepId":"wait-human-editorial","stepNumber":17,"event":"phase_completed","status":"completed","details":{"phaseId":"editorial-production","phaseTitle":"Editorial production"}}
+{"timestamp":"2026-07-21T19:51:02.455Z","event":"step_started","stepId":"wait-human-editorial","stepNumber":17,"status":"started"}
+{"timestamp":"2026-07-21T19:51:02.455Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:51:02.455Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:51:02.455Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:51:02.456Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:51:02.456Z","stepId":"wait-human-editorial","stepNumber":17,"event":"phase_completed","status":"completed","details":{"phaseId":"editorial-production","phaseTitle":"Editorial production"}}
+{"timestamp":"2026-07-21T19:56:47.052Z","event":"step_started","stepId":"wait-human-editorial","stepNumber":17,"status":"started"}
+{"timestamp":"2026-07-21T19:56:47.052Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:56:47.053Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:56:47.053Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:56:47.053Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:56:47.053Z","stepId":"wait-human-editorial","stepNumber":17,"event":"phase_completed","status":"completed","details":{"phaseId":"editorial-production","phaseTitle":"Editorial production"}}
+{"timestamp":"2026-07-21T20:06:03.045Z","event":"step_started","stepId":"wait-human-editorial","stepNumber":17,"status":"started"}
+{"timestamp":"2026-07-21T20:06:03.045Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T20:06:03.045Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T20:06:03.045Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T20:06:03.045Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T20:06:03.046Z","stepId":"wait-human-editorial","stepNumber":17,"event":"phase_completed","status":"completed","details":{"phaseId":"editorial-production","phaseTitle":"Editorial production"}}
+{"timestamp":"2026-07-21T20:29:06.477Z","event":"step_started","stepId":"wait-human-editorial","stepNumber":17,"status":"started"}
+{"timestamp":"2026-07-21T20:29:06.477Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T20:29:06.477Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T20:29:06.477Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T20:29:06.478Z","stepId":"wait-human-editorial","stepNumber":17,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T20:29:06.478Z","stepId":"wait-human-editorial","stepNumber":17,"event":"phase_completed","status":"completed","details":{"phaseId":"editorial-production","phaseTitle":"Editorial production"}}

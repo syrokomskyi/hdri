@@ -1,0 +1,21 @@
+{"timestamp":"2026-07-21T18:43:14.342Z","event":"step_started","stepId":"normalize-operator-payload","stepNumber":5,"status":"started"}
+{"timestamp":"2026-07-21T18:43:14.342Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T18:43:14.343Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"llm_call_started","status":"running","operation":"createOpenAiText","provider":"openai","model":"gpt-5.5","details":{"maxTokens":4000}}
+{"timestamp":"2026-07-21T18:44:31.893Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"llm_call_finished","status":"completed","operation":"createOpenAiText","provider":"openai","model":"gpt-5.5","details":{"promptTokens":22485,"completionTokens":4000,"totalTokens":26485}}
+{"timestamp":"2026-07-21T18:44:31.894Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T18:44:31.894Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T18:44:31.894Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T18:57:21.843Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-07-21T18:57:21.843Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:39:21.710Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-07-21T19:39:21.710Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:44:49.062Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-07-21T19:44:49.062Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:51:02.449Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-07-21T19:51:02.450Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:56:47.046Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-07-21T19:56:47.047Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T20:06:03.039Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-07-21T20:06:03.040Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T20:29:06.472Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"analysis-frame","phaseTitle":"Analytical frame"}}
+{"timestamp":"2026-07-21T20:29:06.472Z","stepId":"normalize-operator-payload","stepNumber":5,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

@@ -1,0 +1,11 @@
+{"timestamp":"2026-07-21T19:51:29.767Z","event":"step_started","stepId":"draw-mind-map","stepNumber":25,"status":"started"}
+{"timestamp":"2026-07-21T19:51:29.767Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:52:08.495Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:52:08.495Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T19:52:08.496Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T19:56:47.060Z","stepId":"draw-mind-map","stepNumber":25,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-07-21T19:56:47.060Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T20:06:03.054Z","stepId":"draw-mind-map","stepNumber":25,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-07-21T20:06:03.054Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T20:29:06.486Z","stepId":"draw-mind-map","stepNumber":25,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"mind-map-assets","phaseTitle":"Mind map assets"}}
+{"timestamp":"2026-07-21T20:29:06.486Z","stepId":"draw-mind-map","stepNumber":25,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

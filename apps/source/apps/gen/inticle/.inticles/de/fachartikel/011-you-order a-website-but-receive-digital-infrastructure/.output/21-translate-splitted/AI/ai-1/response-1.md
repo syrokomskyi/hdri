@@ -1,0 +1,7 @@
+# Sie bestellen eine Website – und erhalten eine digitale Infrastruktur: ein ingenieurtechnischer Blick auf Webentwicklung
+
+Wenn der Inhaber einer Handwerkswerkstatt oder eines lokalen Dienstleistungsbetriebs in Baden-Württemberg zu mir kommt und sagt: „Ich brauche eine Website“, verstehe ich: Er beschreibt eine Kategorie, die ihm vertraut ist. Eine Web-Visitenkarte, eine Landingpage, ein Projekt mit einem Baukasten oder WordPress – etwas, das man Kunden zeigen kann und das bei Google auffindbar ist. Die Formulierung ist nachvollziehbar. Aber sie beschreibt nicht das, was ich tatsächlich baue.
+
+Das Ergebnis meiner Arbeit lässt sich treffender nicht als Website, sondern als steuerbare digitale Infrastruktur bezeichnen. Das ist kein Wortspiel – es beschreibt, wodurch sich das Artefakt, das der Auftraggeber erhält, architektonisch und wirtschaftlich unterscheidet. Und wo die ehrlichen Grenzen dieses Modells liegen – denn es passt nicht für jeden.
+
+Der Inhaber einer Tischlerei kauft weder Astro noch Ed25519-Signaturen. Er kauft weniger Risiko, planbare Kosten und einen klaren Ablauf, falls er sich entscheidet, den Anbieter zu wechseln. Technische Entscheidungen sind nur dann sinnvoll, wenn sie genau das erklären.

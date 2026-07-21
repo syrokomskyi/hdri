@@ -1,0 +1,6 @@
+{"timestamp":"2026-07-21T20:12:36.486Z","event":"step_started","stepId":"llm-cost-report","stepNumber":34,"status":"started"}
+{"timestamp":"2026-07-21T20:12:36.486Z","stepId":"llm-cost-report","stepNumber":34,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T20:12:36.533Z","stepId":"llm-cost-report","stepNumber":34,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T20:12:36.533Z","stepId":"llm-cost-report","stepNumber":34,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T20:12:36.534Z","stepId":"llm-cost-report","stepNumber":34,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T20:29:06.492Z","stepId":"llm-cost-report","stepNumber":34,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

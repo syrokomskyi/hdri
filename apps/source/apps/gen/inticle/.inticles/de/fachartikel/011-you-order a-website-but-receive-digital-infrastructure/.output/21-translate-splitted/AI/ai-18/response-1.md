@@ -1,0 +1,9 @@
+## Compliance: an architectural principle, not a legal guarantee
+
+For businesses in Germany and the DACH region, DSGVO and accessibility (BFSG) are part of operational risk. Some of the answers are embedded at the architectural level. But the boundary should be clear: what architecture does does not replace legal review or manual accessibility testing.
+
+The infrastructure is EU-oriented: hosting and data processing are designed with this in mind. This addresses some questions around data transfer, but it does not remove the need to review specific integrations — forms, email, CRM, analytics — that the Client connects on top of the website. Each such service has its own jurisdiction, and this needs to be checked separately.
+
+The design system and validation help with accessibility indirectly: programmatic constraints make typical violations of contrast, heading structure, and layout — issues often identified during WCAG or EN 301 549 compliance audits — less likely. But I do not perform a formal manual accessibility audit by default, and architectural discipline is not a BFSG compliance certificate. If accessibility is a critical legal requirement, the audit must be a separate, explicitly commissioned task.
+
+Architecture reduces some of the technical risks associated with DSGVO and accessibility, but it does not replace legal consultation or a specialist audit. I design with these requirements in mind; I do not guarantee compliance with them.

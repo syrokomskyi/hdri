@@ -1,0 +1,15 @@
+## Programmatic Pages Only with an Evidence Base
+
+For a local business, it is important to be present for narrow queries — such as “facade painting in Backnang.” One approach is programmatic generation of landing pages across a geo-cascade: industry, country, region, city, demand. The problem is well known: mass generation of thousands of low-quality pages (thin content) harms the site.
+
+That is why every programmatically created page in my system passes through five gates before it becomes indexable:
+
+1/ is there real search demand  
+2/ is there factual evidence of completed work in this region  
+3/ is there enough substantial, unique material  
+4/ has the page become outdated  
+5/ does it fit within the plan’s budget
+
+The point is not to “generate a lot of pages,” but to be able to say: this page should not be indexed yet.
+
+My gates at the moment are configurable admission rules, not a proven universal methodology. They reduce the risk of weak pages, but they do not guarantee indexation or the absence of search engine penalties (Google evaluates quality according to its own non-public criteria).

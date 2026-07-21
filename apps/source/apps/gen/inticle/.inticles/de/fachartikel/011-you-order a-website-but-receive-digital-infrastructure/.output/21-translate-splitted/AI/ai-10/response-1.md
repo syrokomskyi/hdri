@@ -1,0 +1,3 @@
+## Ausstieg ohne Illusionen und überprüfbare Echtheit
+
+„Die Website gehört dem Kunden“ sagen fast alle. Beweisen können es nur wenige. Wenn der Auftraggeber sich entscheidet zu gehen, geht es nicht um eine Erklärung, sondern darum, ob die Infrastruktur vollständig mitgenommen, ihre Echtheit überprüft und sichergestellt werden kann, dass genau das erhalten wurde, was zu Beginn vereinbart war.

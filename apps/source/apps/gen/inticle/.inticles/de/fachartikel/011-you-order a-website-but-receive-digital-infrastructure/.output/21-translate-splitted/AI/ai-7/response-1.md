@@ -1,0 +1,9 @@
+## Compliance: ein architektonisches Prinzip, keine rechtliche Garantie
+
+Für Unternehmen in Deutschland und der DACH-Region sind Fragen rund um DSGVO und Barrierefreiheit (BFSG) Teil des operativen Risikos. Ein Teil der Antworten liegt auf architektonischer Ebene. Die Grenze muss aber klar benannt werden: Was Architektur leistet, ersetzt keine juristische Prüfung und keine manuelle Prüfung der Barrierefreiheit.
+
+Die Infrastruktur ist auf die EU ausgerichtet: Hosting und Datenverarbeitung sind mit diesem Fokus konzipiert. Das reduziert einen Teil der Fragen zur Datenübermittlung, ersetzt aber nicht die Prüfung konkreter Integrationen — Formulare, E-Mail, CRM, Analytics —, die der Auftraggeber zusätzlich zur Website einbindet. Jeder dieser Dienste hat seine eigene Jurisdiktion, und das muss separat geprüft werden.
+
+Designsystem und Validierung unterstützen Barrierefreiheit indirekt: programmatische Einschränkungen machen typische Verstöße bei Kontrast, Überschriftenstruktur und Layout, die bei Audits nach WCAG oder EN 301 549 häufig auffallen, unwahrscheinlicher. Ein formales manuelles Audit der Barrierefreiheit führe ich standardmäßig jedoch nicht durch, und architektonische Disziplin ist kein BFSG-Konformitätszertifikat. Wenn Barrierefreiheit rechtlich kritisch ist, muss das Audit eine separate, ausdrücklich beauftragte Aufgabe sein.
+
+Architektur reduziert einen Teil der technischen Risiken im Zusammenhang mit DSGVO und Barrierefreiheit, ersetzt aber keine Rechtsberatung und kein spezialisiertes Audit. Ich konzipiere mit Blick auf diese Anforderungen, garantiere jedoch nicht deren Erfüllung.

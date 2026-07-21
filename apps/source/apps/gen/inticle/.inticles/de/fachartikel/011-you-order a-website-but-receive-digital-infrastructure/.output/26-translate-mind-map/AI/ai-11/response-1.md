@@ -1,0 +1,41 @@
+# Content as Data, Not as Editing Chaos
+
+## Declarative Description
+
+### Markdown and YAML
+
+### Array of Blocks
+
+### Types and Parameters
+
+## Preventing Chaos
+
+### No Arbitrary HTML
+
+### No JSX in the Body
+
+### Schema Validation
+
+## Page Assembly
+
+### Verifiable Elements
+
+### Fewer Breakages
+
+### Consistency Across Sections
+
+## Business Data
+
+### Prices and Legal Details
+
+### Addresses and Contacts
+
+### Canonical Storage
+
+## Centralized Changes
+
+### Update in One File
+
+### Auto-Insertion Across the Site
+
+### Fewer Manual Edits

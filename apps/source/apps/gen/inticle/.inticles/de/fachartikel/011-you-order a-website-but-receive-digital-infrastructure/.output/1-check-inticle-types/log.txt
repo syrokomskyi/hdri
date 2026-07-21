@@ -1,0 +1,21 @@
+{"timestamp":"2026-07-21T18:41:32.270Z","event":"step_started","stepId":"check-inticle-types","stepNumber":1,"status":"started"}
+{"timestamp":"2026-07-21T18:41:32.270Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_run_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T18:41:32.271Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_run_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T18:41:32.271Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_validation_started","attempt":1,"status":"running"}
+{"timestamp":"2026-07-21T18:41:32.271Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_validation_finished","attempt":1,"status":"completed"}
+{"timestamp":"2026-07-21T18:43:14.336Z","stepId":"check-inticle-types","stepNumber":1,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"input-readiness","phaseTitle":"Input readiness"}}
+{"timestamp":"2026-07-21T18:43:14.337Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T18:57:21.838Z","stepId":"check-inticle-types","stepNumber":1,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"input-readiness","phaseTitle":"Input readiness"}}
+{"timestamp":"2026-07-21T18:57:21.839Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:39:21.705Z","stepId":"check-inticle-types","stepNumber":1,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"input-readiness","phaseTitle":"Input readiness"}}
+{"timestamp":"2026-07-21T19:39:21.706Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:44:49.057Z","stepId":"check-inticle-types","stepNumber":1,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"input-readiness","phaseTitle":"Input readiness"}}
+{"timestamp":"2026-07-21T19:44:49.058Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:51:02.445Z","stepId":"check-inticle-types","stepNumber":1,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"input-readiness","phaseTitle":"Input readiness"}}
+{"timestamp":"2026-07-21T19:51:02.446Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T19:56:47.042Z","stepId":"check-inticle-types","stepNumber":1,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"input-readiness","phaseTitle":"Input readiness"}}
+{"timestamp":"2026-07-21T19:56:47.043Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T20:06:03.035Z","stepId":"check-inticle-types","stepNumber":1,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"input-readiness","phaseTitle":"Input readiness"}}
+{"timestamp":"2026-07-21T20:06:03.035Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
+{"timestamp":"2026-07-21T20:29:06.467Z","stepId":"check-inticle-types","stepNumber":1,"event":"phase_started","status":"started","allowCreateStepOutputDir":false,"details":{"phaseId":"input-readiness","phaseTitle":"Input readiness"}}
+{"timestamp":"2026-07-21T20:29:06.468Z","stepId":"check-inticle-types","stepNumber":1,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
