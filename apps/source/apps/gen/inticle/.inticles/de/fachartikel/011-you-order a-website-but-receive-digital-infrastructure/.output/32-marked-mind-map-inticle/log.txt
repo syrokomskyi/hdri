@@ -1,6 +1,0 @@
-{"timestamp":"2026-07-21T20:12:36.464Z","event":"step_started","stepId":"marked-mind-map-inticle","stepNumber":32,"status":"started"}
-{"timestamp":"2026-07-21T20:12:36.464Z","stepId":"marked-mind-map-inticle","stepNumber":32,"event":"step_run_started","attempt":1,"status":"running"}
-{"timestamp":"2026-07-21T20:12:36.470Z","stepId":"marked-mind-map-inticle","stepNumber":32,"event":"step_run_finished","attempt":1,"status":"completed"}
-{"timestamp":"2026-07-21T20:12:36.470Z","stepId":"marked-mind-map-inticle","stepNumber":32,"event":"step_validation_started","attempt":1,"status":"running"}
-{"timestamp":"2026-07-21T20:12:36.471Z","stepId":"marked-mind-map-inticle","stepNumber":32,"event":"step_validation_finished","attempt":1,"status":"completed"}
-{"timestamp":"2026-07-21T20:29:06.492Z","stepId":"marked-mind-map-inticle","stepNumber":32,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}

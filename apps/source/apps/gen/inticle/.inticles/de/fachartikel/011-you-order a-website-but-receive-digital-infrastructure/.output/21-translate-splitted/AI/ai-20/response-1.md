@@ -1,7 +1,0 @@
-## Why This Is Not WordPress and Not a Website Builder
-
-The client receives a statically generated website built with Astro and TypeScript, deployed on Cloudflare. Not a dynamic CMS with a database that rebuilds the page on every request. Not a single-page application whose content only appears after JavaScript has executed. It is a compiled set of pages where interactivity is added selectively — as “islands” — rather than making the entire website dependent on code running in the browser.
-
-What does this mean for the business? Less complexity. A dynamic CMS requires continuous maintenance: core updates, plugin updates, vulnerability monitoring. I am not claiming that WordPress is insecure — with proper support, it can run for years. But static generation removes an entire class of runtime risks related to server-side page generation, the database, and the chain of third-party plugins.
-
-The second consequence: the site itself is structured as a thin compositional shell — business logic does not live inside it. Components, validators, and runtime are moved into shared packages. The site consists of a manifest, content files, a business profile, navigation, FAQ, and generated auxiliary files. The client receives not hand-written code that, six months later, “no one understands anymore,” but a buildable and validated artifact: the same site is built from the same description every time. Reproducibility is not aesthetics. It is protection against a situation where the business becomes hostage to the memory of a specific developer.

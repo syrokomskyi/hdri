@@ -1,3 +1,0 @@
-## Managed Changes, Not Live-Site Edits
-
-Changes to the site go through a managed lifecycle: materialization, migration, edits, validation, release preparation, verification, and closure. Direct edits on the “live” site are detected and blocked. Every change leaves a trace in the history — it is clear who changed what and when. These are changes without chaos, not random editing.

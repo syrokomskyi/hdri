@@ -1,6 +1,0 @@
-{"timestamp":"2026-07-21T20:12:36.471Z","event":"step_started","stepId":"final-inticle","stepNumber":33,"status":"started"}
-{"timestamp":"2026-07-21T20:12:36.471Z","stepId":"final-inticle","stepNumber":33,"event":"step_run_started","attempt":1,"status":"running"}
-{"timestamp":"2026-07-21T20:12:36.485Z","stepId":"final-inticle","stepNumber":33,"event":"step_run_finished","attempt":1,"status":"completed"}
-{"timestamp":"2026-07-21T20:12:36.485Z","stepId":"final-inticle","stepNumber":33,"event":"step_validation_started","attempt":1,"status":"running"}
-{"timestamp":"2026-07-21T20:12:36.485Z","stepId":"final-inticle","stepNumber":33,"event":"step_validation_finished","attempt":1,"status":"completed"}
-{"timestamp":"2026-07-21T20:29:06.492Z","stepId":"final-inticle","stepNumber":33,"event":"step_reused","status":"completed","details":{"reason":"all_artifacts_valid"}}
