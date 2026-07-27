@@ -1,0 +1,36 @@
+git:
+  repoRoot: "../.."
+  paths:
+    - apps/hdri
+    - apps/digital-observatory
+    - apps/hdri-dashboard
+    - apps/hdri-factory
+    - apps/industry-index
+    - apps/catalog-harvest
+    - apps/hdri-scoring
+    - apps/hdri-publication
+
+grouping:
+  period: week
+  startDay: thu
+
+languages:
+  primary: de
+  translations:
+    - en
+
+ai:
+  generation:
+    provider: openai
+    model: gpt-4.1
+  translation:
+    provider: openai
+    model: gpt-4.1
+
+output:
+  dir: "."
+  filename: CHANGELOG
+
+sortOrder: desc
+
+publicChangelog: true

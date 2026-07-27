@@ -1,0 +1,45 @@
+---
+import "../styles/breadcrumbs.css";
+import { site } from "../lib/seo";
+
+export type Crumb = {
+  label: string;
+  href?: string;
+};
+
+type Props = {
+  items: Crumb[];
+};
+
+const { items } = Astro.props;
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: items.map((item, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: item.label,
+    ...(item.href ? { item: `${site}${item.href}` } : {}),
+  })),
+};
+---
+
+<nav aria-label="Breadcrumb" class="breadcrumbs">
+  <ol>
+    {
+      items.map((item, index) => {
+        const isLast = index === items.length - 1;
+        return (
+          <li>
+            {isLast ? (
+              <span aria-current="page">{item.label}</span>
+            ) : (
+              <a href={item.href}>{item.label}</a>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>
+<script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />

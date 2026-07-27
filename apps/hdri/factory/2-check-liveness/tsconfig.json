@@ -1,0 +1,16 @@
+{
+  "extends": "../../../../tsconfig.app.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "include": ["run/**/*.ts", "run/**/*.d.ts"],
+  "exclude": ["node_modules", "**/dist/**", "**/build/**", ".input", ".output"],
+  "references": [
+    { "path": "../../../../packages/business/business-core" },
+    { "path": "../../../../packages/business/business-crawler" },
+    { "path": "../../../../packages/pipeline/pipeline-node" },
+    { "path": "../../../../packages/pipeline/pipeline-core" },
+    { "path": "../../../../packages/observatory/observatory-crypto" },
+    { "path": "../../../../packages/observatory/observatory-core" },
+    { "path": "../../../../packages/observatory/observatory-emit" },
+    { "path": "../../../../packages/factory-core" }
+  ]
+}

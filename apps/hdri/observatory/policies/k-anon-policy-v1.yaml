@@ -1,0 +1,12 @@
+# K-Anonymity Policy for HDRI Dashboard Publications
+#
+# This file is the authoritative source for the k-anonymity threshold.
+# All export tools (export-dashboard-data, export-dashboard-archive,
+# ExportMartGogol) load this file at runtime instead of using hardcoded constants.
+#
+# Version: 1
+# Effective: 2026-07-10
+
+default_k: 12
+hard_floor: 5
+high_risk_release: false

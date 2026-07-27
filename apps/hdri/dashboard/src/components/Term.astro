@@ -1,0 +1,78 @@
+---
+import "../styles/term.css";
+/**
+ * Inline term with ⓘ tooltip (popover on click).
+ *
+ * Usage:
+ *   <Term id="p75" />          → term name + ⓘ
+ *   <Term id="p75">P75</Term>  → custom display text + ⓘ
+ *   <Term id="p75" iconOnly /> → ⓘ only (e.g. after a label)
+ *
+ * Phrasing content only (span/strong/a — no div/p/ul) so that
+ * <Term> can safely be embedded inside <p> and other inline contexts.
+ */
+import { glossaryById } from "../data/glossary";
+
+type Props = {
+  id: string;
+  iconOnly?: boolean;
+  label?: string;
+};
+
+const { id, iconOnly = false, label } = Astro.props;
+const entry = glossaryById[id];
+
+if (!entry) {
+  throw new Error(
+    `<Term/>: unbekannte Glossar-ID "${id}". Bitte in src/data/glossary.ts ergänzen.`,
+  );
+}
+
+const hasSlot = Astro.slots.has("default");
+const text = label ?? entry.term;
+const uid = `t-${id}-${Math.random().toString(36).slice(2, 9)}`;
+const popId = `pop-${uid}`;
+---
+
+<span class="term-wrap">
+  {!iconOnly && (hasSlot ? <slot /> : <span class="term-text">{text}</span>)}
+  <button
+    type="button"
+    class="term-info"
+    popovertarget={popId}
+    style={`anchor-name: --${uid}`}
+    aria-label={`Erklärung: ${entry.term}`}
+  >
+    <span aria-hidden="true">i</span>
+  </button>
+
+  <!-- Phrasing content only (no div/p/ul) → no implicit <p> closing by the HTML parser -->
+  <span
+    id={popId}
+    popover="auto"
+    class="term-popover"
+    style={`position-anchor: --${uid}`}
+    role="dialog"
+    aria-label={entry.term}
+  >
+    <span class="term-popover-title">{entry.term}</span>
+    <span class="term-popover-body">{entry.short}</span>
+    {
+      entry.links && entry.links.length > 0 && (
+        <span class="term-popover-links">
+          {entry.links.map((link) => (
+            <span class="term-popover-link-item">
+              <a
+                href={link.href}
+                {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              >
+                {link.label}
+              </a>
+            </span>
+          ))}
+        </span>
+      )
+    }
+    <a class="term-popover-more" href={`/glossar#${entry.id}`}>Im Glossar ansehen →</a>
+  </span>
+</span>

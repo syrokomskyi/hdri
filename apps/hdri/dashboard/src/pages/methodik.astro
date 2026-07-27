@@ -1,0 +1,934 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import Term from "../components/Term.astro";
+import katex from "katex";
+import "katex/dist/katex.min.css";
+import { site, ogImage, publisher } from "../lib/seo";
+import { loadChangelog, type ChangelogEntry } from "../data/dashboard-data";
+import { getSiteMeta } from "../data/site-meta";
+import { count } from "../lib/format";
+
+const meta = getSiteMeta();
+
+const overallFormula = katex.renderToString(meta.overallFormulaLatex, {
+  displayMode: true,
+  throwOnError: false,
+});
+
+const dimensionFormula = katex.renderToString(
+  "D_d = \\frac{\\sum_{i \\in \\text{Indikatoren}_d} w_i \\cdot I_i}{\\sum_{i \\in \\text{Indikatoren}_d} w_i}",
+  { displayMode: true, throwOnError: false },
+);
+
+// Methodology changelog (WP15) — the frozen, per-period provenance of how the scoring
+// instrument evolved. Loaded via glob so a build without a generated changelog degrades
+// gracefully to the static prose above (empty array → the section is not rendered).
+const changelog = loadChangelog();
+
+const FIELD_LABEL_DE: Record<string, string> = {
+  codebook_version: "Codebook-Version",
+  ontology_version: "Ontologie-Version",
+  scorer_version: "Scorer-Version",
+  codebook_content: "Codebook-Inhalt (gleiche Version!)",
+  ontology_content: "Ontologie-Inhalt (gleiche Version!)",
+  frame: "Populationsrahmen",
+};
+const STATUS_LABEL_DE: Record<ChangelogEntry["status"], string> = {
+  baseline: "Basis (erste Periode)",
+  unchanged: "unverändert",
+  changed: "geändert",
+};
+
+const pageTitle = "HDRI Methodik — Handwerk Digital Reife Index";
+const pageDescription =
+  "Methodische Dokumentation des HDRI: Datenquellen, Scoring-Formel, Privacy-Regeln, Limitationen und Reproduzierbarkeit.";
+
+const schema = {
+  "@graph": [
+    {
+      "@type": "WebPage",
+      name: pageTitle,
+      description: pageDescription,
+      url: `${site}/methodik`,
+      image: ogImage,
+      inLanguage: "de-DE",
+      publisher: publisher(),
+      about: [
+        {
+          "@type": "Thing",
+          name: "Scoring-Modell",
+          description: `Overall = ${meta.overallFormulaPlain}`,
+        },
+        {
+          "@type": "Thing",
+          name: "Reifegrad-Klassifizierung",
+          description:
+            "Fünf Stufen: Kritisch (<20), Basis (20–40), Aufbau (40–60), Fortgeschritten (60–80), Vorbild (80–100)",
+        },
+      ],
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      name: "HDRI Open Source Repository",
+      url: "https://github.com/syrokomskyi/hdri",
+      codeRepository: "https://github.com/syrokomskyi/hdri",
+      programmingLanguage: "TypeScript",
+      license: "https://www.apache.org/licenses/LICENSE-2.0",
+      description:
+        "Öffentliches Repository zum HDRI mit Codebook, Scoring-Logik und Dashboard-Quellcode",
+    },
+  ],
+};
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: "HDRI Dashboard", href: "/" }, { label: "Methodik" }]} />
+    </div>
+    <section class="hero">
+      <div class="container hero-panel layer-accent">
+        <div class="hero-copy">
+          <span class="eyebrow">Methodische Dokumentation</span>
+          <h1>Wie der HDRI entsteht und was er misst</h1>
+          <p>
+            Diese Seite beschreibt den vollständigen methodischen Rahmen des Handwerk Digital Reife
+            Index (HDRI). Sie dient der Nachvollziehbarkeit, Reproduzierbarkeit und kritischen
+            Einordnung der veröffentlichten Kennzahlen.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="/">Zum Dashboard</a>
+            <a class="button button-secondary" href="/codebook">Codebook</a>
+            <a class="button button-secondary" href="/glossar">Glossar</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Zweck & Kontext</span>
+            <h2>Was der HDRI ist — und was er nicht ist</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Zweck</h3>
+            <ul>
+              <li>
+                Der HDRI misst die digitale Reife von Handwerkswebsites auf Basis öffentlich
+                zugänglicher Signale.
+              </li>
+              <li>
+                Er dient als methodische Orientierung für Regionen, Branchen und Entwickler
+                digitaler Infrastruktur.
+              </li>
+              <li>Er ist kein Ranking einzelner Betriebe und kein SEO-Score.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Grenzen</h3>
+            <ul>
+              <li>Der Index erhebt keinen Anspruch auf Vollständigkeit des digitalen Auftritts.</li>
+              <li>
+                Er misst nur das, was automatisch aus öffentlichen Quellen extrahiert werden kann.
+              </li>
+              <li>Er bewertet nicht die Qualität von Inhalten, Usability oder Geschäftserfolg.</li>
+              <li>Keine Echtzeitdaten — nur quartalsweise Snapshots.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Datengrundlage</span>
+            <h2>Quellen, Stichprobe und Pipeline</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>Datenquellen</h3>
+            <ul>
+              <li>Öffentlich zugängliche Websites deutscher Handwerksbetriebe.</li>
+              <li>Keine Login-Seiten, keine internen Systeme, keine bezahlten APIs.</li>
+              <li>
+                Signale werden durch automatisierte Extraktoren aus HTML, strukturierten Daten und
+                Metadaten gelesen.
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Stichprobenrahmen</h3>
+            <ul>
+              <li>
+                Die Stichprobe umfasst alle öffentlich erreichbaren Handwerkswebsites des Quartals.
+              </li>
+              <li>
+                Nicht jede erfasste Domain ist im Dashboard sichtbar — nur Aggregate mit
+                ausreichender Fallzahl werden veröffentlicht.
+              </li>
+              <li>
+                Neue Domains werden beim ersten Crawl erfasst, inaktive fallen nach mehreren
+                Fehlversuchen heraus.
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Pipeline</h3>
+            <ul>
+              <li>
+                Erhebung → Registrierung → Signal-Extraktion → Scoring → Aggregation →
+                Veröffentlichung.
+              </li>
+              <li>
+                Jeder Lauf produziert eine versionsgebundene Codebook-Version und eine eindeutige
+                Run-ID.
+              </li>
+              <li>
+                Einzeldaten (einzelne Sites, Rohsignale) werden getrennt von öffentlichen Aggregaten
+                gehalten.
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-faq);">
+            <h3>Klassifizierung</h3>
+            <ul>
+              <li>
+                Die Gewerk-Klassifizierung folgt der <a
+                  href="https://www.gesetze-im-internet.de/hwo/anlage_a.html"
+                  target="_blank"
+                  rel="noopener noreferrer">Anlage A</a
+                > und <a
+                  href="https://www.gesetze-im-internet.de/hwo/anlage_b.html"
+                  target="_blank"
+                  rel="noopener noreferrer">Anlage B der Handwerksordnung (HWO)</a
+                >.
+              </li>
+              <li>
+                Die sieben Gewerbegruppen (I–VII) entsprechen der offiziellen Einteilung des <a
+                  href="https://www.destatis.de"
+                  target="_blank"
+                  rel="noopener noreferrer">Statistischen Bundesamts (Destatis)</a
+                >.
+              </li>
+              <li>
+                Dadurch ist die Klassifizierung normativ eingebunden, reproduzierbar und für
+                Forschungseinrichtungen nachvollziehbar.
+              </li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="scoring">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Scoring-Modell</span>
+            <h2>Wie der HDRI-Score berechnet wird</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>1. Indikator-Score</h3>
+            <ul>
+              <li>
+                Jeder Indikator mappt einen rohen Signalwert auf einen Score zwischen 0 und 100.
+              </li>
+              <li>
+                Regeltypen: <code>bool</code>, <code>presence</code>, <code>countClamp</code>, <code
+                  >countClampInverse</code
+                >, <code>enum</code>.
+              </li>
+              <li>
+                Fehlende Werte werden nach der Missing-Policy behandelt (zero, skip, impute,
+                conditional).
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>2. Dimensions-Score</h3>
+            <ul>
+              <li>Score = gewichtetes arithmetisches Mittel aller Indikatoren der Dimension.</li>
+              <li>Wenn Indikatoren fehlen (skip), wird das effektive Gewicht reduziert.</li>
+              <li>Konfidenz = Mittelwert der Konfidenz aller beitragenden Indikatoren.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>3. Overall HDRI-Score</h3>
+            <ul>
+              <li>Overall = gewichtetes arithmetisches Mittel aller Dimensions-Scores.</li>
+              <li>Jede Dimension hat ein deklariertes Gewicht (Summe = 1,0).</li>
+              <li>
+                Wenn eine Dimension vollständig fehlt, wird ihr Gewicht auf die verbleibenden
+                umverteilt.
+              </li>
+              <li>Overall-Konfidenz = gewichtetes Mittel der Dimensions-Konfidenzen.</li>
+            </ul>
+          </article>
+        </div>
+        <div class="method-formula">
+          <h3>Formel</h3>
+          <p>Der Dimensions-Score ist das gewichtete Mittel der Indikator-Scores:</p>
+          <div class="katex-scroll" tabindex="0">
+            <Fragment set:html={dimensionFormula} />
+          </div>
+          <p>Der Overall-Score ist das gewichtete Mittel der Dimensions-Scores:</p>
+          <div class="katex-scroll" tabindex="0">
+            <Fragment set:html={overallFormula} />
+          </div>
+          <p class="method-card-footnote">
+            Gewichte und Indikatoren sind im <a href="/codebook">Codebook</a> vollständig dokumentiert.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Dimensionen</span>
+            <h2>Was die sechs Dimensionen konkret messen</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Recht & Pflichtangaben</h3>
+            <p>
+              <strong>Gewicht:</strong>
+              {
+                meta.codebook.dimensions
+                  .find((d) => d.id === "legal_compliance")
+                  ?.weight.toFixed(2)
+                  .replace("0.", "0,")
+              }
+            </p>
+            <ul>
+              <li>
+                Prüft Pflichtangaben nach deutschem Recht (<Term id="impressum">Impressum</Term>,
+                Datenschutz, AGB, BFSG, Widerruf, Versand).
+              </li>
+              <li>Misst strukturierte Rechtssignale aus HTML und Schema.org.</li>
+              <li>Keine Rechtsberatung — nur statistische Erfassung vorhandener Elemente.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Kontakt & Erreichbarkeit</h3>
+            <p>
+              <strong>Gewicht:</strong>
+              {
+                meta.codebook.dimensions
+                  .find((d) => d.id === "contact_accessibility")
+                  ?.weight.toFixed(2)
+                  .replace("0.", "0,")
+              }
+            </p>
+            <ul>
+              <li>Erfasst Telefon, E-Mail, Adresse, Öffnungszeiten, Kontaktformular.</li>
+              <li>Bewertet Vollständigkeit und maschinenlesbare Strukturierung.</li>
+              <li>Signalquelle: HTML-Inhalt und Schema.org-Strukturdaten.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-entities);">
+            <h3>Strukturierte Informationen</h3>
+            <p>
+              <strong>Gewicht:</strong>
+              {
+                meta.codebook.dimensions
+                  .find((d) => d.id === "structured_data")
+                  ?.weight.toFixed(2)
+                  .replace("0.", "0,")
+              }
+            </p>
+            <ul>
+              <li>
+                <Term id="schema-org">Schema.org</Term>-Markup (LocalBusiness, FAQ, Service),
+                Breadcrumbs, Öffnungszeiten.
+              </li>
+              <li>Bewertet Reichhaltigkeit und Korrektheit der semantischen Auszeichnung.</li>
+              <li>Starke Korrelation mit Suchmaschinen-Verständlichkeit, aber kein SEO-Score.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3><Term id="barrierefreiheit">Barrierefreiheit</Term></h3>
+            <p>
+              <strong>Gewicht:</strong>
+              {
+                meta.codebook.dimensions
+                  .find((d) => d.id === "accessibility_audit")
+                  ?.weight.toFixed(2)
+                  .replace("0.", "0,")
+              }
+            </p>
+            <ul>
+              <li>
+                Automatisierte <Term id="axe-core">Axe-Core</Term>-Prüfung auf WCAG-Konformität.
+              </li>
+              <li>Misst Anzahl und Schweregrad von Barrierefreiheitsfehlern.</li>
+              <li>Nur automatisch prüfbare Aspekte — keine manuelle Bewertung.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-faq);">
+            <h3>Vertrauen & Nachweise</h3>
+            <p>
+              <strong>Gewicht:</strong>
+              {
+                meta.codebook.dimensions
+                  .find((d) => d.id === "trust_signals")
+                  ?.weight.toFixed(2)
+                  .replace("0.", "0,")
+              }
+            </p>
+            <ul>
+              <li>
+                Zertifizierungen, Meistertitel, Auszeichnungen, Mitgliedschaften, Kammereinträge.
+              </li>
+              <li>Signalquelle: Registrierungsdaten, strukturierte Trust-Signale.</li>
+              <li>Keine Bewertung der Güte — nur statistische Erfassung.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Soziale Präsenz</h3>
+            <p>
+              <strong>Gewicht:</strong>
+              {
+                meta.codebook.dimensions
+                  .find((d) => d.id === "social_presence")
+                  ?.weight.toFixed(2)
+                  .replace("0.", "0,")
+              }
+            </p>
+            <ul>
+              <li>
+                Prüft Verweise auf soziale Netzwerke (Facebook, Instagram, YouTube, LinkedIn u. a.).
+              </li>
+              <li>Niedriges Gewicht, da optional — aber relevanter Trendindikator.</li>
+              <li>Misst nur Existenz der Links, nicht Aktivität oder Reichweite.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Datenschutz & Unterdrückung</span>
+            <h2>Wie Daten geschützt werden, bevor sie veröffentlicht werden</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3><Term id="k-anonymitaet">Publikationsschwelle</Term></h3>
+            <ul>
+              <li>
+                Jeder veröffentlichte Slice muss mindestens <code>n ≥ {meta.kAnonymityMin}</code> Fälle
+                enthalten.
+              </li>
+              <li>Wenn ein Bundesland oder Gewerk zu wenige Fälle hat, wird es nicht angezeigt.</li>
+              <li>
+                Die Matrix (Region × Gewerk) hat höhere Anforderungen — beide Achsen müssen die
+                Schwelle erfüllen.
+              </li>
+              <li>
+                Die Schwelle reduziert das Risiko einer indirekten Zuordnung einzelner Betriebe und
+                erhöht zugleich die statistische Stabilität kleiner Gruppen.
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3><Term id="suppression">Delta-Suppression</Term></h3>
+            <ul>
+              <li>
+                <code>delta_below_absolute_threshold</code>: Änderung kleiner als 3 Punkte absolut.
+              </li>
+              <li>
+                <code>delta_below_relative_threshold</code>: Relative Änderung kleiner als 3 % im
+                Vergleich zum Vorquartal.
+              </li>
+              <li>
+                <code>current_sample_below_k</code> / <code>previous_sample_below_k</code>:
+                Stichprobe unterschreitet k.
+              </li>
+              <li>
+                <code>category_absent_current</code> / <code>category_absent_previous</code>:
+                Kategorie fehlt in einem Quartal.
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>Was nie veröffentlicht wird</h3>
+            <ul>
+              <li>Keine Domains, keine URLs, keine internen Kennungen.</li>
+              <li>Keine Einzelscores pro Website.</li>
+              <li>Keine Rohsignale außerhalb der internen Verarbeitung.</li>
+              <li>Einzeldaten werden getrennt von den veröffentlichten Aggregaten gehalten.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Konfidenz & Qualität</span>
+            <h2>Wie verlässlich sind die Messungen?</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3><Term id="konfidenz">Konfidenz</Term>-Skala</h3>
+            <ul>
+              <li>
+                <strong>1,0</strong> = Signal wurde direkt beobachtet und erfolgreich extrahiert.
+              </li>
+              <li>
+                <strong>0,5</strong> = Signal wurde imputiert (geschätzt) aufgrund fehlender Daten.
+              </li>
+              <li>
+                <strong>0,0</strong> = Signal wurde übersprungen (skip) und fließt nicht in den Score
+                ein.
+              </li>
+              <li>Dimensions-Konfidenz ist das Mittel aller beitragenden Indikatoren.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3>Bekannte Limitationen</h3>
+            <ul>
+              <li>
+                Automatisierte Extraktion kann falsch-positive und falsch-negative Ergebnisse
+                liefern.
+              </li>
+              <li>Sites mit starkem Bot-Schutz (403, Anti-Bot) werden unterrepräsentiert.</li>
+              <li>
+                JavaScript-lastige Single-Page-Apps können nicht vollständig ausgelesen werden.
+              </li>
+              <li>
+                Konfidenz ≠ statistische Signifikanz — sie misst Datenverfügbarkeit, nicht
+                Modellgüte.
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Statistische Einordnung</h3>
+            <ul>
+              <li>
+                Der HDRI verwendet <strong
+                  ><Term id="deskriptive-statistik">deskriptive Statistik</Term></strong
+                > — er beschreibt die Stichprobe, nicht die Grundgesamtheit.
+              </li>
+              <li>Es werden keine p-Werte, Konfidenzintervalle oder Hypothesentests berechnet.</li>
+              <li>
+                Die Aussagekraft kommt aus der Stichprobengröße (N = {count(meta.sampleSize)}),
+                nicht aus inferenzstatistischen Verfahren.
+              </li>
+              <li>
+                P75 ist robust gegenüber Ausreißern und spiegelt das „erreichbare Niveau" wider.
+              </li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Kennzahlen & Statistik</span>
+            <h2>Wie die veröffentlichten Zahlen zu lesen sind</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3><Term id="p75">P75</Term> — Primäre Kennzahl</h3>
+            <ul>
+              <li>
+                P75 ist der <strong>75. Perzentil</strong>: 75 % der gemessenen Websites liegen
+                unter diesem Wert, 25 % darüber.
+              </li>
+              <li>
+                Berechnung via <strong>lineare Interpolation (Type 7, R-Standard)</strong>: <code
+                  >pos = (n − 1) × 0,75</code
+                >, linear interpoliert zwischen den benachbarten Rangplätzen.
+              </li>
+              <li>
+                P75 wurde gewählt, weil es robust gegen Ausreißer ist und gleichzeitig ein
+                ambitioniertes, aber erreichbares Niveau anzeigt.
+              </li>
+              <li>
+                Im Gegensatz zum Mittelwert wird P75 nicht von Einzelwerten jenseits von 100
+                verzerrt.
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
+            <h3><Term id="mittelwert">Mittelwert</Term> & <Term id="median">Median (P50)</Term></h3>
+            <ul>
+              <li>
+                Der <strong>Mittelwert</strong> (arithmetisches Mittel) zeigt die „Schwerpunktlage" der
+                Verteilung.
+              </li>
+              <li>
+                Wenn Mittelwert deutlich unter P75 liegt, ist die Verteilung linksschief: viele
+                niedrige Werte, wenige hohe.
+              </li>
+              <li>
+                Der <strong>Median (P50)</strong> ist in den Rohdaten vorhanden, wird aber nicht als eigene
+                Spalte geführt — er liegt typischerweise zwischen Mittelwert und P75.
+              </li>
+              <li>
+                Die Kombination P75 + Mittelwert + IQR gibt ein vollständiges Bild der Verteilung.
+              </li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3><Term id="iqr">IQR</Term> und Quartile</h3>
+            <ul>
+              <li>
+                <strong>IQR</strong> = Interquartilsabstand = P75 − P25. Er umfasst die mittleren 50 %
+                aller Werte.
+              </li>
+              <li>Ein enger IQR bedeutet, dass die meisten Websites ähnliche Scores haben.</li>
+              <li>Ein breiter IQR deutet auf heterogene Qualität innerhalb der Gruppe hin.</li>
+              <li>IQR wird auf den Dimension-Karten als Spannweite angezeigt.</li>
+            </ul>
+          </article>
+          <article
+            class="method-card layer-accent"
+            style="grid-column: 1 / -1; --accent-color: var(--layer-entities);"
+            id="reifegrad"
+          >
+            <h3>Reifegrad-Klassifizierung</h3>
+            <p>
+              Der HDRI-Score (0–100) jeder Website wird in fünf Reifegrad-Stufen eingeteilt, um eine
+              grobe Orientierung zu geben. Diese Einteilung ist ein nachgelagerter Schritt — der
+              Score wird zuerst berechnet, dann in Bänder eingeordnet.
+            </p>
+            <table class="method-table" data-sortable>
+              <thead>
+                <tr>
+                  <th data-sort-type="number" data-col-id="stufe">Stufe</th>
+                  <th data-sort-type="number" data-col-id="range">Score-Bereich</th>
+                  <th data-sort-type="text" data-col-id="meaning">Bedeutung</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-sort-value="0"
+                    ><span
+                      class="method-swatch"
+                      style="background: #b91c1c"
+                      role="img"
+                      aria-label="Farbmarker: Kritisch"></span>Kritisch</td
+                  >
+                  <td data-sort-value="0">0 – &lt;20</td>
+                  <td>Kritische Mängel, fundamentale Anforderungen nicht erfüllt</td>
+                </tr>
+                <tr>
+                  <td data-sort-value="20"
+                    ><span
+                      class="method-swatch"
+                      style="background: #b45309"
+                      role="img"
+                      aria-label="Farbmarker: Basis"></span>Basis</td
+                  >
+                  <td data-sort-value="20">20 – &lt;40</td>
+                  <td>Grundlegende Anforderungen überwiegend erfüllt</td>
+                </tr>
+                <tr>
+                  <td data-sort-value="40"
+                    ><span
+                      class="method-swatch"
+                      style="background: #1d4ed8"
+                      role="img"
+                      aria-label="Farbmarker: Aufbau"></span>Aufbau</td
+                  >
+                  <td data-sort-value="40">40 – &lt;60</td>
+                  <td>Fortgeschrittene Maßnahmen teilweise umgesetzt</td>
+                </tr>
+                <tr>
+                  <td data-sort-value="60"
+                    ><span
+                      class="method-swatch"
+                      style="background: #15803d"
+                      role="img"
+                      aria-label="Farbmarker: Fortgeschritten"></span>Fortgeschritten</td
+                  >
+                  <td data-sort-value="60">60 – &lt;80</td>
+                  <td>Moderne Best Practices weitgehend implementiert</td>
+                </tr>
+                <tr>
+                  <td data-sort-value="80"
+                    ><span
+                      class="method-swatch"
+                      style="background: #6d28d9"
+                      role="img"
+                      aria-label="Farbmarker: Vorbild"></span>Vorbild</td
+                  >
+                  <td data-sort-value="80">80 – 100</td>
+                  <td>Hervorragende digitale Präsenz, Best-Practice-Niveau</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="method-card-footnote">
+              Die Band-Grenzen (20, 40, 60, 80) sind als feste Schwellen definiert.
+            </p>
+            <p class="method-card-footnote" style="margin-top: 0">
+              → <a href="/methodik#scoring">Wie der HDRI-Score berechnet wird</a>
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Reproduzierbarkeit</span>
+            <h2>Quellcode, Versionierung und Nachvollziehbarkeit</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-metadata);">
+            <h3>Codebook-Versionierung</h3>
+            <ul>
+              <li>
+                Jeder veröffentlichte Index bezieht sich auf eine semantisch versionierte
+                Codebook-Version.
+              </li>
+              <li>MAJOR-Änderungen (z. B. neue Dimensionen) sind nicht rückwärtskompatibel.</li>
+              <li>MINOR-Änderungen (z. B. neue Indikatoren) erweitern das Modell.</li>
+              <li>PATCH-Änderungen korrigieren Extraktoren oder Regeln ohne Modelländerung.</li>
+            </ul>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-entities);">
+            <h3>Open Source</h3>
+            <ul>
+              <li>
+                Scoring-Engine, Codebook-Parser und Aggregationslogik sind als <code
+                  >@syrokomskyi/hdri-codebook</code
+                > verfügbar.
+              </li>
+              <li>
+                Das öffentliche GitHub-Repository dokumentiert die technische Grundlage des
+                Projekts, einschließlich Berechnungslogik, Codebook und Website-Quellcode:
+                <a
+                  href="https://github.com/syrokomskyi/hdri"
+                  target="_blank"
+                  rel="noopener noreferrer">github.com/syrokomskyi/hdri</a
+                >.
+              </li>
+              <li>
+                Jeder veröffentlichte Lauf kann theoretisch von einem unabhängigen System
+                reproduziert werden, sofern dieselben Quelldaten vorliegen.
+              </li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    {
+      changelog.length > 0 && (
+        <section class="section" id="methodik-aenderungen">
+          <div class="container">
+            <div class="section-head">
+              <div>
+                <span class="eyebrow">Versionsverlauf</span>
+                <h2>Methodik-Änderungen zwischen den Quartalen</h2>
+              </div>
+            </div>
+            <div class="method-grid">
+              <article
+                class="method-card layer-accent"
+                style="grid-column: 1 / -1; --accent-color: var(--layer-metadata);"
+              >
+                <p>
+                  Jeder veröffentlichte Quartalsindex friert die exakte Methodik ein, mit der er
+                  berechnet wurde (Codebook, Ontologie, Scorer und deren Inhalts-Hashes). Diese
+                  Tabelle zeigt, was sich zwischen den Perioden geändert hat. Ein{" "}
+                  <strong>Vergleichbarkeitsbruch</strong> bedeutet, dass sich die Scoring-Identität
+                  (<code>methodology_hash</code>) geändert hat — Quartalsvergleiche über einen
+                  solchen Bruch hinweg sind nicht direkt vergleichbar und werden im Dashboard
+                  unterdrückt. Eine reine Änderung des Populationsrahmens gewichtet die Kennzahlen
+                  neu, ohne sie neu zu berechnen, und ist kein Bruch.
+                </p>
+                <table class="method-table" data-sortable>
+                  <thead>
+                    <tr>
+                      <th data-sort-type="text" data-col-id="period">
+                        Periode
+                      </th>
+                      <th data-sort-type="text" data-col-id="hash">
+                        Methodologie-Hash
+                      </th>
+                      <th data-sort-type="text" data-col-id="codebook">
+                        Codebook
+                      </th>
+                      <th data-sort-type="text" data-col-id="ontology">
+                        Ontologie
+                      </th>
+                      <th data-sort-type="text" data-col-id="scorer">
+                        Scorer
+                      </th>
+                      <th data-sort-type="text" data-col-id="status">
+                        Status
+                      </th>
+                      <th data-sort-type="none" data-col-id="changes">
+                        Änderungen
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {changelog.map((e) => (
+                      <tr>
+                        <td data-sort-value={e.period}>
+                          <strong>{e.period}</strong>
+                          {e.comparabilityBreak && (
+                            <span
+                              class="method-swatch"
+                              style="background: #c2410c; margin-left: 6px"
+                              title="Vergleichbarkeitsbruch"
+                            />
+                          )}
+                        </td>
+                        <td data-sort-value={e.methodologyHash.slice(0, 12)}>
+                          <code>{e.methodologyHash.slice(0, 12)}</code>
+                        </td>
+                        <td data-sort-value={`${e.codebookId} v${e.codebookVersion}`}>
+                          {e.codebookId} v{e.codebookVersion}
+                        </td>
+                        <td data-sort-value={e.ontologyVersion}>v{e.ontologyVersion}</td>
+                        <td data-sort-value={e.scorerVersion}>{e.scorerVersion}</td>
+                        <td data-sort-value={e.status}>
+                          {STATUS_LABEL_DE[e.status]}
+                          {e.comparabilityBreak && (
+                            <>
+                              {" "}
+                              <strong>⚠️ Vergleichbarkeitsbruch</strong>
+                            </>
+                          )}
+                        </td>
+                        <td>
+                          {e.status === "baseline" || e.changes.length === 0 ? (
+                            "—"
+                          ) : (
+                            <ul style="margin: 0; padding-left: 1.1em">
+                              {e.changes.map((c) => (
+                                <li>
+                                  {FIELD_LABEL_DE[c.field] ?? c.field}: <code>{c.from ?? "—"}</code>{" "}
+                                  → <code>{c.to ?? "—"}</code>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p class="method-card-footnote">
+                  Auto-generiert aus den eingefrorenen <code>run_methodology</code>-Datensätzen
+                  jeder veröffentlichten Periode. Der <code>methodology_hash</code> erlaubt es
+                  Dritten, die Zahlen einer Periode gegen die exakte, eingefrorene Methodik zu
+                  verifizieren.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Häufige Fragen</span>
+            <h2>Kurze Antworten auf zentrale Einwände</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-schema);">
+            <h3>Warum P75 und nicht der Median?</h3>
+            <p>
+              Der Median (P50) beschreibt das „typische" Niveau. P75 beschreibt das Niveau, das 25 %
+              der besten Websites erreichen — es ist ein ambitionierterer, aber realistischer
+              Benchmark für Betriebe, die ihre digitale Präsenz verbessern wollen.
+            </p>
+          </article>
+          <article class="method-card layer-accent" style="--accent-color: var(--layer-text);">
+            <h3>Ist das statistisch signifikant?</h3>
+            <p>
+              Der HDRI arbeitet mit <strong>deskriptiver Statistik</strong>. Er beschreibt, was in
+              der Stichprobe gemessen wurde, und zieht keine inferenzstatistischen Schlüsse auf die
+              Grundgesamtheit. Bei N = {count(meta.sampleSize)} und quartalsweisen Wiederholungen ist
+              die Stabilität der Kennzahlen selbst die Evidenz — nicht ein p-Wert.
+            </p>
+          </article>
+        </div>
+        <div class="section-head section-head-top">
+          <a class="button" href="/faq">Alle häufigen Fragen ansehen →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Kooperation</span>
+            <h2>Advisory Board & Forschungskooperationen</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article
+            class="method-card layer-accent"
+            style="grid-column: 1 / -1; --accent-color: var(--layer-schema);"
+          >
+            <p>
+              Der Handwerk Digital Reife Index (HDRI) wird derzeit als unabhängiges Observatorium
+              von einer Privatperson aufgebaut. Für die nächsten Ausbaustufen (Jahresbericht,
+              Peer-Review der Methodik, BFSG- und AI-Readiness-Module) suchen wir gezielt den
+              Austausch mit Institutionen aus Forschung und Handwerk.
+            </p>
+            <p>Insbesondere interessieren uns:</p>
+            <ul>
+              <li>
+                Hochschul- und Institutspartner mit Fokus auf Digitalisierung im Handwerk oder
+                Mittelstand
+              </li>
+              <li>
+                Handwerkskammern und Fachverbände mit Interesse an aggregierten Lagebildern und
+                Jahresberichten
+              </li>
+              <li>
+                Initiativen zu Barrierefreiheit (BFSG/BITV) und digitaler Zugänglichkeit im Handwerk
+              </li>
+            </ul>
+            <p>
+              Wenn Ihre Institution an einer Kooperation oder an einem Advisory Board-Mandat
+              interessiert ist, freuen wir uns über eine kurze Nachricht an <a
+                href="mailto:andrii@syrokomskyi.com">andrii@syrokomskyi.com</a
+              >
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

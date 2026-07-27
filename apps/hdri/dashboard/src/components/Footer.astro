@@ -1,0 +1,87 @@
+---
+import { getChangelogEntryCount } from "../lib/changelog";
+
+const currentYear = new Date().getFullYear();
+const changelogCount = getChangelogEntryCount();
+---
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <h2 class="footer-title">HDRI Dashboard</h2>
+      <p class="footer-desc">
+        Handwerk Digital Reife Index.<br />
+        Deskriptiver Quartalsindex für Deutschland.<br />
+        Transparent und anonymisiert.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h3 class="footer-heading">Navigation</h3>
+      <ul class="footer-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/methodik">Methodik</a></li>
+        <li><a href="/codebook">Codebook</a></li>
+        <li><a href="/glossar">Glossar</a></li>
+        <li><a href="/faq">Häufige Fragen</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h3 class="footer-heading">Rechtliches</h3>
+      <ul class="footer-links">
+        <li><a href="/impressum">Impressum</a></li>
+        <li><a href="/datenschutz">Datenschutz</a></li>
+        <li>
+          <a
+            href="https://github.com/syrokomskyi/hdri/blob/main/LICENSE"
+            target="_blank"
+            rel="noopener noreferrer">Lizenz (Apache 2.0)</a
+          >
+        </li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h3 class="footer-heading">Kontakt</h3>
+      <p class="footer-contact">
+        <a href="mailto:andrii@syrokomskyi.com">andrii@syrokomskyi.com</a>
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h3 class="footer-heading">Kooperation</h3>
+      <p class="footer-contact">
+        Interesse an Advisory Board oder Forschungspartnerschaft? <a href="/methodik"
+          >Mehr erfahren »</a
+        >
+      </p>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <span
+      >© {currentYear}&nbsp;<a
+        href="https://syrokomskyi.com"
+        target="_blank"
+        rel="noopener noreferrer">syrokomskyi.com</a
+      ></span
+    >
+    <span
+      ><a href="/methodik">Methodik</a> · <a href="/codebook">Codebook</a> · <a
+        href="https://doi.org/10.5281/zenodo.20478155"
+        target="_blank"
+        rel="noopener noreferrer">DOI</a
+      > · <a href="https://github.com/syrokomskyi/hdri" target="_blank" rel="noopener noreferrer"
+        >Open Source</a
+      > · <a
+        href="https://github.com/syrokomskyi/hdri/blob/main/CHANGELOG_PUBLIC.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        title={changelogCount > 0 ? "Änderungen" : undefined}
+        >Changelog{changelogCount > 0 ? ` | ${changelogCount}` : ""}</a
+      ></span
+    >
+    <span>Der digitale Puls des deutschen Handwerks — ohne Namen</span>
+  </div>
+</footer>

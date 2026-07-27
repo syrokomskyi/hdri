@@ -1,0 +1,17 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/server-card/v1.json",
+  "serverInfo": {
+    "name": "dashboard",
+    "version": "1.0.0",
+    "description": "HDRI Dashboard — public quarterly index dashboard for German craft business digital maturity."
+  },
+  "transports": [],
+  "capabilities": {
+    "tools": {},
+    "resources": {},
+    "prompts": {}
+  },
+  "documentation": {
+    "url": "https://handwerk-index.org/methodik"
+  }
+}
