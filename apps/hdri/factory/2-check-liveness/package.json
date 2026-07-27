@@ -6,12 +6,7 @@
     "build": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/2-check-liveness/tsconfig.json --noEmit",
     "typecheck": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/2-check-liveness/tsconfig.json --noEmit",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
-    "start": "tsx -C @syrokomskyi/source run/run.ts",
-    "compass:annotate": "code-compass annotate --root .",
-    "compass:migrate": "code-compass migrate --root .",
-    "compass:inventory": "code-compass inventory --root .",
-    "compass:validate": "code-compass validate --root .",
-    "compass": "code-compass validate --root ."
+    "start": "tsx -C @syrokomskyi/source run/run.ts"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",
@@ -33,7 +28,5 @@
     "markdown-table": "^3.0.4",
     "tsx": "^4.23.1"
   },
-  "devDependencies": {
-    "@syrokomskyi/code-compass": "workspace:*"
-  }
+  "devDependencies": {}
 }
