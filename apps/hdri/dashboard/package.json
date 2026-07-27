@@ -1,0 +1,45 @@
+{
+  "name": "@syrokomskyi/dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "export:data": "pnpm --filter @syrokomskyi/observatory run export:dashboard",
+    "build": "pnpm run export:data && if [ -f src/assets/data/public/archive.json ]; then pnpm --dir ../../.. exec astro build --root apps/hdri/dashboard; else echo 'ℹ No dashboard data, skipping astro build'; fi",
+    "start": "astro dev",
+    "dev": "pnpm run export:data && pnpm --dir ../../.. exec astro dev --root apps/hdri/dashboard",
+    "preview": "pnpm --dir ../../.. exec astro preview --root apps/hdri/dashboard",
+    "typecheck": "pnpm --dir ../../.. exec astro sync --root apps/hdri/dashboard && pnpm --dir ../../.. exec tsc -p apps/hdri/dashboard/tsconfig.json --noEmit",
+    "upgrade-packages": "pnpm up --latest",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/cloudflare": "^14.1.4",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-serif": "^5.3.0",
+    "@tanstack/table-core": "^8.21.3",
+    "astro": "^7.1.3",
+    "cookie": "^2.0.1",
+    "d3-array": "^3.2.4",
+    "d3-geo": "^3.1.1",
+    "d3-scale": "^4.0.2",
+    "d3-scale-chromatic": "^3.1.0",
+    "katex": "^0.18.1",
+    "lenis": "^1.3.25",
+    "topojson-client": "^3.1.0",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260724.1",
+    "@types/d3-scale-chromatic": "^3.1.0",
+    "@types/node": "^26.1.1",
+    "@wgogol/changelog-live": "workspace:*",
+    "terser": "^5.49.0",
+    "tsx": "^4.23.1",
+    "typescript": "7.0.2",
+    "wrangler": "^4.114.0"
+  }
+}
