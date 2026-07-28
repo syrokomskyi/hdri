@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Ambient TypeScript declarations for the subset of the untyped `javascript-opentimestamps`
+<purpose>Ambient TypeScript declarations for the subset of the untyped `opentimestamps`
 package used by timestamp-publication.ts, so the module is typed rather than `any` (finding 2).</purpose>
 <non-goals>
   <item>Not a full binding — widen only as the CLI grows to use more of the API.</item>
@@ -13,11 +13,11 @@ package used by timestamp-publication.ts, so the module is typed rather than `an
 // @ai-invariant: timestamps are RFC 3161 trusted; never accept unverified timestamp tokens
 
 /**
- * Minimal ambient types for the subset of `javascript-opentimestamps` we use (the package
+ * Minimal ambient types for the subset of `opentimestamps` we use (the package
  * ships no declarations). Covers detached-file construction, stamp/verify/upgrade — enough to
  * anchor and check a publication digest. Widen as needed; do not turn the module into `any`.
  */
-declare module "javascript-opentimestamps" {
+declare module "opentimestamps" {
   export interface DetachedTimestampFileInstance {
     serializeToBytes(): Uint8Array;
   }

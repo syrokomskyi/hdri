@@ -83,16 +83,16 @@ function resolvePublished(period?: string): { runId: string; period: string } {
 }
 
 // ── OpenTimestamps adapters (dynamic import so the pure path never loads the lib) ─────────
-type OtsModule = typeof import("javascript-opentimestamps");
+type OtsModule = typeof import("opentimestamps");
 
 async function loadOts(): Promise<OtsModule> {
   try {
     // The package is CommonJS: under ESM dynamic import its API lands on `.default`.
-    const mod = await import("javascript-opentimestamps");
+    const mod = await import("opentimestamps");
     return (mod as unknown as { default?: OtsModule }).default ?? mod;
   } catch {
     throw new Error(
-      "javascript-opentimestamps is not installed. Run `pnpm install`, or pass --no-stamp to " +
+      "opentimestamps is not installed. Run `pnpm install`, or pass --no-stamp to " +
         "write publication.json only and anchor it later.",
     );
   }

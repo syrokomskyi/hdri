@@ -21,7 +21,6 @@
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.1",
-    "@types/systeminformation": "^3.54.1",
     "better-sqlite3": "^13.0.1",
     "chrome-launcher": "^1.2.1",
     "csv-stringify": "^6.8.1",
