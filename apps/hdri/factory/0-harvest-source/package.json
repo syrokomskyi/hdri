@@ -20,7 +20,7 @@
     "@syrokomskyi/rate-limit": "workspace:*",
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "better-sqlite3": "^13.0.1",
     "cheerio": "^1.2.0",
     "csv-parse": "^7.0.1",
@@ -30,6 +30,5 @@
     "gray-matter": "^4.0.3",
     "markdown-table": "^3.0.4",
     "tsx": "^4.23.1"
-  },
-  "devDependencies": {}
+  }
 }
