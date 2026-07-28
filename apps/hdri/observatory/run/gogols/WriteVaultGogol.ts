@@ -153,7 +153,10 @@ export class WriteVaultGogol extends Gogol {
           shardPath: path.basename(shardPath),
           count: signed.length,
         });
-        const result = await writer.writeObservationShard(signed, { year, runId: factoryRunId });
+        const result = await writer.writeShard("observations", signed as readonly object[], {
+          year,
+          runId: factoryRunId,
+        });
         results.push({
           factoryRunId,
           appId,
