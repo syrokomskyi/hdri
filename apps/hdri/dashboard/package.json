@@ -16,12 +16,12 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
-    "@astrojs/cloudflare": "^14.1.5",
+    "@astrojs/cloudflare": "^14.1.7",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/ibm-plex-sans": "^5.3.0",
     "@fontsource/ibm-plex-serif": "^5.3.0",
     "@tanstack/table-core": "^8.21.3",
-    "astro": "^7.1.4",
+    "astro": "^7.1.6",
     "cookie": "^2.0.1",
     "d3-array": "^3.2.4",
     "d3-geo": "^3.1.1",
@@ -33,13 +33,13 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260728.1",
+    "@cloudflare/workers-types": "^5.20260729.1",
     "@types/d3-scale-chromatic": "^3.1.0",
     "@types/node": "^26.1.2",
     "@wgogol/changelog-live": "workspace:*",
     "terser": "^5.49.0",
     "tsx": "^4.23.1",
     "typescript": "6.0.3",
-    "wrangler": "^4.114.0"
+    "wrangler": "^4.115.0"
   }
 }
