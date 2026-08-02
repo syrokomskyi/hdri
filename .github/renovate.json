@@ -1,0 +1,40 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "group:monorepos"
+  ],
+  "description": [
+    "Replaces the footgun `pnpm up --latest` (a weaker agent could ship a breaking bump wholesale) with reviewable, grouped PRs. The reproducibility CI check is the merge criterion: a transitive bump to better-sqlite3 / DuckDB / Parquet that breaks vault reconstruction fails the required check before it can land. Enable branch protection so that gate is enforced."
+  ],
+  "timezone": "Europe/Berlin",
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "rangeStrategy": "bump",
+  "labels": ["dependencies"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "description": "Non-major updates: batch into one low-noise PR, still gated by CI.",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "non-major dependencies"
+    },
+    {
+      "description": "Native modules that back vault durability + reproducibility — isolate so a bump is reviewed alone against the reproducibility gate.",
+      "matchPackageNames": ["better-sqlite3", "@duckdb/node-api", "javascript-opentimestamps"],
+      "groupName": "durability-critical native modules",
+      "labels": ["dependencies", "reproducibility"]
+    },
+    {
+      "description": "Major updates always get their own PR — never batched.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}

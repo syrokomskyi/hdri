@@ -1,0 +1,34 @@
+.env
+.env.*
+
+# Build outputs
+.output
+.debug
+.debug-public
+dist
+node_modules
+
+# Workspace
+.turbo
+
+# TypeScript
+*.tsbuildinfo
+
+# Data files
+**/*.db
+.cadence-state.json
+archive/
+.pipeline-data/
+
+# Astro
+.astro
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Signing key — never commit private key material
+apps/hdri/observatory/.input/signing-key/
+
+# Dashboard debug
+/src/assets/data/debug-csv/

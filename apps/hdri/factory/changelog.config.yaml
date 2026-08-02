@@ -1,0 +1,26 @@
+git:
+  repoRoot: "../../.."
+  paths:
+    - apps/hdri-factory
+    - apps/hdri/factory
+    - apps/hdri/hdri-factory
+
+grouping:
+  period: week
+  startDay: thu
+
+languages:
+  primary: en
+  translations: []
+
+ai:
+  generation:
+    provider: openai
+  translation:
+    provider: openai
+
+output:
+  dir: "."
+  filename: CHANGELOG
+
+sortOrder: desc

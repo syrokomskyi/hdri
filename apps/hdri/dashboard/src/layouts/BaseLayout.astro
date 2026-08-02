@@ -1,0 +1,161 @@
+---
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/ibm-plex-serif/400.css";
+import "@fontsource/ibm-plex-serif/700.css";
+import "@fontsource/ibm-plex-serif/400-italic.css";
+import "@fontsource/ibm-plex-serif/700-italic.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "@fontsource/ibm-plex-mono/700.css";
+import "../styles/global.css";
+import "../styles/sortable-table.css";
+import "../styles/building-blocks-reality.css";
+import Footer from "../components/Footer.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import { site } from "../lib/seo";
+import { getSiteMeta } from "../data/site-meta";
+
+const meta = getSiteMeta();
+
+type Props = {
+  title: string;
+  description: string;
+  canonical?: string;
+  noIndex?: boolean;
+  schema?: Record<string, unknown>;
+  image?: string;
+};
+
+const {
+  title,
+  description,
+  canonical,
+  noIndex = false,
+  schema,
+  image = "/og-image.webp",
+} = Astro.props;
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, site).href;
+const imageUrl = new URL(image, site).href;
+const robotsContent = noIndex ? "noindex, nofollow" : "index, follow";
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="robots" content={robotsContent} />
+    <title>{title}</title>
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+    <link rel="alternate" type="text/plain" title="LLMs" href="/llms.txt" />
+    <link rel="alternate" type="text/plain" title="LLMs Full" href="/llms-full.txt" />
+    <link rel="alternate" type="text/plain" title="AI Policy" href="/ai.txt" />
+    <link rel="api-catalog" type="application/linkset+json" href="/.well-known/api-catalog" />
+    <link rel="service-doc" href="/methodik" />
+    <link rel="service-desc" href={`/${meta.codebookFilename}`} />
+    <link rel="describedby" href="/llms.txt" />
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:type" content="image/webp" />
+    <meta property="og:locale" content="de_DE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+
+    {
+      schema && (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify({ "@context": "https://schema.org", ...schema })}
+          is:inline
+        />
+      )
+    }
+    <!-- Matomo Tag Manager -->
+    <script is:inline>
+      var _paq = (window._paq = window._paq || []);
+      // Keep the privacy configuration documented on the Datenschutz page.
+      _paq.push(["setDoNotTrack", true]);
+      _paq.push(["disableCookies"]);
+      _paq.push(["disableBrowserFeatureDetection"]);
+
+      var _mtm = (window._mtm = window._mtm || []);
+      _mtm.push({ "mtm.startTime": new Date().getTime(), event: "mtm.Start" });
+      (function () {
+        var d = document,
+          g = d.createElement("script"),
+          s = d.getElementsByTagName("script")[0];
+        g.async = true;
+        g.src = "https://cdn.matomo.cloud/warpgogol.matomo.cloud/container_ab032J39.js";
+        s.parentNode.insertBefore(g, s);
+      })();
+    </script>
+    <!-- End Matomo Tag Manager -->
+  </head>
+  <body>
+    <div class="building-blocks-reality" aria-hidden="true">
+      <canvas id="building-blocks-canvas"></canvas>
+    </div>
+    <SiteHeader>
+      <!-- Forward the page "header-extra" slot into the header "extra" slot -->
+      <slot name="header-extra" slot="extra" />
+    </SiteHeader>
+    <slot />
+    <Footer />
+  </body>
+
+  <script>
+    import Lenis from "lenis";
+
+    const lenis = new Lenis({ duration: 1.1, smoothWheel: true });
+
+    // Smooth scroll for anchors: intercept all clicks on <a href="#...">
+    document.addEventListener("click", (e) => {
+      const a = (e.target as Element).closest('a[href^="#"]');
+      if (!a) return;
+      const hash = a.getAttribute("href");
+      if (!hash || hash === "#") return;
+      let target: Element | null;
+      try {
+        target = document.querySelector(hash);
+      } catch {
+        return;
+      }
+      if (!target) return;
+      e.preventDefault();
+      // Subtract sticky header height so the target is not hidden behind it
+      const header = document.querySelector<HTMLElement>(".site-header");
+      const offset = header ? -(header.offsetHeight + 8) : -8;
+      lenis.scrollTo(target as HTMLElement, { offset, duration: 1.1 });
+    });
+
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+  </script>
+  <script src="../scripts/webmcp.ts"></script>
+  <script>
+    import { initSortableTables } from "../scripts/sortable-table";
+    initSortableTables();
+  </script>
+  <script>
+    import { initBuildingBlocksReality } from "../scripts/building-blocks-reality";
+    const canvas = document.getElementById("building-blocks-canvas") as HTMLCanvasElement | null;
+    if (canvas) initBuildingBlocksReality(canvas, 15, 0.08);
+  </script>
+</html>

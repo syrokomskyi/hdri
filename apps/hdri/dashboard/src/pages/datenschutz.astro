@@ -1,0 +1,281 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import "../styles/datenschutz.css";
+import { site, ogImage, publisher } from "../lib/seo";
+
+const pageTitle = "Datenschutzerklärung — HDRI Dashboard";
+const pageDescription =
+  "Datenschutzerklärung des HDRI Dashboard: DSGVO-konforme Informationen zur Datenverarbeitung.";
+
+const schema = {
+  "@type": "WebPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: `${site}/datenschutz`,
+  image: ogImage,
+  inLanguage: "de-DE",
+  publisher: publisher(),
+};
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: "HDRI Dashboard", href: "/" }, { label: "Datenschutz" }]} />
+    </div>
+
+    <section class="hero">
+      <div class="container hero-panel layer-accent">
+        <div class="hero-copy">
+          <span class="eyebrow">Rechtliches</span>
+          <h1>Datenschutzerklärung</h1>
+          <p>Zuletzt aktualisiert: Juli 2026</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="legal-card">
+          <h2>1. Verantwortlicher</h2>
+          <p>
+            Verantwortlicher im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:<br /><br />
+            Andrii Syrokomskyi<br />
+            Elly-Heuss-Knapp-Weg 29<br />
+            71522 Backnang, Deutschland<br />
+            E-Mail: <a href="mailto:andrii@syrokomskyi.com">andrii@syrokomskyi.com</a>
+          </p>
+
+          <h2>2. Allgemeines zur Datenverarbeitung</h2>
+          <p>
+            Diese Website dient ausschließlich der Veröffentlichung des quartalsweise erscheinenden
+            "Handwerk Digital Reife Index" (HDRI). Es werden keine Nutzerkonten, Formulare,
+            Kommentarfunktionen oder sonstige interaktive Eingabemöglichkeiten angeboten. Cookies
+            werden durch die Website selbst nicht gesetzt.
+          </p>
+          <p>
+            Die Verarbeitung personenbezogener Daten erfolgt nur, soweit dies technisch für den
+            Betrieb der Website erforderlich ist.
+          </p>
+
+          <h2>3. Hosting und Content Delivery Network (Cloudflare)</h2>
+          <p>
+            Diese Website wird über das Content Delivery Network (CDN) von <strong
+              >Cloudflare, Inc., 101 Townsend St., San Francisco, CA 94107, USA</strong
+            > (europäische Niederlassung: Cloudflare Germany GmbH, Rosental 7, c/o Mindspace, 80331 München)
+            ausgeliefert.
+          </p>
+          <p>
+            Wenn Sie unsere Website aufrufen, wird Ihre Anfrage über Server von Cloudflare geleitet.
+            Dabei können folgende Daten technisch verarbeitet werden:
+          </p>
+          <ul>
+            <li>
+              IP-Adresse des anfragenden Geräts (durch Cloudflare für Sicherheits- und
+              Lastverteilungszwecke)
+            </li>
+            <li>Zeitpunkt der Anfrage</li>
+            <li>Aufgerufene Seite / Ressource</li>
+            <li>Browsertyp und Betriebssystem</li>
+            <li>Referrer-URL</li>
+          </ul>
+          <p>
+            <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer
+            sicheren, schnellen und zuverlässigen Auslieferung der Website).
+          </p>
+          <p>
+            <strong>Drittlandübermittlung:</strong> Cloudflare ist ein US-amerikanisches Unternehmen und
+            im EU-US Data Privacy Framework (DPF) zertifiziert. Zusätzlich hat Cloudflare EU-Standardvertragsklauseln
+            (SCCs) abgeschlossen. Weitere Informationen zum Datenschutz bei Cloudflare: <a
+              href="https://www.cloudflare.com/de-de/privacypolicy/"
+              target="_blank"
+              rel="noopener noreferrer">https://www.cloudflare.com/de-de/privacypolicy/</a
+            >
+          </p>
+          <p>
+            <strong>Auftragsverarbeitung:</strong> Mit Cloudflare wurde ein Vertrag zur Auftragsverarbeitung
+            gemäß Art. 28 DSGVO abgeschlossen.
+          </p>
+          <p>
+            <strong>Hinweis zu Cloudflare-Cookies:</strong> Cloudflare kann in bestimmten Betriebssituationen
+            (z. B. Bot-Schutz, Lastverteilung) technisch notwendige Cookies setzen (z. B. <code
+              >__cf_bm</code
+            >, <code>__cflb</code>). Diese Cookies werden ausschließlich für den sicheren Betrieb
+            des CDN benötigt, dienen keiner Nutzerverfolgung und erfordern keine Einwilligung, da
+            sie technisch notwendig sind.
+          </p>
+
+          <h2>4. Webanalyse mit Matomo (ohne Cookies, datenschutzfreundlich)</h2>
+          <p>
+            Diese Website nutzt <strong>Matomo</strong>, eine Open-Source-Software zur statistischen
+            Auswertung von Zugriffen. Matomo wird als <strong>Matomo Cloud</strong>-Instanz bei
+            <strong>InnoCraft GmbH</strong>, 150 Willis Street, 6011 Wellington, Neuseeland
+            (europäischer Datenverarbeitungsort: Frankfurt am Main, Deutschland) betrieben. Alle
+            Daten verbleiben auf Servern in der EU und werden nicht an Dritte weitergegeben.
+          </p>
+          <p>
+            <strong>Auftragsverarbeitung:</strong> Mit InnoCraft wurde ein Vertrag zur Auftragsverarbeitung
+            gemäß Art. 28 DSGVO abgeschlossen. InnoCraft verarbeitet Daten ausschließlich als Auftragsverarbeiter
+            im Sinne der DSGVO.
+          </p>
+          <p><strong>Matomo ist wie folgt konfiguriert:</strong></p>
+          <ul>
+            <li>
+              <strong>Keine Cookies:</strong> Matomo setzt keinerlei Tracking-Cookies auf Ihrem Endgerät.
+            </li>
+            <li>
+              <strong>Keine aktive Browser-Erkennung:</strong> Die aktive Abfrage von Browsereigenschaften
+              (Plugins, Bildschirmauflösung) ist deaktiviert. Damit wird § 25 TDDDG nicht berührt.
+            </li>
+            <li>
+              <strong>IP-Anonymisierung:</strong> Ihre IP-Adresse wird vor der Speicherung um mindestens
+              2 Bytes gekürzt (z. B. wird aus <code>192.168.100.123</code> die Adresse <code
+                >192.168.0.0</code
+              >). Eine Rückführung auf Ihre Person ist damit nicht möglich.
+            </li>
+            <li>
+              <strong>Keine Nutzerprofile:</strong> Es werden keine individuellen Besucherprofile erstellt;
+              ausschließlich aggregierte Statistiken werden ausgewertet. Heatmaps, Session Recording,
+              User ID und seitenübergreifendes Tracking sind deaktiviert.
+            </li>
+            <li>
+              <strong>Respektierung des DoNotTrack-Signals:</strong> Wenn Ihr Browser das DoNotTrack-Signal
+              sendet, wird Ihr Besuch nicht erfasst.
+            </li>
+            <li>
+              <strong>Keine Weitergabe:</strong> Erfasste Daten werden nicht an Dritte übermittelt und
+              nicht für Werbezwecke genutzt.
+            </li>
+            <li>
+              <strong>Automatische Datenlöschung:</strong> Rohdaten werden nach spätestens 24 Monaten
+              automatisch gelöscht; ausschließlich aggregierte Statistiken werden länger aufbewahrt.
+            </li>
+          </ul>
+          <p><strong>Folgende Daten werden statistisch erfasst:</strong></p>
+          <ul>
+            <li>Anonymisierte IP-Adresse</li>
+            <li>Aufgerufene Seiten und Zeitpunkt des Zugriffs</li>
+            <li>Referrer-URL (Herkunftsseite)</li>
+            <li>Verwendeter Browser und Betriebssystem (aus HTTP-Headern)</li>
+            <li>Land / Region (auf Basis der anonymisierten IP)</li>
+          </ul>
+          <p>
+            <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der
+            anonymen, statistischen Auswertung der Websitenutzung zur Verbesserung des Angebots). Da weder
+            Cookies gesetzt noch persistente Identifikatoren verwendet werden und die aktive Browser-Erkennung
+            deaktiviert ist, ist keine Einwilligung nach § 25 TDDDG erforderlich.
+          </p>
+
+          <h2>5. Widerspruchsrecht (Opt-out)</h2>
+          <p>
+            Sie können das Tracking durch Matomo jederzeit deaktivieren. Der Opt-out-Mechanismus von
+            Matomo setzt ein funktionales Cookie auf Ihrem Endgerät, das ausschließlich den Zweck
+            hat, Ihren Widerspruch gegen das Tracking zu speichern. Dieses Cookie ist kein
+            Tracking-Cookie im Sinne von § 25 TDDDG, sondern dient der Umsetzung Ihres Willens — es
+            wird nur gesetzt, wenn Sie aktiv den Opt-out-Button betätigen.
+          </p>
+          <p>
+            Dass auf einer ansonsten cookielosen Website für den Opt-out ein Cookie gesetzt wird,
+            ist technisch bedingt: Matomo benötigt ein persistentes Signal, um Ihren Wunsch bei
+            jedem Seitenaufruf zu erkennen. Dieser scheinbare Widerspruch wird hier bewusst
+            transparent kommuniziert.
+          </p>
+          <div class="opt-out-box" id="matomo-opt-out">
+            <p class="opt-out-status" id="opt-out-status">
+              <span class="opt-out-loading">Tracking-Status wird geladen …</span>
+            </p>
+            <button class="opt-out-btn" id="opt-out-btn" type="button" disabled>
+              Tracking deaktivieren
+            </button>
+          </div>
+          <script is:inline>
+            (function () {
+              var statusEl = document.getElementById("opt-out-status");
+              var btnEl = document.getElementById("opt-out-btn");
+              _paq.push([
+                function () {
+                  if (this.isUserOptedOut()) {
+                    statusEl.innerHTML =
+                      "<strong>Sie haben das Tracking deaktiviert.</strong> Ihre Besuche werden nicht erfasst.";
+                    btnEl.textContent = "Tracking wieder aktivieren";
+                    btnEl.onclick = function () {
+                      _paq.push(["forgetUserOptOut"]);
+                      window.location.reload();
+                    };
+                  } else {
+                    statusEl.innerHTML =
+                      "Tracking ist <strong>aktiv</strong>. Ihre Besuche werden anonymisiert und ohne Cookies erfasst.";
+                    btnEl.textContent = "Tracking deaktivieren";
+                    btnEl.onclick = function () {
+                      _paq.push(["optOutUser"]);
+                      window.location.reload();
+                    };
+                  }
+                  btnEl.disabled = false;
+                },
+              ]);
+            })();
+          </script>
+
+          <h2>6. Daten des veröffentlichten Indexes</h2>
+          <p>
+            Die Daten, die dem "Handwerk Digital Reife Index" (HDRI) zugrunde liegen, werden aus
+            öffentlich zugänglichen Quellen und Verzeichnissen im Internet zusammengestellt. Die
+            Rohdaten werden vor der Verarbeitung anonymisiert; der veröffentlichte Index enthält
+            ausschließlich aggregierte, nicht personenbezogene Kennzahlen. Es werden keine
+            personenbezogenen Daten von Dritten im Rahmen des Indexes verarbeitet oder
+            veröffentlicht.
+          </p>
+
+          <h2>7. Ihre Rechte als betroffene Person</h2>
+          <p>Soweit personenbezogene Daten verarbeitet werden, stehen Ihnen folgende Rechte zu:</p>
+          <ul>
+            <li>
+              <strong>Auskunft</strong> (Art. 15 DSGVO): Sie haben das Recht zu erfahren, ob und welche
+              Daten über Sie gespeichert sind.
+            </li>
+            <li>
+              <strong>Berichtigung</strong> (Art. 16 DSGVO): Unrichtige Daten können Sie berichtigen lassen.
+            </li>
+            <li>
+              <strong>Löschung</strong> (Art. 17 DSGVO): Sie können die Löschung Ihrer Daten verlangen,
+              sofern keine Aufbewahrungspflichten entgegenstehen.
+            </li>
+            <li>
+              <strong>Einschränkung</strong> (Art. 18 DSGVO): Sie können die Verarbeitung Ihrer Daten
+              einschränken lassen.
+            </li>
+            <li>
+              <strong>Widerspruch</strong> (Art. 21 DSGVO): Sie können der Verarbeitung Ihrer Daten aufgrund
+              berechtigten Interesses widersprechen.
+            </li>
+            <li>
+              <strong>Beschwerde</strong>: Sie haben das Recht, sich bei einer
+              Datenschutzaufsichtsbehörde zu beschweren. Die zuständige Aufsichtsbehörde für
+              Baden-Württemberg ist der <strong
+                >Landesbeauftragte für den Datenschutz und die Informationsfreiheit
+                Baden-Württemberg (LfDI BW)</strong
+              >, Lautenschlagerstraße 20, 70173 Stuttgart, <a
+                href="https://www.baden-wuerttemberg.datenschutz.de"
+                target="_blank"
+                rel="noopener noreferrer">https://www.baden-wuerttemberg.datenschutz.de</a
+              >.
+            </li>
+          </ul>
+          <p>
+            Anfragen richten Sie bitte per E-Mail an: <a href="mailto:andrii@syrokomskyi.com"
+              >andrii@syrokomskyi.com</a
+            >
+          </p>
+
+          <h2>8. Aktualität dieser Datenschutzerklärung</h2>
+          <p>
+            Diese Datenschutzerklärung ist aktuell gültig und datiert vom Juli 2026. Sie wird bei
+            Änderungen am Dienst oder bei Änderungen der rechtlichen Rahmenbedingungen aktualisiert.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

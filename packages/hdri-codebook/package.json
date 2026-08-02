@@ -1,0 +1,65 @@
+{
+  "name": "@syrokomskyi/hdri-codebook",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit",
+    "test": "pnpm exec vitest run",
+    "validate-signatories": "tsx -C @syrokomskyi/source scripts/validate-signatories.ts",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@syrokomskyi/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./parse": {
+      "@syrokomskyi/source": "./src/parse.ts",
+      "types": "./dist/parse.d.ts",
+      "import": "./dist/parse.js",
+      "default": "./dist/parse.js"
+    },
+    "./score": {
+      "@syrokomskyi/source": "./src/score-site.ts",
+      "types": "./dist/score-site.d.ts",
+      "import": "./dist/score-site.js",
+      "default": "./dist/score-site.js"
+    },
+    "./aggregate": {
+      "@syrokomskyi/source": "./src/aggregate.ts",
+      "types": "./dist/aggregate.d.ts",
+      "import": "./dist/aggregate.js",
+      "default": "./dist/aggregate.js"
+    },
+    "./governance": {
+      "@syrokomskyi/source": "./src/governance.ts",
+      "types": "./dist/governance.d.ts",
+      "import": "./dist/governance.js",
+      "default": "./dist/governance.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@types/node": "^26.1.2",
+    "tslib": "^2.8.1",
+    "tsx": "^4.23.1",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

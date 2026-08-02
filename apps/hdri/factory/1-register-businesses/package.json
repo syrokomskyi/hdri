@@ -1,0 +1,29 @@
+{
+  "name": "@syrokomskyi/register-businesses",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/1-register-businesses/tsconfig.json --noEmit",
+    "typecheck": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/1-register-businesses/tsconfig.json --noEmit",
+    "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
+    "start": "tsx -C @syrokomskyi/source run/run.ts"
+  },
+  "dependencies": {
+    "@syrokomskyi/business-core": "workspace:*",
+    "@syrokomskyi/factory-core": "workspace:*",
+    "@syrokomskyi/observatory-core": "workspace:*",
+    "@syrokomskyi/observatory-crypto": "workspace:*",
+    "@syrokomskyi/observatory-emit": "workspace:*",
+    "@syrokomskyi/pipeline-core": "workspace:*",
+    "@syrokomskyi/pipeline-node": "workspace:*",
+    "@syrokomskyi/pipeline-steps": "workspace:*",
+    "@syrokomskyi/utils": "workspace:*",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^26.1.2",
+    "better-sqlite3": "^13.0.2",
+    "dotenv": "^17.4.2",
+    "gray-matter": "^4.0.3",
+    "markdown-table": "^3.0.4",
+    "tsx": "^4.23.1"
+  }
+}

@@ -1,0 +1,41 @@
+[
+  {
+    "siteId": 1,
+    "stratum": { "gewerkGroup": "BauAusbau", "bundesland": "BW" },
+    "signals": {
+      "impressumPresent": true,
+      "datenschutzPresent": true,
+      "phoneCount": 3,
+      "emailCount": 2,
+      "openingHoursText": "Mo-Fr 08:00-18:00",
+      "metaDescriptionPresent": true,
+      "cookieBannerPresent": true
+    }
+  },
+  {
+    "siteId": 2,
+    "stratum": { "gewerkGroup": "BauAusbau", "bundesland": "BY" },
+    "signals": {
+      "impressumPresent": true,
+      "datenschutzPresent": false,
+      "phoneCount": 1,
+      "emailCount": 0,
+      "openingHoursText": null,
+      "metaDescriptionPresent": false,
+      "cookieBannerPresent": false
+    }
+  },
+  {
+    "siteId": 3,
+    "stratum": { "gewerkGroup": "Nahrung", "bundesland": "BW" },
+    "signals": {
+      "impressumPresent": false,
+      "datenschutzPresent": false,
+      "phoneCount": 0,
+      "emailCount": 0,
+      "openingHoursText": null,
+      "metaDescriptionPresent": null,
+      "cookieBannerPresent": null
+    }
+  }
+]

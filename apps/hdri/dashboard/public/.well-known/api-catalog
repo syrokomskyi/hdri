@@ -1,0 +1,34 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://handwerk-index.org/",
+      "rel": {
+        "service-doc": ["https://handwerk-index.org/methodik"],
+        "service-desc": ["https://handwerk-index.org/codebook-observatory-1.3.0.yaml"],
+        "describedby": ["https://handwerk-index.org/llms.txt"],
+        "status": ["https://handwerk-index.org/"]
+      }
+    },
+    {
+      "anchor": "https://handwerk-index.org/assets/data/public/latest.json",
+      "rel": {
+        "type": ["application/json"],
+        "describedby": ["https://handwerk-index.org/methodik"]
+      }
+    },
+    {
+      "anchor": "https://handwerk-index.org/assets/data/public/archive.json",
+      "rel": {
+        "type": ["application/json"],
+        "describedby": ["https://handwerk-index.org/methodik"]
+      }
+    },
+    {
+      "anchor": "https://handwerk-index.org/assets/data/public/comparisons/overview-trends.json",
+      "rel": {
+        "type": ["application/json"],
+        "describedby": ["https://handwerk-index.org/methodik"]
+      }
+    }
+  ]
+}

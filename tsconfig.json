@@ -1,0 +1,55 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/business/business-core"
+    },
+    {
+      "path": "./packages/business/business-crawler"
+    },
+    {
+      "path": "./packages/factory-core"
+    },
+    {
+      "path": "./packages/hdri-codebook"
+    },
+    {
+      "path": "./packages/observatory/observatory-core"
+    },
+    {
+      "path": "./packages/observatory/observatory-crypto"
+    },
+    {
+      "path": "./packages/observatory/observatory-emit"
+    },
+    {
+      "path": "./packages/observatory/observatory-vault"
+    },
+    {
+      "path": "./packages/pipeline/pipeline-ai"
+    },
+    {
+      "path": "./packages/pipeline/pipeline-core"
+    },
+    {
+      "path": "./packages/pipeline/pipeline-node"
+    },
+    {
+      "path": "./packages/pipeline/pipeline-steps"
+    },
+    {
+      "path": "./packages/rate-limit"
+    },
+    {
+      "path": "./packages/utils"
+    },
+    {
+      "path": "./apps/hdri/observatory"
+    },
+    {
+      "path": "./apps/hdri/dashboard"
+    }
+  ]
+}

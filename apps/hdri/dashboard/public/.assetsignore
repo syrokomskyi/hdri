@@ -1,0 +1,7 @@
+_worker.js
+_routes.json
+_headers
+_redirects
+*.map
+.DS_Store
+Thumbs.db

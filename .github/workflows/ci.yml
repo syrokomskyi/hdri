@@ -1,0 +1,179 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Weekly, plus on-demand. A published period is reproducible from the signed vault via DuckDB
+  # Parquet + better-sqlite3; a transitive bump to any of those can silently break reconstruction
+  # with NO change to our code. The scheduled run re-proves the durability invariants against the
+  # current dependency + runner environment, so that drift is caught before a quarter depends on it.
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check workflow configuration
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+        run: |
+          mkdir -p "$RUNNER_TEMP/actionlint"
+          curl --fail --silent --show-error --location \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            --output "$RUNNER_TEMP/actionlint/actionlint.tar.gz"
+          tar --extract --gzip --file "$RUNNER_TEMP/actionlint/actionlint.tar.gz" \
+            --directory "$RUNNER_TEMP/actionlint" actionlint
+          "$RUNNER_TEMP/actionlint/actionlint" .github/workflows/*.yml
+
+  hdri:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      # Factory chain (7 packages) — typecheck only; build = tsc --noEmit
+      - run: >
+          npx turbo run typecheck build
+          --filter=@syrokomskyi/catalog-harvest
+          --filter=@syrokomskyi/register-businesses
+          --filter=@syrokomskyi/site-liveness
+          --filter=@syrokomskyi/site-profile
+          --filter=@syrokomskyi/site-lighthouse-audit
+          --filter=@syrokomskyi/site-axe-audit
+          --filter=@syrokomskyi/contract-ontology
+
+      # Observatory integrity gate (WP10) — typecheck + build + lint across the app and
+      # every observatory package on every PR.
+      - run: >
+          npx turbo run typecheck build lint
+          --filter=@syrokomskyi/observatory
+          --filter=@syrokomskyi/observatory-vault
+          --filter=@syrokomskyi/observatory-core
+          --filter=@syrokomskyi/observatory-crypto
+          --filter=@syrokomskyi/observatory-emit
+
+      # Observatory integrity gate (WP10) — the FULL test suite for every package that has
+      # tests: unit tests, the Q3 cross-quarter integration run, versioned migrations on
+      # fixtures, the vault rebuild round-trip, the DR runbook drill, and the shard-manifest
+      # planned-verification (catches a missing shard, not only a corrupted one).
+      # observatory-emit now has contract tests (round-trip + integrity + zod schema),
+      # so it is in the test filter too.
+      - run: >
+          npx turbo run test
+          --filter=@syrokomskyi/observatory
+          --filter=@syrokomskyi/observatory-vault
+          --filter=@syrokomskyi/observatory-core
+          --filter=@syrokomskyi/observatory-crypto
+          --filter=@syrokomskyi/observatory-emit
+
+      # Dashboard — typecheck (build needs runtime observatory output)
+      - run: npx turbo run typecheck --filter=@syrokomskyi/dashboard
+
+      # Governance gates
+      - run: pnpm --filter @syrokomskyi/hdri-codebook run test
+      - run: >
+          pnpm --filter @syrokomskyi/hdri-codebook run validate-signatories --
+          ../../apps/hdri/observatory/.input/codebook.yaml --enforce
+      # Bilingual docs must not drift: DE/EN pairs must share heading structure + code-block count.
+      - run: pnpm --filter @syrokomskyi/scripts run check:doc-parity
+      # RFC implementation status gate: RFCs with implement: commits must be stamped implemented.
+      - run: pnpm --filter @syrokomskyi/scripts run check:rfc-implemented
+
+  # ── Reproducibility gate ────────────────────────────────────────────────────────────────
+  # A published index is only credible if it can be rebuilt. This job isolates the invariants
+  # that guarantee that — as a fast, separately-named required check (branch protection) and the
+  # focused surface the weekly schedule re-proves against a drifting dependency environment:
+  #   · rebuild-roundtrip — DB → real Parquet vault → fresh DB reproduces overall_score AND
+  #     computation_hash bit-for-bit (the core "rebuild = identical" claim);
+  #   · migrations — historical observations are byte-for-byte unchanged across every migration;
+  #   · mint-core — cross-year asset identity stays constant (no re-minting of the baseline);
+  #   · q3-cross-quarter — both quarters land, Q2 survives Q3 expiry, panel vs cross-section hold;
+  #   · observatory-vault — signed shard write/read + manifest planned-verification.
+  reproducibility:
+    # The published index is PRODUCED on a Windows laptop, but the invariants were only
+    # ever proven on Ubuntu. better-sqlite3, DuckDB and Parquet are native modules whose
+    # byte-level behaviour can differ across OSes, so "rebuild = identical" must hold on
+    # the OS that actually mints the numbers. Run the reproducibility invariants on both.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 75
+    # The repository contains source artifacts whose paths exceed Windows' legacy limit.
+    # This is injected before checkout, so Git can materialize the complete repository.
+    env:
+      TZ: UTC
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: "true"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install dependencies
+        if: runner.os != 'Windows'
+        run: pnpm install --frozen-lockfile
+      # better-sqlite3 may need a local build when its prebuilt binary is unavailable.
+      # node-gyp used by the current dependency stack supports Visual Studio 2022, not 2026.
+      # Locate or install the compatible C++ build tools instead of selecting the newest edition.
+      - name: Locate C++ build tools (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vsPath = if (Test-Path $vswhere) {
+            & $vswhere -latest -products * -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          }
+          if (-not $vsPath) {
+            choco install visualstudio2022buildtools visualstudio2022-workload-vctools --yes --no-progress
+            $vsPath = & $vswhere -latest -products * -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          }
+          if (-not $vsPath) {
+            throw 'C++ build tools are unavailable after installation.'
+          }
+          "VS_DEV_CMD=$vsPath\Common7\Tools\VsDevCmd.bat" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      # Activate MSVC in this shell before installing so node-gyp can compile it.
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: >
+          set GYP_MSVS_VERSION=2022 && set npm_config_msvs_version=2022 && call "%VS_DEV_CMD%" -arch=x64
+          && pnpm install --frozen-lockfile
+      # Tests resolve the vault/core/codebook packages via their built dist.
+      - run: >
+          npx turbo run build
+          --filter=@syrokomskyi/observatory-vault
+          --filter=@syrokomskyi/observatory-core
+          --filter=@syrokomskyi/hdri-codebook
+      - run: >
+          pnpm --filter @syrokomskyi/observatory exec vitest run
+          run/tests/rebuild-roundtrip.test.ts
+          run/tests/migrations.test.ts
+          run/tests/mint-core.test.ts
+          run/tests/q3-cross-quarter.integration.test.ts
+      - run: pnpm --filter @syrokomskyi/observatory-vault exec vitest run

@@ -1,0 +1,69 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import "../styles/impressum.css";
+import { site, ogImage, publisher } from "../lib/seo";
+
+const pageTitle = "Impressum — HDRI Dashboard";
+const pageDescription = "Impressum des HDRI Dashboard: Angaben gemäß § 5 DDG.";
+
+const schema = {
+  "@type": "AboutPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: `${site}/impressum`,
+  image: ogImage,
+  inLanguage: "de-DE",
+  publisher: publisher(),
+};
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: "HDRI Dashboard", href: "/" }, { label: "Impressum" }]} />
+    </div>
+
+    <section class="hero">
+      <div class="container hero-panel layer-accent">
+        <div class="hero-copy">
+          <span class="eyebrow">Rechtliches</span>
+          <h1>Impressum</h1>
+          <p>Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG).</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="legal-card">
+          <p><strong>Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG)</strong></p>
+
+          <p>
+            Andrii Syrokomskyi<br />
+            Elly-Heuss-Knapp-Weg 29<br />
+            71522 Backnang, Deutschland
+          </p>
+
+          <p>
+            <strong>Kontakt:</strong><br />
+            E-Mail: <a href="mailto:andrii@syrokomskyi.com">andrii@syrokomskyi.com</a>
+          </p>
+
+          <p>
+            <strong>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV:</strong><br />
+            Andrii Syrokomskyi<br />
+            Elly-Heuss-Knapp-Weg 29<br />
+            71522 Backnang, Deutschland
+          </p>
+
+          <p>
+            <strong>Hinweis:</strong> Kein Eintrag in Handels-, Vereins- oder Berufsregister.<br />
+            Keine Umsatzsteuer-Identifikationsnummer (Privatperson, kein Gewerbe).<br />
+            Keine Beteiligung an Verbraucherschlichtungsverfahren (kein B2C-Vertragsverhältnis).
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

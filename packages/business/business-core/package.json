@@ -1,0 +1,89 @@
+{
+  "name": "@syrokomskyi/business-core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm exec eslint src --ext .ts",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit",
+    "upgrade-packages": "pnpm up --latest",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@syrokomskyi/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "@syrokomskyi/source": "./src/schema/index.ts",
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js",
+      "default": "./dist/schema/index.js"
+    },
+    "./migrate": {
+      "@syrokomskyi/source": "./src/migrate/index.ts",
+      "types": "./dist/migrate/index.d.ts",
+      "import": "./dist/migrate/index.js",
+      "default": "./dist/migrate/index.js"
+    },
+    "./ids": {
+      "@syrokomskyi/source": "./src/ids/index.ts",
+      "types": "./dist/ids/index.d.ts",
+      "import": "./dist/ids/index.js",
+      "default": "./dist/ids/index.js"
+    },
+    "./gewerk": {
+      "@syrokomskyi/source": "./src/gewerk/index.ts",
+      "types": "./dist/gewerk/index.d.ts",
+      "import": "./dist/gewerk/index.js",
+      "default": "./dist/gewerk/index.js"
+    },
+    "./cross-db": {
+      "@syrokomskyi/source": "./src/cross-db.ts",
+      "types": "./dist/cross-db.d.ts",
+      "import": "./dist/cross-db.js",
+      "default": "./dist/cross-db.js"
+    },
+    "./liveness-schema": {
+      "@syrokomskyi/source": "./src/schema/liveness.ts",
+      "types": "./dist/schema/liveness.d.ts",
+      "import": "./dist/schema/liveness.js",
+      "default": "./dist/schema/liveness.js"
+    },
+    "./liveness-migrate": {
+      "@syrokomskyi/source": "./src/migrate/liveness.ts",
+      "types": "./dist/migrate/liveness.d.ts",
+      "import": "./dist/migrate/liveness.js",
+      "default": "./dist/migrate/liveness.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@syrokomskyi/utils": "workspace:*",
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^13.0.2",
+    "drizzle-orm": "^0.45.2",
+    "tslib": "^2.8.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "csv-parse": "^7.0.1",
+    "eslint": "~10.7.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "4.1.10"
+  }
+}

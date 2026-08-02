@@ -1,0 +1,59 @@
+{
+  "sampleSize": 38121,
+  "summary": {
+    "n": 38121,
+    "mean": 32.5,
+    "p10": 17.2,
+    "p25": 26.5,
+    "p50": 33.2,
+    "p75": 39.8,
+    "p90": 46,
+    "min": 0,
+    "max": 74.6,
+    "stdDev": 11.3
+  },
+  "maturity": [
+    {
+      "id": "kritisch",
+      "label": "Kritisch",
+      "count": 4860,
+      "share": 0.1274887857086645
+    },
+    {
+      "id": "basis",
+      "label": "Basis",
+      "count": 23897,
+      "share": 0.6268723275884683
+    },
+    {
+      "id": "aufbau",
+      "label": "Aufbau",
+      "count": 9181,
+      "share": 0.24083838304346686
+    },
+    {
+      "id": "fortgeschritten",
+      "label": "Fortgeschritten",
+      "count": 183,
+      "share": 0.004800503659400331
+    },
+    {
+      "id": "vorbild",
+      "label": "Vorbild",
+      "count": 0,
+      "share": 0
+    }
+  ],
+  "confidence": {
+    "n": 38121,
+    "mean": 1,
+    "p10": 1,
+    "p25": 1,
+    "p50": 1,
+    "p75": 1,
+    "p90": 1,
+    "min": 1,
+    "max": 1,
+    "stdDev": 0
+  }
+}

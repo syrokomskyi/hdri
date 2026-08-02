@@ -1,0 +1,25 @@
+.legal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  padding: 2.2rem;
+  max-width: 720px;
+  line-height: 1.7;
+}
+
+.legal-card p {
+  margin: 0 0 1.25rem;
+}
+
+.legal-card p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-card a {
+  color: var(--layer-text);
+  text-decoration: underline;
+}

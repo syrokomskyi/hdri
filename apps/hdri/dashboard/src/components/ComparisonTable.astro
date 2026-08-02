@@ -1,0 +1,101 @@
+---
+import type { ComparisonPoint, PeriodManifest } from "../types";
+import {
+  score,
+  count,
+  deltaLabel,
+  reliabilityLabel,
+  reliabilityClass,
+  detailGrid,
+} from "../lib/format";
+
+type Props = {
+  items: ComparisonPoint[];
+  manifest: PeriodManifest;
+  labelHeader: string;
+  labelAccessor: (item: ComparisonPoint) => string;
+  accentClass?: string;
+  detailsMode?: "none" | "first" | "all";
+  sectionStackTop?: boolean;
+};
+
+const {
+  items,
+  manifest,
+  labelHeader,
+  labelAccessor,
+  accentClass = "accent-schema",
+  detailsMode = "none",
+  sectionStackTop = false,
+} = Astro.props;
+---
+
+<div
+  class={`table-card table-wrap layer-accent ${accentClass}${sectionStackTop ? " section-stack-top" : ""}`}
+  tabindex="0"
+>
+  <table data-sortable>
+    <thead>
+      <tr>
+        <th data-sort-type="text" data-col-id="label">{labelHeader}</th>
+        <th class="numeric" data-sort-type="number" data-col-id="p75">P75</th>
+        <th class="numeric" data-sort-type="number" data-col-id="mean">Mittelwert</th>
+        <th class="numeric" data-sort-type="number" data-col-id="delta">Delta</th>
+        <th class="numeric" data-sort-type="number" data-col-id="n">N</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        items.map((item) => (
+          <tr>
+            <td data-sort-value={labelAccessor(item)}>{labelAccessor(item)}</td>
+            <td class="numeric" data-sort-value={item.p75}>
+              {score(item.p75)}
+            </td>
+            <td class="numeric" data-sort-value={item.mean}>
+              {score(item.mean)}
+            </td>
+            <td class="numeric" data-sort-value={item.deltaFromPrevious ?? -9999}>
+              <span
+                class={reliabilityClass(item.reliability)}
+                title={reliabilityLabel(item.reliability)}
+              />
+              {deltaLabel(item)}
+            </td>
+            <td class="numeric" data-sort-value={item.n}>
+              {count(item.n)}
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  <div class="provenance-badge">
+    Quelle: @syrokomskyi/observatory · Run {manifest.observatoryRunId.slice(0, 8)} ·{" "}
+    <a href="/codebook">Codebook {manifest.codebookVersion}</a> · n ≥{" "}
+    {count(manifest.kAnonymityMin)}
+  </div>
+  {
+    detailsMode === "first" && items.length > 0 && (
+      <details class="details-row">
+        <summary>Details: Perzentile anzeigen</summary>
+        <Fragment set:html={detailGrid(items[0]!)} />
+      </details>
+    )
+  }
+  {
+    detailsMode === "all" && items.length > 0 && (
+      <details class="details-row">
+        <summary>Details: Perzentile pro {labelHeader}</summary>
+        {items.map((item) => (
+          <div>
+            <p class="detail-row-caption">
+              <strong>{labelAccessor(item)}</strong> — N = {count(item.n)}
+            </p>
+            <Fragment set:html={detailGrid(item)} />
+          </div>
+        ))}
+      </details>
+    )
+  }
+</div>

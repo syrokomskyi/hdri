@@ -1,0 +1,200 @@
+{
+  "$schema": "https://v2-10-7.turborepo.dev/schema.json",
+  "globalDependencies": [
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "tsconfig.base.json",
+    "tsconfig.app.json",
+    "tsconfig.json"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": ["dist/**", "build/**", "test-output/**"]
+    },
+    "@syrokomskyi/dashboard#build": {
+      "dependsOn": ["^build", "@syrokomskyi/observatory#build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": ["dist/**"]
+    },
+    "@syrokomskyi/axiom-factory-app#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/axiom-observatory-app#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/axiom-vault-app#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/catalog-harvest#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/city#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/contract-ontology#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/image#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/profession#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/inticle#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/observatory#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/register-businesses#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/service#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/site#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/site-axe-audit#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/site-lighthouse-audit#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/site-liveness#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/site-profile#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/video#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/pipeline-host#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/crawler#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/publish-agent#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "@syrokomskyi/truth#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "eslint.config.mjs",
+        "!**/.input/**",
+        "!**/.output/**",
+        "!**/.inticles/**"
+      ],
+      "outputs": [".eslintcache"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "vitest.workspace.ts",
+        "!**/.input/**",
+        "!**/.output/**",
+        "!**/.inticles/**"
+      ],
+      "outputs": ["coverage/**", "test-output/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "docs:pipeline": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": [".output/_guide/**"]
+    },
+    "validate-signatories": {
+      "cache": false,
+      "inputs": [
+        "src/**/*.yaml",
+        "scripts/**/*.ts",
+        "!**/.input/**",
+        "!**/.output/**",
+        "!**/.inticles/**"
+      ]
+    },
+    "changelog": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "changelog.config.yaml",
+        "!**/.input/**",
+        "!**/.output/**",
+        "!**/.inticles/**"
+      ],
+      "outputs": ["CHANGELOG*.md"]
+    },
+    "changelog:init": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "inputs": ["$TURBO_DEFAULT$", "!**/.input/**", "!**/.output/**", "!**/.inticles/**"],
+      "outputs": ["changelog.config.yaml"]
+    }
+  }
+}

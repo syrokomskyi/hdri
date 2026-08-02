@@ -1,0 +1,163 @@
+/* ─── Sortable table enhancements ──────────────────────────────────────────── */
+
+/* Sort button in header */
+.sortable-th {
+  cursor: pointer;
+  position: relative;
+}
+
+.th-sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  width: 100%;
+}
+
+/* Right-align numeric headers so the label stays above the data. */
+th.numeric .th-sort-btn,
+.table-card th.numeric .th-sort-btn,
+.faq-card th.numeric .th-sort-btn {
+  justify-content: flex-end;
+}
+
+.th-sort-btn:focus-visible {
+  outline: 2px solid var(--layer-schema);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.th-sort-label {
+  display: inline;
+}
+
+.th-sort-icon {
+  flex-shrink: 0;
+  position: relative;
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  opacity: 0.25;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.th-sort-icon::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 5px solid currentColor;
+  transform: translate(-50%, -60%);
+  transition:
+    transform 0.2s ease,
+    border-color 0.15s ease;
+}
+
+/* Hover — brighter icon */
+.sortable-th:hover .th-sort-icon {
+  opacity: 0.5;
+}
+
+/* Ascending — solid up arrow */
+th.sort-asc .th-sort-icon {
+  opacity: 1;
+}
+
+th.sort-asc .th-sort-icon::before {
+  transform: translate(-50%, -60%);
+  border-bottom-color: var(--accent-color, var(--layer-text));
+}
+
+/* Descending — flip to down arrow */
+th.sort-desc .th-sort-icon {
+  opacity: 1;
+}
+
+th.sort-desc .th-sort-icon::before {
+  transform: translate(-50%, -40%) rotate(180deg);
+  border-bottom-color: var(--accent-color, var(--layer-text));
+}
+
+/* Sorted column highlight on cells */
+table.sortable-ready th.sort-asc,
+table.sortable-ready th.sort-desc {
+  color: var(--text);
+}
+
+/* ─── Enhanced table row styling ───────────────────────────────────────────── */
+
+table.sortable-ready tbody tr {
+  transition: background 0.12s ease;
+}
+
+table.sortable-ready tbody tr:hover {
+  background: var(--surface-muted);
+}
+
+/* Subtle zebra striping for data tables */
+.table-card table.sortable-ready tbody tr:nth-child(even):not(:hover) {
+  background: rgba(245, 245, 244, 0.4);
+}
+
+/* ─── Sortable header visual feedback ──────────────────────────────────────── */
+
+table.sortable-ready thead .sortable-th {
+  user-select: none;
+  white-space: nowrap;
+}
+
+table.sortable-ready thead .sortable-th:hover {
+  color: var(--text);
+}
+
+/* ─── Method table sortable overrides ──────────────────────────────────────── */
+
+.method-table.sortable-ready thead .sortable-th {
+  white-space: nowrap;
+}
+
+/* ─── FAQ table sortable overrides ─────────────────────────────────────────── */
+
+.faq-card table.sortable-ready thead .sortable-th {
+  white-space: nowrap;
+}
+
+/* ─── Maturity bands table sortable overrides ──────────────────────────────── */
+
+.maturity-bands-table.sortable-ready thead .sortable-th {
+  white-space: nowrap;
+}
+
+/* ─── Responsive: hide sort icons on very narrow screens ───────────────────── */
+
+@media (max-width: 480px) {
+  .th-sort-icon {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+
+  .th-sort-icon::before {
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-bottom-width: 4px;
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "lighthouseVersion": "12.0.0",
+  "finalUrl": "https://mer-backnang.de/",
+  "categories": {
+    "performance":    { "score": 0.45 },
+    "accessibility":  { "score": 0.70 },
+    "best-practices": { "score": 0.83 },
+    "seo":            { "score": 0.79 }
+  },
+  "audits": {
+    "largest-contentful-paint": { "numericValue": 4100 },
+    "cumulative-layout-shift":  { "numericValue": 0.18 },
+    "total-blocking-time":      { "numericValue": 620 }
+  }
+}
+

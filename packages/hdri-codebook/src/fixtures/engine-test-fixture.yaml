@@ -1,0 +1,107 @@
+id: hdri-demo-v1
+version: "2.1.0"
+label: "HDRI Demo Codebook"
+notes: >-
+  Minimal fixture. v2.1.0 adds the self_report dimension (B-Subindex, MINOR bump):
+  B.01 online_booking · B.02 digital_payment · B.03 social_media_active
+  · B.04 google_business_profile · B.05 newsletter_or_crm
+  · B.06 website_accessibility_statement.
+governance:
+  signedBy:
+    - name: "Prof. Dr. Anna Weber"
+      role: academic
+    - name: "RA Claudia Brandt"
+      role: legal
+    - name: "Thomas Hoffmann"
+      role: kammer
+dimensions:
+  - id: compliance
+    label: "Legal compliance"
+    weight: 0.4
+    indicators:
+      - id: has_impressum
+        inputKey: impressumPresent
+        weight: 0.6
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: zero }
+      - id: has_datenschutz
+        inputKey: datenschutzPresent
+        weight: 0.4
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: zero }
+
+  - id: contactability
+    label: "Contact affordances"
+    weight: 0.4
+    indicators:
+      - id: phones_count
+        inputKey: phoneCount
+        weight: 0.5
+        rule: { type: countClamp, min: 0, max: 3, scoreAtMin: 0, scoreAtMax: 100 }
+        missing: { kind: zero }
+      - id: emails_count
+        inputKey: emailCount
+        weight: 0.3
+        rule: { type: countClamp, min: 0, max: 2, scoreAtMin: 0, scoreAtMax: 100 }
+        missing: { kind: zero }
+      - id: opening_hours
+        inputKey: openingHoursText
+        weight: 0.2
+        rule: { type: presence, presentScore: 100, absentScore: 0 }
+        missing: { kind: zero }
+
+  - id: digital_presence
+    label: "Digital signal strength"
+    weight: 0.2
+    indicators:
+      - id: meta_description
+        inputKey: metaDescriptionPresent
+        weight: 0.4
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+      - id: cookie_banner
+        inputKey: cookieBannerPresent
+        weight: 0.6
+        rule: { type: bool, trueScore: 100, falseScore: 50 }
+        missing: { kind: impute, imputedScore: 50 }
+
+  - id: self_report
+    label: "B-Subindex (Selbstauskunft)"
+    weight: 0.2
+    indicators:
+      - id: B.01
+        inputKey: b01_online_booking
+        description: "Online-Buchungs- oder Terminvergabesystem auf der Website"
+        weight: 1.0
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+      - id: B.02
+        inputKey: b02_digital_payment
+        description: "Digitale Zahlungsmethode beworben oder angeboten"
+        weight: 1.0
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+      - id: B.03
+        inputKey: b03_social_media_active
+        description: "Aktive Social-Media-Präsenz, von Website verlinkt"
+        weight: 1.0
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+      - id: B.04
+        inputKey: b04_google_business_profile
+        description: "Google Business Profile (oder äquivalent) verifiziert"
+        weight: 1.0
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+      - id: B.05
+        inputKey: b05_newsletter_or_crm
+        description: "Newsletter-Abonnement oder CRM-Opt-in auf der Website"
+        weight: 1.0
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }
+      - id: B.06
+        inputKey: b06_accessibility_statement
+        description: "Barrierefreiheitserklärung (WCAG/BITV) veröffentlicht"
+        weight: 1.0
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+        missing: { kind: skip }

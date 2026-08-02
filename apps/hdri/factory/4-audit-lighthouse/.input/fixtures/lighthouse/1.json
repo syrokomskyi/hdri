@@ -1,0 +1,16 @@
+{
+  "lighthouseVersion": "12.0.0",
+  "finalUrl": "https://aspach.de/",
+  "categories": {
+    "performance":    { "score": 0.72 },
+    "accessibility":  { "score": 0.88 },
+    "best-practices": { "score": 0.92 },
+    "seo":            { "score": 0.83 }
+  },
+  "audits": {
+    "largest-contentful-paint": { "numericValue": 2400 },
+    "cumulative-layout-shift":  { "numericValue": 0.05 },
+    "total-blocking-time":      { "numericValue": 310 }
+  }
+}
+

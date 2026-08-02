@@ -1,0 +1,348 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import "../styles/codebook.css";
+import Term from "../components/Term.astro";
+import { pct } from "../lib/format";
+import { site, ogImage, publisher } from "../lib/seo";
+import { getSiteMeta, DIM_DE_LABELS, type Codebook } from "../data/site-meta";
+
+const meta = getSiteMeta();
+const cb: Codebook = meta.codebook;
+
+const pageTitle = "HDRI Codebook — Scoring-Spezifikation";
+const pageDescription =
+  "Vollständige Codebook-Spezifikation des HDRI: Dimensionen, Indikatoren, Gewichtungen, Scoring-Regeln und Versionsgeschichte.";
+
+const schema = {
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      name: pageTitle,
+      description: pageDescription,
+      url: `${site}/codebook`,
+      image: ogImage,
+      inLanguage: "de-DE",
+      publisher: publisher(),
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      name: "HDRI Open Source Repository",
+      url: "https://github.com/syrokomskyi/hdri",
+      codeRepository: "https://github.com/syrokomskyi/hdri",
+      programmingLanguage: "TypeScript",
+      license: "https://www.apache.org/licenses/LICENSE-2.0",
+      description:
+        "Öffentliches Repository zum HDRI mit Codebook, Scoring-Logik und Dashboard-Quellcode",
+    },
+    {
+      "@type": "DataDownload",
+      name: `HDRI Codebook v${cb.version} (YAML)`,
+      description: "Maschinenlesbare Codebook-Spezifikation des HDRI als YAML-Datei",
+      contentUrl: `${site}/codebook-observatory-${cb.version}.yaml`,
+      encodingFormat: "application/x-yaml",
+      inLanguage: "de-DE",
+      version: cb.version,
+      license: "https://www.apache.org/licenses/LICENSE-2.0",
+    },
+  ],
+};
+
+function ruleSummary(rule: Record<string, unknown>): string {
+  const type = rule.type as string;
+  if (type === "bool") return `bool — true:${rule.trueScore} / false:${rule.falseScore}`;
+  if (type === "presence")
+    return `presence — present:${rule.presentScore} / absent:${rule.absentScore}`;
+  if (type === "countClamp")
+    return `countClamp — min:${rule.min}→${rule.scoreAtMin} / max:${rule.max}→${rule.scoreAtMax}`;
+  if (type === "countClampInverse") return `countClampInverse — 0→100 / max:${rule.max}→0`;
+  if (type === "enum")
+    return `enum — ${Object.entries(rule.cases as Record<string, number>)
+      .map(([k, v]) => `${k}:${v}`)
+      .join(", ")}`;
+  return type ?? "unknown";
+}
+
+function missingSummary(m: Record<string, unknown> | undefined): string {
+  if (!m) return "zero";
+  if (m.kind === "conditional") {
+    const states = m.states as Record<string, string> | undefined;
+    return `conditional — ${
+      states
+        ? Object.entries(states)
+            .map(([k, v]) => `${k}:${v}`)
+            .join(", ")
+        : ""
+    }`;
+  }
+  return String(m.kind);
+}
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} schema={schema}>
+  <main>
+    <div class="container">
+      <Breadcrumbs items={[{ label: "HDRI Dashboard", href: "/" }, { label: "Codebook" }]} />
+    </div>
+    <section class="hero">
+      <div class="container hero-panel layer-accent accent-schema">
+        <div class="hero-copy">
+          <span class="eyebrow">Scoring-Spezifikation</span>
+          <h1>Codebook v{cb.version}</h1>
+          <p>
+            Diese Seite dokumentiert die vollständige Scoring-Spezifikation des HDRI. Sie enthält
+            alle Dimensionen, Indikatoren, Gewichtungen und Scoring-Regeln, die für die Berechnung
+            des Index verwendet werden.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="/">Zum Dashboard</a>
+            <a class="button button-secondary" href="/methodik">Methodik</a>
+            <a class="button button-secondary" href="/glossar">Glossar</a>
+            <a
+              class="button button-secondary"
+              href={`/codebook-observatory-${cb.version}.yaml`}
+              download>YAML herunterladen</a
+            >
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Version & Kontext</span>
+            <h2>Codebook-Identität</h2>
+          </div>
+        </div>
+        <div class="meta-card layer-accent accent-metadata">
+          <div>
+            <span class="meta-line"><strong>ID:</strong> {cb.id}</span>
+            <span class="meta-line"><strong>Version:</strong> {cb.version}</span>
+            <span class="meta-line"><strong>Label:</strong> {cb.label}</span>
+          </div>
+          <div>
+            <span class="meta-line"><strong>Ontology:</strong> {cb.ontologyRef}</span>
+            <span class="meta-line"><strong>Dimensionen:</strong> {cb.dimensions.length}</span>
+            <span class="meta-line"
+              ><strong>Indikatoren:</strong>
+              {cb.dimensions.reduce((sum, d) => sum + d.indicators.length, 0)}</span
+            >
+          </div>
+        </div>
+        <p class="method-card-footnote" style="margin-top: 0.5rem">
+          Die methodische Einordnung der Scoring-Regeln ist auf der Seite <a
+            href="/methodik#scoring">Methodik</a
+          > dokumentiert.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Versionsgeschichte</span>
+            <h2>CHANGELOG</h2>
+          </div>
+        </div>
+        <article class="method-card layer-accent accent-text changelog-card">
+          <div class="changelog-body">
+            {
+              cb.notes.split(/\n\n/).map((para) => {
+                const versionMatch = para.match(/^(v\d+\.\d+(?:\.\d+)?)\s*(?:—|–|-|:)\s*(.*)/s);
+                if (versionMatch) {
+                  return (
+                    <div class="changelog-entry">
+                      <span class="version-tag">{versionMatch[1]}</span>
+                      <p>{versionMatch[2]}</p>
+                    </div>
+                  );
+                }
+                return <p>{para}</p>;
+              })
+            }
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Scoring-Rahmen</span>
+            <h2>
+              <Term id="dimension">Dimensionen</Term> & <Term id="gewicht">Gewichtungen</Term>
+            </h2>
+          </div>
+        </div>
+        <div class="table-card table-wrap layer-accent accent-schema" tabindex="0">
+          <table data-sortable>
+            <thead>
+              <tr>
+                <th data-sort-type="text" data-col-id="id">ID</th>
+                <th data-sort-type="text" data-col-id="label">Label</th>
+                <th class="numeric" data-sort-type="number" data-col-id="weight"
+                  ><Term id="gewicht">Gewicht</Term></th
+                >
+                <th class="numeric" data-sort-type="number" data-col-id="indicators"
+                  ><Term id="indikator">Indikatoren</Term></th
+                >
+              </tr>
+            </thead>
+            <tbody>
+              {
+                cb.dimensions.map((dim) => (
+                  <tr>
+                    <td data-sort-value={dim.id}>
+                      <code>{dim.id}</code>
+                    </td>
+                    <td data-sort-value={DIM_DE_LABELS[dim.id] ?? dim.label}>
+                      {DIM_DE_LABELS[dim.id] ?? dim.label}
+                    </td>
+                    <td class="numeric" data-sort-value={dim.weight}>
+                      {pct(dim.weight)}
+                    </td>
+                    <td class="numeric" data-sort-value={dim.indicators.length}>
+                      {dim.indicators.length}
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Indikatoren</span>
+            <h2>Alle Scoring-Regeln pro <Term id="dimension">Dimension</Term></h2>
+          </div>
+        </div>
+        {
+          cb.dimensions.map((dim) => (
+            <div
+              class="table-card table-wrap section-stack-top layer-accent accent-shtama"
+              tabindex="0"
+            >
+              <h3 class="dimension-title">
+                {DIM_DE_LABELS[dim.id] ?? dim.label}{" "}
+                <span class="weight-badge">{pct(dim.weight)}</span>
+              </h3>
+              <table data-sortable>
+                <thead>
+                  <tr>
+                    <th data-sort-type="text" data-col-id="id">
+                      ID
+                    </th>
+                    <th data-sort-type="text" data-col-id="desc">
+                      Beschreibung
+                    </th>
+                    <th data-sort-type="text" data-col-id="input">
+                      Input Key
+                    </th>
+                    <th class="numeric" data-sort-type="number" data-col-id="weight">
+                      Gewicht
+                    </th>
+                    <th data-sort-type="text" data-col-id="rule">
+                      Regel
+                    </th>
+                    <th data-sort-type="text" data-col-id="missing">
+                      Missing Policy
+                    </th>
+                    <th data-sort-type="text" data-col-id="extractor">
+                      Extractor
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dim.indicators.map((ind) => (
+                    <tr>
+                      <td data-sort-value={ind.id}>
+                        <code>{ind.id}</code>
+                      </td>
+                      <td data-sort-value={ind.remediation?.humanLabel ?? ""}>
+                        {ind.remediation?.humanLabel ?? "—"}
+                      </td>
+                      <td data-sort-value={ind.inputKey}>
+                        <code>{ind.inputKey}</code>
+                      </td>
+                      <td class="numeric" data-sort-value={ind.weight}>
+                        {pct(ind.weight)}
+                      </td>
+                      <td data-sort-value={ruleSummary(ind.rule)}>
+                        <span class="rule-tag">{ruleSummary(ind.rule)}</span>
+                      </td>
+                      <td data-sort-value={missingSummary(ind.missing)}>
+                        <span class="missing-tag">{missingSummary(ind.missing)}</span>
+                      </td>
+                      <td data-sort-value={ind.source?.extractor ?? ""}>
+                        {ind.source?.extractor ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Reproduzierbarkeit</span>
+            <h2>Download & Lizenz</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article class="method-card layer-accent accent-metadata">
+            <h3>YAML-Download</h3>
+            <p>
+              Das Codebook steht als maschinenlesbare YAML-Datei zur Verfügung. Forscher und
+              Entwickler können damit die Scoring-Logik nachvollziehen und reproduzieren.
+            </p>
+            <a class="button" href={`/codebook-observatory-${cb.version}.yaml`} download
+              >codebook-observatory-{cb.version}.yaml herunterladen</a
+            >
+          </article>
+          <article class="method-card layer-accent accent-entities">
+            <h3>Repository</h3>
+            <p>
+              Das öffentliche Repository zum HDRI mit Codebook, Scoring-Logik und Website-Quellcode:
+            </p>
+            <a
+              class="button"
+              href="https://github.com/syrokomskyi/hdri"
+              target="_blank"
+              rel="noopener noreferrer">github.com/syrokomskyi/hdri</a
+            >
+          </article>
+          <article class="method-card layer-accent accent-faq">
+            <h3>Semantische Versionierung</h3>
+            <p>Das Codebook folgt semantischer Versionierung (MAJOR.MINOR.PATCH):</p>
+            <ul>
+              <li>
+                <strong>MAJOR</strong> — inkompatible Änderung (Indikator entfernt, Dimension umbenannt)
+              </li>
+              <li>
+                <strong>MINOR</strong> — additive Änderung (neuer Indikator, neue Dimension hinzugefügt)
+              </li>
+              <li>
+                <strong>PATCH</strong> — Beschreibung oder Tippfehler, keine Scoring-Auswirkung
+              </li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

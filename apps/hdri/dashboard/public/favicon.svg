@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" fill="blue" rx="3"/>
+  <text x="60" y="34" fill="white" font-family="monospace" font-size="66" font-weight="bold" text-anchor="middle" dominant-baseline="central">HD</text>
+  <text x="60" y="86" fill="white" font-family="monospace" font-size="66" font-weight="bold" text-anchor="middle" dominant-baseline="central">RI</text>
+</svg>
