@@ -29,6 +29,6 @@
     "lighthouse": "^13.4.1",
     "markdown-table": "^3.0.4",
     "systeminformation": "^5.33.1",
-    "tsx": "^4.23.1"
+    "tsx": "^4.23.4"
   }
 }
