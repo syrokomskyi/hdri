@@ -61,4 +61,10 @@ describe("snapshot-core", () => {
     expect(r.ok).toBe(false);
     expect(r.missing).toContain("vault.parquet");
   });
+
+  it("rejects a manifest entry that escapes the sealed archive root", async () => {
+    const m = await buildManifest();
+    m.files.push({ path: "../outside", bytes: 0, sha256: "x" });
+    expect((await verifyManifest(dir, m)).ok).toBe(false);
+  });
 });
