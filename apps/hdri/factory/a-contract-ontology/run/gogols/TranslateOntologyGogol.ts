@@ -21,6 +21,8 @@ import {
   EXT_SIGNAL_MAP,
   deriveAssetId,
   newId,
+  observationKey,
+  sha256Json,
   type AxeSignalMapping,
   type ExtSignalMapping,
   type Observation,
@@ -175,6 +177,7 @@ export class TranslateOntologyGogol extends Gogol {
               brief.ontologyVersion,
               now,
               src.sourceToken,
+              brief.period,
             );
             if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
           }
@@ -207,7 +210,14 @@ export class TranslateOntologyGogol extends Gogol {
               continue;
             }
             appendObservation({
-              observation_id: newId(),
+              observation_id: observationKey({
+                period: brief.period,
+                capsuleId: brief.sourceToken,
+                provisionalAssetId: row.provisional_asset_id,
+                signalPath,
+                sourceResultSha256: sha256Json(row),
+                extractorVersion: "liveness-v1",
+              }),
               asset_id: row.provisional_asset_id,
               crawl_id: runId,
               signal_path: signalPath,
@@ -307,6 +317,7 @@ export class TranslateOntologyGogol extends Gogol {
               now,
               brief.sourceToken,
               auditRun,
+              brief.period,
             );
             if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
           }
@@ -352,6 +363,7 @@ function buildObservation(
   ontologyVersion: string,
   now: string,
   sourceToken: string,
+  period: string,
 ): Observation | null {
   const assetId = deriveAssetId(domain);
   const observedAt = row.extracted_at ? new Date(row.extracted_at * 1000).toISOString() : now;
@@ -378,7 +390,14 @@ function buildObservation(
   }
 
   return {
-    observation_id: newId(),
+    observation_id: observationKey({
+      period,
+      capsuleId: sourceToken,
+      provisionalAssetId: assetId,
+      signalPath: mapping.signalPath,
+      sourceResultSha256: row.content_sha256,
+      extractorVersion: row.extractor_ver ?? "rule_v3",
+    }),
     asset_id: assetId,
     crawl_id: runId,
     signal_path: mapping.signalPath,
@@ -411,6 +430,7 @@ function buildAxeObservation(
   now: string,
   sourceToken: string,
   auditRun: AxeAuditRunRow | undefined,
+  period: string,
 ): Observation | null {
   const rawValue = row[mapping.column as keyof AxeMetricRow];
   if (rawValue == null) {
@@ -427,7 +447,14 @@ function buildAxeObservation(
     : now;
 
   return {
-    observation_id: newId(),
+    observation_id: observationKey({
+      period,
+      capsuleId: sourceToken,
+      provisionalAssetId: deriveAssetId(domain),
+      signalPath: mapping.signalPath,
+      sourceResultSha256: sha256Json(row),
+      extractorVersion: row.axe_version ?? "axe-unknown",
+    }),
     asset_id: deriveAssetId(domain),
     crawl_id: runId,
     signal_path: mapping.signalPath,
