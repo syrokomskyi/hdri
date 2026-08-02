@@ -1,79 +1,46 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Resolves observation conflicts using last-writer-wins per (asset_id, signal_path) — this module handles resolve conflicts operations within the pipeline application.</purpose>
-<non-goals>
-  <item>Do not translate or sign observations.</item>
-  <item>Do not emit bundles.</item>
-</non-goals>
+<purpose>Resolves observation conflicts in SQLite without retaining the quarter in memory.</purpose>
+<non-goals><item>Does not sign or emit observations.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY>
-  <item>Extracted from monolithic main.ts as part of pipeline conversion.</item>
-</CHANGE_SUMMARY>
 */
-// @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
 
-import fsp from "node:fs/promises";
-import path from "node:path";
+import Database from "better-sqlite3";
 import { Gogol } from "../pipeline/Gogol.js";
-import type { PipelineContext, IngestedObs } from "../pipeline/types.js";
-import { evidenceDir } from "../config.js";
+import type { PipelineContext } from "../pipeline/types.js";
 
 export class ResolveConflictsGogol extends Gogol {
   override readonly id = "resolve-conflicts";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { allObs } = ctx.state;
-    if (allObs.length === 0)
-      throw new Error("No observations to resolve — run translate-ontology first");
-
-    const winnerByKey = new Map<string, IngestedObs>();
-    const conflicts: Array<{
-      key: string;
-      winner_device: string;
-      winner_observed_at: string;
-      loser_device: string;
-      loser_observed_at: string;
-      loser_value: unknown;
-    }> = [];
-
-    for (const obs of allObs) {
-      const key = `${obs.asset_id}\x00${obs.signal_path}`;
-      const existing = winnerByKey.get(key);
-      if (!existing) {
-        winnerByKey.set(key, obs);
-        continue;
-      }
-
-      const a = existing.recorded_at;
-      const b = obs.recorded_at;
-      let challengerWins: boolean;
-      if (a !== b) challengerWins = b > a;
-      else challengerWins = obs._device_id > existing._device_id;
-
-      const winner = challengerWins ? obs : existing;
-      const loser = challengerWins ? existing : obs;
-      winnerByKey.set(key, winner);
-
-      conflicts.push({
-        key,
-        winner_device: winner._device_id,
-        winner_observed_at: winner.observed_at,
-        loser_device: loser._device_id,
-        loser_observed_at: loser.observed_at,
-        loser_value: loser.value_bool ?? loser.value_num ?? loser.value_str ?? loser.value_json,
-      });
+    const dbPath = ctx.state.observationDbPath;
+    if (!dbPath) throw new Error("No observation store — run translate-ontology first");
+    const db = new Database(dbPath);
+    try {
+      const total = (db.prepare(`SELECT COUNT(*) AS n FROM observations`).get() as { n: number }).n;
+      if (total === 0) throw new Error("No observations to resolve");
+      db.exec(`
+        DROP TABLE IF EXISTS resolved_observations;
+        CREATE TABLE resolved_observations AS
+        SELECT payload_json
+        FROM (
+          SELECT payload_json,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY conflict_key
+                   ORDER BY recorded_at DESC, device_id DESC, seq DESC
+                 ) AS rank
+          FROM observations
+        )
+        WHERE rank = 1;
+      `);
+      const resolved = (
+        db.prepare(`SELECT COUNT(*) AS n FROM resolved_observations`).get() as { n: number }
+      ).n;
+      console.log(
+        `[resolve-conflicts] ${resolved} winners persisted; ${total - resolved} conflicts discarded deterministically.`,
+      );
+    } finally {
+      db.close();
     }
-
-    console.log(
-      `[resolve-conflicts] ${winnerByKey.size} unique observations after LWW; ${conflicts.length} conflicts logged.`,
-    );
-
-    if (conflicts.length > 0) {
-      await fsp.mkdir(evidenceDir, { recursive: true });
-      const conflictNdjson = conflicts.map((c) => JSON.stringify(c)).join("\n") + "\n";
-      await fsp.writeFile(path.join(evidenceDir, "conflict-log.ndjson"), conflictNdjson, "utf-8");
-    }
-
-    ctx.state.resolvedObs = [...winnerByKey.values()];
   }
 }

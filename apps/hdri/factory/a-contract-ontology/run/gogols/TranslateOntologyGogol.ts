@@ -85,7 +85,34 @@ export class TranslateOntologyGogol extends Gogol {
     if (discoveredPages.length === 0)
       throw new Error("No discovered sources — run discover-sources first");
 
-    const allObs: IngestedObs[] = [];
+    const observationDbPath = path.join(ctx.outputDir, "observations.sqlite");
+    await fsp.rm(observationDbPath, { force: true });
+    const observationDb = new Database(observationDbPath);
+    observationDb.exec(`
+      PRAGMA journal_mode=WAL;
+      CREATE TABLE observations (
+        seq INTEGER PRIMARY KEY AUTOINCREMENT,
+        conflict_key TEXT NOT NULL,
+        recorded_at TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        payload_json TEXT NOT NULL
+      );
+      CREATE INDEX observations_conflict_order
+        ON observations(conflict_key, recorded_at DESC, device_id DESC, seq DESC);
+    `);
+    const insertObservation = observationDb.prepare(
+      `INSERT INTO observations(conflict_key, recorded_at, device_id, payload_json) VALUES (?, ?, ?, ?)`,
+    );
+    let observationCount = 0;
+    const appendObservation = (obs: IngestedObs): void => {
+      insertObservation.run(
+        `${obs.asset_id}\u0000${obs.signal_path}`,
+        obs.recorded_at,
+        obs._device_id,
+        JSON.stringify(obs),
+      );
+      observationCount++;
+    };
     let untranslated = 0;
     const unknownSignals = new Set<string>();
     const deprecatedSignals = new Set<string>();
@@ -131,7 +158,9 @@ export class TranslateOntologyGogol extends Gogol {
             .get(mapping.table) as { name: string } | undefined;
           if (!tableExists) continue;
 
-          const rows = pagesDb.prepare(`SELECT * FROM "${mapping.table}"`).all() as ContentRow[];
+          const rows = pagesDb
+            .prepare(`SELECT * FROM "${mapping.table}"`)
+            .iterate() as IterableIterator<ContentRow>;
           for (const row of rows) {
             const domain = contentToDomain.get(row.content_sha256);
             if (!domain) {
@@ -147,7 +176,7 @@ export class TranslateOntologyGogol extends Gogol {
               now,
               src.sourceToken,
             );
-            if (obs) allObs.push({ ...obs, _device_id: src.deviceId });
+            if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
           }
         }
       } finally {
@@ -177,7 +206,7 @@ export class TranslateOntologyGogol extends Gogol {
               unknownSignals.add(signalPath);
               continue;
             }
-            allObs.push({
+            appendObservation({
               observation_id: newId(),
               asset_id: row.provisional_asset_id,
               crawl_id: runId,
@@ -245,7 +274,7 @@ export class TranslateOntologyGogol extends Gogol {
           FROM axe_runs
         `,
           )
-          .all() as AxeMetricRow[];
+          .iterate() as IterableIterator<AxeMetricRow>;
 
         for (const mapping of AXE_SIGNAL_MAP) {
           const ontDef = ontologySignals[mapping.signalPath];
@@ -279,7 +308,7 @@ export class TranslateOntologyGogol extends Gogol {
               brief.sourceToken,
               auditRun,
             );
-            if (obs) allObs.push({ ...obs, _device_id: src.deviceId });
+            if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
           }
         }
       } finally {
@@ -289,7 +318,7 @@ export class TranslateOntologyGogol extends Gogol {
     }
 
     console.log(
-      `[translate-ontology] Ingested ${allObs.length} obs. ` +
+      `[translate-ontology] Ingested ${observationCount} obs. ` +
         `${unknownSignals.size} unknown signal(s) skipped, ${deprecatedSignals.size} deprecated kept, ` +
         `${untranslated} rows lacked content→domain mapping.`,
     );
@@ -310,7 +339,8 @@ export class TranslateOntologyGogol extends Gogol {
       );
     }
 
-    ctx.state.allObs = allObs;
+    observationDb.close();
+    ctx.state.observationDbPath = observationDbPath;
   }
 }
 

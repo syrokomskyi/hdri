@@ -20,7 +20,6 @@ import type {
 import type { NodePipelineContext } from "@syrokomskyi/pipeline-node/types";
 import type { HdriFactoryContextExtras } from "@syrokomskyi/factory-core";
 import type { Observation, SignalOntology } from "@syrokomskyi/observatory-core";
-import type { SignedObservation } from "@syrokomskyi/observatory-crypto";
 import type { Brief } from "../brief.js";
 
 // ---------------------------------------------------------------------------
@@ -72,9 +71,8 @@ export type PipelineState = {
   coreDbs: DiscoveredCoreDb[];
   livenessDbs: DiscoveredLivenessDb[];
   axeDbs: DiscoveredAxeDb[];
-  allObs: IngestedObs[];
-  resolvedObs: IngestedObs[];
-  signed: SignedObservation[];
+  observationDbPath: string | null;
+  signedNdjsonPath: string | null;
   manifest: EmitBundleManifest | null;
 };
 

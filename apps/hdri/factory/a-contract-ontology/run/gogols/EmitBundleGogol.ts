@@ -18,10 +18,13 @@
 import "@syrokomskyi/observatory-crypto/auto-env";
 import Database from "better-sqlite3";
 import fsp from "node:fs/promises";
+import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline";
 import { deriveAssetId, newId } from "@syrokomskyi/observatory-core";
 import type { AssetStateMapping, AssetStateRecord } from "@syrokomskyi/observatory-core";
 import { EmitBundleWriter } from "@syrokomskyi/observatory-emit";
+import type { SignedObservation } from "@syrokomskyi/observatory-crypto";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { outputRootDir } from "../config.js";
@@ -56,8 +59,8 @@ export class EmitBundleGogol extends Gogol {
   override readonly id = "emit-bundle";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { brief, signed, coreDbs } = ctx.state;
-    if (signed.length === 0) throw new Error("No signed observations — run sign-bundle first");
+    const { brief, signedNdjsonPath, coreDbs } = ctx.state;
+    if (!signedNdjsonPath) throw new Error("No signed observation stream — run sign-bundle first");
 
     const factoryRunId = newId();
     const emitPeriodDir = path.join(outputRootDir, "emit", brief.period);
@@ -75,7 +78,13 @@ export class EmitBundleGogol extends Gogol {
     await writer.open();
 
     // ── Write observations ────────────────────────────────────────────────────
-    for (const obs of signed) writer.writeObservation(obs);
+    const lines = readline.createInterface({
+      input: fs.createReadStream(signedNdjsonPath, { encoding: "utf-8" }),
+      crlfDelay: Infinity,
+    });
+    for await (const line of lines) {
+      if (line.trim() !== "") writer.writeObservation(JSON.parse(line) as SignedObservation);
+    }
 
     // ── Write asset states from upstream core_*.db ────────────────────────────
     let assetStateCount = 0;

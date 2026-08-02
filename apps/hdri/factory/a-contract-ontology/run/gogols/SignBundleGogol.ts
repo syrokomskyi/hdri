@@ -1,45 +1,48 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Signs each resolved observation with the device signing key — this module handles sign bundle operations within the pipeline application.</purpose>
-<non-goals>
-  <item>Do not resolve conflicts — that is done by ResolveConflictsGogol.</item>
-  <item>Do not emit the bundle — that is done by EmitBundleGogol.</item>
-</non-goals>
+<purpose>Signs resolved observations as a bounded NDJSON stream.</purpose>
+<non-goals><item>Does not load the full quarter into memory.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY>
-  <item>Extracted from monolithic main.ts as part of pipeline conversion.</item>
-  <item>Add incremental progress output via logProgress from @syrokomskyi/utils during signing.</item>
-</CHANGE_SUMMARY>
 */
-// @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
 
 import "@syrokomskyi/observatory-crypto/auto-env";
+import Database from "better-sqlite3";
+import fsp from "node:fs/promises";
+import path from "node:path";
 import { loadSigningKeyFromEnv, signObservation } from "@syrokomskyi/observatory-crypto";
-import { logProgress } from "@syrokomskyi/utils";
+import type { Observation } from "@syrokomskyi/observatory-core";
 import { Gogol } from "../pipeline/Gogol.js";
-import type { PipelineContext } from "../pipeline/types.js";
+import type { IngestedObs, PipelineContext } from "../pipeline/types.js";
 
 export class SignBundleGogol extends Gogol {
   override readonly id = "sign-bundle";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { resolvedObs } = ctx.state;
-    if (resolvedObs.length === 0)
-      throw new Error("No observations to sign — run resolve-conflicts first");
-
-    const signingKey = loadSigningKeyFromEnv();
-    const total = resolvedObs.length;
-    const signed = resolvedObs.map((obs, i) => {
-      const { _device_id, ...clean } = obs;
-      void _device_id;
-      logProgress("sign-bundle", i + 1, total, 1000, true);
-      return signObservation(clean, signingKey);
-    });
-
-    console.log(
-      `[sign-bundle] Signed ${signed.length} observations with key ${signingKey.signingKeyId}`,
-    );
-
-    ctx.state.signed = signed;
+    const dbPath = ctx.state.observationDbPath;
+    if (!dbPath) throw new Error("No resolved observation store");
+    const signedNdjsonPath = path.join(ctx.outputDir, "signed-observations.ndjson");
+    const key = loadSigningKeyFromEnv();
+    const db = new Database(dbPath, { readonly: true });
+    const output = await fsp.open(signedNdjsonPath, "w");
+    let count = 0;
+    try {
+      const rows = db.prepare(`SELECT payload_json FROM resolved_observations`).iterate() as IterableIterator<{
+        payload_json: string;
+      }>;
+      for (const row of rows) {
+        const { _device_id, ...observation } = JSON.parse(row.payload_json) as IngestedObs;
+        void _device_id;
+        const signed = signObservation(observation as Observation, key);
+        await output.write(`${JSON.stringify(signed)}\n`);
+        count++;
+      }
+      await output.sync();
+    } finally {
+      await output.close();
+      db.close();
+    }
+    if (count === 0) throw new Error("No observations to sign");
+    ctx.state.signedNdjsonPath = signedNdjsonPath;
+    console.log(`[sign-bundle] Signed ${count} observations with key ${key.signingKeyId}`);
   }
 }
