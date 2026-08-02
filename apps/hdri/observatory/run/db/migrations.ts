@@ -472,4 +472,28 @@ export const MIGRATIONS: Migration[] = [
       addColumnIfMissing(db, "run_methodology", "frame_sha256", "TEXT");
     },
   },
+  {
+    id: 11,
+    name: "website-availability-events",
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS website_availability_events (
+          event_id       TEXT PRIMARY KEY,
+          asset_id       TEXT NOT NULL,
+          period         TEXT NOT NULL,
+          outcome        TEXT NOT NULL,
+          state          TEXT NOT NULL,
+          event_type     TEXT,
+          observed_at    TEXT NOT NULL,
+          policy_version TEXT NOT NULL,
+          evidence_ref   TEXT,
+          UNIQUE(asset_id, period)
+        );
+        CREATE INDEX IF NOT EXISTS wae_asset_period_idx
+          ON website_availability_events(asset_id, period);
+        CREATE INDEX IF NOT EXISTS wae_outcome_idx
+          ON website_availability_events(period, outcome);
+      `);
+    },
+  },
 ];
