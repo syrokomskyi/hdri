@@ -24,7 +24,7 @@
 
 import path from "node:path";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
-import { loadLiveAuditTargets, upsertAuditRun } from "@syrokomskyi/factory-core";
+import { assertStageComplete, loadLiveAuditTargets, upsertAuditRun } from "@syrokomskyi/factory-core";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import { markdownTable } from "markdown-table";
 import { RateLimiter } from "@syrokomskyi/rate-limit";
@@ -315,6 +315,19 @@ export class AxeAuditGogol extends Gogol {
       ),
     );
 
+    const terminal = auditsDb.prepare(`
+      SELECT
+        SUM(CASE WHEN ok = 1 THEN 1 ELSE 0 END) AS succeeded,
+        SUM(CASE WHEN ok = 0 THEN 1 ELSE 0 END) AS failed
+      FROM audit_runs WHERE tool = 'axe'
+    `).get() as { succeeded: number | null; failed: number | null };
+    assertStageComplete({
+      targetCount: targets.length,
+      succeeded: terminal.succeeded ?? 0,
+      observedFailures: terminal.failed ?? 0,
+      approvedExclusions: 0,
+      quarantined: 0,
+    });
     auditsDb.close();
 
     const okCount = results.filter((r) => r.ok).length;
