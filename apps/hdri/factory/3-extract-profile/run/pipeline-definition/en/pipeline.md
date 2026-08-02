@@ -4,7 +4,7 @@ quickStart:
   - Create apps/hdri/factory/3-extract-profile/.input/brief.md with profileYear, profileHalf, profileToken, registryDbPath, livenessDbPath, and livenessBatchId.
   - Ensure site-liveness has been run so liveness.db is populated with live domains.
   - Run the pipeline; review artifacts in .output/ after each phase.
-  - The final pages_YYYY.db snapshot is the data contract for downstream pipelines (hdri-scoring).
+  - The final pages-YYYY-qN.db snapshot is the data contract for downstream pipelines (hdri-scoring).
 operatingRules:
   - Each run is idempotent — all writes use ON CONFLICT DO UPDATE or DO NOTHING.
   - profileBatchId is derived from brief fields; same brief = same batch ID.

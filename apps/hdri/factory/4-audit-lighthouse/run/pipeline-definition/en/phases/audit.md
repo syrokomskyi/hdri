@@ -2,10 +2,10 @@
 title: Phase 1 · Audit · Aggregate · Snapshot
 purpose: >-
   Run Lighthouse against targets under rate-limited execution, persist raw
-  reports to CAS, store per-tool metrics in lighthouse_YYYY.db, and snapshot
+  reports to CAS, store per-tool metrics in lighthouse-YYYY-qN.db, and snapshot
   the database with full upstream provenance.
 entryCriteria:
-  - lighthouse_YYYY.db is initialised (Phase 0 complete).
+  - lighthouse-YYYY-qN.db is initialised (Phase 0 complete).
   - Either a fixture directory exists or the required live tool is installable (lighthouse + chrome-launcher).
 successSignals:
   - audit_runs has one row per (tool, site) pair with ok flag and report_sha256.

@@ -10,11 +10,11 @@ details: >-
   content_sha256 to ext_team_page with url and confidence.
   Idempotent: skips already-extracted content.
 inputs:
-  - page_observations (pages_YYYY.db) — source of content_sha256 for this batch.
+  - page_observations (pages-YYYY-qN.db) — source of content_sha256 for this batch.
   - HTML files from CAS storage.
   - registry.db (ATTACH, read-only) — provides url_norm for baseUrl resolution.
 outputs:
-  - ext_team_page rows in pages_YYYY.db.
+  - ext_team_page rows in pages-YYYY-qN.db.
   - extract-report.json — counts of total, extracted, skipped.
 definitionOfDone:
   - extract-report.json exists in the gogol output directory.

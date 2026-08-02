@@ -9,7 +9,7 @@ details: >-
   extracts email addresses using the business-crawler extractPageSignals function,
   and upserts one row per content_sha256 into ext_email with present flag and count.
 inputs:
-  - pages_YYYY.db (page_observations, page_contents)
+  - pages-YYYY-qN.db (page_observations, page_contents)
   - registry.db (site_pages for url_norm)
 outputs:
   - ext_email table (content_sha256, extractor_ver, present, count)

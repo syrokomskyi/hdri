@@ -10,4 +10,4 @@ Pipeline for automated crawling and analysis of site homepages (T2 — Homepage 
    ```bash
    pnpm turbo run start --filter=@syrokomskyi/site-profile
    ```
-4. HTML page content is saved in CAS, and metadata in `pages_YYYY.db`.
+4. HTML page content is saved in CAS, and metadata in `pages-YYYY-qN.db`.

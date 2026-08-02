@@ -2,7 +2,7 @@
 title: Phase 2 · Extract
 purpose: >-
   Run focused signal-extraction gogols over crawled HTML, each writing to its
-  own flat table in pages_YYYY.db.
+  own flat table in pages-YYYY-qN.db.
 entryCriteria:
   - Phase 1 (crawl) complete; page_observations populated for this batch.
   - HTML files present in CAS storage under .output/data/content/.

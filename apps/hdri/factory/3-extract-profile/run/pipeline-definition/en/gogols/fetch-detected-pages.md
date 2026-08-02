@@ -10,12 +10,12 @@ details: >-
   detected by multiple extractors). For each unique URL, calls fetchPageContent()
   from @syrokomskyi/business-crawler: tries HTTPS first, then HTTP on any network-level
   failure. Stores raw HTML on disk under data/content/{sha256[0:2]}/{sha256}.html
-  (CAS). Upserts page_contents, site_pages (pages_YYYY.db with source='detected'), and
+  (CAS). Upserts page_contents, site_pages (pages-YYYY-qN.db with source='detected'), and
   page_observations. Updates ext_* tables with detected_page_sha256 linking to
   fetched content. Respects rescanPolicy (skip / if-stale / always). Only runs
   when brief.fetchDetectedPages is true (optional feature flag).
 inputs:
-  - pages_YYYY.db (read-write) — ext_* tables with detected URLs, site_pages for detected pages.
+  - pages-YYYY-qN.db (read-write) — ext_* tables with detected URLs, site_pages for detected pages.
   - brief.fetchDetectedPages, brief.concurrency, brief.timeoutMs, brief.rescanPolicy.
 outputs:
   - fetch-detected-pages-report.json — fetch counts per batch.
