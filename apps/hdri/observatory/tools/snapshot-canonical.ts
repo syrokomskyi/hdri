@@ -71,6 +71,9 @@ async function walkFiles(dir: string): Promise<string[]> {
   return out;
 }
 
+const isSqliteSidecar = (filePath: string): boolean =>
+  filePath.endsWith(".db-wal") || filePath.endsWith(".db-shm");
+
 async function copyInto(
   srcAbs: string,
   snapshotDir: string,
@@ -95,6 +98,7 @@ async function createSnapshot(year: number, outDir: string): Promise<void> {
   const sourceBefore = new Map<string, { sha256: string; mtimeMs: number }>();
   for (const root of protectedSources) {
     for (const source of await walkFiles(root)) {
+      if (isSqliteSidecar(source)) continue;
       const stat = await fs.stat(source);
       sourceBefore.set(source, { sha256: await sha256File(source), mtimeMs: stat.mtimeMs });
     }
@@ -111,6 +115,7 @@ async function createSnapshot(year: number, outDir: string): Promise<void> {
     role: string,
   ): Promise<void> => {
     for (const source of await walkFiles(sourceRoot)) {
+      if (isSqliteSidecar(source)) continue;
       const name = path.basename(source).toLowerCase();
       if (name === ".env" || name.includes("private") || source.includes(`${path.sep}signing-key${path.sep}`)) continue;
       const relative = path.join(destinationRoot, path.relative(sourceRoot, source));
