@@ -17,7 +17,7 @@ export const DELTA_SUPPRESSION_MIN_RELATIVE = 0.03;
 // Relative change in N above which a cross-sectional delta is treated as
 // confounded by sample-frame composition (e.g. a tripled Q3 sample) and never
 // marked "reliable". The descriptive value still shows; only trust is downgraded.
-export const SAMPLE_FRAME_SHIFT_WARN = 0.5;
+export const SAMPLE_FRAME_SHIFT_WARN = 0.1;
 
 export type ScoreSummary = {
   n: number;
