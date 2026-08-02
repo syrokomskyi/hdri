@@ -21,6 +21,8 @@ export type SnapshotFileEntry = {
   path: string;
   bytes: number;
   sha256: string;
+  access?: "public" | "internal" | "restricted";
+  role?: string;
 };
 
 export type SnapshotRunInfo = {
