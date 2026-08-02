@@ -6,6 +6,7 @@ summary: >
 members:
   - id: write-vault
   - id: export-mart
+  - id: finalize-quarter-capsule
 ---
 
 # Phase: Publish

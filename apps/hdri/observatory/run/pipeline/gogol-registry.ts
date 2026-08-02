@@ -23,6 +23,7 @@ import { WriteVaultGogol } from "../gogols/WriteVaultGogol";
 import { ScoreHdriGogol } from "../gogols/ScoreHdriGogol";
 import { BuildCohortsGogol } from "../gogols/BuildCohortsGogol";
 import { ExportMartGogol } from "../gogols/ExportMartGogol";
+import { FinalizeQuarterCapsuleGogol } from "../gogols/FinalizeQuarterCapsuleGogol";
 
 export const createGogolById = createGogolRegistry<Gogol>({
   loadGogolDeclaration,
@@ -36,5 +37,6 @@ export const createGogolById = createGogolRegistry<Gogol>({
     "score-hdri": () => new ScoreHdriGogol(),
     "build-cohorts": () => new BuildCohortsGogol(),
     "export-mart": () => new ExportMartGogol(),
+    "finalize-quarter-capsule": () => new FinalizeQuarterCapsuleGogol(),
   },
 });

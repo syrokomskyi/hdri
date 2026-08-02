@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",
+    "@syrokomskyi/factory-core": "workspace:*",
     "@syrokomskyi/hdri-codebook": "workspace:*",
     "@syrokomskyi/observatory-core": "workspace:*",
     "@syrokomskyi/observatory-crypto": "workspace:*",

@@ -258,5 +258,9 @@ export class WriteVaultGogol extends Gogol {
         2,
       ),
     );
+    ctx.state.vaultShardPaths = [
+      ...results.map((result) => result.shardPath).filter(Boolean),
+      ...(assetStatesShard?.shardPath ? [assetStatesShard.shardPath] : []),
+    ];
   }
 }

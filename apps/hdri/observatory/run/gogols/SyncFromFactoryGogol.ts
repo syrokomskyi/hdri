@@ -79,6 +79,9 @@ export class SyncFromFactoryGogol extends Gogol {
 
     // Phase A: resolve single contract bundle path — explicit dir, auto-discovery, or legacy fallback.
     const emitDirs: string[] = await resolveEmitDirs(brief, log);
+    const capsuleDirs = new Set(emitDirs.map((dir) => path.dirname(path.dirname(dir))));
+    if (capsuleDirs.size !== 1) throw new Error("One Observatory run must resolve exactly one quarter capsule");
+    ctx.state.capsuleDir = [...capsuleDirs][0];
 
     const db = openObservatoryDb(year);
     const results: BundleResult[] = [];

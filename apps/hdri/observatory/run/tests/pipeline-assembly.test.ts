@@ -34,6 +34,7 @@ describe("Pipeline assembly", () => {
     // publish phase
     expect(ids).toContain("write-vault");
     expect(ids).toContain("export-mart");
+    expect(ids).toContain("finalize-quarter-capsule");
 
     // Order: harvest → observe → interpret → publish
     expect(ids.indexOf("setup-observatory-run")).toBeLessThan(ids.indexOf("sync-from-factory"));
@@ -42,11 +43,12 @@ describe("Pipeline assembly", () => {
     expect(ids.indexOf("score-hdri")).toBeLessThan(ids.indexOf("build-cohorts"));
     expect(ids.indexOf("build-cohorts")).toBeLessThan(ids.indexOf("write-vault"));
     expect(ids.indexOf("write-vault")).toBeLessThan(ids.indexOf("export-mart"));
+    expect(ids.indexOf("export-mart")).toBeLessThan(ids.indexOf("finalize-quarter-capsule"));
   });
 
-  it("has exactly 8 gogols", () => {
+  it("has exactly 9 gogols", () => {
     const pipeline = createPipeline();
-    expect(pipeline.steps.length).toBe(8);
+    expect(pipeline.steps.length).toBe(9);
   });
 });
 
