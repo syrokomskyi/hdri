@@ -108,7 +108,7 @@ export function postStratifiedMean(
 export type PeriodStrata = { period: string; assets: StratifiedAsset[] };
 
 /** Minimum frame coverage below which a post-stratified figure is suppressed. */
-export const MIN_WEIGHT_COVERAGE = 0.6;
+export const MIN_WEIGHT_COVERAGE = 0.95;
 
 export function buildPostStratTrends(
   periods: PeriodStrata[],

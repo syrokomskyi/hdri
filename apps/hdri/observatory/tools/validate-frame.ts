@@ -132,7 +132,7 @@ async function main(): Promise<void> {
   );
   console.log(
     `   projected weight coverage: ${(v.projectedWeightCoverage * 100).toFixed(1)}%  ` +
-      `(threshold ${(0.6 * 100).toFixed(0)}% → ${v.meetsThreshold ? "OK" : "SUPPRESSED"})`,
+      `(threshold ${(0.95 * 100).toFixed(0)}% → ${v.meetsThreshold ? "OK" : "SUPPRESSED"})`,
   );
 
   if (v.invalidWeights.length > 0) {

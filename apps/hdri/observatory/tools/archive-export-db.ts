@@ -111,7 +111,7 @@ export async function writePostStratTrends(
   await writeJson(path.join(comparisonsDir, "poststrat-manifest.json"), {
     strataSystem: frame.strataSystem,
     source: frame.source,
-    minWeightCoverage: 0.6,
+    minWeightCoverage: 0.95,
     periods: trends.map((t) => t.period),
     generatedAt: new Date().toISOString(),
   });
