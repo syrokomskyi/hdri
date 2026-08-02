@@ -47,11 +47,15 @@ import type { PipelineContext } from "../pipeline/types.js";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import {
   checkSourceBatch,
+  freezeFrame,
   rebuildLedgerHead,
   sealSourceBatch,
+  sourceOccurrenceId,
   type HdriPeriod,
+  type ProvisionalAssetId,
   type SourceBatchManifest,
 } from "@syrokomskyi/factory-core";
+import { deriveAssetId } from "@syrokomskyi/observatory-core";
 import { listBatchSourceFiles } from "../source-files.js";
 import { getParserForSource } from "../parsers/index.js";
 import { openCoreSqlite } from "../db/connection.js";
@@ -371,6 +375,9 @@ export class ParseSourcesGogol extends Gogol {
       }
     }
 
+    if (maxPages < 0) {
+      await materializeLedgerProjection(db, path.join(outputRootDir, "data", "source-ledger"), brief.sourceToken);
+    }
     db.close();
 
     await ctx.writeTextFile(
@@ -460,4 +467,72 @@ const buildSourceBatchManifest = async (
     batchHash,
     files: entries,
   };
+};
+
+const materializeLedgerProjection = async (
+  db: ReturnType<typeof openCoreSqlite>,
+  ledgerDir: string,
+  sourceToken: string,
+): Promise<void> => {
+  const segmentDir = path.join(ledgerDir, "segments");
+  const segmentNames = (await fs.readdir(segmentDir)).filter((name) => name.endsWith(".json")).sort();
+  const fileHashes = new Map<string, { batchHash: string; fileHash: string; period: HdriPeriod }>();
+  for (const name of segmentNames) {
+    const manifest = JSON.parse(await fs.readFile(path.join(segmentDir, name), "utf8")) as SourceBatchManifest;
+    for (const file of manifest.files) {
+      fileHashes.set(`${manifest.batchId}/${file.relativePath}`, {
+        batchHash: manifest.batchHash,
+        fileHash: file.sha256,
+        period: manifest.periodAdded,
+      });
+    }
+  }
+
+  const projectionDir = path.join(ledgerDir, "projections");
+  await fs.mkdir(projectionDir, { recursive: true });
+  const occurrencePath = path.join(projectionDir, "source-occurrences.ndjson");
+  const output = await fs.open(occurrencePath, "w");
+  try {
+    const rows = db.prepare(`
+      SELECT s.domain, seed.source_path, seed.source_item_key
+      FROM site_source_seeds seed
+      JOIN sites s ON s.id = seed.site_id
+      ORDER BY seed.source_path, seed.source_item_key, s.domain
+    `).iterate() as IterableIterator<{ domain: string; source_path: string; source_item_key: string }>;
+    for (const row of rows) {
+      const provenance = fileHashes.get(row.source_path);
+      if (!provenance) continue;
+      await output.write(`${JSON.stringify({
+        sourceOccurrenceId: sourceOccurrenceId(
+          provenance.batchHash,
+          provenance.fileHash,
+          row.source_item_key,
+        ),
+        batchId: row.source_path.split("/", 1)[0],
+        periodAdded: provenance.period,
+        provisionalAssetId: deriveAssetId(row.domain),
+        normalisedDomain: row.domain,
+        disposition: "assertion",
+      })}\n`);
+    }
+    await output.sync();
+  } finally {
+    await output.close();
+  }
+
+  const parsed = parseSourceToken(sourceToken);
+  const period = `${parsed.year}-q${parsed.quarter}` as HdriPeriod;
+  const candidates = db.prepare(`SELECT domain FROM sites ORDER BY domain`).all() as { domain: string }[];
+  const frame = freezeFrame(
+    period,
+    candidates.map((row) => ({
+      sourceOccurrenceId: `frame-${deriveAssetId(row.domain)}`,
+      batchId: "accepted-ledger",
+      periodAdded: period,
+      provisionalAssetId: deriveAssetId(row.domain) as ProvisionalAssetId,
+      normalisedDomain: row.domain,
+      disposition: "assertion" as const,
+    })),
+  );
+  await fs.writeFile(path.join(projectionDir, `frame-${period}.json`), `${JSON.stringify(frame, null, 2)}\n`, "utf8");
 };
