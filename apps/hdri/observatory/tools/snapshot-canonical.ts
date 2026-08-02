@@ -27,6 +27,7 @@ const OUTPUT_DIR = path.join(CWD, ".output");
 const DB_DIR = path.join(OUTPUT_DIR, "db");
 const VAULT_DIR = path.join(OUTPUT_DIR, "vault");
 const INPUT_DIR = path.join(CWD, ".input");
+const WORKSPACE_ROOT = path.resolve(CWD, "..", "..", "..");
 const KEYS_DIR = path.resolve(CWD, "..", "..", "transparency", "keys");
 const SNAP_ROOT = path.join(OUTPUT_DIR, "snapshots");
 
@@ -126,7 +127,16 @@ async function createSnapshot(year: number, outDir: string): Promise<void> {
     }
   }
 
-  // 5. Checksummed manifest.
+  // 5. Rebuild closure: retain the exact dependency declaration and lockfile
+  // alongside the evidence, without copying secrets or mutable working output.
+  for (const [source, destination] of [
+    [path.join(WORKSPACE_ROOT, "package.json"), "rebuild/package.json"],
+    [path.join(WORKSPACE_ROOT, "pnpm-lock.yaml"), "rebuild/pnpm-lock.yaml"],
+  ] as const) {
+    if (await exists(source)) relPaths.push(await copyInto(source, outDir, destination));
+  }
+
+  // 6. Checksummed manifest.
   const files = [];
   for (const rel of relPaths) files.push(await hashEntry(outDir, rel));
   const manifest: SnapshotManifest = {
