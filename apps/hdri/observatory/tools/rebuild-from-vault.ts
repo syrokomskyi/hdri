@@ -85,16 +85,22 @@ async function main(): Promise<void> {
   }
 
   // 2. Observations from the vault → fresh DB.
-  const obsRows = await reader.getAllObservations(year);
-  if (obsRows.length === 0) {
-    throw new Error(`No observation shards found in the vault for year ${year} at ${vaultDir}`);
-  }
-
   const db = new Database(targetDbPath);
   db.pragma("journal_mode = WAL");
   migrateObservatory(db);
 
-  const insertedObs = insertRebuiltObservations(db, obsRows, { runId, period, ontologyVersion });
+  let insertedObs = 0;
+  let seenObs = 0;
+  for await (const rows of reader.streamAllObservations(year)) {
+    seenObs += rows.length;
+    insertedObs += insertRebuiltObservations(db, rows, { runId, period, ontologyVersion });
+    if (seenObs % 100_000 < rows.length) console.log(`   observations streamed: ${seenObs}`);
+  }
+  if (seenObs === 0) {
+    db.close();
+    reader.close();
+    throw new Error(`No observation shards found in the vault for year ${year} at ${vaultDir}`);
+  }
   const insertedStates = writeAssetStatesDeduped(db, stateInputs, {
     runId,
     now: new Date().toISOString(),
@@ -156,6 +162,7 @@ async function main(): Promise<void> {
   }
 
   db.close();
+  reader.close();
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log(`✓ Rebuild complete → ${targetDbPath}`);
   process.exitCode = exitCode;
