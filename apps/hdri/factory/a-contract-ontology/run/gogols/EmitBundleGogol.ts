@@ -56,11 +56,6 @@ type CoreMapping = {
   source: string;
 };
 
-type SiteIndustryGroup = {
-  site_id: number;
-  gewerk_group: string | null;
-};
-
 export class EmitBundleGogol extends Gogol {
   override readonly id = "emit-bundle";
 
@@ -101,8 +96,7 @@ export class EmitBundleGogol extends Gogol {
     // ── Write asset states from upstream core_*.db ────────────────────────────
     let assetStateCount = 0;
     for (const coreDb of coreDbs) {
-      const { records } = readAssetStates(coreDb.coreDbPath);
-      for (const rec of records) {
+      for (const rec of iterateAssetStates(coreDb.coreDbPath)) {
         writer.writeAssetState(rec);
         assetStateCount++;
       }
@@ -221,69 +215,58 @@ const hashFile = async (filePath: string): Promise<string> =>
 export function readAssetStates(coreDbPath: string): {
   records: AssetStateRecord[];
 } {
+  return { records: [...iterateAssetStates(coreDbPath)] };
+}
+
+export function* iterateAssetStates(coreDbPath: string): Generator<AssetStateRecord> {
   const db = new Database(coreDbPath, { readonly: true });
-
-  let sites: CoreSite[];
-  let mappings: CoreMapping[];
-  let industryGroups: SiteIndustryGroup[];
   try {
-    sites = db
-      .prepare(
-        `SELECT id, domain, hwo_uid, hwo_provenance, bundesland, gemeinde FROM sites ORDER BY id`,
-      )
-      .all() as CoreSite[];
+    const rows = db.prepare(`
+      SELECT s.id, s.domain, s.hwo_uid, s.hwo_provenance, s.bundesland, s.gemeinde,
+             m.mapping_system, m.target_code, m.target_label, m.source
+      FROM sites s
+      LEFT JOIN site_hwo_mappings m ON m.site_id = s.id
+      ORDER BY s.id, m.mapping_system, m.target_code
+    `).iterate() as IterableIterator<CoreSite & Partial<Omit<CoreMapping, "site_id">>>;
 
-    mappings = db
-      .prepare(
-        `SELECT site_id, mapping_system, target_code, target_label, source FROM site_hwo_mappings`,
-      )
-      .all() as CoreMapping[];
+    let current: CoreSite | null = null;
+    let mappings: AssetStateMapping[] = [];
+    let gewerkGroup: string | null = null;
+    const emitCurrent = (): AssetStateRecord | null =>
+      current
+        ? {
+            asset_id: deriveAssetId(current.domain),
+            domain: current.domain,
+            gewerk_group: gewerkGroup,
+            hwo_uid: current.hwo_uid,
+            hwo_provenance: current.hwo_provenance,
+            bundesland: current.bundesland,
+            gemeinde: current.gemeinde,
+            mappings,
+          }
+        : null;
 
-    industryGroups = db
-      .prepare(
-        `SELECT site_id, target_code AS gewerk_group
-       FROM site_hwo_mappings
-       WHERE mapping_system = 'destatis_group'`,
-      )
-      .all() as SiteIndustryGroup[];
+    for (const row of rows) {
+      if (current && row.id !== current.id) {
+        const record = emitCurrent();
+        if (record) yield record;
+        mappings = [];
+        gewerkGroup = null;
+      }
+      current = row;
+      if (row.mapping_system && row.target_code && row.source) {
+        mappings.push({
+          mapping_system: row.mapping_system,
+          target_code: row.target_code,
+          target_label: row.target_label ?? null,
+          source: row.source,
+        });
+        if (row.mapping_system === "destatis_group") gewerkGroup = row.target_code;
+      }
+    }
+    const finalRecord = emitCurrent();
+    if (finalRecord) yield finalRecord;
   } finally {
     db.close();
   }
-
-  // Group mappings by site_id
-  const mappingBySite = new Map<number, AssetStateMapping[]>();
-  for (const m of mappings) {
-    let list = mappingBySite.get(m.site_id);
-    if (!list) {
-      list = [];
-      mappingBySite.set(m.site_id, list);
-    }
-    list.push({
-      mapping_system: m.mapping_system,
-      target_code: m.target_code,
-      target_label: m.target_label,
-      source: m.source,
-    });
-  }
-
-  const gewerkGroupBySite = new Map<number, string | null>();
-  for (const row of industryGroups) {
-    gewerkGroupBySite.set(row.site_id, row.gewerk_group);
-  }
-
-  const records: AssetStateRecord[] = [];
-  for (const site of sites) {
-    records.push({
-      asset_id: deriveAssetId(site.domain),
-      domain: site.domain,
-      gewerk_group: gewerkGroupBySite.get(site.id) ?? null,
-      hwo_uid: site.hwo_uid,
-      hwo_provenance: site.hwo_provenance,
-      bundesland: site.bundesland,
-      gemeinde: site.gemeinde,
-      mappings: mappingBySite.get(site.id) ?? [],
-    });
-  }
-
-  return { records };
 }
