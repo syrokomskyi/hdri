@@ -9,7 +9,7 @@ The factory consists of 6 sequential pipelines:
 ```
 0-harvest-source → 1-register-businesses → 2-check-liveness → 3-extract-profile → 4-audit-lighthouse → 5-audit-axe
      ↓                     ↓                      ↓                    ↓                    ↓                    ↓
-  core_YYYY.db       registry_YYYY.db       liveness_YYYY.db    pages_YYYY.db    lighthouse_YYYY.db      axe_YYYY.db
+  core_YYYY.db       registry_YYYY.db       liveness-YYYY-qN.db pages-YYYY-qN.db lighthouse-YYYY-qN.db   axe-YYYY-qN.db
 ```
 
 Each pipeline depends on the previous one. **Always run in order.**
@@ -211,7 +211,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-liveness
 
 ### Success Criteria
 
-- `2-check-liveness/.output/liveness_YYYY.db` exists
+- `2-check-liveness/.output/<device>/data/db/liveness-YYYY-qN.db` exists
 - Report shows % of live sites (typically 60-80%)
 - No timeout errors in bulk
 
@@ -250,7 +250,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-profile
 
 ### Success Criteria
 
-- `3-extract-profile/.output/pages_YYYY.db` exists
+- `3-extract-profile/.output/<device>/data/db/pages-YYYY-qN.db` exists
 - `data/content/` contains HTML files in CAS layout
 - Report shows >70% crawl success rate
 
@@ -271,13 +271,15 @@ After crawl completes, these signals are extracted automatically:
 | -------------------- | --------------------------------------------------------- |
 | High error rate      | Check site-blocking, reduce concurrency, increase timeout |
 | Empty ext\_\* tables | Ensure crawl succeeded before signal extraction           |
-| Out of disk space    | CAS storage grows with each site, clean old runs          |
+| Out of disk space    | Stop the run and add storage; sealed quarterly artifacts are never deleted |
 
 ---
 
 ## Phase 4: Audit Lighthouse
 
-**Purpose:** Performance audit of all live sites using Lighthouse.
+**Q3 2026 status:** disabled by the instrument plan. Do not run this phase for Q3 and do not substitute missing Lighthouse values with zero.
+
+**Purpose in a future enabled quarter:** Performance audit of all live sites using Lighthouse.
 
 ### Prerequisites
 
@@ -292,7 +294,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-lighthouse-audit
 
 ### Success Criteria
 
-- `4-audit-lighthouse/.output/lighthouse_YYYY.db` exists
+- `4-audit-lighthouse/.output/<device>/data/db/lighthouse-YYYY-qN.db` exists
 - `lighthouse_runs` table populated
 - Report shows audit completion rate
 
@@ -326,7 +328,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
 
 ### Success Criteria
 
-- `5-audit-axe/.output/axe_YYYY.db` exists
+- `5-audit-axe/.output/<device>/data/db/axe-YYYY-qN.db` exists
 - `axe_runs` table populated with violation counts
 - Report shows audit completion rate
 
@@ -361,7 +363,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
 Or use the monorepo root:
 
 ```bash
-pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi/register-businesses --filter=@syrokomskyi/site-liveness --filter=@syrokomskyi/site-profile --filter=@syrokomskyi/site-lighthouse-audit --filter=@syrokomskyi/site-axe-audit
+pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi/register-businesses --filter=@syrokomskyi/site-liveness --filter=@syrokomskyi/site-profile --filter=@syrokomskyi/site-axe-audit
 ```
 
 **Note:** This runs dependencies in parallel where possible, but respects the pipeline chain order.
@@ -382,15 +384,15 @@ apps/hdri/factory/
     registry_YYYY.db           # Deduplicated business registry
     <step>-sign-source/        # Signature manifest
   2-check-liveness/.output/
-    liveness_YYYY.db           # Availability status
+    liveness-YYYY-qN.db        # Availability status
   3-extract-profile/.output/
-    pages_YYYY.db              # Page observations + ext_* signals
+    pages-YYYY-qN.db           # Page observations + ext_* signals
     data/content/              # CAS HTML storage
   4-audit-lighthouse/.output/
-    lighthouse_YYYY.db         # Lighthouse metrics
+    lighthouse-YYYY-qN.db      # optional Lighthouse metrics
     data/audit-reports/        # CAS audit JSON
   5-audit-axe/.output/
-    axe_YYYY.db                # Axe violations
+    axe-YYYY-qN.db             # Axe violations
     data/audit-reports/        # CAS audit JSON
 ```
 

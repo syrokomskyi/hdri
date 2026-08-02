@@ -137,7 +137,7 @@ Der veröffentlichte deskriptive Index ist ein **wiederholter Querschnitt**: Jed
 
 Das Dashboard begegnet dem zweifach:
 
-1. **Vorsicht-Kennzeichnung** — Übersteigt die relative Änderung der Fallzahl `|ΔN|/N` den Schwellenwert 0,5, wird der querschnittsbasierte Delta nicht unterdrückt, aber seine Verlässlichkeit auf „Mit Vorsicht" herabgestuft und mit `sample_frame_changed` markiert. Der deskriptive Wert bleibt sichtbar.
+1. **Vorsicht-Kennzeichnung** — Übersteigt die relative Änderung der Fallzahl `|ΔN|/N` den Schwellenwert 0,1, wird der querschnittsbasierte Delta nicht unterdrückt, aber seine Verlässlichkeit auf „Mit Vorsicht" herabgestuft und mit `sample_frame_changed` markiert. Der deskriptive Wert bleibt sichtbar.
 2. **Panel-Trend (Längsschnitt)** — Zusätzlich wird ein **like-for-like-Vergleich** über die Schnittmenge derselben Betriebe (stabile `asset_id`) veröffentlicht (`comparisons/panel-trends.json`). Da dieselben Assets verglichen werden, ist dieser Delta **immun gegen Zusammensetzungseffekte**. Berichtet werden Mittelwert und Median der Score-Änderung, ein **deterministisches 95 %-Bootstrap-Konfidenzintervall** (fester Seed ⇒ reproduzierbar) sowie die **Abdeckung** (Panel-N ÷ aktuelles N). Eine Änderung gilt als statistisch belastbar, wenn das Konfidenzintervall die Null ausschließt.
 
 ### 6.5 Vergleichbarkeit bei Versionswechseln
@@ -146,7 +146,7 @@ Scores aus unterschiedlichen Codebook- oder Ontologie-Versionen sind **nicht ver
 
 ### 6.6 Post-Stratifizierung (optional, rahmengebunden)
 
-Um den Zusammensetzungseffekt grundsätzlich zu korrigieren, kann ein **post-stratifizierter** Gesamtwert veröffentlicht werden, der die Stratum-Mittelwerte auf einen Referenz-Populationsrahmen umgewichtet (Stratum = `bundesland|destatis_group`). Dieser Rahmen ist **operator-bereitgestellt** (`apps/hdri/observatory/.input/population-frame.json`, Stratum → Gewicht, z. B. Betriebszahlen je Stratum). **Ohne realen Rahmen werden keine post-stratifizierten Zahlen ausgegeben** — fabrizierte Gewichte würden die wissenschaftliche Integrität des Index verletzen. Liegt die abgedeckte Rahmengewichtung unter 60 %, wird der Wert unterdrückt.
+Um den Zusammensetzungseffekt grundsätzlich zu korrigieren, kann ein **post-stratifizierter** Gesamtwert veröffentlicht werden, der die Stratum-Mittelwerte auf einen Referenz-Populationsrahmen umgewichtet (Stratum = `bundesland|destatis_group`). Dieser Rahmen ist **operator-bereitgestellt** (`apps/hdri/observatory/.input/population-frame.json`, Stratum → Gewicht, mit einer einheitlichen amtlichen statistischen Einheit). **Ohne realen Rahmen werden keine post-stratifizierten Zahlen ausgegeben**. Ein Headline-Wert erfordert mindestens 95 % des gesamten Rahmengewichts sowie mindestens 80 % Abdeckung in jedem Bundesland und jeder Destatis-Gruppe; andernfalls wird er unterdrückt.
 
 ---
 

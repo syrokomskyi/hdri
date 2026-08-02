@@ -30,9 +30,9 @@ The Digital Observatory pipeline depends on upstream data from the `factory` pip
 
 1. **factory pipelines have completed successfully**:
    - `0-harvest-source` — generates `core.db` with sites catalog
-   - `3-extract-profile` — generates `pages_YYYY.db` with ext\_\* signal tables
-   - `4-audit-lighthouse` — generates `lighthouse_YYYY.db` with Lighthouse metrics
-   - `5-audit-axe` — generates `axe_YYYY.db` with Axe metrics
+   - `3-extract-profile` — generates `pages-YYYY-qN.db` with ext\_\* signal tables
+   - `4-audit-lighthouse` — optionally generates `lighthouse-YYYY-qN.db`
+   - `5-audit-axe` — generates `axe-YYYY-qN.db` with Axe metrics
 
 2. **Shared packages are built**:
    ```bash
@@ -94,7 +94,7 @@ The Digital Observatory only receives observations for sites that were **live** 
 4. **`3-extract-profile`** only crawls `is_live=true` sites; dead sites never enter `pages_*.db`
 5. **`a-contract-ontology`** reads only from `pages_*.db` — dead sites are invisible
 
-**Consequence**: The observatory has no explicit knowledge of dead or unreachable sites. A site present in the original harvest but failing liveness checks will simply be absent from all observations. There is currently no `availability.is_live` signal in the ontology.
+From ontology 2.0 onward, quarterly `availability.website.*` observations are published. `blocked` and `indeterminate` are not outages. `website_became_unavailable` may only be emitted for a previously reachable website; a never-reachable source candidate remains in the research archive but is never called “dead”. These website events make no claim that a business has closed.
 
 ### Input Data Sources
 
@@ -104,7 +104,7 @@ The pipeline reads from three upstream databases (read-only, no modification):
    - `sites` table — site catalog with gewerk_group, bundesland
    - Used to generate asset states and track site metadata
 
-2. **pages_YYYY.db** (from `sourceDbDir/../3-extract-profile/.output/`):
+2. **pages-YYYY-qN.db** (from the sealed Factory quarter):
    - `page_observations` table — crawl log with content_sha256
    - `ext_*` tables (42 tables) — signal extractions (phone, email, schema.org, etc.)
    - Used to map raw signals to ontology-backed observations

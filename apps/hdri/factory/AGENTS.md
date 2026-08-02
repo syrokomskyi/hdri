@@ -8,9 +8,9 @@ Every app under `apps/hdri/factory/<N>-<name>/` **writes only to its own `.outpu
 
 ## Database naming rule (hard rule)
 
-Every SQLite database produced by a factory app **must include a `_YYYY` suffix** where `YYYY` is the pipeline run year declared in `brief.md` (e.g., `harvestYear`, `scanYear`, `auditYear`). This bounds long-term growth and makes the year scope explicit. Year-rollover migration is out of scope until explicitly requested.
+Mutable catalog and registry databases are year-scoped. Every observation database is **quarter-scoped** with lowercase `YYYY-qN`; Q3 and Q4 must never share a writable database.
 
-Examples: `core_2026.db`, `liveness_2026.db`, `pages_2026_h1.db`, `lighthouse_2026.db`, `axe_2026.db`.
+Examples: `core_2026.db`, `registry_2026.db`, `liveness-2026-q3.db`, `pages-2026-q3.db`, `lighthouse-2026-q3.db`, `axe-2026-q3.db`.
 
 When updating `brief.md` for a new year, also update any downstream `brief.md` files that reference the path.
 
@@ -19,11 +19,11 @@ When updating `brief.md` for a new year, also update any downstream `brief.md` f
 The factory pipeline is a chain of **workspace applications**, not a single monolithic app. Each is a **crawl factory** component — it collects raw signals and emits them for downstream consumption by `apps/hdri/observatory`.
 
 - **0-harvest-source**: Ingests source files (CSV/HTML/MHTML), parses business data, enriches bundesland, classifies gewerk_group. Outputs `core_YYYY.db`.
-- **1-register-businesses**: Collects distinct domains from harvested core.db, deduplicates into a device-local registry, mints deterministic da-\* asset IDs. Outputs `registry_YYYY.db`.
-- **2-check-liveness**: Checks site reachability via HTTP. Outputs `liveness_YYYY.db`.
-- **3-extract-profile**: Crawls sites, extracts 42 signal types into `ext_*` flat tables. Outputs `pages_YYYY.db`.
-- **4-audit-lighthouse**: Runs Lighthouse performance audits. Outputs `lighthouse_YYYY.db`.
-- **5-audit-axe**: Runs Axe accessibility audits. Outputs `axe_YYYY.db`.
+- **1-register-businesses**: Preserves device-local rows and deterministic provisional `da-*` IDs. Canonical cross-quarter identity is a UUID v7 minted once in the Observatory identity registry.
+- **2-check-liveness**: Checks site reachability via HTTP. Outputs `liveness-YYYY-qN.db` keyed by provisional asset ID.
+- **3-extract-profile**: Crawls sites and writes `pages-YYYY-qN.db`.
+- **4-audit-lighthouse**: Optional quarterly Lighthouse audit. It is explicitly disabled for Q3 2026.
+- **5-audit-axe**: Runs quarterly Axe audits and outputs `axe-YYYY-qN.db`.
 
 **Note:** HDRI scoring and publication live in `apps/hdri/observatory`, not here.
 
@@ -39,17 +39,17 @@ Each app has its own `run/` directory, brief.md, and gogol registry. Run workspa
 - `site_cohorts(id, description, ...)` — cohort definitions
 - `site_strata(cohort_id, site_id, gewerk_group, bundesland, ...)` — cohort membership
 
-### pages_YYYY.db (3-extract-profile)
+### pages-YYYY-qN.db (3-extract-profile)
 
-- `page_observations(batch_id, site_page_id, content_sha256, observed_at, ...)` — crawl log
+- `page_observations(site_page_id, content_sha256, observed_at, ...)` — crawl log
 - `page_contents(sha256, storage_path, byte_size)` — CAS for HTML
 - `ext_*` tables (42 flat tables) — one per signal type, schema: `(content_sha256, present, extractor_ver, ...)`
 
-### axe_YYYY.db (5-audit-axe) and lighthouse_YYYY.db (4-audit-lighthouse)
+### axe-YYYY-qN.db and lighthouse-YYYY-qN.db
 
-- `audit_runs(audit_batch_id, site_id, tool, ok, ...)` — audit log
-- `lighthouse_runs(audit_batch_id, site_id, ...)` — Lighthouse metrics
-- `axe_runs(audit_batch_id, site_id, ...)` — axe violation counts
+- `audit_runs(tool, provisional_asset_id, site_id, ok, ...)` — audit log; `site_id` is diagnostic only
+- `lighthouse_runs(provisional_asset_id, ...)` — Lighthouse metrics
+- `axe_runs(provisional_asset_id, ...)` — axe violation counts
 
 ## ext\_\* flat table schema
 
@@ -96,7 +96,7 @@ This ensures balanced representation across gewerk and state combinations.
 
 The publication pipeline enforces k-anonymity:
 
-- Default mode is `enforce` (fail if any stratum has < k_min=5 sites)
+- Default mode is `enforce` (fail if any stratum has < effective k=12 sites)
 - Override to `warn` only for development
 - Publication mode `public` omits identifying data (domain, gewerk, bundesland, real site_id)
 - Publication mode `internal` includes identifying data for internal use

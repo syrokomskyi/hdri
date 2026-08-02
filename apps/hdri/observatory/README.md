@@ -30,9 +30,9 @@ Die Digital-Observatory-Pipeline hängt von Upstream-Daten der `factory`-Pipelin
 
 1. **factory-Pipelines wurden erfolgreich abgeschlossen**:
    - `0-harvest-source` — erzeugt `core.db` mit Website-Katalog
-   - `3-extract-profile` — erzeugt `pages_YYYY.db` mit `ext_*`-Signaltabellen
-   - `4-audit-lighthouse` — erzeugt `lighthouse_YYYY.db` mit Lighthouse-Metriken
-   - `5-audit-axe` — erzeugt `axe_YYYY.db` mit Axe-Metriken
+   - `3-extract-profile` — erzeugt `pages-YYYY-qN.db` mit `ext_*`-Signaltabellen
+   - `4-audit-lighthouse` — erzeugt optional `lighthouse-YYYY-qN.db`
+   - `5-audit-axe` — erzeugt `axe-YYYY-qN.db` mit Axe-Metriken
 
 2. **Gemeinsame Pakete wurden gebaut**:
    ```bash
@@ -94,7 +94,7 @@ Das Digital Observatory erhält nur Beobachtungen für Websites, die zum Zeitpun
 4. **`3-extract-profile`** crawlt nur `is_live=true`-Websites; tote Websites gelangen nie in `pages_*.db`
 5. **`a-contract-ontology`** liest nur aus `pages_*.db` — tote Websites sind unsichtbar
 
-**Konsequenz:** Das Observatorium hat kein explizites Wissen über tote oder unerreichbare Websites. Eine Website, die in der ursprünglichen Ernte vorhanden war, aber die Erreichbarkeitsprüfungen nicht bestanden hat, fehlt einfach in allen Beobachtungen. Derzeit gibt es kein `availability.is_live`-Signal in der Ontologie.
+Ab Ontologie 2.0 werden quartalsweise `availability.website.*`-Beobachtungen veröffentlicht. `blocked` und `indeterminate` gelten nicht als Ausfall. `website_became_unavailable` darf nur für eine zuvor erreichbare Website entstehen; ein nie erreichbarer Quellenkandidat bleibt im Forschungsarchiv, wird aber nicht als „gestorben“ bezeichnet. Diese Website-Ereignisse sind ausdrücklich keine Aussage über die Schließung eines Unternehmens.
 
 ### Eingabedatenquellen
 
@@ -104,7 +104,7 @@ Die Pipeline liest aus drei Upstream-Datenbanken (nur lesend, keine Modifikation
    - Tabelle `sites` — Website-Katalog mit gewerk_group, bundesland
    - Wird verwendet, um Asset-Zustände zu generieren und Website-Metadaten zu verfolgen
 
-2. **pages_YYYY.db** (aus `sourceDbDir/../3-extract-profile/.output/`):
+2. **pages-YYYY-qN.db** (aus dem versiegelten Factory-Quartal):
    - Tabelle `page_observations` — Crawl-Log mit content_sha256
    - `ext_*`-Tabellen (42 Tabellen) — Signalextraktionen (Telefon, E-Mail, schema.org usw.)
    - Wird verwendet, um Rohsignale auf ontologiegestützte Beobachtungen abzubilden
