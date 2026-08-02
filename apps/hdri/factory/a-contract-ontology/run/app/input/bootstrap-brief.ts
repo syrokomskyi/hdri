@@ -38,6 +38,7 @@ export type BootstrappedBrief = {
 const briefTemplate = `---
 period: "2026-q3"
 ontologyVersion: "2.0.0"
+capsuleId: "0198f000-0000-7000-8000-000000000000"
 
 # Upstream database paths (read-only)
 harvestDbPath: "../0-harvest-source/.output/<DEVICE>/data/db/core_2026.db"

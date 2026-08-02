@@ -25,6 +25,8 @@ export type Brief = {
   ontologyVersion: string;
   /** Canonical batch identifier from shared factory brief (optional, for logging). */
   sourceToken: string;
+  /** UUID v7 minted once for this quarterly capsule. */
+  capsuleId: string;
   /** Absolute or relative path to upstream core_YYYY.db (harvest). */
   harvestDbPath: string;
   /** Absolute or relative path to upstream registry_YYYY.db. */
@@ -70,11 +72,16 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     }
     return value.trim();
   };
+  const capsuleId = getRequiredString(data.capsuleId, "capsuleId").toLowerCase();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(capsuleId)) {
+    throw new Error("brief.md: capsuleId must be a UUID v7");
+  }
 
   return {
     period,
     ontologyVersion,
     sourceToken: sourceTokenRaw,
+    capsuleId,
     harvestDbPath: getRequiredString(data.harvestDbPath, "harvestDbPath"),
     registryDbPath: getRequiredString(data.registryDbPath, "registryDbPath"),
     livenessDbPath: getRequiredString(data.livenessDbPath, "livenessDbPath"),
