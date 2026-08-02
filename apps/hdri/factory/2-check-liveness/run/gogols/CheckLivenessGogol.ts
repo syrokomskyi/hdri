@@ -36,7 +36,7 @@ import { openLivenessSqlite, openReadOnlySqlite } from "../db/connection.js";
 // Types
 // ---------------------------------------------------------------------------
 
-type SiteRow = { id: number; domain: string };
+type SiteRow = { id: number; domain: string; provisionalAssetId: string };
 
 type CheckStat = {
   domain: string;
@@ -67,7 +67,10 @@ export class CheckLivenessGogol extends Gogol {
     // ── 1. Load domains from registry.db ────────────────────────────────────
     const coreDb = openReadOnlySqlite(resolvedRegistryDbPath);
 
-    const query = `SELECT id, domain FROM sites ORDER BY id`;
+    const query = `
+      SELECT s.id, s.domain, br.da_id AS provisionalAssetId
+      FROM sites s JOIN business_registry br ON br.domain = s.domain
+      ORDER BY br.da_id`;
 
     let sites = coreDb.prepare(query).all() as SiteRow[];
     coreDb.close();
@@ -77,16 +80,17 @@ export class CheckLivenessGogol extends Gogol {
     }
 
     // ── 1b. Skip already-checked sites (resume support) ─────────────────────
-    const { year } = parseSourceToken(brief.sourceToken);
-    const resumeDb = openLivenessSqlite(year);
-    const checkedRows = resumeDb.prepare(`SELECT site_id FROM liveness_checks`).all() as {
-      site_id: number;
+    const { year, quarter } = parseSourceToken(brief.sourceToken);
+    const period = `${year}-q${quarter}`;
+    const resumeDb = openLivenessSqlite(period);
+    const checkedRows = resumeDb.prepare(`SELECT provisional_asset_id FROM liveness_checks`).all() as {
+      provisional_asset_id: string;
     }[];
-    const checkedSiteIds = new Set(checkedRows.map((r) => r.site_id));
+    const checkedAssetIds = new Set(checkedRows.map((r) => r.provisional_asset_id));
     resumeDb.close();
 
     const originalCount = sites.length;
-    sites = sites.filter((s) => !checkedSiteIds.has(s.id));
+    sites = sites.filter((s) => !checkedAssetIds.has(s.provisionalAssetId));
     const skippedCount = originalCount - sites.length;
 
     console.log(
@@ -101,11 +105,12 @@ export class CheckLivenessGogol extends Gogol {
     }
 
     // ── 2. Prepare liveness.db writes ───────────────────────────────────────
-    const liveDb = openLivenessSqlite(year);
+    const liveDb = openLivenessSqlite(period);
 
     const insertStmt = liveDb.prepare<
       [
         number,
+        string,
         string,
         number | null,
         string | null,
@@ -117,12 +122,13 @@ export class CheckLivenessGogol extends Gogol {
       ]
     >(`
       INSERT INTO liveness_checks (
-        site_id, domain,
+        site_id, provisional_asset_id, domain,
         http_status, final_url, redirect_count,
         latency_ms, is_live,
         error_code, error_msg
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(site_id) DO UPDATE SET
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(provisional_asset_id) DO UPDATE SET
+        site_id        = excluded.site_id,
         domain         = excluded.domain,
         http_status    = excluded.http_status,
         final_url      = excluded.final_url,
@@ -147,6 +153,7 @@ export class CheckLivenessGogol extends Gogol {
 
       insertStmt.run(
         site.id,
+        site.provisionalAssetId,
         result.domain,
         result.httpStatus,
         result.finalUrl,
@@ -187,7 +194,7 @@ export class CheckLivenessGogol extends Gogol {
     liveDb.close();
 
     // ── 4. Load full batch stats from database (includes resumed sites) ─────
-    const reportDb = openLivenessSqlite(year);
+    const reportDb = openLivenessSqlite(period);
 
     const totalChecked = (
       reportDb.prepare(`SELECT COUNT(*) AS n FROM liveness_checks`).get() as { n: number }

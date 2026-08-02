@@ -17,8 +17,8 @@ import { getLivenessDbPath } from "../paths.js";
  * Opens liveness.db for read-write (creates if missing).
  * Caller is responsible for closing.
  */
-export const openLivenessSqlite = (year: number): Database.Database => {
-  const db = new Database(getLivenessDbPath(year));
+export const openLivenessSqlite = (period: string): Database.Database => {
+  const db = new Database(getLivenessDbPath(period));
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   return db;

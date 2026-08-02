@@ -32,8 +32,9 @@ export class SummarizeLivenessGogol extends Gogol {
 
   override async run(ctx: PipelineContext): Promise<void> {
     const { brief } = ctx.state;
-    const { year } = parseSourceToken(brief.sourceToken);
-    const db = openLivenessSqlite(year);
+    const { year, quarter } = parseSourceToken(brief.sourceToken);
+    const period = `${year}-q${quarter}`;
+    const db = openLivenessSqlite(period);
 
     // Stats from liveness_checks
     const totalChecked = (
@@ -61,7 +62,7 @@ export class SummarizeLivenessGogol extends Gogol {
     db.close();
 
     // SHA-256 fingerprint of liveness.db
-    const livenessDbPath = getLivenessDbPath(year);
+    const livenessDbPath = getLivenessDbPath(period);
     console.log(`[summarize-liveness] Computing SHA-256 of liveness.db…`);
     const sha256 = await hashDatabaseFile(livenessDbPath);
     console.log(`[summarize-liveness] sha256=${sha256}`);
