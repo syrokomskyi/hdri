@@ -14,6 +14,7 @@
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
 
 import { SignSourceStep } from "@syrokomskyi/pipeline-steps";
+import { periodFromSourceToken } from "@syrokomskyi/observatory-crypto";
 import { toFactoryRelativePath } from "../config.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { getAuditsDbPath } from "../paths.js";
@@ -44,7 +45,7 @@ export class SignSourceGogol extends SignSourceStep<PipelineContext> {
   }
 
   protected override getDbPath(ctx: PipelineContext): string {
-    return getAuditsDbPath(ctx.state.brief.year);
+    return getAuditsDbPath(periodFromSourceToken(ctx.state.brief.sourceToken));
   }
 
   protected override getSourceToken(ctx: PipelineContext): string {

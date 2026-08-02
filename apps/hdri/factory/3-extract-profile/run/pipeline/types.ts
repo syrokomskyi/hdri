@@ -21,7 +21,7 @@ import type { DomCache } from "../services/dom-cache.js";
 import type { Brief } from "../brief.js";
 
 export type PipelineState = {
-  /** Short DB filename stem, e.g. "pages-2026-h1". */
+  /** Short DB filename stem, e.g. "pages-2026-q3". */
   pagesDbName: string;
   /** Resolved absolute path to registry.db (read-write). */
   resolvedRegistryDbPath: string;

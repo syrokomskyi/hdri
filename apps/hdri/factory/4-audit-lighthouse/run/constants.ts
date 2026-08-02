@@ -18,5 +18,5 @@ export const OWNER_APP = "site-lighthouse-audit";
 /** Human-readable pipeline version for logs and artifacts. */
 export const PIPELINE_VER = "v1";
 
-/** Canonical DB name prefix — actual filename is lighthouse_{year}.db. */
+/** Canonical DB name prefix — actual filename is lighthouse-YYYY-qN.db. */
 export const AUDITS_DB_PREFIX = "lighthouse";

@@ -219,7 +219,8 @@ export class LighthouseAuditGogol extends Gogol {
 
     try {
       // Derive year from sourceToken (B.1 cleanup)
-      const { year } = parseSourceToken(brief.sourceToken);
+      const { year, quarter } = parseSourceToken(brief.sourceToken);
+      const period = `${year}-q${quarter}`;
 
       // Phase B: Query registry.db for live sites, respecting sample size
       const registryDb = openRegistryDbReadOnly(resolvedRegistryDbPath);
@@ -275,7 +276,7 @@ export class LighthouseAuditGogol extends Gogol {
       const totalTargets = targets.length;
       const progressInterval = Math.max(1, Math.min(10, Math.floor(totalTargets / 5)));
 
-      const auditsDb = openAuditsDb(getAuditsDbPath(year));
+      const auditsDb = openAuditsDb(getAuditsDbPath(period));
 
       // Resume: skip sites already recorded in audit_runs
       const auditedSiteIds = new Set(

@@ -25,9 +25,10 @@ export class SetupAuditDbGogol extends Gogol {
 
   override async run(ctx: PipelineContext): Promise<void> {
     const { brief } = ctx.state;
-    const { year } = parseSourceToken(brief.sourceToken);
-    const dbName = getAuditsDbName(year);
-    const dbPath = getAuditsDbPath(year);
+    const { year, quarter } = parseSourceToken(brief.sourceToken);
+    const period = `${year}-q${quarter}`;
+    const dbName = getAuditsDbName(period);
+    const dbPath = getAuditsDbPath(period);
 
     await setupFactoryDb({
       dbDir: getDbDir(),
