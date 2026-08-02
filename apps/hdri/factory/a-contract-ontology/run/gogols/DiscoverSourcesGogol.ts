@@ -26,6 +26,7 @@ import type {
   PipelineContext,
   DiscoveredAxeDb,
   DiscoveredCoreDb,
+  DiscoveredLivenessDb,
   DiscoveredPagesDb,
 } from "../pipeline/types.js";
 import { upstreamOutputRoots } from "../config.js";
@@ -39,6 +40,7 @@ export class DiscoverSourcesGogol extends Gogol {
 
     const discoveredPages: DiscoveredPagesDb[] = [];
     const coreDbs: DiscoveredCoreDb[] = [];
+    const livenessDbs: DiscoveredLivenessDb[] = [];
     const axeDbs: DiscoveredAxeDb[] = [];
 
     // ── Discover pages_*.db (profile) ────────────────────────────────────────
@@ -76,6 +78,15 @@ export class DiscoverSourcesGogol extends Gogol {
           pagesDbPath: path.join(dbDir, fname),
           registryDbPath,
         });
+      }
+    }
+
+    // ── Discover liveness-YYYY-qN.db ────────────────────────────────────────
+    const livenessDevices = await listDeviceFolders(upstreamOutputRoots.liveness);
+    for (const dev of livenessDevices) {
+      const livenessDbPath = path.join(dev.path, "data", "db", `liveness-${brief.period}.db`);
+      if (fs.existsSync(livenessDbPath)) {
+        livenessDbs.push({ deviceId: dev.deviceId, livenessDbPath });
       }
     }
 
@@ -118,9 +129,11 @@ export class DiscoverSourcesGogol extends Gogol {
           period: brief.period,
           pagesCount: discoveredPages.length,
           coreCount: coreDbs.length,
+          livenessCount: livenessDbs.length,
           axeCount: axeDbs.length,
           sources: discoveredPages,
           coreDbs,
+          livenessDbs,
           axeDbs,
         },
         null,
@@ -130,12 +143,13 @@ export class DiscoverSourcesGogol extends Gogol {
     );
 
     console.log(
-      `[discover-sources] ${discoveredPages.length} pages_*.db, ${coreDbs.length} core_*.db, ${axeDbs.length} axe_*.db across ` +
+      `[discover-sources] ${discoveredPages.length} pages DB(s), ${coreDbs.length} core DB(s), ${livenessDbs.length} liveness DB(s), ${axeDbs.length} axe DB(s) across ` +
         `${new Set(discoveredPages.map((d) => d.deviceId)).size} device(s) for period ${brief.period}`,
     );
 
     ctx.state.discoveredPages = discoveredPages;
     ctx.state.coreDbs = coreDbs;
+    ctx.state.livenessDbs = livenessDbs;
     ctx.state.axeDbs = axeDbs;
   }
 }

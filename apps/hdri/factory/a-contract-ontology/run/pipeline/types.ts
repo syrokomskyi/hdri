@@ -60,11 +60,17 @@ export type DiscoveredAxeDb = {
   registryDbPath: string;
 };
 
+export type DiscoveredLivenessDb = {
+  deviceId: string;
+  livenessDbPath: string;
+};
+
 export type PipelineState = {
   brief: Brief;
   ontology: SignalOntology | null;
   discoveredPages: DiscoveredPagesDb[];
   coreDbs: DiscoveredCoreDb[];
+  livenessDbs: DiscoveredLivenessDb[];
   axeDbs: DiscoveredAxeDb[];
   allObs: IngestedObs[];
   resolvedObs: IngestedObs[];

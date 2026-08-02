@@ -50,6 +50,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
       ontology,
       discoveredPages: [],
       coreDbs: [],
+      livenessDbs: [],
       axeDbs: [],
       allObs: [],
       resolvedObs: [],
