@@ -12,6 +12,7 @@
     "validate": "tsx -C @syrokomskyi/source tools/validate-observatory.ts",
     "validate:staging": "tsx -C @syrokomskyi/source tools/validate-observatory.ts --db-dir .output/db/staging",
     "frame:validate": "tsx -C @syrokomskyi/source tools/validate-frame.ts",
+    "frame:import": "tsx -C @syrokomskyi/source tools/import-population-frame.ts",
     "frame:template": "tsx -C @syrokomskyi/source tools/validate-frame.ts --template",
     "promote": "tsx -C @syrokomskyi/source tools/promote-to-canonical.ts",
     "gc:superseded": "tsx -C @syrokomskyi/source tools/gc-superseded.ts",
