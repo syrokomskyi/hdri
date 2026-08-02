@@ -23,6 +23,8 @@ Before starting any pipeline:
 - [ ] Upstream pipeline completed (if not first)
 - [ ] `.input/brief.md` created from `brief.example.md`
 - [ ] `sourceToken` uses correct format: `YYYY-Qn-CC[-extra]`
+- [ ] One UUID v7 `capsuleId` has been minted for the quarter and copied unchanged into every Factory and Observatory brief
+- [ ] The new quarter batch directory contains only newly received source files; prior batch directories and all prior `.output` data are unchanged
 - [ ] Input data files in correct locations
 - [ ] Sufficient disk space (estimate 1GB per 1000 sites)
 - [ ] Chrome/Chromium installed (for audit pipelines)
@@ -104,6 +106,7 @@ Root brief is the single source of truth for geographic and other shared indexes
 ```yaml
 ---
 sourceToken: "2026-q2-de-05"
+capsuleId: "019..." # UUID v7; one value for the complete quarter
 zipcodesTablePath: zipcodes.de.json
 ---
 ```
@@ -127,6 +130,12 @@ Do **not** add `zipcodesTablePath` to `0-harvest-source/.input/brief.md` or `1-r
 Place catalog files in `.input/batches/<batch-name>/`:
 
 ```
+
+For Q3, add only `2026-q3-de-01/` with the new source files. A source may repeat
+domains already present in Q2: this creates new provenance occurrences while the
+domain keeps the same provisional identity and canonical UUID v7. Never copy Q2
+files into the Q3 directory. The accepted source ledger projects the cumulative
+Q2+Q3 frame without reparsing or replacing the Q2 segment.
 0-harvest-source/.input/
   brief.md
   batches/
@@ -236,11 +245,12 @@ pnpm turbo run start --filter=@syrokomskyi/site-liveness
 
 ### Configuration Notes
 
-This pipeline has **hardcoded policies** (Phase B):
+This pipeline has quarter-scoped policies:
 
 - Only live sites are crawled (`liveOnly = true`)
-- Successful pages are never re-fetched
-- Failed pages are always re-fetched on next run
+- A terminal result is never fetched again while resuming the same quarter capsule
+- A new quarter has a new capsule and therefore captures the site again
+- HTTP and network failures are terminal observed evidence after the bounded policy is exhausted
 
 ### Run
 
@@ -356,8 +366,9 @@ pnpm turbo run start --filter=@syrokomskyi/catalog-harvest
 pnpm turbo run start --filter=@syrokomskyi/register-businesses
 pnpm turbo run start --filter=@syrokomskyi/site-liveness
 pnpm turbo run start --filter=@syrokomskyi/site-profile
-pnpm turbo run start --filter=@syrokomskyi/site-lighthouse-audit
+# Q3: Lighthouse is explicitly disabled
 pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
+pnpm turbo run start --filter=@syrokomskyi/contract-ontology
 ```
 
 Or use the monorepo root:
@@ -367,6 +378,29 @@ pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi
 ```
 
 **Note:** This runs dependencies in parallel where possible, but respects the pipeline chain order.
+
+### Safe restart contract
+
+Liveness, profile and Axe freeze their complete target set before the first
+network request and append lease, retry and terminal events under the quarter
+capsule. Mutable SQLite rows are checkpoints only. After power or network loss,
+rerun the same stage with the same `period` and `capsuleId`: terminal work is
+restored from immutable CAS evidence and is not requested again. `maxDomains`
+sessions are diagnostic and never seal a stage.
+
+Do not edit a brief, instrument version or target frame after work has begun.
+Configuration or target drift is rejected. A full stage seals only when every
+declared target has a successful or observed-failure result.
+
+### Quarter closure
+
+The contract bridge creates a staging capsule containing the frozen frame,
+quarter databases, execution journal, referenced profile HTML, referenced Axe
+reports, signed observations and methodology. Observatory adds canonical UUID v7
+identity, vault shards and publication artifacts after the release gate, then
+writes `capsule-manifest.json` and detached `capsule-signature.json`. Until both
+files exist and verify, the quarter is not sealed and must not be published or
+used as the starting point for the next quarter.
 
 ---
 
