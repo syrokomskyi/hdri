@@ -161,7 +161,7 @@ Die aggregierten, anonymisierten Quartalsdaten werden auf **[handwerk-index.de](
 - **Codebook** — Versioniert in `codebook.yaml` (aktuell v1.3.0). Eine Änderung der Gewichte oder Regeln erfordert eine neue Codebook-Version.
 - **Ontologie** — Versioniert in `ontology.yaml` (aktuell v1.0.0). Neue Signale erhalten ein `introduced_in`-Datum.
 - **Datenbanken** — Jedes Quartal erzeugt neue `*_YYYY.db`-Dateien; historische Daten werden nicht überschrieben.
-- **Reproduzierbarkeit** — Durch deterministische Asset-ID-Ableitung (SHA-256 über Domain + `sourceToken`) und Seeded-Sampling können identische Stichproben bei erneuten Läufen erzeugt werden.
+- **Reproduzierbarkeit** — Die vorläufige Asset-ID wird deterministisch aus der normalisierten Domain abgeleitet; der kanonische UUID-v7-Identifier wird im append-only Identity-Register genau einmal zugeordnet. Source-Token dokumentieren Herkunft und Quartal, sind aber kein Teil der Site-Identität.
 
 ---
 
