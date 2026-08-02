@@ -46,11 +46,14 @@ type SignedObsRow = {
 
 type ShardResult = {
   factoryRunId: string;
+  shardRunId: string;
   appId: string;
   shardPath: string;
   count: number;
   skipped: boolean;
 };
+
+const VAULT_PARTITION_ROWS = 100_000;
 
 export class WriteVaultGogol extends Gogol {
   override readonly id = "write-vault";
@@ -103,21 +106,6 @@ export class WriteVaultGogol extends Gogol {
       }
 
       for (const { run_id: factoryRunId, app_id: appId, obs_count } of syncedRuns) {
-        // Idempotency: skip if shard already exists
-        const shardPath = obsShardPath(vaultDir, year, factoryRunId);
-
-        try {
-          await fsp.access(shardPath);
-          log.info("shard-exists", `Shard exists — skipping factory run_id=${factoryRunId}`, {
-            factoryRunId,
-          });
-          results.push({ factoryRunId, appId, shardPath, count: obs_count, skipped: true });
-          continue;
-        } catch {
-          // File does not exist — proceed with write
-        }
-
-        // Load signed observations for this factory run
         const rows = db
           .prepare(
             `
@@ -126,44 +114,57 @@ export class WriteVaultGogol extends Gogol {
           WHERE factory_run_id = ? AND signature IS NOT NULL AND obs_json IS NOT NULL
         `,
           )
-          .all(factoryRunId) as SignedObsRow[];
+          .iterate(factoryRunId) as IterableIterator<SignedObsRow>;
 
-        if (rows.length === 0) {
-          log.info(
-            "no-signed-obs",
-            `No signed observations for factory run_id=${factoryRunId} — skipping shard`,
-            { factoryRunId },
-          );
-          results.push({ factoryRunId, appId, shardPath: "", count: 0, skipped: true });
-          continue;
-        }
+        let part = 0;
+        let seen = 0;
+        let chunk: SignedObservation[] = [];
+        const flush = async (): Promise<void> => {
+          if (chunk.length === 0) return;
+          const partRunId = `${factoryRunId}-part-${String(part).padStart(6, "0")}`;
+          const shardPath = obsShardPath(vaultDir, year, partRunId);
+          try {
+            await fsp.access(shardPath);
+            results.push({ factoryRunId, shardRunId: partRunId, appId, shardPath, count: chunk.length, skipped: true });
+          } catch {
+            const result = await writer.writeShard("observations", chunk as readonly object[], {
+              year,
+              runId: partRunId,
+            });
+            results.push({ factoryRunId, shardRunId: partRunId, appId, shardPath: result.shardPath, count: result.count, skipped: false });
+          }
+          part++;
+          chunk = [];
+        };
 
-        const signed: SignedObservation[] = rows.map((row) => {
+        for (const row of rows) {
           const obs = JSON.parse(row.obs_json) as Observation;
-          return {
+          chunk.push({
             ...obs,
             signature: row.signature,
             signed_at: row.signed_at,
             signing_key_id: row.signing_key_id,
             collector_id: row.collector_id,
-          };
-        });
+          });
+          seen++;
+          if (chunk.length >= VAULT_PARTITION_ROWS) await flush();
+        }
+        await flush();
 
-        log.info("writing-shard", `Writing ${signed.length} obs → ${path.basename(shardPath)}`, {
-          shardPath: path.basename(shardPath),
-          count: signed.length,
-        });
-        const result = await writer.writeShard("observations", signed as readonly object[], {
-          year,
-          runId: factoryRunId,
-        });
-        results.push({
-          factoryRunId,
-          appId,
-          shardPath: result.shardPath,
-          count: result.count,
-          skipped: false,
-        });
+        if (seen !== obs_count) {
+          throw new Error(
+            `Signed observation count mismatch for ${factoryRunId}: expected ${obs_count}, found ${seen}`,
+          );
+        }
+
+        if (seen === 0) {
+          log.info(
+            "no-signed-obs",
+            `No signed observations for factory run_id=${factoryRunId} — skipping shard`,
+            { factoryRunId },
+          );
+          results.push({ factoryRunId, shardRunId: factoryRunId, appId, shardPath: "", count: 0, skipped: true });
+        }
       }
 
       // Additively persist this run's asset_states to the vault (one shard keyed by the
@@ -211,7 +212,7 @@ export class WriteVaultGogol extends Gogol {
       if (!r.shardPath || r.count === 0 || !r.skipped) continue;
       await writer.recordShard("observations", r.shardPath, {
         year,
-        runId: r.factoryRunId,
+        runId: r.shardRunId,
         rows: r.count,
       });
       recorded++;
