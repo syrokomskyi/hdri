@@ -27,7 +27,7 @@ import type { AssetStateMapping, AssetStateRecord } from "@syrokomskyi/observato
 import { EmitBundleWriter } from "@syrokomskyi/observatory-emit";
 import type { SignedObservation } from "@syrokomskyi/observatory-crypto";
 import {
-  sealQuarterCapsule,
+  writeQuarterCapsuleStaging,
   type CapsuleArtifact,
   type QuarterCapsule,
 } from "@syrokomskyi/factory-core";
@@ -167,14 +167,16 @@ export class EmitBundleGogol extends Gogol {
       throw new Error(`No frozen source frame found for ${brief.period}`);
     }
 
-    const emitManifestPath = path.join(emitDir, "manifest.json");
-    const emitStat = await fsp.stat(emitManifestPath);
-    artifacts.push({
-      stage: "emit",
-      uri: "artifacts/emit/manifest.json",
-      sha256: await hashFile(emitManifestPath),
-      bytes: emitStat.size,
-    });
+    for (const name of ["manifest.json", "observations.ndjson", "asset-states.ndjson"]) {
+      const emitPath = path.join(emitDir, name);
+      const emitStat = await fsp.stat(emitPath);
+      artifacts.push({
+        stage: "emit",
+        uri: `artifacts/emit/${name}`,
+        sha256: await hashFile(emitPath),
+        bytes: emitStat.size,
+      });
+    }
     if (ontology) {
       const methodologyUri = "artifacts/methodology/ontology.json";
       const methodologyPath = path.join(capsuleDir, methodologyUri);
@@ -187,7 +189,7 @@ export class EmitBundleGogol extends Gogol {
     const capsule: QuarterCapsule = {
       period: brief.period,
       capsuleId: brief.capsuleId,
-      state: "sealed",
+      state: "staging",
       instrumentPlan: [
         { instrument: "liveness", state: "required", reason: null },
         { instrument: "profile", state: "required", reason: null },
@@ -196,7 +198,7 @@ export class EmitBundleGogol extends Gogol {
       ],
       artifacts,
     };
-    await sealQuarterCapsule(capsuleDir, capsule);
+    await writeQuarterCapsuleStaging(capsuleDir, capsule);
     ctx.state.manifest = manifestWithDir;
   }
 }
