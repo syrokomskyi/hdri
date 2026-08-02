@@ -34,6 +34,8 @@ export type PostStratResult = {
   frameStrata: number;
   /** Fraction of total frame weight covered by sampled strata (0..1). */
   weightCoverage: number;
+  minimumBundeslandCoverage: number;
+  minimumGroupCoverage: number;
 };
 
 export type PostStratPoint = {
@@ -44,6 +46,8 @@ export type PostStratPoint = {
   coveredStrata: number;
   frameStrata: number;
   weightCoverage: number;
+  minimumBundeslandCoverage: number;
+  minimumGroupCoverage: number;
   suppressed: boolean;
 };
 
@@ -92,6 +96,17 @@ export function postStratifiedMean(
   let weightedSum = 0;
   let coveredWeight = 0;
   let coveredStrata = 0;
+  const dimensionWeights = new Map<string, { total: number; covered: number }>();
+  for (const [key, weight] of Object.entries(frame.weights)) {
+    if (weight <= 0) continue;
+    const [bundesland, group] = key.split("|");
+    for (const dimension of [`land:${bundesland}`, `group:${group}`]) {
+      const current = dimensionWeights.get(dimension) ?? { total: 0, covered: 0 };
+      current.total += weight;
+      if (sums.has(key)) current.covered += weight;
+      dimensionWeights.set(dimension, current);
+    }
+  }
   for (const [key, agg] of sums) {
     const w = frame.weights[key];
     if (w == null || w <= 0) continue; // stratum not in frame → cannot weight it
@@ -102,13 +117,27 @@ export function postStratifiedMean(
 
   const weightCoverage = totalFrameWeight > 0 ? round2(coveredWeight / totalFrameWeight) : 0;
   const weightedMean = coveredWeight > 0 ? round(weightedSum / coveredWeight) : null;
-  return { weightedMean, coveredStrata, frameStrata, weightCoverage };
+  const minimumCoverage = (prefix: string): number => {
+    const values = [...dimensionWeights.entries()]
+      .filter(([key]) => key.startsWith(prefix))
+      .map(([, value]) => (value.total > 0 ? value.covered / value.total : 0));
+    return values.length > 0 ? Math.min(...values) : 0;
+  };
+  return {
+    weightedMean,
+    coveredStrata,
+    frameStrata,
+    weightCoverage,
+    minimumBundeslandCoverage: round2(minimumCoverage("land:")),
+    minimumGroupCoverage: round2(minimumCoverage("group:")),
+  };
 }
 
 export type PeriodStrata = { period: string; assets: StratifiedAsset[] };
 
 /** Minimum frame coverage below which a post-stratified figure is suppressed. */
 export const MIN_WEIGHT_COVERAGE = 0.95;
+export const MIN_DIMENSION_COVERAGE = 0.8;
 
 export function buildPostStratTrends(
   periods: PeriodStrata[],
@@ -119,7 +148,11 @@ export function buildPostStratTrends(
   let prevPeriod: string | null = null;
   return sorted.map((p) => {
     const r = postStratifiedMean(p.assets, frame);
-    const suppressed = r.weightedMean == null || r.weightCoverage < MIN_WEIGHT_COVERAGE;
+    const suppressed =
+      r.weightedMean == null ||
+      r.weightCoverage < MIN_WEIGHT_COVERAGE ||
+      r.minimumBundeslandCoverage < MIN_DIMENSION_COVERAGE ||
+      r.minimumGroupCoverage < MIN_DIMENSION_COVERAGE;
     const weightedMean = suppressed ? null : r.weightedMean;
     const delta = weightedMean != null && prevMean != null ? round(weightedMean - prevMean) : null;
     const point: PostStratPoint = {
@@ -130,6 +163,8 @@ export function buildPostStratTrends(
       coveredStrata: r.coveredStrata,
       frameStrata: r.frameStrata,
       weightCoverage: r.weightCoverage,
+      minimumBundeslandCoverage: r.minimumBundeslandCoverage,
+      minimumGroupCoverage: r.minimumGroupCoverage,
       suppressed,
     };
     prevPeriod = p.period;

@@ -172,6 +172,21 @@ describe("poststrat-core", () => {
     expect(pt!.suppressed).toBe(true); // only 30% coverage < 0.6
     expect(pt!.weightedMean).toBeNull();
   });
+
+  it("suppresses a headline when a Bundesland or industry group is below 80% coverage", () => {
+    const unevenFrame = {
+      strataSystem: "bundesland|destatis_group",
+      source: "official",
+      weights: { "Bayern|I": 96, "Bayern|II": 4 },
+    };
+    const [point] = buildPostStratTrends(
+      [{ period: "2026-q3", assets: [{ stratumKey: "Bayern|I", score: 70 }] }],
+      unevenFrame,
+    );
+    expect(point!.weightCoverage).toBe(0.96);
+    expect(point!.minimumGroupCoverage).toBe(0);
+    expect(point!.suppressed).toBe(true);
+  });
 });
 
 describe("loadPopulationFrame", () => {
