@@ -20,11 +20,7 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
-import {
-  listDeviceFolders,
-  parseSourceToken,
-  periodMatchesToken,
-} from "@syrokomskyi/observatory-crypto";
+import { listDeviceFolders } from "@syrokomskyi/observatory-crypto";
 import { Gogol } from "../pipeline/Gogol.js";
 import type {
   PipelineContext,
@@ -57,56 +53,9 @@ export class DiscoverSourcesGogol extends Gogol {
       }
 
       for (const fname of entries) {
-        // Support both pages_*.db and pages-*.db formats
-        if (!fname.startsWith("pages_") && !fname.startsWith("pages-")) continue;
-        if (!fname.endsWith(".db")) continue;
-
-        // Extract token after "pages_" or "pages-"
-        const sourceToken = fname.startsWith("pages_")
-          ? fname.slice("pages_".length, -".db".length)
-          : fname.slice("pages-".length, -".db".length);
-
-        let parsedToken: { year: number; quarter: number };
-        let isSimplePattern = false;
-
-        try {
-          parsedToken = parseSourceToken(sourceToken);
-        } catch {
-          // If parseSourceToken fails, try to match simple patterns like "2026-h1"
-          const simpleMatch = /^(\d{4})-(h[12]|q[1-4])$/.exec(sourceToken);
-          if (!simpleMatch) continue;
-          const year = parseInt(simpleMatch[1], 10);
-          const period = simpleMatch[2];
-          // Convert h1/h2 to quarters: h1 covers Q1+Q2, h2 covers Q3+Q4
-          // For current quarter matching, h1 should match both Q1 and Q2
-          const quarter = period === "h1" ? 2 : period === "h2" ? 4 : parseInt(period.slice(1), 10);
-          parsedToken = { year, quarter };
-          isSimplePattern = true;
-        }
-
-        // Check period matching
-        if (isSimplePattern) {
-          // For simple patterns like "2026-h1", check if the period matches
-          const briefYear = parsePeriod(brief.period).year;
-          const briefQuarter = parsePeriod(brief.period).quarter;
-          if (parsedToken.year !== briefYear) continue;
-
-          // h1 covers Q1+Q2, h2 covers Q3+Q4
-          const sourceToken = fname.startsWith("pages_")
-            ? fname.slice("pages_".length, -".db".length)
-            : fname.slice("pages-".length, -".db".length);
-
-          const simpleMatch = /^(\d{4})-(h[12]|q[1-4])$/.exec(sourceToken);
-          if (simpleMatch) {
-            const period = simpleMatch[2];
-            if (period === "h1" && briefQuarter !== 1 && briefQuarter !== 2) continue;
-            if (period === "h2" && briefQuarter !== 3 && briefQuarter !== 4) continue;
-            if (period.startsWith("q") && parseInt(period.slice(1), 10) !== briefQuarter) continue;
-          }
-        } else {
-          // For full sourceToken format, use periodMatchesToken
-          if (!periodMatchesToken(brief.period, sourceToken)) continue;
-        }
+        if (fname !== `pages-${brief.period}.db`) continue;
+        const sourceToken = brief.period;
+        const parsedToken = parsePeriod(brief.period);
 
         const registryDbPath = path.join(
           upstreamOutputRoots.registry,
@@ -142,7 +91,7 @@ export class DiscoverSourcesGogol extends Gogol {
     // ── Discover axe_YYYY.db (axe audit) ──────────────────────────────────────
     const axeDevices = await listDeviceFolders(upstreamOutputRoots.axe);
     for (const dev of axeDevices) {
-      const axePath = path.join(dev.path, "data", "db", `axe_${year}.db`);
+      const axePath = path.join(dev.path, "data", "db", `axe-${brief.period}.db`);
       const registryDbPath = path.join(
         upstreamOutputRoots.registry,
         dev.deviceId,
@@ -153,7 +102,7 @@ export class DiscoverSourcesGogol extends Gogol {
       if (fs.existsSync(axePath)) {
         if (!fs.existsSync(registryDbPath)) {
           console.warn(
-            `[discover-sources] ${dev.deviceId}/axe_${year}.db: missing matching registry_${year}.db — skipped`,
+            `[discover-sources] ${dev.deviceId}/axe-${brief.period}.db: missing matching registry_${year}.db — skipped`,
           );
           continue;
         }
