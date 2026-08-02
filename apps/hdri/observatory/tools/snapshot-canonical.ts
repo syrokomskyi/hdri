@@ -18,6 +18,7 @@ import crypto from "node:crypto";
 import Database from "better-sqlite3";
 import "@syrokomskyi/observatory-crypto/auto-env";
 import { canonicalize, loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
+import { writeParquet } from "@syrokomskyi/observatory-vault";
 import {
   hashEntry,
   sha256File,
@@ -103,6 +104,60 @@ async function signSnapshotManifest(dir: string, manifest: SnapshotManifest): Pr
     }, null, 2)}\n`,
     "utf8",
   );
+}
+
+async function writeLegacyIdentityIndex(
+  snapshotDir: string,
+  observatoryDbPath: string,
+  year: number,
+): Promise<{ relativePath: string; rows: number }> {
+  const registryCandidates = (await walkFiles(path.join(snapshotDir, "factory", "output")))
+    .filter((file) => path.basename(file) === `registry_${year}.db`);
+  if (registryCandidates.length !== 1) {
+    throw new Error(
+      `Expected exactly one preserved registry_${year}.db, found ${registryCandidates.length}`,
+    );
+  }
+
+  const registry = new Database(registryCandidates[0]!, { readonly: true });
+  const observatory = new Database(observatoryDbPath, { readonly: true });
+  try {
+    const identities = observatory
+      .prepare(`SELECT provisional_id, canonical_id, domain, first_seen FROM asset_id_map`)
+      .all() as Array<{
+      provisional_id: string;
+      canonical_id: string;
+      domain: string;
+      first_seen: string;
+    }>;
+    const byDomain = new Map(identities.map((row) => [row.domain, row]));
+    const sites = registry.prepare(`SELECT id, domain FROM sites ORDER BY id`).all() as Array<{
+      id: number;
+      domain: string;
+    }>;
+    const unresolved = sites.filter((site) => !byDomain.has(site.domain));
+    if (unresolved.length > 0) {
+      throw new Error(`Identity recovery index has ${unresolved.length} unresolved registry sites`);
+    }
+    const rows = sites.map((site) => {
+      const identity = byDomain.get(site.domain)!;
+      return {
+        legacy_site_id: site.id,
+        domain: site.domain,
+        provisional_asset_id: identity.provisional_id,
+        canonical_asset_id: identity.canonical_id,
+        first_seen: identity.first_seen,
+      };
+    });
+    const relativePath = "index/legacy-site-identities.parquet";
+    const outputPath = path.join(snapshotDir, relativePath);
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
+    await writeParquet(rows, outputPath);
+    return { relativePath, rows: rows.length };
+  } finally {
+    observatory.close();
+    registry.close();
+  }
 }
 
 async function createSnapshot(year: number, outDir: string): Promise<void> {
@@ -226,6 +281,13 @@ async function createSnapshot(year: number, outDir: string): Promise<void> {
     await retainTree(path.join(DASHBOARD_DIR, ".output"), "dashboard/output", "public", "published-dashboard");
   }
 
+  // 7. Explicit recovery bridge from transient Factory integer row ids to the
+  // canonical UUID v7 identity already minted for every Q2 site.
+  const identityIndex = await writeLegacyIdentityIndex(outDir, dbDest, year);
+  relPaths.push(identityIndex.relativePath);
+  metadata.set(identityIndex.relativePath, { access: "internal", role: "identity-recovery" });
+  console.log(`  ✓ Identity recovery index: ${identityIndex.rows} rows`);
+
   const sourceIntegrity = [];
   for (const [source, before] of sourceBefore) {
       const after = await fs.stat(source);
@@ -248,7 +310,7 @@ async function createSnapshot(year: number, outDir: string): Promise<void> {
   relPaths.push(sourceIntegrityPath);
   metadata.set(sourceIntegrityPath, { access: "internal", role: "source-integrity" });
 
-  // 7. Checksummed manifest.
+  // 8. Checksummed manifest.
   const files = [];
   for (const rel of relPaths) {
     const entry = await hashEntry(outDir, rel);
