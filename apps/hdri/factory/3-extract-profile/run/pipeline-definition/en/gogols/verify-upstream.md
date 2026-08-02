@@ -11,7 +11,7 @@ details: >-
   liveness.db and compares it to the signed content hash. Writes verification
   summary JSON and Markdown artifacts.
 inputs:
-  - '2-check-liveness/.output/<deviceId>/data/db/liveness_YYYY.db'
+  - '2-check-liveness/.output/<deviceId>/data/db/liveness-YYYY-qN.db'
   - '2-check-liveness/.output/<deviceId>/*-sign-source/source-signature.json'
   - '<repo-root>/transparency/keys/*.pem'
 outputs:

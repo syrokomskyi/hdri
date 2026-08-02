@@ -15,6 +15,7 @@
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
 
 import { VerifyUpstreamStep } from "@syrokomskyi/pipeline-steps";
+import { periodFromSourceToken } from "@syrokomskyi/observatory-crypto";
 import { toFactoryRelativePath, upstreamLivenessOutputRoot } from "../config.js";
 import type { PipelineContext } from "../pipeline/types.js";
 
@@ -27,7 +28,7 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
       "Check ed25519 signatures on every upstream 2-check-liveness liveness.db before ingestion.",
     decisionType: "auto" as const,
     inputs: [
-      "2-check-liveness/.output/<deviceId>/data/db/liveness_YYYY.db",
+      "2-check-liveness/.output/<deviceId>/data/db/liveness-YYYY-qN.db",
       "2-check-liveness/.output/<deviceId>/*-sign-source/source-signature.json",
       "<repo-root>/transparency/keys/*.pem",
     ],
@@ -52,7 +53,7 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
   }
 
   protected override getDbFilenames(ctx: PipelineContext): string[] {
-    return [`liveness_${ctx.state.brief.year}.db`];
+    return [`liveness-${periodFromSourceToken(ctx.state.brief.sourceToken)}.db`];
   }
 
   protected override getYear(ctx: PipelineContext): number {

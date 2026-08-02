@@ -29,7 +29,7 @@ export type Brief = {
   harvestDbPath: string;
   /** Absolute or relative path to upstream registry_YYYY.db. */
   registryDbPath: string;
-  /** Absolute or relative path to upstream liveness_YYYY.db. */
+  /** Absolute or relative path to upstream liveness-YYYY-qN.db. */
   livenessDbPath: string;
   /** Absolute or relative path to upstream pages_*.db (profile). */
   profileDbPath: string;
