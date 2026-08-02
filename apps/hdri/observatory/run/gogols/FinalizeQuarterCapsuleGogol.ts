@@ -6,6 +6,7 @@
 <CHANGE_SUMMARY><item>RFC-0025 moves final sealing behind Observatory publication.</item></CHANGE_SUMMARY>
 */
 
+import "@syrokomskyi/observatory-crypto/auto-env";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";

@@ -143,6 +143,66 @@ export class EmitBundleGogol extends Gogol {
     for (const item of discoveredPages) await retainDb("profile", item.deviceId, item.pagesDbPath);
     for (const item of axeDbs) await retainDb("axe", item.deviceId, item.axeDbPath);
 
+    const retainCasFile = async (
+      stage: "profile" | "axe",
+      deviceId: string,
+      source: string,
+      relativeStoragePath: string,
+      expectedSha256: string,
+    ): Promise<void> => {
+      const uri = `artifacts/${stage}/${deviceId}/${relativeStoragePath.replaceAll(path.sep, "/")}`;
+      const destination = path.join(capsuleDir, uri);
+      await fsp.mkdir(path.dirname(destination), { recursive: true });
+      try {
+        await fsp.link(source, destination);
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === "EEXIST") {
+          // Idempotent retry: the closure check below proves the existing bytes.
+        } else if (code === "EXDEV" || code === "EPERM" || code === "ENOTSUP") {
+          await fsp.copyFile(source, destination, fs.constants.COPYFILE_EXCL).catch((copyError) => {
+            if ((copyError as NodeJS.ErrnoException).code !== "EEXIST") throw copyError;
+          });
+        } else {
+          throw error;
+        }
+      }
+      const sha256 = await hashFile(destination);
+      if (sha256 !== expectedSha256) throw new Error(`CAS closure hash mismatch: ${relativeStoragePath}`);
+      const stat = await fsp.stat(destination);
+      artifacts.push({ stage, uri, sha256, bytes: stat.size });
+    };
+
+    for (const item of discoveredPages) {
+      const db = new Database(item.pagesDbPath, { readonly: true, fileMustExist: true });
+      try {
+        const rows = db.prepare("SELECT content_hash AS contentHash, storage_path AS storagePath FROM page_contents ORDER BY content_hash").all() as Array<{ contentHash: string; storagePath: string }>;
+        const outputRoot = path.dirname(path.dirname(path.dirname(item.pagesDbPath)));
+        for (const row of rows) {
+          if (row.storagePath !== `data/content/${row.contentHash.slice(0, 2)}/${row.contentHash}.html`) {
+            throw new Error(`Non-canonical profile CAS path: ${row.storagePath}`);
+          }
+          await retainCasFile("profile", item.deviceId, path.resolve(outputRoot, row.storagePath), row.storagePath, row.contentHash);
+        }
+      } finally {
+        db.close();
+      }
+    }
+
+    for (const item of axeDbs) {
+      const db = new Database(item.axeDbPath, { readonly: true, fileMustExist: true });
+      try {
+        const rows = db.prepare("SELECT DISTINCT report_sha256 AS reportSha256 FROM axe_runs WHERE report_sha256 IS NOT NULL ORDER BY report_sha256").all() as Array<{ reportSha256: string }>;
+        const outputRoot = path.dirname(path.dirname(path.dirname(item.axeDbPath)));
+        for (const row of rows) {
+          const relative = `data/audit-reports/axe/${row.reportSha256.slice(0, 2)}/${row.reportSha256}.json`;
+          await retainCasFile("axe", item.deviceId, path.resolve(outputRoot, relative), relative, row.reportSha256);
+        }
+      } finally {
+        db.close();
+      }
+    }
+
     for (const item of coreDbs) {
       const frameSource = path.resolve(
         path.dirname(item.coreDbPath),

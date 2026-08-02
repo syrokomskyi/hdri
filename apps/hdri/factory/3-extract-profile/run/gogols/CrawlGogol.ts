@@ -244,6 +244,8 @@ export class CrawlGogol extends Gogol {
           } finally {
             await fs.unlink(temp).catch(() => undefined);
           }
+        } else if (sha256Hex(await fs.readFile(contentFilePath, "utf8")) !== fetched.contentHash) {
+          throw new Error(`Profile content CAS collision: ${fetched.contentHash}`);
         }
         evidencePayload = {
           schemaVersion: 1,
