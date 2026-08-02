@@ -23,6 +23,7 @@
 
 import matter from "gray-matter";
 import { parseSourceToken, getDeviceId } from "@syrokomskyi/observatory-crypto";
+import { assertCapsuleId } from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -30,6 +31,8 @@ export type Brief = {
    * Sole axis of idempotency.
    */
   sourceToken: string;
+  /** UUID v7 shared by every stage of this quarter. */
+  capsuleId: string;
   /**
    * Absolute or app-root-relative path to the 1-register-businesses registry.db.
    * Site-profile needs read-write access — it owns the site_pages table.
@@ -114,6 +117,8 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     );
   }
   const parsedToken = parseSourceToken(sourceTokenRaw);
+  const capsuleId = typeof data.capsuleId === "string" ? data.capsuleId.trim().toLowerCase() : "";
+  assertCapsuleId(capsuleId);
 
   const registryDbPath = typeof data.registryDbPath === "string" ? data.registryDbPath.trim() : "";
   if (!registryDbPath) throw new Error("brief.md: registryDbPath must be a non-empty string");
@@ -126,6 +131,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   return {
     sourceToken: parsedToken.raw,
+    capsuleId,
     registryDbPath,
     livenessDbPath,
     zipcodesTablePath,

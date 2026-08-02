@@ -17,6 +17,7 @@
 
 import matter from "gray-matter";
 import { parseSourceToken, getDeviceId } from "@syrokomskyi/observatory-crypto";
+import { assertCapsuleId } from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -24,6 +25,8 @@ export type Brief = {
    * Sole axis of idempotency.
    */
   sourceToken: string;
+  /** UUID v7 shared by every stage of this quarter. */
+  capsuleId: string;
   /**
    * Absolute or app-root-relative path to the 1-register-businesses registry.db.
    * Example: "../1-register-businesses/.output/${DEVICE_ID}/data/db/registry_2026.db"
@@ -86,6 +89,8 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     );
   }
   const parsedToken = parseSourceToken(sourceTokenRaw);
+  const capsuleId = typeof data.capsuleId === "string" ? data.capsuleId.trim().toLowerCase() : "";
+  assertCapsuleId(capsuleId);
 
   // registryDbPath
   const registryDbPath = typeof data.registryDbPath === "string" ? data.registryDbPath.trim() : "";
@@ -100,6 +105,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   return {
     sourceToken: parsedToken.raw,
+    capsuleId,
     registryDbPath,
     deviceId: getDeviceId(),
     year: parsedToken.year,
