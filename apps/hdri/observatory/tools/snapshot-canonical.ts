@@ -108,7 +108,7 @@ async function createSnapshot(year: number, outDir: string): Promise<void> {
   const vaultYearDir = path.join(VAULT_DIR, "observations", `year=${year}`);
   const vaultFiles = await walkFiles(vaultYearDir);
   for (const abs of vaultFiles) {
-    const rel = path.join("vault", "observations", `year=${year}`, path.basename(abs));
+    const rel = path.join("vault", "observations", `year=${year}`, path.relative(vaultYearDir, abs));
     relPaths.push(await copyInto(abs, outDir, rel));
   }
   console.log(`  ✓ Vault shards: ${vaultFiles.length}`);
