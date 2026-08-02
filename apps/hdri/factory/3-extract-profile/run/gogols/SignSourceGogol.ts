@@ -44,13 +44,7 @@ export class SignSourceGogol extends SignSourceStep<PipelineContext> {
   }
 
   protected override getDbPath(ctx: PipelineContext): string {
-    const match = ctx.state.pagesDbName.match(/pages-(\d{4})-h([12])/);
-    if (!match) {
-      throw new Error(`Invalid pagesDbName format: ${ctx.state.pagesDbName}`);
-    }
-    const year = parseInt(match[1], 10);
-    const half = parseInt(match[2], 10) as 1 | 2;
-    return getPagesDbPath(year, half);
+    return getPagesDbPath(ctx.state.pagesDbName);
   }
 
   protected override getSourceToken(ctx: PipelineContext): string {

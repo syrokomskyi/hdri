@@ -45,10 +45,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   const { brief } = await bootstrapBrief();
 
   const { year, quarter } = parseSourceToken(brief.sourceToken);
-  // Quarter → half: Q1/Q2 → 1; Q3/Q4 → 2
-  const half: 1 | 2 = quarter <= 2 ? 1 : 2;
-
-  const pagesDbName = getPagesDbName(year, half);
+  const pagesDbName = getPagesDbName(`${year}-q${quarter}`);
 
   // Resolve both DB paths relative to the app root (parent of app-local .input/)
   const appRootDir = path.resolve(briefInputDir, "..");

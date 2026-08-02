@@ -17,7 +17,6 @@
 </CHANGE_SUMMARY>
 */
 
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { migratePages, stampPagesMeta } from "@syrokomskyi/business-core/migrate";
 import { setupFactoryDb } from "@syrokomskyi/factory-core";
 import { toFactoryRelativePath } from "../config.js";
@@ -31,10 +30,8 @@ export class SetupProfileDbGogol extends Gogol {
   override readonly id = "setup-profile-db";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { brief, pagesDbName } = ctx.state;
-    const { year, quarter } = parseSourceToken(brief.sourceToken);
-    const half: 1 | 2 = quarter <= 2 ? 1 : 2;
-    const pagesDbPath = getPagesDbPath(year, half);
+    const { pagesDbName } = ctx.state;
+    const pagesDbPath = getPagesDbPath(pagesDbName);
 
     await setupFactoryDb({
       dbDir: getDbDir(),

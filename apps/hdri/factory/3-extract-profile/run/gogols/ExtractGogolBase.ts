@@ -28,7 +28,6 @@
 import path from "node:path";
 import { type CheerioAPI } from "@syrokomskyi/business-crawler/extract";
 import { stringify as csvStringify } from "csv-stringify/sync";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
@@ -88,10 +87,8 @@ export abstract class ExtractGogolBase extends Gogol {
   }
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { brief } = ctx.state;
-    const { year, quarter } = parseSourceToken(brief.sourceToken);
-    const half: 1 | 2 = quarter <= 2 ? 1 : 2;
-    const db = openPagesDb(getPagesDbPath(year, half));
+    const { pagesDbName, brief } = ctx.state;
+    const db = openPagesDb(getPagesDbPath(pagesDbName));
     const contentRoot = getContentRootDir();
 
     const rows = db.prepare<[]>(this.querySql).all() as ObsRow[];

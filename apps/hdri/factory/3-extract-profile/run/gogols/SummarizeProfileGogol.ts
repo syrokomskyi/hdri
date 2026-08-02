@@ -26,7 +26,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { markdownTable } from "markdown-table";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { toFactoryRelativePath } from "../config.js";
 import { hashDatabaseFile } from "@syrokomskyi/business-core/cross-db";
 import { Gogol } from "../pipeline/Gogol.js";
@@ -103,9 +102,7 @@ export class SummarizeProfileGogol extends Gogol {
 
   override async run(ctx: PipelineContext): Promise<void> {
     const { pagesDbName, brief } = ctx.state;
-    const { year, quarter } = parseSourceToken(brief.sourceToken);
-    const half: 1 | 2 = quarter <= 2 ? 1 : 2;
-    const pagesDbPath = getPagesDbPath(year, half);
+    const pagesDbPath = getPagesDbPath(pagesDbName);
     const db = openPagesDb(pagesDbPath);
 
     // Load geographic index for reports

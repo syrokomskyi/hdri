@@ -30,7 +30,6 @@ import fs from "node:fs/promises";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
 import { markdownTable } from "markdown-table";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { fetchPageContent } from "@syrokomskyi/business-crawler/fetch-page";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
@@ -75,11 +74,7 @@ export class CrawlGogol extends Gogol {
   override readonly id = "crawl-pages";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { resolvedRegistryDbPath, resolvedLivenessDbPath, brief } = ctx.state;
-
-    // Derive year/half from sourceToken (B.1 cleanup)
-    const { year, quarter } = parseSourceToken(brief.sourceToken);
-    const half: 1 | 2 = quarter <= 2 ? 1 : 2;
+    const { resolvedRegistryDbPath, resolvedLivenessDbPath, brief, pagesDbName } = ctx.state;
 
     // ── 1. Build domain list ──────────────────────────────────────────────
     const livenessDb = openReadOnlyDb(resolvedLivenessDbPath);
@@ -108,7 +103,7 @@ export class CrawlGogol extends Gogol {
     );
 
     // ── 2. Open pages DB ──────────────────────────────────────────────────
-    const pagesDbPath = getPagesDbPath(year, half);
+    const pagesDbPath = getPagesDbPath(pagesDbName);
     const pagesDb = openPagesDb(pagesDbPath);
     await fs.mkdir(getContentDir(), { recursive: true });
 
