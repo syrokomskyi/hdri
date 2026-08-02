@@ -57,26 +57,10 @@ export class DiscoverSourcesGogol extends Gogol {
       for (const fname of entries) {
         if (fname !== `pages-${brief.period}.db`) continue;
         const sourceToken = brief.period;
-        const parsedToken = parsePeriod(brief.period);
-
-        const registryDbPath = path.join(
-          upstreamOutputRoots.registry,
-          dev.deviceId,
-          "data",
-          "db",
-          `registry_${parsedToken.year}.db`,
-        );
-        if (!fs.existsSync(registryDbPath)) {
-          console.warn(
-            `[discover-sources] ${dev.deviceId}/${fname}: missing matching registry_${parsedToken.year}.db — skipped`,
-          );
-          continue;
-        }
         discoveredPages.push({
           deviceId: dev.deviceId,
           sourceToken,
           pagesDbPath: path.join(dbDir, fname),
-          registryDbPath,
         });
       }
     }

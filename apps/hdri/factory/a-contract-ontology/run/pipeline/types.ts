@@ -30,7 +30,6 @@ export type DiscoveredPagesDb = {
   deviceId: string;
   sourceToken: string;
   pagesDbPath: string;
-  registryDbPath: string;
 };
 
 export type IngestedObs = Observation & { _device_id: string };

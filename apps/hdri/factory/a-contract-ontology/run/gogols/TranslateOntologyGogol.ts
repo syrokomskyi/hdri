@@ -43,7 +43,7 @@ type ContentRow = {
 };
 
 type DomainJoinRow = {
-  domain: string;
+  url_norm: string;
   content_sha256: string;
 };
 
@@ -126,22 +126,24 @@ export class TranslateOntologyGogol extends Gogol {
       const runId = newId();
       const now = new Date().toISOString();
       try {
-        pagesDb.exec(`ATTACH DATABASE '${src.registryDbPath.replace(/'/g, "''")}' AS registry`);
         const joinRows = pagesDb
           .prepare(
             `
-          SELECT DISTINCT s.domain, po.content_sha256
+          SELECT DISTINCT sp.url_norm, po.content_sha256
           FROM page_observations po
           JOIN site_pages sp ON sp.id = po.site_page_id
-          JOIN registry.sites s ON s.id = sp.site_id
         `,
           )
           .all() as DomainJoinRow[];
 
         const contentToDomain = new Map<string, string>();
         for (const r of joinRows) {
-          if (r.domain && r.content_sha256) {
-            contentToDomain.set(r.content_sha256, r.domain.trim().toLowerCase());
+          if (r.url_norm && r.content_sha256) {
+            try {
+              contentToDomain.set(r.content_sha256, new URL(r.url_norm).hostname.toLowerCase());
+            } catch {
+              untranslated++;
+            }
           }
         }
 
