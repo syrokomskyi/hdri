@@ -68,11 +68,19 @@ type SiteDomainRow = {
   domain: string;
 };
 
+type LivenessRow = {
+  provisional_asset_id: string;
+  domain: string;
+  checked_at: number;
+  http_status: number | null;
+  latency_ms: number | null;
+};
+
 export class TranslateOntologyGogol extends Gogol {
   override readonly id = "translate-ontology";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { brief, discoveredPages, axeDbs, ontology } = ctx.state;
+    const { brief, discoveredPages, livenessDbs, axeDbs, ontology } = ctx.state;
     if (!ontology) throw new Error("Ontology not loaded — run bootstrap first");
     if (discoveredPages.length === 0)
       throw new Error("No discovered sources — run discover-sources first");
@@ -144,6 +152,59 @@ export class TranslateOntologyGogol extends Gogol {
         }
       } finally {
         pagesDb.close();
+      }
+    }
+
+
+    for (const src of livenessDbs) {
+      const livenessDb = new Database(src.livenessDbPath, { readonly: true });
+      const runId = newId();
+      const now = new Date().toISOString();
+      try {
+        const rows = livenessDb.prepare(`
+          SELECT provisional_asset_id, domain, checked_at, http_status, latency_ms
+          FROM liveness_checks
+          ORDER BY provisional_asset_id
+        `).iterate() as IterableIterator<LivenessRow>;
+        for (const row of rows) {
+          const observedAt = new Date(row.checked_at * 1000).toISOString();
+          for (const [signalPath, value] of [
+            ["transport.http.status_code", row.http_status],
+            ["transport.http.latency_ms", row.latency_ms],
+          ] as const) {
+            if (value == null) continue;
+            if (!ontologySignals[signalPath]) {
+              unknownSignals.add(signalPath);
+              continue;
+            }
+            allObs.push({
+              observation_id: newId(),
+              asset_id: row.provisional_asset_id,
+              crawl_id: runId,
+              signal_path: signalPath,
+              value_bool: null,
+              value_num: value,
+              value_str: null,
+              value_json: null,
+              value_type: "num",
+              observed_at: observedAt,
+              recorded_at: now,
+              collector_version: COLLECTOR_VERSION,
+              probe_version: "liveness-v1",
+              ruleset_version: brief.ontologyVersion,
+              source_hash: null,
+              crawl_hash: brief.period,
+              evidence_ref: null,
+              confidence: 1,
+              status: "active",
+              superseded_by: null,
+              deprecated_reason: null,
+              _device_id: src.deviceId,
+            });
+          }
+        }
+      } finally {
+        livenessDb.close();
       }
     }
 
