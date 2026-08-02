@@ -15,7 +15,7 @@ import Database from "better-sqlite3";
 import { getAuditsDbPath } from "../paths.js";
 
 export const openAuditsDb = (dbPath?: string): Database.Database => {
-  const resolvedPath = dbPath ?? getAuditsDbPath(new Date().getFullYear());
+  const resolvedPath = dbPath ?? getAuditsDbPath(`${new Date().getFullYear()}-q1`);
   const db = new Database(resolvedPath);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");

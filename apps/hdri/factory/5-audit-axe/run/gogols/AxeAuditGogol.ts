@@ -163,10 +163,11 @@ export class AxeAuditGogol extends Gogol {
     const { brief, resolvedRegistryDbPath, resolvedLivenessDbPath } = ctx.state;
 
     // Derive year from sourceToken (B.1 cleanup)
-    const { year } = parseSourceToken(brief.sourceToken);
+    const { year, quarter } = parseSourceToken(brief.sourceToken);
+    const period = `${year}-q${quarter}`;
 
     // Open audits DB for upserts
-    const auditsDb = openAuditsDb(getAuditsDbPath(year));
+    const auditsDb = openAuditsDb(getAuditsDbPath(period));
 
     // Phase B: Query registry.db for live sites, respecting sample size
     const registryDb = openRegistryDbReadOnly(resolvedRegistryDbPath);
