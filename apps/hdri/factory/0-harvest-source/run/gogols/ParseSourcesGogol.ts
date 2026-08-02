@@ -35,6 +35,8 @@
 */
 
 import fs from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { createHash } from "node:crypto";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
 import { normaliseDomain, isStopDomain } from "@syrokomskyi/business-core/ids";
@@ -43,10 +45,18 @@ import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import {
+  checkSourceBatch,
+  rebuildLedgerHead,
+  sealSourceBatch,
+  type HdriPeriod,
+  type SourceBatchManifest,
+} from "@syrokomskyi/factory-core";
 import { listBatchSourceFiles } from "../source-files.js";
 import { getParserForSource } from "../parsers/index.js";
 import { openCoreSqlite } from "../db/connection.js";
 import { getDbDir } from "../paths.js";
+import { outputRootDir } from "../config.js";
 import {
   insertSkippedSeed,
   upsertFileStat,
@@ -108,6 +118,9 @@ export class ParseSourcesGogol extends Gogol {
       console.log(`[parse-sources] Processing batch: ${batchName} (concurrency: ${concurrency})`);
 
       const allSourceFiles = await listBatchSourceFiles(batchName, brief);
+      const sourceManifest = await buildSourceBatchManifest(batchName, brief.sourceToken, allSourceFiles);
+      const ledgerDir = path.join(outputRootDir, "data", "source-ledger");
+      await checkSourceBatch(ledgerDir, sourceManifest);
 
       // Pre-filter: exclude files already processed in previous runs
       // This avoids I/O overhead from reading and checking already-processed files
@@ -266,8 +279,17 @@ export class ParseSourcesGogol extends Gogol {
         `[parse-sources] Batch ${batchName} done: ${batchReport.sourceFiles.length} source files processed`,
       );
 
-      // Per-batch CSVs
       const batchOutDir = path.join(outDir, "batches", batchName);
+      if (maxPages < 0) {
+        const sealResult = await sealSourceBatch(ledgerDir, sourceManifest);
+        const ledgerHead = await rebuildLedgerHead(ledgerDir);
+        await ctx.writeTextFile(
+          path.join(batchOutDir, "source-batch-manifest.json"),
+          `${JSON.stringify({ ...sourceManifest, sealResult, ledgerHead }, null, 2)}\n`,
+        );
+      }
+
+      // Per-batch CSVs
       await ctx.writeTextFile(
         path.join(batchOutDir, "sources.csv"),
         csvStringify([
@@ -400,3 +422,42 @@ export class ParseSourcesGogol extends Gogol {
     );
   }
 }
+
+const hashFile = async (filePath: string): Promise<{ sha256: string; bytes: number }> => {
+  const hash = createHash("sha256");
+  let bytes = 0;
+  for await (const chunk of createReadStream(filePath)) {
+    const buffer = chunk as Buffer;
+    hash.update(buffer);
+    bytes += buffer.length;
+  }
+  return { sha256: hash.digest("hex"), bytes };
+};
+
+const buildSourceBatchManifest = async (
+  batchId: string,
+  sourceToken: string,
+  files: Awaited<ReturnType<typeof listBatchSourceFiles>>,
+): Promise<SourceBatchManifest> => {
+  const parsed = parseSourceToken(sourceToken);
+  const entries = [];
+  for (const file of files) {
+    const digest = await hashFile(file.absolutePath);
+    entries.push({
+      relativePath: file.logicalPath,
+      ...digest,
+      parserId: file.sourceFolder,
+      parserVersion: "harvest-v1",
+    });
+  }
+  const batchHash = createHash("sha256")
+    .update(JSON.stringify(entries))
+    .digest("hex");
+  return {
+    schemaVersion: "1",
+    batchId,
+    periodAdded: `${parsed.year}-q${parsed.quarter}` as HdriPeriod,
+    batchHash,
+    files: entries,
+  };
+};
