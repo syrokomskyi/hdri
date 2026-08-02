@@ -87,6 +87,7 @@ export class CheckLivenessGogol extends Gogol {
     let sites = coreDb.prepare(query).all() as SiteRow[];
     coreDb.close();
 
+    const stageTargetSites = sites;
     if (brief.maxDomains >= 0) {
       sites = sites.slice(0, brief.maxDomains);
     }
@@ -106,6 +107,12 @@ export class CheckLivenessGogol extends Gogol {
       stageId: "liveness",
       provisionalAssetId: site.provisionalAssetId as WorkKey["provisionalAssetId"],
       instrumentVersion: "liveness-v2",
+    });
+    await journal.declareStageTargets({
+      stageId: "liveness",
+      keys: stageTargetSites.map(keyFor),
+      eventId: mintAssetId(),
+      now: new Date().toISOString(),
     });
 
     // ── 2. Prepare checkpoint DB writes ─────────────────────────────────────
@@ -247,6 +254,15 @@ export class CheckLivenessGogol extends Gogol {
     };
 
     await Promise.all(Array.from({ length: Math.min(brief.concurrency, sites.length) }, worker));
+
+    if (brief.maxDomains < 0) {
+      await journal.sealStage({
+        stageId: "liveness",
+        keys: stageTargetSites.map(keyFor),
+        eventId: mintAssetId(),
+        now: new Date().toISOString(),
+      });
+    }
 
     liveDb.close();
 

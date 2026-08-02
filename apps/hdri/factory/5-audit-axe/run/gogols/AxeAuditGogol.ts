@@ -24,7 +24,20 @@
 
 import path from "node:path";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
-import { assertStageComplete, loadLiveAuditTargets, upsertAuditRun } from "@syrokomskyi/factory-core";
+import { mintAssetId } from "@syrokomskyi/observatory-core";
+import {
+  QuarterExecutionJournal,
+  assertStageComplete,
+  capsuleConfigSha256,
+  loadLiveAuditTargets,
+  quarterCapsuleDir,
+  quarterExecutionEventsDir,
+  readExecutionCasObject,
+  upsertAuditRun,
+  writeExecutionCasObject,
+  type HdriPeriod,
+  type WorkKey,
+} from "@syrokomskyi/factory-core";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import { markdownTable } from "markdown-table";
 import { RateLimiter } from "@syrokomskyi/rate-limit";
@@ -35,6 +48,7 @@ import { openAuditsDb, openRegistryDbReadOnly, openLivenessDbReadOnly } from "..
 import { getAuditsDbPath } from "../paths.js";
 import { writeReportToCas } from "../cas/write-report.js";
 import type Database from "better-sqlite3";
+import { factoryRootDir } from "../config.js";
 
 // ---------------------------------------------------------------------------
 // Axe report shape — minimal subset we care about
@@ -61,6 +75,18 @@ type Extracted = {
   minorCount: number;
   nodesScanned: number | null;
   axeVersion: string | null;
+};
+
+type AxeEvidence = {
+  schemaVersion: 1;
+  stage: "axe";
+  siteId: number;
+  provisionalAssetId: string;
+  url: string;
+  durationMs: number;
+  result:
+    | { ok: true; reportSha256: string; extracted: Extracted }
+    | { ok: false; errorClass: string; errorMessage: string };
 };
 
 const extract = (r: AxeReport): Extracted => {
@@ -167,7 +193,7 @@ export class AxeAuditGogol extends Gogol {
 
     // Derive year from sourceToken (B.1 cleanup)
     const { year, quarter } = parseSourceToken(brief.sourceToken);
-    const period = `${year}-q${quarter}`;
+    const period = `${year}-q${quarter}` as HdriPeriod;
 
     // Open audits DB for upserts
     const auditsDb = openAuditsDb(getAuditsDbPath(period));
@@ -188,24 +214,53 @@ export class AxeAuditGogol extends Gogol {
       return;
     }
 
-    // Resume: skip sites already recorded in audit_runs
-    const auditedAssetIds = new Set(
-      (
-        auditsDb.prepare(`SELECT provisional_asset_id FROM audit_runs WHERE tool = 'axe'`).all() as {
-          provisional_asset_id: string;
-        }[]
-      ).map((r) => r.provisional_asset_id),
+    const capsuleDir = quarterCapsuleDir(factoryRootDir, brief.deviceId, period, brief.capsuleId);
+    const journal = new QuarterExecutionJournal(
+      quarterExecutionEventsDir(factoryRootDir, brief.deviceId, period, brief.capsuleId),
+      capsuleConfigSha256(period, brief.capsuleId),
     );
-    const pendingTargets = targets.filter((t) => !auditedAssetIds.has(t.provisionalAssetId));
-    if (auditedAssetIds.size > 0) {
-      console.log(
-        `[axe-audit] Resuming: ${auditedAssetIds.size} already audited, ${pendingTargets.length} remaining.`,
-      );
+    await journal.initialize(mintAssetId(), new Date().toISOString());
+    const keyFor = (target: AuditTarget): WorkKey => ({
+      period,
+      capsuleId: brief.capsuleId,
+      stageId: "axe",
+      provisionalAssetId: target.provisionalAssetId as WorkKey["provisionalAssetId"],
+      instrumentVersion: "axe-v2",
+    });
+    await journal.declareStageTargets({
+      stageId: "axe",
+      keys: targets.map(keyFor),
+      eventId: mintAssetId(),
+      now: new Date().toISOString(),
+    });
+    const checkpoint = (target: AuditTarget, evidence: AxeEvidence): void => {
+      if (evidence.result.ok) {
+        upsertAuditRun(auditsDb, {
+          tool: "axe", siteId: target.siteId, provisionalAssetId: target.provisionalAssetId,
+          url: target.url, durationMs: evidence.durationMs, ok: true, errorClass: null,
+          errorMessage: null, reportSha256: evidence.result.reportSha256, source: "live",
+        });
+        upsertAxe(auditsDb, target.siteId, target.provisionalAssetId, evidence.result.extracted, evidence.result.reportSha256);
+      } else {
+        upsertAuditRun(auditsDb, {
+          tool: "axe", siteId: target.siteId, provisionalAssetId: target.provisionalAssetId,
+          url: target.url, durationMs: evidence.durationMs, ok: false,
+          errorClass: evidence.result.errorClass, errorMessage: evidence.result.errorMessage,
+          reportSha256: null, source: "live",
+        });
+      }
+    };
+    for (const target of targets) {
+      const sha256 = journal.terminalResultSha256(keyFor(target));
+      if (!sha256) continue;
+      const evidence = await readExecutionCasObject<AxeEvidence>(capsuleDir, sha256);
+      if (evidence.provisionalAssetId !== target.provisionalAssetId) throw new Error(`Axe evidence identity mismatch: ${target.provisionalAssetId}`);
+      checkpoint(target, evidence);
     }
+    const pendingTargets = targets.filter((target) => !journal.isTerminal(keyFor(target)));
+    console.log(`[axe-audit] Resume: ${targets.length - pendingTargets.length} terminal, ${pendingTargets.length} remaining.`);
     if (pendingTargets.length === 0) {
       console.log("[axe-audit] All targets already audited.");
-      auditsDb.close();
-      return;
     }
 
     console.log(
@@ -216,7 +271,7 @@ export class AxeAuditGogol extends Gogol {
     const limiter = new RateLimiter({
       concurrency: brief.concurrency,
       retry: {
-        retries: brief.retries,
+        retries: 0,
         baseDelayMs: 500,
         maxDelayMs: 5_000,
         jitter: true,
@@ -244,76 +299,85 @@ export class AxeAuditGogol extends Gogol {
       pendingTargets.map((target) =>
         limiter.schedule(async () => {
           const startedAt = Date.now();
-          try {
-            const report = await runAxeLive(target, brief.timeoutMs);
+          for (let retryOrdinal = 0; retryOrdinal <= brief.retries; retryOrdinal++) {
+            const leaseAt = new Date();
+            const attempt = await journal.begin({
+              key: keyFor(target),
+              attemptId: mintAssetId(),
+              leaseOwner: brief.deviceId,
+              now: leaseAt.toISOString(),
+              leaseExpiresAt: new Date(leaseAt.getTime() + brief.timeoutMs + 60_000).toISOString(),
+            });
+            if (!attempt) return;
+            try {
+              const report = await runAxeLive(target, brief.timeoutMs);
 
-            const { sha256 } = await writeReportToCas("axe", JSON.stringify(report));
-            const extracted = extract(report);
-            const durationMs = Date.now() - startedAt;
+              const { sha256 } = await writeReportToCas("axe", JSON.stringify(report));
+              const extracted = extract(report);
+              const durationMs = Date.now() - startedAt;
 
-            upsertAuditRun(auditsDb, {
-              tool: "axe",
-              siteId: target.siteId,
-              provisionalAssetId: target.provisionalAssetId,
-              url: target.url,
-              durationMs,
-              ok: true,
-              errorClass: null,
-              errorMessage: null,
-              reportSha256: sha256,
-              source: "live",
-            });
-            upsertAxe(auditsDb, target.siteId, target.provisionalAssetId, extracted, sha256);
+              const payload: AxeEvidence = {
+                schemaVersion: 1, stage: "axe", siteId: target.siteId,
+                provisionalAssetId: target.provisionalAssetId, url: target.url, durationMs,
+                result: { ok: true, reportSha256: sha256, extracted },
+              };
+              const evidence = await writeExecutionCasObject(capsuleDir, payload);
+              await journal.finish(attempt, {
+                eventId: mintAssetId(), now: new Date().toISOString(), state: "succeeded",
+                resultSha256: evidence.sha256,
+              });
+              checkpoint(target, payload);
 
-            results.push({
-              siteId: target.siteId,
-              ok: true,
-              errorClass: null,
-              durationMs,
-              extracted,
-            });
-            completed++;
-            logProgress(this.id, completed, totalTargets, progressInterval, true);
-            console.log(
-              `[axe-audit] site ${target.siteId} (${target.domain}) ok in ${durationMs}ms ` +
-                `violations=${extracted.violationsTotal} (crit=${extracted.criticalCount} ` +
-                `ser=${extracted.seriousCount} mod=${extracted.moderateCount} ` +
-                `min=${extracted.minorCount})`,
-            );
-          } catch (err) {
-            const durationMs = Date.now() - startedAt;
-            const errorClass =
-              err instanceof Error && /timeout/i.test(err.message) ? "timeout" : "error";
-            const errorMessage =
-              err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500);
-            upsertAuditRun(auditsDb, {
-              tool: "axe",
-              siteId: target.siteId,
-              provisionalAssetId: target.provisionalAssetId,
-              url: target.url,
-              durationMs,
-              ok: false,
-              errorClass,
-              errorMessage,
-              reportSha256: null,
-              source: "live",
-            });
-            results.push({
-              siteId: target.siteId,
-              ok: false,
-              errorClass,
-              durationMs,
-              extracted: null,
-            });
-            completed++;
-            logProgress(this.id, completed, totalTargets, progressInterval, true);
-            console.log(
-              `[axe-audit] site ${target.siteId} (${target.domain}) FAILED (${errorClass}) in ${durationMs}ms: ${errorMessage.slice(0, 120)}`,
-            );
+              results.push({ siteId: target.siteId, ok: true, errorClass: null, durationMs, extracted });
+              completed++;
+              logProgress(this.id, completed, totalTargets, progressInterval, true);
+              console.log(
+                `[axe-audit] site ${target.siteId} (${target.domain}) ok in ${durationMs}ms ` +
+                  `violations=${extracted.violationsTotal} (crit=${extracted.criticalCount} ` +
+                  `ser=${extracted.seriousCount} mod=${extracted.moderateCount} min=${extracted.minorCount})`,
+              );
+              return;
+            } catch (err) {
+              const durationMs = Date.now() - startedAt;
+              const errorClass = err instanceof Error && /timeout/i.test(err.message) ? "timeout" : "error";
+              const errorMessage = err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500);
+              if (retryOrdinal < brief.retries) {
+                await journal.finish(attempt, {
+                  eventId: mintAssetId(), now: new Date().toISOString(), state: "retryable", errorClass,
+                });
+                await new Promise((resolve) => setTimeout(resolve, Math.min(5_000, 500 * 2 ** retryOrdinal)));
+                continue;
+              }
+              const payload: AxeEvidence = {
+                schemaVersion: 1, stage: "axe", siteId: target.siteId,
+                provisionalAssetId: target.provisionalAssetId, url: target.url, durationMs,
+                result: { ok: false, errorClass, errorMessage },
+              };
+              const evidence = await writeExecutionCasObject(capsuleDir, payload);
+              await journal.finish(attempt, {
+                eventId: mintAssetId(), now: new Date().toISOString(), state: "observed-failure",
+                resultSha256: evidence.sha256, errorClass,
+              });
+              checkpoint(target, payload);
+              results.push({ siteId: target.siteId, ok: false, errorClass, durationMs, extracted: null });
+              completed++;
+              logProgress(this.id, completed, totalTargets, progressInterval, true);
+              console.log(
+                `[axe-audit] site ${target.siteId} (${target.domain}) FAILED (${errorClass}) in ${durationMs}ms: ${errorMessage.slice(0, 120)}`,
+              );
+              return;
+            }
           }
         }),
       ),
     );
+
+    await journal.sealStage({
+      stageId: "axe",
+      keys: targets.map(keyFor),
+      eventId: mintAssetId(),
+      now: new Date().toISOString(),
+    });
 
     const terminal = auditsDb.prepare(`
       SELECT

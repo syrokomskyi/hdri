@@ -120,6 +120,7 @@ export class CrawlGogol extends Gogol {
 
     livenessDb.close();
 
+    const stageTargetSites = sites;
     if (brief.maxDomains >= 0) sites = sites.slice(0, brief.maxDomains);
 
     console.log(
@@ -146,6 +147,12 @@ export class CrawlGogol extends Gogol {
       stageId: "profile",
       provisionalAssetId: site.provisionalAssetId as WorkKey["provisionalAssetId"],
       instrumentVersion: "profile-v2",
+    });
+    await journal.declareStageTargets({
+      stageId: "profile",
+      keys: stageTargetSites.map(keyFor),
+      eventId: mintAssetId(),
+      now: new Date().toISOString(),
     });
     const checkpoint = (site: SiteRow, evidence: ProfileEvidence, evidenceSha256: string): void => {
       const initialUrl = normalisePageUrl(`https://${site.domain}`);
@@ -302,6 +309,15 @@ export class CrawlGogol extends Gogol {
     await Promise.all(
       Array.from({ length: Math.min(brief.concurrency, sites.length || 1) }, worker),
     );
+
+    if (brief.maxDomains < 0) {
+      await journal.sealStage({
+        stageId: "profile",
+        keys: stageTargetSites.map(keyFor),
+        eventId: mintAssetId(),
+        now: new Date().toISOString(),
+      });
+    }
 
     pagesDb.close();
 

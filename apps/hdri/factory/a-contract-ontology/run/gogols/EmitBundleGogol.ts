@@ -186,6 +186,13 @@ export class EmitBundleGogol extends Gogol {
       artifacts.push({ stage: "methodology", uri: methodologyUri, sha256: await hashFile(methodologyPath), bytes: stat.size });
     }
 
+    const executionRoot = path.join(capsuleDir, "staging", "execution");
+    for (const executionPath of await walkFiles(executionRoot)) {
+      const uri = path.relative(capsuleDir, executionPath).replaceAll(path.sep, "/");
+      const stat = await fsp.stat(executionPath);
+      artifacts.push({ stage: "qc", uri, sha256: await hashFile(executionPath), bytes: stat.size });
+    }
+
     const capsule: QuarterCapsule = {
       period: brief.period,
       capsuleId: brief.capsuleId,
@@ -202,6 +209,27 @@ export class EmitBundleGogol extends Gogol {
     ctx.state.manifest = manifestWithDir;
   }
 }
+
+const walkFiles = async (root: string): Promise<string[]> => {
+  const files: string[] = [];
+  const pending = [root];
+  while (pending.length > 0) {
+    const current = pending.pop()!;
+    let entries: import("node:fs").Dirent[];
+    try {
+      entries = await fsp.readdir(current, { withFileTypes: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw error;
+    }
+    for (const entry of entries) {
+      const absolute = path.join(current, entry.name);
+      if (entry.isDirectory()) pending.push(absolute);
+      else if (entry.isFile()) files.push(absolute);
+    }
+  }
+  return files.sort();
+};
 
 const hashFile = async (filePath: string): Promise<string> =>
   new Promise((resolve, reject) => {
