@@ -103,21 +103,8 @@ export class DiscoverSourcesGogol extends Gogol {
     const axeDevices = await listDeviceFolders(upstreamOutputRoots.axe);
     for (const dev of axeDevices) {
       const axePath = path.join(dev.path, "data", "db", `axe-${brief.period}.db`);
-      const registryDbPath = path.join(
-        upstreamOutputRoots.registry,
-        dev.deviceId,
-        "data",
-        "db",
-        `registry_${year}.db`,
-      );
       if (fs.existsSync(axePath)) {
-        if (!fs.existsSync(registryDbPath)) {
-          console.warn(
-            `[discover-sources] ${dev.deviceId}/axe-${brief.period}.db: missing matching registry_${year}.db — skipped`,
-          );
-          continue;
-        }
-        axeDbs.push({ deviceId: dev.deviceId, axeDbPath: axePath, registryDbPath });
+        axeDbs.push({ deviceId: dev.deviceId, axeDbPath: axePath });
       }
     }
 

@@ -49,6 +49,7 @@ type DomainJoinRow = {
 
 type AxeAuditRunRow = {
   site_id: number;
+  provisional_asset_id: string;
   fetched_at: number | null;
   ok: number;
   error_class: string | null;
@@ -57,6 +58,7 @@ type AxeAuditRunRow = {
 
 type AxeMetricRow = {
   site_id: number;
+  provisional_asset_id: string;
   violations_total: number | null;
   critical_count: number | null;
   serious_count: number | null;
@@ -64,11 +66,6 @@ type AxeMetricRow = {
   minor_count: number | null;
   nodes_scanned: number | null;
   axe_version: string | null;
-};
-
-type SiteDomainRow = {
-  site_id: number;
-  domain: string;
 };
 
 type LivenessRow = {
@@ -265,38 +262,27 @@ export class TranslateOntologyGogol extends Gogol {
 
     for (const src of axeDbs) {
       const axeDb = new Database(src.axeDbPath, { readonly: true });
-      const registryDb = new Database(src.registryDbPath, { readonly: true });
       const runId = newId();
       const now = new Date().toISOString();
       try {
-        const siteRows = registryDb
-          .prepare(`SELECT id AS site_id, domain FROM sites ORDER BY id`)
-          .all() as SiteDomainRow[];
-        const domainBySiteId = new Map<number, string>();
-        for (const row of siteRows) {
-          if (row.domain) {
-            domainBySiteId.set(row.site_id, row.domain.trim().toLowerCase());
-          }
-        }
-
-        const auditRunBySiteId = new Map<number, AxeAuditRunRow>();
+        const auditRunByAssetId = new Map<string, AxeAuditRunRow>();
         const auditRows = axeDb
           .prepare(
             `
-          SELECT site_id, fetched_at, ok, error_class, error_message
+          SELECT site_id, provisional_asset_id, fetched_at, ok, error_class, error_message
           FROM audit_runs
           WHERE tool = 'axe'
         `,
           )
           .all() as AxeAuditRunRow[];
         for (const row of auditRows) {
-          auditRunBySiteId.set(row.site_id, row);
+          auditRunByAssetId.set(row.provisional_asset_id, row);
         }
 
         const metricRows = axeDb
           .prepare(
             `
-          SELECT site_id, violations_total, critical_count, serious_count, moderate_count, minor_count, nodes_scanned, axe_version
+          SELECT site_id, provisional_asset_id, violations_total, critical_count, serious_count, moderate_count, minor_count, nodes_scanned, axe_version
           FROM axe_runs
         `,
           )
@@ -314,12 +300,7 @@ export class TranslateOntologyGogol extends Gogol {
         }
 
         for (const row of metricRows) {
-          const domain = domainBySiteId.get(row.site_id);
-          if (!domain) {
-            untranslated++;
-            continue;
-          }
-          const auditRun = auditRunBySiteId.get(row.site_id);
+          const auditRun = auditRunByAssetId.get(row.provisional_asset_id);
           if (auditRun && auditRun.ok !== 1) {
             continue;
           }
@@ -327,7 +308,7 @@ export class TranslateOntologyGogol extends Gogol {
             const obs = buildAxeObservation(
               row,
               mapping,
-              domain,
+              row.provisional_asset_id,
               runId,
               brief.ontologyVersion,
               now,
@@ -340,7 +321,6 @@ export class TranslateOntologyGogol extends Gogol {
         }
       } finally {
         axeDb.close();
-        registryDb.close();
       }
     }
 
@@ -440,7 +420,7 @@ function buildObservation(
 function buildAxeObservation(
   row: AxeMetricRow,
   mapping: AxeSignalMapping,
-  domain: string,
+  provisionalAssetId: string,
   runId: string,
   ontologyVersion: string,
   now: string,
@@ -466,12 +446,12 @@ function buildAxeObservation(
     observation_id: observationKey({
       period,
       capsuleId: sourceToken,
-      provisionalAssetId: deriveAssetId(domain),
+      provisionalAssetId,
       signalPath: mapping.signalPath,
       sourceResultSha256: sha256Json(row),
       extractorVersion: row.axe_version ?? "axe-unknown",
     }),
-    asset_id: deriveAssetId(domain),
+    asset_id: provisionalAssetId,
     crawl_id: runId,
     signal_path: mapping.signalPath,
     value_bool: null,

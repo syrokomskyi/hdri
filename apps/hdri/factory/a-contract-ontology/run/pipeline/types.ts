@@ -56,7 +56,6 @@ export type DiscoveredCoreDb = {
 export type DiscoveredAxeDb = {
   deviceId: string;
   axeDbPath: string;
-  registryDbPath: string;
 };
 
 export type DiscoveredLivenessDb = {
