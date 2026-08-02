@@ -85,6 +85,26 @@ async function copyInto(
   return relInSnapshot;
 }
 
+async function signSnapshotManifest(dir: string, manifest: SnapshotManifest): Promise<void> {
+  const signingKey = loadSigningKeyFromEnv();
+  const manifestPayload = Buffer.from(canonicalize(manifest), "utf8");
+  const signature = crypto.sign(
+    null,
+    crypto.createHash("sha256").update(manifestPayload).digest(),
+    signingKey.privateKeyPem,
+  );
+  await fs.writeFile(
+    path.join(dir, "snapshot-manifest.sig.json"),
+    `${JSON.stringify({
+      algorithm: "ed25519-sha256",
+      signingKeyId: signingKey.signingKeyId,
+      publicKeyPem: signingKey.publicKeyPem,
+      signature: signature.toString("base64url"),
+    }, null, 2)}\n`,
+    "utf8",
+  );
+}
+
 async function createSnapshot(year: number, outDir: string): Promise<void> {
   const dbPath = path.join(DB_DIR, `observatory_${year}.db`);
   if (!(await exists(dbPath))) {
@@ -247,23 +267,7 @@ async function createSnapshot(year: number, outDir: string): Promise<void> {
     JSON.stringify(manifest, null, 2),
     "utf-8",
   );
-  const signingKey = loadSigningKeyFromEnv();
-  const manifestPayload = Buffer.from(canonicalize(manifest), "utf8");
-  const signature = crypto.sign(
-    null,
-    crypto.createHash("sha256").update(manifestPayload).digest(),
-    signingKey.privateKeyPem,
-  );
-  await fs.writeFile(
-    path.join(outDir, "snapshot-manifest.sig.json"),
-    `${JSON.stringify({
-      algorithm: "ed25519-sha256",
-      signingKeyId: signingKey.signingKeyId,
-      publicKeyPem: signingKey.publicKeyPem,
-      signature: signature.toString("base64url"),
-    }, null, 2)}\n`,
-    "utf8",
-  );
+  await signSnapshotManifest(outDir, manifest);
 
   const totalBytes = files.reduce((s, f) => s + f.bytes, 0);
   console.log(`  ✓ Manifest: ${files.length} files, ${(totalBytes / 1e9).toFixed(2)} GB`);
@@ -305,6 +309,16 @@ async function main(): Promise<void> {
   // Positionals = argv entries that are not flags. Robust to the `--` separator
   // that `pnpm run … -- <dir>` injects (which otherwise gets read as a flag value).
   const positionals = process.argv.slice(2).filter((a) => !a.startsWith("-"));
+
+  if (process.argv.includes("--sign-existing")) {
+    const dir = positionals[positionals.length - 1];
+    if (!dir) throw new Error("snapshot directory is required");
+    const manifest = JSON.parse(
+      await fs.readFile(path.join(dir, "snapshot-manifest.json"), "utf8"),
+    ) as SnapshotManifest;
+    await signSnapshotManifest(dir, manifest);
+    return;
+  }
 
   if (process.argv.includes("--verify")) {
     const dir = positionals[positionals.length - 1];
