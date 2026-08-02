@@ -20,7 +20,7 @@
 import path from "node:path";
 import matter from "gray-matter";
 import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
-import { readOntologyFile, type SignalOntology } from "@syrokomskyi/observatory-core";
+import { readOntologyFile, withAvailabilityOntologyV2, type SignalOntology } from "@syrokomskyi/observatory-core";
 import { getDeviceId } from "@syrokomskyi/observatory-crypto";
 import { fileExists, readTextFile } from "@syrokomskyi/pipeline-node/context";
 import { mergeBriefFrontmatter } from "@syrokomskyi/pipeline-node/frontmatter";
@@ -36,16 +36,16 @@ export type BootstrappedBrief = {
 };
 
 const briefTemplate = `---
-period: "2026-q2"
-ontologyVersion: "1.0.0"
+period: "2026-q3"
+ontologyVersion: "2.0.0"
 
 # Upstream database paths (read-only)
 harvestDbPath: "../0-harvest-source/.output/<DEVICE>/data/db/core_2026.db"
 registryDbPath: "../1-register-businesses/.output/<DEVICE>/data/db/registry_2026.db"
-livenessDbPath: "../2-check-liveness/.output/<DEVICE>/data/db/liveness_2026.db"
-profileDbPath: "../3-extract-profile/.output/<DEVICE>/data/db/pages-2026-h1.db"
-lighthouseDbPath: "../4-audit-lighthouse/.output/<DEVICE>/data/db/lighthouse_2026.db"
-axeDbPath: "../5-audit-axe/.output/<DEVICE>/data/db/axe_2026.db"
+livenessDbPath: "../2-check-liveness/.output/<DEVICE>/data/db/liveness-2026-q3.db"
+profileDbPath: "../3-extract-profile/.output/<DEVICE>/data/db/pages-2026-q3.db"
+lighthouseDbPath: "disabled"
+axeDbPath: "../5-audit-axe/.output/<DEVICE>/data/db/axe-2026-q3.db"
 
 skipGogols: []
 ---
@@ -124,7 +124,7 @@ export const bootstrapBrief = async (): Promise<BootstrappedBrief> => {
   }
 
   // 4. Load ontology
-  const ontology = await loadOntology();
+  const ontology = await loadOntology(brief.ontologyVersion);
   console.log(
     `[bootstrap] Loaded ontology v${ontology.version} (${Object.keys(ontology.signals).length} signals)`,
   );
@@ -132,15 +132,24 @@ export const bootstrapBrief = async (): Promise<BootstrappedBrief> => {
   return { brief, briefMd: mergedBriefMd, rootBrief: {} as Brief, ontology };
 };
 
-async function loadOntology(): Promise<SignalOntology> {
+async function loadOntology(requestedVersion: string): Promise<SignalOntology> {
+  const selectVersion = (base: SignalOntology): SignalOntology => {
+    const selected = requestedVersion === "2.0.0" ? withAvailabilityOntologyV2(base) : base;
+    if (selected.version !== requestedVersion) {
+      throw new Error(`Requested ontology ${requestedVersion} is unavailable (loaded ${selected.version})`);
+    }
+    return selected;
+  };
   const ontologyPath = path.join(inputDir, "ontology.yaml");
   try {
-    return await readOntologyFile(ontologyPath);
+    const base = await readOntologyFile(ontologyPath);
+    return selectVersion(base);
   } catch {
     // Fall back to observatory ontology
     const fallback = path.resolve(inputDir, "..", "..", "observatory", ".input", "ontology.yaml");
     try {
-      const ont = await readOntologyFile(fallback);
+      const loaded = await readOntologyFile(fallback);
+      const ont = selectVersion(loaded);
       console.log(
         `[bootstrap] Loaded ontology from observatory fallback; v${ont.version}, ${Object.keys(ont.signals).length} signals`,
       );

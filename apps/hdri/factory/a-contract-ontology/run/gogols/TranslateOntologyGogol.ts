@@ -18,6 +18,7 @@ import path from "node:path";
 import Database from "better-sqlite3";
 import {
   AXE_SIGNAL_MAP,
+  classifyLivenessOutcome,
   EXT_SIGNAL_MAP,
   deriveAssetId,
   newId,
@@ -76,6 +77,8 @@ type LivenessRow = {
   checked_at: number;
   http_status: number | null;
   latency_ms: number | null;
+  is_live: number;
+  error_code: string | null;
 };
 
 export class TranslateOntologyGogol extends Gogol {
@@ -194,16 +197,29 @@ export class TranslateOntologyGogol extends Gogol {
       const now = new Date().toISOString();
       try {
         const rows = livenessDb.prepare(`
-          SELECT provisional_asset_id, domain, checked_at, http_status, latency_ms
+          SELECT provisional_asset_id, domain, checked_at, http_status, latency_ms, is_live, error_code
           FROM liveness_checks
           ORDER BY provisional_asset_id
         `).iterate() as IterableIterator<LivenessRow>;
         for (const row of rows) {
           const observedAt = new Date(row.checked_at * 1000).toISOString();
-          for (const [signalPath, value] of [
-            ["transport.http.status_code", row.http_status],
-            ["transport.http.latency_ms", row.latency_ms],
-          ] as const) {
+          const outcome = classifyLivenessOutcome({
+            isLive: row.is_live === 1,
+            httpStatus: row.http_status,
+            errorCode: row.error_code,
+          });
+          const signals: Array<{
+            signalPath: string;
+            value: boolean | number | string | null;
+            valueType: "bool" | "num" | "str";
+          }> = [
+            { signalPath: "transport.http.status_code", value: row.http_status, valueType: "num" },
+            { signalPath: "transport.http.latency_ms", value: row.latency_ms, valueType: "num" },
+            { signalPath: "availability.website.outcome", value: outcome, valueType: "str" },
+            { signalPath: "availability.website.is_reachable", value: row.is_live === 1, valueType: "bool" },
+            { signalPath: "availability.website.error_code", value: row.error_code, valueType: "str" },
+          ];
+          for (const { signalPath, value, valueType } of signals) {
             if (value == null) continue;
             if (!ontologySignals[signalPath]) {
               unknownSignals.add(signalPath);
@@ -221,11 +237,11 @@ export class TranslateOntologyGogol extends Gogol {
               asset_id: row.provisional_asset_id,
               crawl_id: runId,
               signal_path: signalPath,
-              value_bool: null,
-              value_num: value,
-              value_str: null,
+              value_bool: valueType === "bool" ? Boolean(value) : null,
+              value_num: valueType === "num" ? Number(value) : null,
+              value_str: valueType === "str" ? String(value) : null,
               value_json: null,
-              value_type: "num",
+              value_type: valueType,
               observed_at: observedAt,
               recorded_at: now,
               collector_version: COLLECTOR_VERSION,
