@@ -10,7 +10,7 @@
   <item>Extracted from monolithic main.ts as part of pipeline conversion.</item>
   <item>Add core DB discovery for asset state emit-bundle support.</item>
   <item>Fix filename pattern matching to support both pages_*.db and pages-*.db formats.</item>
-  <item>Add support for simple period patterns like "2026-h1" alongside full sourceToken format.</item>
+  <item>Use strict quarter-only discovery for observation databases.</item>
   <item>Add AXE DB discovery for audit observation translation.</item>
 </CHANGE_SUMMARY>
 */

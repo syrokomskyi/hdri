@@ -21,7 +21,6 @@ import {
   classifyLivenessOutcome,
   EXT_SIGNAL_MAP,
   deriveAssetId,
-  newId,
   observationKey,
   sha256Json,
   type AxeSignalMapping,
@@ -123,8 +122,8 @@ export class TranslateOntologyGogol extends Gogol {
 
     for (const src of discoveredPages) {
       const pagesDb = new Database(src.pagesDbPath, { readonly: true });
-      const runId = newId();
-      const now = new Date().toISOString();
+      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "profile"]);
+      const recordedAt = periodStart(brief.period);
       try {
         const joinRows = pagesDb
           .prepare(
@@ -177,7 +176,7 @@ export class TranslateOntologyGogol extends Gogol {
               domain,
               runId,
               brief.ontologyVersion,
-              now,
+              recordedAt,
               src.sourceToken,
               brief.period,
             );
@@ -192,8 +191,8 @@ export class TranslateOntologyGogol extends Gogol {
 
     for (const src of livenessDbs) {
       const livenessDb = new Database(src.livenessDbPath, { readonly: true });
-      const runId = newId();
-      const now = new Date().toISOString();
+      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "liveness"]);
+      const recordedAt = periodStart(brief.period);
       try {
         const rows = livenessDb.prepare(`
           SELECT provisional_asset_id, domain, checked_at, http_status, latency_ms, is_live, error_code
@@ -242,7 +241,7 @@ export class TranslateOntologyGogol extends Gogol {
               value_json: null,
               value_type: valueType,
               observed_at: observedAt,
-              recorded_at: now,
+              recorded_at: observedAt || recordedAt,
               collector_version: COLLECTOR_VERSION,
               probe_version: "liveness-v1",
               ruleset_version: brief.ontologyVersion,
@@ -264,8 +263,8 @@ export class TranslateOntologyGogol extends Gogol {
 
     for (const src of axeDbs) {
       const axeDb = new Database(src.axeDbPath, { readonly: true });
-      const runId = newId();
-      const now = new Date().toISOString();
+      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "axe"]);
+      const recordedAt = periodStart(brief.period);
       try {
         const auditRunByAssetId = new Map<string, AxeAuditRunRow>();
         const auditRows = axeDb
@@ -313,7 +312,7 @@ export class TranslateOntologyGogol extends Gogol {
               row.provisional_asset_id,
               runId,
               brief.ontologyVersion,
-              now,
+              recordedAt,
               brief.sourceToken,
               auditRun,
               brief.period,
@@ -352,6 +351,13 @@ export class TranslateOntologyGogol extends Gogol {
     ctx.state.observationDbPath = observationDbPath;
   }
 }
+
+const periodStart = (period: string): string => {
+  const match = /^(\d{4})-q([1-4])$/.exec(period);
+  if (!match) throw new Error(`Invalid period: ${period}`);
+  const month = (Number(match[2]) - 1) * 3 + 1;
+  return `${match[1]}-${String(month).padStart(2, "0")}-01T00:00:00.000Z`;
+};
 
 function buildObservation(
   row: ContentRow,
@@ -405,7 +411,7 @@ function buildObservation(
     value_json: valueJson,
     value_type: mapping.valueType,
     observed_at: observedAt,
-    recorded_at: now,
+    recorded_at: observedAt,
     collector_version: COLLECTOR_VERSION,
     probe_version: row.extractor_ver ?? "rule_v3",
     ruleset_version: ontologyVersion,
@@ -462,7 +468,7 @@ function buildAxeObservation(
     value_json: null,
     value_type: mapping.valueType,
     observed_at: observedAt,
-    recorded_at: now,
+    recorded_at: observedAt,
     collector_version: COLLECTOR_VERSION,
     probe_version: row.axe_version,
     ruleset_version: ontologyVersion,
