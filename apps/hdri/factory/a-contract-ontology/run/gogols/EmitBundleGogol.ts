@@ -11,8 +11,9 @@
   <item>Add asset state harvesting from core_*.db for emit-bundle schema v2.</item>
   <item>Add gewerk_group in emitted asset states by deriving it from site_hwo_mappings with mapping_system = destatis_group.</item>
   <item>Write immutable emit bundles to .output/emit/&lt;period&gt;/&lt;factory_run_id&gt;/ and persist emit_dir in pipeline state.</item>
-<item>Fail closed on existing staging closure and retain consistent SQLite snapshots plus transitive raw source evidence.</item>
-<item>Verify signed ledger, frame and occurrence closure before retaining any source evidence.</item>
+  <item>Fail closed on existing staging closure and retain consistent SQLite snapshots plus transitive raw source evidence.</item>
+  <item>Verify signed ledger, frame and occurrence closure before retaining any source evidence.</item>
+  <item>Require consumer-verified target, event, CAS and signed stage closure before emitting quarterly artifacts.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: emit-bundle contract is immutable; never change manifest schema without version bump

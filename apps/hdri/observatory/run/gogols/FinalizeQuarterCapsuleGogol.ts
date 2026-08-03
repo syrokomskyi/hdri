@@ -6,6 +6,7 @@
 <CHANGE_SUMMARY>
   <item>RFC-0025 moves final sealing behind Observatory publication.</item>
   <item>Verify an existing final seal before any write and recover a missing detached signature without rewriting artifacts.</item>
+  <item>Re-verify every required execution stage before publication finalization and on sealed-capsule replay.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: finalization never writes after capsule-manifest.json exists
