@@ -42,7 +42,7 @@ Key settings:
 
 ```yaml
 ---
-sourceToken: "2026-q2-de-05"
+sourceToken: "2026-q3-de-05"
 outputLanguage: de
 period: "2026-q3"
 capsuleId: "019..." # the same UUID v7 used by every Factory stage
