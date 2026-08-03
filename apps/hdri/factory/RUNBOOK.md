@@ -105,7 +105,7 @@ Root brief is the single source of truth for geographic and other shared indexes
 
 ```yaml
 ---
-sourceToken: "2026-q2-de-05"
+sourceToken: "2026-q3-de-01"
 capsuleId: "019..." # UUID v7; one value for the complete quarter
 zipcodesTablePath: zipcodes.de.json
 ---
@@ -285,11 +285,11 @@ After crawl completes, these signals are extracted automatically:
 
 ### Troubleshooting
 
-| Problem              | Solution                                                  |
-| -------------------- | --------------------------------------------------------- |
-| High error rate      | Check site-blocking, reduce concurrency, increase timeout |
-| Empty ext\_\* tables | Ensure crawl succeeded before signal extraction           |
-| Out of disk space    | Stop the run and add storage; sealed quarterly artifacts are never deleted |
+| Problem | Solution |
+| --- | --- |
+| High error rate | Check site-blocking, reduce concurrency, increase timeout |
+| Empty ext\_\* tables | Ensure crawl succeeded before signal extraction |
+| Out of disk space | Stop the run and add storage; sealed quarterly artifacts are never deleted |
 
 ---
 
@@ -389,45 +389,13 @@ pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi
 
 ### Safe restart contract
 
-Liveness, profile and Axe freeze their complete target set before the first
-network request and append lease, retry and terminal events under the quarter
-capsule. Leases are atomic filesystem claims with durable attempt ordinals and
-fencing: a second process cannot request the same WorkKey, and an expired owner
-cannot commit after a replacement takes over. Active browser/network work writes
-append-only heartbeats that extend its lease. Each frozen target set is retained,
-and completeness is committed as an Ed25519-signed stage seal. Mutable SQLite
-rows are checkpoints only. After power or network loss,
-rerun the same stage with the same `period` and `capsuleId`: terminal work is
-restored from immutable CAS evidence and is not requested again. `maxDomains`
-sessions are diagnostic and never seal a stage.
+Liveness, profile and Axe freeze their complete target set before the first network request and append lease, retry and terminal events under the quarter capsule. Leases are atomic filesystem claims with durable attempt ordinals and fencing: a second process cannot request the same WorkKey, and an expired owner cannot commit after a replacement takes over. Active browser/network work writes append-only heartbeats that extend its lease. Each frozen target set is retained, and completeness is committed as an Ed25519-signed stage seal. Mutable SQLite rows are checkpoints only. After power or network loss, rerun the same stage with the same `period` and `capsuleId`: terminal work is restored from immutable CAS evidence and is not requested again. `maxDomains` sessions are diagnostic and never seal a stage.
 
-Do not edit a brief, instrument version or target frame after work has begun.
-Configuration or target drift is rejected. A full stage seals only when every
-declared target has a successful or observed-failure result. The bridge verifies
-the frozen target count/hash, exactly one matching stage-sealed event, every
-selected terminal event and CAS object, and the collector-bound Ed25519 stage
-seal before creating emit output. Therefore a diagnostic `maxDomains` run cannot
-be mistaken for a complete quarter.
+Do not edit a brief, instrument version or target frame after work has begun. Configuration or target drift is rejected. A full stage seals only when every declared target has a successful or observed-failure result. The bridge verifies the frozen target count/hash, exactly one matching stage-sealed event, every selected terminal event and CAS object, and the collector-bound Ed25519 stage seal before creating emit output. Therefore a diagnostic `maxDomains` run cannot be mistaken for a complete quarter.
 
 ### Quarter closure
 
-The contract bridge creates a staging capsule containing the signed source-ledger
-segments, raw batch files, occurrence projection, signed frozen frame, consistent
-SQLite backup snapshots, execution journal, referenced profile HTML, referenced
-Axe reports, signed observations and methodology. Observatory adds canonical UUID v7
-identity, vault shards and publication artifacts after the release gate, then
-writes `capsule-manifest.json` and detached `capsule-signature.json`. Until both
-files exist and verify, the quarter is not sealed and must not be published or
-used as the starting point for the next quarter. A retry first verifies an
-existing staging/final closure and performs no writes inside it. Before copying
-source evidence, the bridge verifies every segment signature, the signed frame,
-the ledger head, included batch set and occurrence-projection hash; any mismatch
-fails before the capsule is written. The head is rebuilt from the frame's exact
-signed `includedBatchIds`, so appending Q4 segments does not invalidate Q3.
-Expected source hashes come from that verified snapshot and are checked again on
-the copied capsule artifact, closing mutation races between preflight and retain.
-Observatory repeats the complete execution-evidence verification before final
-sealing and whenever it reopens an already sealed capsule.
+The contract bridge creates a staging capsule containing the signed source-ledger segments, raw batch files, occurrence projection, signed frozen frame, consistent SQLite backup snapshots, execution journal, referenced profile HTML, referenced Axe reports, signed observations and methodology. Observatory adds canonical UUID v7 identity, vault shards and publication artifacts after the release gate, then writes `capsule-manifest.json` and detached `capsule-signature.json`. Until both files exist and verify, the quarter is not sealed and must not be published or used as the starting point for the next quarter. A retry first verifies an existing staging/final closure and performs no writes inside it. Before copying source evidence, the bridge verifies every segment signature, the signed frame, the ledger head, included batch set and occurrence-projection hash; any mismatch fails before the capsule is written. The head is rebuilt from the frame's exact signed `includedBatchIds`, so appending Q4 segments does not invalidate Q3. Expected source hashes come from that verified snapshot and are checked again on the copied capsule artifact, closing mutation races between preflight and retain. Observatory repeats the complete execution-evidence verification before final sealing and whenever it reopens an already sealed capsule.
 
 ---
 
