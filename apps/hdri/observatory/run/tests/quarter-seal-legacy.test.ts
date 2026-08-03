@@ -11,10 +11,10 @@ import {
   type QuarterCapsule,
 } from "@syrokomskyi/factory-core";
 import { execFileSync } from "node:child_process";
+import Database from "better-sqlite3";
 
 const createTempDb = (dir: string, name: string): string => {
   const dbPath = path.join(dir, name);
-  const Database = require("better-sqlite3");
   const db = new Database(dbPath);
   db.exec("CREATE TABLE IF NOT EXISTS t (v INTEGER)");
   db.close();
