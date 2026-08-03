@@ -184,3 +184,8 @@ When adding a new audit or crawl gogol, extend the relevant base class or import
 - Do not skip k-anonymity enforcement in production — default to `enforce` mode.
 - Do not publish identifying data in public mode — use `publicationMode` guard.
 - Do not apply `maxSites` quota before stratification — allocate proportionally after shuffling.
+
+## Testing
+
+- Apps that import gogol files (e.g. `LighthouseAuditGogol.ts`, `AxeAuditGogol.ts`) in tests must load `apps/hdri/.env` via `dotenv` in their `vitest.config.ts` — gogol imports trigger `getDeviceId()` at module load time, which throws without `DEVICE_ID`.
+- Pattern: `import { config } from "dotenv"; config({ path: "apps/hdri/.env" });` at the top of `vitest.config.ts`.
