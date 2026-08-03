@@ -3,8 +3,12 @@
 <purpose>Adds canonical identity, vault and publication closure, then creates the sole final quarter-capsule seal.</purpose>
 <non-goals><item>Does not mutate Factory staging artifacts or previously sealed capsules.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>RFC-0025 moves final sealing behind Observatory publication.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY>
+  <item>RFC-0025 moves final sealing behind Observatory publication.</item>
+  <item>Verify an existing final seal before any write and recover a missing detached signature without rewriting artifacts.</item>
+</CHANGE_SUMMARY>
 */
+// @ai-invariant: finalization never writes after capsule-manifest.json exists
 
 import "@syrokomskyi/observatory-crypto/auto-env";
 import { loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";

@@ -31,6 +31,7 @@
   <item>Use single-line progress output via logProgress singleLine flag.</item>
   <item>Migrate shared concurrency primitive import from @syrokomskyi/business-rate-limit to @syrokomskyi/rate-limit.</item>
   <item>File-size refactor: extracted domain types, DB helpers, and report/source-file helpers into separate modules; gogol class now focuses on orchestration.</item>
+  <item>Seal accepted batches and ledger-bound frame manifests with Ed25519 signatures.</item>
 </CHANGE_SUMMARY>
 */
 
