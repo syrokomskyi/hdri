@@ -56,6 +56,7 @@ const copyFile = async (src: string, dest: string): Promise<{ sha256: string; by
 const copyDir = async (
   src: string,
   dest: string,
+  rootDest: string = dest,
 ): Promise<{ sha256: string; bytes: number; relativePath: string }[]> => {
   const entries = await fs.readdir(src, { withFileTypes: true });
   const results: { sha256: string; bytes: number; relativePath: string }[] = [];
@@ -63,10 +64,10 @@ const copyDir = async (
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
-      results.push(...(await copyDir(srcPath, destPath)));
+      results.push(...(await copyDir(srcPath, destPath, rootDest)));
     } else {
       const { sha256, bytes } = await copyFile(srcPath, destPath);
-      results.push({ sha256, bytes, relativePath: path.relative(dest, destPath) });
+      results.push({ sha256, bytes, relativePath: path.relative(rootDest, destPath) });
     }
   }
   return results;
@@ -131,14 +132,29 @@ async function main(): Promise<void> {
   }
 
   const manifestPath = path.join(capsuleDir!, "capsule-manifest.json");
-  if (await fs.access(manifestPath).then(() => true).catch(() => false)) {
-    console.error(`capsule-manifest.json already exists in ${capsuleDir} — quarter is already sealed`);
+  if (
+    await fs
+      .access(manifestPath)
+      .then(() => true)
+      .catch(() => false)
+  ) {
+    console.error(
+      `capsule-manifest.json already exists in ${capsuleDir} — quarter is already sealed`,
+    );
     process.exit(1);
   }
 
   const stagingPath = path.join(capsuleDir!, "capsule-staging.json");
-  if (!force && (await fs.access(stagingPath).then(() => true).catch(() => false))) {
-    console.error(`capsule-staging.json already exists in ${capsuleDir} — use --force to overwrite`);
+  if (
+    !force &&
+    (await fs
+      .access(stagingPath)
+      .then(() => true)
+      .catch(() => false))
+  ) {
+    console.error(
+      `capsule-staging.json already exists in ${capsuleDir} — use --force to overwrite`,
+    );
     process.exit(1);
   }
 
@@ -156,7 +172,12 @@ async function main(): Promise<void> {
   }
 
   for (const db of dbPaths) {
-    if (!(await fs.access(db.path).then(() => true).catch(() => false))) {
+    if (
+      !(await fs
+        .access(db.path)
+        .then(() => true)
+        .catch(() => false))
+    ) {
       console.error(`DB file not found: ${db.path}`);
       process.exit(1);
     }
@@ -164,7 +185,12 @@ async function main(): Promise<void> {
   }
 
   const emitManifestPath = path.join(emitDir!, "manifest.json");
-  if (!(await fs.access(emitManifestPath).then(() => true).catch(() => false))) {
+  if (
+    !(await fs
+      .access(emitManifestPath)
+      .then(() => true)
+      .catch(() => false))
+  ) {
     console.error(`Emit bundle manifest.json not found in ${emitDir}`);
     process.exit(1);
   }
@@ -175,7 +201,12 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  if (!(await fs.access(sourceLedgerDir!).then(() => true).catch(() => false))) {
+  if (
+    !(await fs
+      .access(sourceLedgerDir!)
+      .then(() => true)
+      .catch(() => false))
+  ) {
     console.error(`Source ledger directory not found: ${sourceLedgerDir}`);
     process.exit(1);
   }
@@ -216,7 +247,13 @@ async function main(): Promise<void> {
     }
   }
 
-  const sourceLedgerDestDir = path.join(capsuleDir!, "artifacts", "frame", DEVICE_ID, "source-ledger");
+  const sourceLedgerDestDir = path.join(
+    capsuleDir!,
+    "artifacts",
+    "frame",
+    DEVICE_ID,
+    "source-ledger",
+  );
   const ledgerResults = await copyDir(sourceLedgerDir!, sourceLedgerDestDir);
   for (const result of ledgerResults) {
     artifacts.push({
@@ -252,7 +289,11 @@ async function main(): Promise<void> {
   const instrumentPlan: InstrumentPlanEntry[] = [
     { instrument: "liveness", state: "required", reason: null },
     { instrument: "profile", state: "required", reason: null },
-    { instrument: "axe", state: axeDb ? "required" : "disabled", reason: axeDb ? null : "Legacy quarter — no axe data" },
+    {
+      instrument: "axe",
+      state: axeDb ? "required" : "disabled",
+      reason: axeDb ? null : "Legacy quarter — no axe data",
+    },
     { instrument: "lighthouse", state: "disabled", reason: "Legacy quarter — no Lighthouse data" },
   ];
 
