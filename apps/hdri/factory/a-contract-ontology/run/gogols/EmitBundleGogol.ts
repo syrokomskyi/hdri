@@ -192,15 +192,15 @@ export class EmitBundleGogol extends Gogol {
       const destination = path.join(capsuleDir, uri);
       await fsp.mkdir(path.dirname(destination), { recursive: true });
       try {
-        await fsp.link(source, destination);
+        await fsp.copyFile(
+          source,
+          destination,
+          fs.constants.COPYFILE_EXCL | fs.constants.COPYFILE_FICLONE,
+        );
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code;
         if (code === "EEXIST") {
           // Idempotent retry: the closure check below proves the existing bytes.
-        } else if (code === "EXDEV" || code === "EPERM" || code === "ENOTSUP") {
-          await fsp.copyFile(source, destination, fs.constants.COPYFILE_EXCL).catch((copyError) => {
-            if ((copyError as NodeJS.ErrnoException).code !== "EEXIST") throw copyError;
-          });
         } else {
           throw error;
         }
