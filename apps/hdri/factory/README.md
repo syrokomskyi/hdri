@@ -128,3 +128,9 @@ apps/hdri/factory/
 - [`apps/hdri/observatory`](../observatory) — Asset-Zustandsverfolgung, HDRI-Bewertung, Mart-Generierung
 - [`METHODOLOGY.md`](../../METHODOLOGY.md) — Wissenschaftliche Methodik des HDRI
 - [`GOVERNANCE.md`](../../GOVERNANCE.md) — Projekt-Governance und Rollen
+
+## Werkzeugskripte
+
+| Skript | Zweck | Aufruf |
+| --- | --- | --- |
+| `batch-estimate.ts` | Grobe Schnellschätzung der Website-Anzahl in Batch-Eingabeordnern (Dateien, URL-Einträge, eindeutige Domains) ohne vollständige Pipeline-Ausführung | `pnpm estimate:hdri` |
