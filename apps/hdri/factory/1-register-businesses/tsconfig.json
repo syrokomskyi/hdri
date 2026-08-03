@@ -8,7 +8,9 @@
     { "path": "../../../../packages/observatory/observatory-core" },
     { "path": "../../../../packages/observatory/observatory-crypto" },
     { "path": "../../../../packages/observatory/observatory-emit" },
+    { "path": "../../../../packages/pipeline/pipeline-core" },
     { "path": "../../../../packages/pipeline/pipeline-node" },
+    { "path": "../../../../packages/pipeline/pipeline-steps" },
     { "path": "../../../../packages/utils" },
     { "path": "../../../../packages/factory-core" }
   ]
