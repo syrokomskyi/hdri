@@ -27,13 +27,16 @@ import type { AssetStateMapping, AssetStateRecord } from "@syrokomskyi/observato
 import { EmitBundleWriter } from "@syrokomskyi/observatory-emit";
 import type { SignedObservation } from "@syrokomskyi/observatory-crypto";
 import {
+  verifyQuarterCapsuleArtifacts,
   writeQuarterCapsuleStaging,
   type CapsuleArtifact,
   type QuarterCapsule,
+  type SignedLedgerManifest,
+  type SourceBatchManifest,
 } from "@syrokomskyi/factory-core";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
-import { outputRootDir } from "../config.js";
+import { inputDir, outputRootDir } from "../config.js";
 
 const APP_VERSION = "0.1.0";
 const APP_ID = "a-contract-ontology";
@@ -66,9 +69,22 @@ export class EmitBundleGogol extends Gogol {
     const factoryRunId = brief.capsuleId;
     const capsuleDir = path.join(outputRootDir, "capsules", brief.period, brief.capsuleId);
     const emitDir = path.join(capsuleDir, "artifacts", "emit");
+    const stagingPath = path.join(capsuleDir, "capsule-staging.json");
     try {
       await fsp.access(path.join(capsuleDir, "capsule-manifest.json"));
       throw new Error(`Quarter capsule is already sealed: ${brief.period}/${brief.capsuleId}`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    try {
+      const existing = JSON.parse(await fsp.readFile(stagingPath, "utf8")) as QuarterCapsule;
+      if (existing.state !== "staging" || existing.period !== brief.period || existing.capsuleId !== brief.capsuleId) {
+        throw new Error(`Quarter capsule staging identity mismatch: ${brief.period}/${brief.capsuleId}`);
+      }
+      await verifyQuarterCapsuleArtifacts(capsuleDir, existing);
+      ctx.state.manifest = JSON.parse(await fsp.readFile(path.join(emitDir, "manifest.json"), "utf8"));
+      console.log(`[emit-bundle] Existing staging capsule verified; no artifacts rewritten.`);
+      return;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
@@ -135,7 +151,28 @@ export class EmitBundleGogol extends Gogol {
       const uri = `artifacts/${stage}/${deviceId}/${path.basename(source)}`;
       const destination = path.join(capsuleDir, uri);
       await fsp.mkdir(path.dirname(destination), { recursive: true });
-      await fsp.copyFile(source, destination);
+      await fsp.unlink(destination).catch((error) => {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      });
+      const sourceDb = new Database(source, { readonly: true, fileMustExist: true });
+      try {
+        const integrity = sourceDb.pragma("integrity_check") as Array<{ integrity_check: string }>;
+        if (integrity.some((row) => row.integrity_check !== "ok")) {
+          throw new Error(`SQLite source failed integrity_check: ${source}`);
+        }
+        await sourceDb.backup(destination);
+      } finally {
+        sourceDb.close();
+      }
+      const snapshotDb = new Database(destination, { readonly: true, fileMustExist: true });
+      try {
+        const integrity = snapshotDb.pragma("integrity_check") as Array<{ integrity_check: string }>;
+        if (integrity.some((row) => row.integrity_check !== "ok")) {
+          throw new Error(`SQLite capsule snapshot failed integrity_check: ${uri}`);
+        }
+      } finally {
+        snapshotDb.close();
+      }
       const stat = await fsp.stat(destination);
       artifacts.push({ stage, uri, sha256: await hashFile(destination), bytes: stat.size });
     };
@@ -144,7 +181,7 @@ export class EmitBundleGogol extends Gogol {
     for (const item of axeDbs) await retainDb("axe", item.deviceId, item.axeDbPath);
 
     const retainCasFile = async (
-      stage: "profile" | "axe",
+      stage: CapsuleArtifact["stage"],
       deviceId: string,
       source: string,
       relativeStoragePath: string,
@@ -204,23 +241,30 @@ export class EmitBundleGogol extends Gogol {
     }
 
     for (const item of coreDbs) {
-      const frameSource = path.resolve(
-        path.dirname(item.coreDbPath),
-        "..",
-        "source-ledger",
-        "projections",
+      const ledgerRoot = path.resolve(path.dirname(item.coreDbPath), "..", "source-ledger");
+      const segmentRoot = path.join(ledgerRoot, "segments");
+      const segmentNames = (await fsp.readdir(segmentRoot)).filter((name) => name.endsWith(".json")).sort();
+      for (const name of segmentNames) {
+        const segmentPath = path.join(segmentRoot, name);
+        const segmentSha256 = await hashFile(segmentPath);
+        await retainCasFile("frame", item.deviceId, segmentPath, `source-ledger/segments/${name}`, segmentSha256);
+        const envelope = JSON.parse(await fsp.readFile(segmentPath, "utf8")) as SignedLedgerManifest<SourceBatchManifest>;
+        const batchRoot = path.resolve(inputDir, "batches", envelope.payload.batchId);
+        for (const file of envelope.payload.files) {
+          const source = path.resolve(batchRoot, file.relativePath);
+          if (source !== batchRoot && !source.startsWith(`${batchRoot}${path.sep}`)) {
+            throw new Error(`Source batch artifact escapes its batch root: ${file.relativePath}`);
+          }
+          await retainCasFile("frame", item.deviceId, source, `source-ledger/raw/${envelope.payload.batchId}/${file.relativePath}`, file.sha256);
+        }
+      }
+      for (const name of [
+        "source-occurrences.ndjson",
         `frame-${brief.period}.json`,
-      );
-      try {
-        const frameUri = "artifacts/frame/frame.json";
-        const frameDestination = path.join(capsuleDir, frameUri);
-        await fsp.mkdir(path.dirname(frameDestination), { recursive: true });
-        await fsp.copyFile(frameSource, frameDestination);
-        const stat = await fsp.stat(frameDestination);
-        artifacts.push({ stage: "frame", uri: frameUri, sha256: await hashFile(frameDestination), bytes: stat.size });
-        break;
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        `frame-${brief.period}.manifest.json`,
+      ]) {
+        const source = path.join(ledgerRoot, "projections", name);
+        await retainCasFile("frame", item.deviceId, source, `source-ledger/projections/${name}`, await hashFile(source));
       }
     }
     if (!artifacts.some((artifact) => artifact.stage === "frame")) {

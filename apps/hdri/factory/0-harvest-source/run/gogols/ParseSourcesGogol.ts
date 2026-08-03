@@ -34,6 +34,7 @@
 </CHANGE_SUMMARY>
 */
 
+import "@syrokomskyi/observatory-crypto/auto-env";
 import fs from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { createHash } from "node:crypto";
@@ -48,7 +49,9 @@ import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import {
   checkSourceBatch,
   freezeFrame,
+  readSourceBatchManifests,
   rebuildLedgerHead,
+  sealFrameManifest,
   sealSourceBatch,
   sourceOccurrenceId,
   type HdriPeriod,
@@ -474,11 +477,9 @@ const materializeLedgerProjection = async (
   ledgerDir: string,
   sourceToken: string,
 ): Promise<void> => {
-  const segmentDir = path.join(ledgerDir, "segments");
-  const segmentNames = (await fs.readdir(segmentDir)).filter((name) => name.endsWith(".json")).sort();
+  const manifests = await readSourceBatchManifests(ledgerDir);
   const fileHashes = new Map<string, { batchHash: string; fileHash: string; period: HdriPeriod }>();
-  for (const name of segmentNames) {
-    const manifest = JSON.parse(await fs.readFile(path.join(segmentDir, name), "utf8")) as SourceBatchManifest;
+  for (const manifest of manifests) {
     for (const file of manifest.files) {
       fileHashes.set(`${manifest.batchId}/${file.relativePath}`, {
         batchHash: manifest.batchHash,
@@ -522,6 +523,8 @@ const materializeLedgerProjection = async (
 
   const parsed = parseSourceToken(sourceToken);
   const period = `${parsed.year}-q${parsed.quarter}` as HdriPeriod;
+  const occurrenceProjectionSha256 = (await hashFile(occurrencePath)).sha256;
+  const ledgerHead = await rebuildLedgerHead(ledgerDir);
   const candidates = db.prepare(`SELECT domain FROM sites ORDER BY domain`).all() as { domain: string }[];
   const frame = freezeFrame(
     period,
@@ -533,6 +536,12 @@ const materializeLedgerProjection = async (
       normalisedDomain: row.domain,
       disposition: "assertion" as const,
     })),
+    {
+      ledgerHead,
+      occurrenceProjectionSha256,
+      includedBatchIds: manifests.map((manifest) => manifest.batchId),
+    },
   );
   await fs.writeFile(path.join(projectionDir, `frame-${period}.json`), `${JSON.stringify(frame, null, 2)}\n`, "utf8");
+  await sealFrameManifest(ledgerDir, frame);
 };

@@ -7,11 +7,12 @@
 */
 
 import "@syrokomskyi/observatory-crypto/auto-env";
+import { loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { sealQuarterCapsule, type CapsuleArtifact, type QuarterCapsule } from "@syrokomskyi/factory-core";
+import { sealQuarterCapsule, verifyQuarterCapsuleArtifacts, verifyQuarterCapsuleSignature, type CapsuleArtifact, type CapsuleSignature, type QuarterCapsule } from "@syrokomskyi/factory-core";
 import { writeParquet } from "@syrokomskyi/observatory-vault";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { Gogol } from "../pipeline/Gogol";
@@ -32,6 +33,29 @@ export class FinalizeQuarterCapsuleGogol extends Gogol {
   override async run(ctx: PipelineContext): Promise<void> {
     const { runId, capsuleDir, vaultShardPaths = [], martPaths = [], brief } = ctx.state;
     if (!runId || !capsuleDir) throw new Error("Capsule finalization requires synced Observatory run state");
+    const finalManifestPath = path.join(capsuleDir, "capsule-manifest.json");
+    let finalCapsule: QuarterCapsule | null = null;
+    try {
+      finalCapsule = JSON.parse(await fsp.readFile(finalManifestPath, "utf8")) as QuarterCapsule;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    if (finalCapsule) {
+      const signingKey = loadSigningKeyFromEnv();
+      await verifyQuarterCapsuleArtifacts(capsuleDir, finalCapsule);
+      if (finalCapsule.period !== brief.period) throw new Error("Existing quarter capsule period mismatch");
+      try {
+        const signature = JSON.parse(await fsp.readFile(path.join(capsuleDir, "capsule-signature.json"), "utf8")) as CapsuleSignature;
+        if (!verifyQuarterCapsuleSignature(finalCapsule, signature, signingKey)) {
+          throw new Error("Existing quarter capsule signature verification failed");
+        }
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        await sealQuarterCapsule(capsuleDir, finalCapsule, signingKey);
+      }
+      console.log(`[finalize-quarter-capsule] Existing sealed capsule verified; no artifacts rewritten.`);
+      return;
+    }
     const stagingPath = path.join(capsuleDir, "capsule-staging.json");
     const staging = JSON.parse(await fsp.readFile(stagingPath, "utf8")) as QuarterCapsule;
     if (staging.period !== brief.period) throw new Error("Factory staging capsule period mismatch");
