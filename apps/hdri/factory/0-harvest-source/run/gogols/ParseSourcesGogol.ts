@@ -46,7 +46,7 @@ import { ConcurrencyGate } from "@syrokomskyi/rate-limit";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import { getTransparencyKeysDir, loadVerificationKeys, parseSourceToken, type VerificationKey } from "@syrokomskyi/observatory-crypto";
 import {
   checkSourceBatch,
   freezeFrame,
@@ -86,6 +86,7 @@ export class ParseSourcesGogol extends Gogol {
     const { year } = parseSourceToken(brief.sourceToken);
     const maxPages = brief.maxPages;
     const concurrency = brief.parserConcurrency;
+    const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
 
     await fs.mkdir(getDbDir(), { recursive: true });
     const db = openCoreSqlite(year);
@@ -128,7 +129,7 @@ export class ParseSourcesGogol extends Gogol {
       const allSourceFiles = await listBatchSourceFiles(batchName, brief);
       const sourceManifest = await buildSourceBatchManifest(batchName, brief.sourceToken, allSourceFiles);
       const ledgerDir = path.join(outputRootDir, "data", "source-ledger");
-      await checkSourceBatch(ledgerDir, sourceManifest);
+      await checkSourceBatch(ledgerDir, sourceManifest, verificationKeys);
 
       // Pre-filter: exclude files already processed in previous runs
       // This avoids I/O overhead from reading and checking already-processed files
@@ -380,7 +381,7 @@ export class ParseSourcesGogol extends Gogol {
     }
 
     if (maxPages < 0) {
-      await materializeLedgerProjection(db, path.join(outputRootDir, "data", "source-ledger"), brief.sourceToken);
+      await materializeLedgerProjection(db, path.join(outputRootDir, "data", "source-ledger"), brief.sourceToken, verificationKeys);
     }
     db.close();
 
@@ -477,8 +478,9 @@ const materializeLedgerProjection = async (
   db: ReturnType<typeof openCoreSqlite>,
   ledgerDir: string,
   sourceToken: string,
+  verificationKeys: ReadonlyMap<string, VerificationKey>,
 ): Promise<void> => {
-  const manifests = await readSourceBatchManifests(ledgerDir);
+  const manifests = await readSourceBatchManifests(ledgerDir, verificationKeys);
   const fileHashes = new Map<string, { batchHash: string; fileHash: string; period: HdriPeriod }>();
   for (const manifest of manifests) {
     for (const file of manifest.files) {
