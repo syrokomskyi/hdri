@@ -38,7 +38,7 @@
 import "@syrokomskyi/observatory-crypto/auto-env";
 import fs from "node:fs/promises";
 import { createReadStream } from "node:fs";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
 import { normaliseDomain, isStopDomain } from "@syrokomskyi/business-core/ids";
@@ -50,9 +50,9 @@ import { getTransparencyKeysDir, loadVerificationKeys, parseSourceToken, type Ve
 import {
   checkSourceBatch,
   freezeFrame,
+  publishFrozenFrameProjection,
   readSourceBatchManifests,
   rebuildLedgerHead,
-  sealFrameManifest,
   sealSourceBatch,
   sourceOccurrenceId,
   type HdriPeriod,
@@ -290,7 +290,7 @@ export class ParseSourcesGogol extends Gogol {
 
       const batchOutDir = path.join(outDir, "batches", batchName);
       if (maxPages < 0) {
-        const sealResult = await sealSourceBatch(ledgerDir, sourceManifest);
+        const sealResult = await sealSourceBatch(ledgerDir, sourceManifest, undefined, verificationKeys);
         const ledgerHead = await rebuildLedgerHead(ledgerDir);
         await ctx.writeTextFile(
           path.join(batchOutDir, "source-batch-manifest.json"),
@@ -494,8 +494,11 @@ const materializeLedgerProjection = async (
 
   const projectionDir = path.join(ledgerDir, "projections");
   await fs.mkdir(projectionDir, { recursive: true });
-  const occurrencePath = path.join(projectionDir, "source-occurrences.ndjson");
-  const output = await fs.open(occurrencePath, "w");
+  const parsed = parseSourceToken(sourceToken);
+  const period = `${parsed.year}-q${parsed.quarter}` as HdriPeriod;
+  const occurrencePath = path.join(projectionDir, `source-occurrences-${period}.ndjson`);
+  const occurrenceTemp = `${occurrencePath}.${process.pid}.${randomUUID()}.tmp`;
+  const output = await fs.open(occurrenceTemp, "wx");
   try {
     const rows = db.prepare(`
       SELECT s.domain, seed.source_path, seed.source_item_key
@@ -524,9 +527,7 @@ const materializeLedgerProjection = async (
     await output.close();
   }
 
-  const parsed = parseSourceToken(sourceToken);
-  const period = `${parsed.year}-q${parsed.quarter}` as HdriPeriod;
-  const occurrenceProjectionSha256 = (await hashFile(occurrencePath)).sha256;
+  const occurrenceProjectionSha256 = (await hashFile(occurrenceTemp)).sha256;
   const ledgerHead = await rebuildLedgerHead(ledgerDir);
   const candidates = db.prepare(`SELECT domain FROM sites ORDER BY domain`).all() as { domain: string }[];
   const frame = freezeFrame(
@@ -545,6 +546,9 @@ const materializeLedgerProjection = async (
       includedBatchIds: manifests.map((manifest) => manifest.batchId),
     },
   );
-  await fs.writeFile(path.join(projectionDir, `frame-${period}.json`), `${JSON.stringify(frame, null, 2)}\n`, "utf8");
-  await sealFrameManifest(ledgerDir, frame);
+  try {
+    await publishFrozenFrameProjection(ledgerDir, frame, occurrenceTemp, undefined, verificationKeys);
+  } finally {
+    await fs.unlink(occurrenceTemp).catch(() => undefined);
+  }
 };

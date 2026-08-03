@@ -26,14 +26,13 @@ import readline from "node:readline";
 import { deriveAssetId } from "@syrokomskyi/observatory-core";
 import type { AssetStateMapping, AssetStateRecord } from "@syrokomskyi/observatory-core";
 import { EmitBundleWriter } from "@syrokomskyi/observatory-emit";
-import type { SignedObservation } from "@syrokomskyi/observatory-crypto";
+import { getTransparencyKeysDir, loadVerificationKeys, type SignedObservation } from "@syrokomskyi/observatory-crypto";
 import {
   verifyQuarterCapsuleArtifacts,
+  verifySourceClosure,
   writeQuarterCapsuleStaging,
   type CapsuleArtifact,
   type QuarterCapsule,
-  type SignedLedgerManifest,
-  type SourceBatchManifest,
 } from "@syrokomskyi/factory-core";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
@@ -144,6 +143,7 @@ export class EmitBundleGogol extends Gogol {
     );
 
     const artifacts: CapsuleArtifact[] = [];
+    const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
     const retainDb = async (
       stage: "liveness" | "profile" | "axe",
       deviceId: string,
@@ -243,24 +243,26 @@ export class EmitBundleGogol extends Gogol {
 
     for (const item of coreDbs) {
       const ledgerRoot = path.resolve(path.dirname(item.coreDbPath), "..", "source-ledger");
+      const sourceClosure = await verifySourceClosure(ledgerRoot, brief.period, verificationKeys);
       const segmentRoot = path.join(ledgerRoot, "segments");
       const segmentNames = (await fsp.readdir(segmentRoot)).filter((name) => name.endsWith(".json")).sort();
       for (const name of segmentNames) {
         const segmentPath = path.join(segmentRoot, name);
         const segmentSha256 = await hashFile(segmentPath);
         await retainCasFile("frame", item.deviceId, segmentPath, `source-ledger/segments/${name}`, segmentSha256);
-        const envelope = JSON.parse(await fsp.readFile(segmentPath, "utf8")) as SignedLedgerManifest<SourceBatchManifest>;
-        const batchRoot = path.resolve(inputDir, "batches", envelope.payload.batchId);
-        for (const file of envelope.payload.files) {
+        const manifest = sourceClosure.manifests.find((candidate) => `${candidate.batchId}.json` === name);
+        if (!manifest) throw new Error(`Verified source manifest is missing for segment: ${name}`);
+        const batchRoot = path.resolve(inputDir, "batches", manifest.batchId);
+        for (const file of manifest.files) {
           const source = path.resolve(batchRoot, file.relativePath);
           if (source !== batchRoot && !source.startsWith(`${batchRoot}${path.sep}`)) {
             throw new Error(`Source batch artifact escapes its batch root: ${file.relativePath}`);
           }
-          await retainCasFile("frame", item.deviceId, source, `source-ledger/raw/${envelope.payload.batchId}/${file.relativePath}`, file.sha256);
+          await retainCasFile("frame", item.deviceId, source, `source-ledger/raw/${manifest.batchId}/${file.relativePath}`, file.sha256);
         }
       }
       for (const name of [
-        "source-occurrences.ndjson",
+        `source-occurrences-${brief.period}.ndjson`,
         `frame-${brief.period}.json`,
         `frame-${brief.period}.manifest.json`,
       ]) {
@@ -291,11 +293,16 @@ export class EmitBundleGogol extends Gogol {
       artifacts.push({ stage: "methodology", uri: methodologyUri, sha256: await hashFile(methodologyPath), bytes: stat.size });
     }
 
-    const executionRoot = path.join(capsuleDir, "staging", "execution");
-    for (const executionPath of await walkFiles(executionRoot)) {
-      const uri = path.relative(capsuleDir, executionPath).replaceAll(path.sep, "/");
-      const stat = await fsp.stat(executionPath);
-      artifacts.push({ stage: "qc", uri, sha256: await hashFile(executionPath), bytes: stat.size });
+    for (const evidenceRoot of [
+      path.join(capsuleDir, "staging", "execution"),
+      path.join(capsuleDir, "staging", "stage-seals"),
+      path.join(capsuleDir, "staging", "targets"),
+    ]) {
+      for (const evidencePath of await walkFiles(evidenceRoot)) {
+        const uri = path.relative(capsuleDir, evidencePath).replaceAll(path.sep, "/");
+        const stat = await fsp.stat(evidencePath);
+        artifacts.push({ stage: "qc", uri, sha256: await hashFile(evidencePath), bytes: stat.size });
+      }
     }
 
     const capsule: QuarterCapsule = {

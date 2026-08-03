@@ -39,6 +39,7 @@ import {
   quarterCapsuleDir,
   quarterExecutionEventsDir,
   readExecutionCasObject,
+  withLeaseHeartbeat,
   writeExecutionCasObject,
   type HdriPeriod,
   type WorkKey,
@@ -197,23 +198,26 @@ export class CrawlGogol extends Gogol {
     const processOne = async (site: SiteRow): Promise<void> => {
       const url = `https://${site.domain}`;
       const startedAt = new Date();
+      const leaseDurationMs = brief.timeoutMs * 2 + 60_000;
       const attempt = await journal.begin({
         key: keyFor(site),
         attemptId: mintAssetId(),
         leaseOwner: brief.deviceId,
         now: startedAt.toISOString(),
-        leaseExpiresAt: new Date(startedAt.getTime() + brief.timeoutMs * 2 + 60_000).toISOString(),
+        leaseExpiresAt: new Date(startedAt.getTime() + leaseDurationMs).toISOString(),
       });
       if (!attempt) return;
 
-      const result = await fetchPageContent(url, { timeoutMs: brief.timeoutMs });
-      const fetched = result.ok
-        ? result
-        : result.errorCode === "SSL_ERROR" ||
-            result.errorCode === "ENOTFOUND" ||
-            result.errorCode === "ETIMEDOUT"
-          ? await fetchPageContent(`http://${site.domain}`, { timeoutMs: brief.timeoutMs })
-          : result;
+      const fetched = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, async () => {
+        const result = await fetchPageContent(url, { timeoutMs: brief.timeoutMs });
+        return result.ok
+          ? result
+          : result.errorCode === "SSL_ERROR" ||
+              result.errorCode === "ENOTFOUND" ||
+              result.errorCode === "ETIMEDOUT"
+            ? await fetchPageContent(`http://${site.domain}`, { timeoutMs: brief.timeoutMs })
+            : result;
+      });
 
       let evidencePayload: ProfileEvidence;
       if (!fetched.ok || fetched.httpStatus === null || fetched.httpStatus >= 400) {

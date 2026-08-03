@@ -33,6 +33,7 @@ import {
   quarterCapsuleDir,
   quarterExecutionEventsDir,
   readExecutionCasObject,
+  withLeaseHeartbeat,
   upsertAuditRun,
   writeExecutionCasObject,
   type HdriPeriod,
@@ -301,16 +302,22 @@ export class AxeAuditGogol extends Gogol {
           const startedAt = Date.now();
           for (let retryOrdinal = 0; retryOrdinal <= brief.retries; retryOrdinal++) {
             const leaseAt = new Date();
+            const leaseDurationMs = brief.timeoutMs + 60_000;
             const attempt = await journal.begin({
               key: keyFor(target),
               attemptId: mintAssetId(),
               leaseOwner: brief.deviceId,
               now: leaseAt.toISOString(),
-              leaseExpiresAt: new Date(leaseAt.getTime() + brief.timeoutMs + 60_000).toISOString(),
+              leaseExpiresAt: new Date(leaseAt.getTime() + leaseDurationMs).toISOString(),
             });
             if (!attempt) return;
             try {
-              const report = await runAxeLive(target, brief.timeoutMs);
+              const report = await withLeaseHeartbeat(
+                journal,
+                attempt,
+                leaseDurationMs,
+                () => runAxeLive(target, brief.timeoutMs),
+              );
 
               const { sha256 } = await writeReportToCas("axe", JSON.stringify(report));
               const extracted = extract(report);

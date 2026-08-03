@@ -33,6 +33,7 @@ import {
   quarterCapsuleDir,
   quarterExecutionEventsDir,
   readExecutionCasObject,
+  withLeaseHeartbeat,
   writeExecutionCasObject,
   type HdriPeriod,
   type WorkKey,
@@ -199,20 +200,20 @@ export class CheckLivenessGogol extends Gogol {
 
     const processOne = async (site: SiteRow): Promise<void> => {
       const startedAt = new Date();
+      const leaseDurationMs = brief.timeoutMs * (brief.retryCount + 1) + 60_000;
       const attempt = await journal.begin({
         key: keyFor(site),
         attemptId: mintAssetId(),
         leaseOwner: brief.deviceId,
         now: startedAt.toISOString(),
-        leaseExpiresAt: new Date(
-          startedAt.getTime() + brief.timeoutMs * (brief.retryCount + 1) + 60_000,
-        ).toISOString(),
+        leaseExpiresAt: new Date(startedAt.getTime() + leaseDurationMs).toISOString(),
       });
       if (!attempt) return;
-      const result = await checkSiteLiveness(site.domain, {
-        timeoutMs: brief.timeoutMs,
-        retryCount: brief.retryCount,
-      });
+      const result = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, () =>
+        checkSiteLiveness(site.domain, {
+          timeoutMs: brief.timeoutMs,
+          retryCount: brief.retryCount,
+        }));
       const evidence = await writeExecutionCasObject(capsuleDir, {
         schemaVersion: 1,
         stage: "liveness",
