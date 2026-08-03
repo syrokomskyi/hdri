@@ -1,36 +1,71 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Discovers source batches from prior capsule segments and the current quarter's input folder to build a cumulative frame.</purpose>
+<purpose>Two-phase cumulative source batch discovery: prior capsule segments from prior-capsules.json plus the current quarter's input folder.</purpose>
 <non-goals>
   <item>Does not re-parse old raw folders; prior segments are read from sealed capsule manifests.</item>
   <item>Does not modify or delete sealed capsules or their artifacts.</item>
+  <item>Does not scan .input/batches for prior-quarter folders.</item>
   <item>Do not include future-quarter folders in the current frozen frame.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Enhanced COMPASS scaffolding to accurately reflect module responsibilities and boundaries.</item>
-  <item>Discover preserved prior-quarter folders together with the current new-source folder.</item>
-  <item>Update COMPASS header to reflect cumulative capsule discovery contract (RFC-0030).</item>
+  <item>RFC-0030: rewrite to two-phase discovery — prior capsules from prior-capsules.json + current batch folder verification.</item>
+  <item>Remove raw folder scanning (listBatchNames) for prior quarters.</item>
+  <item>Remove selectCumulativeBatchNames — prior batch IDs come from sealed manifests.</item>
 </CHANGE_SUMMARY>
 */
 
 import fs from "node:fs/promises";
 import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
+import {
+  parsePriorCapsulesFile,
+  type LedgerDiscoveryResult,
+  type PriorCapsuleRef,
+} from "@syrokomskyi/factory-core";
 import type { Brief } from "../../brief.js";
 import { getBatchInputDir } from "../../paths.js";
-import { listBatchNames } from "../../source-files.js";
-import { selectCumulativeBatchNames } from "./batch-selection.js";
+import { inputDir } from "../../config.js";
 
 export type BootstrappedBatches = {
   batchNames: string[];
+  discovery: LedgerDiscoveryResult;
 };
 
-export const bootstrapBatches = async (brief: Brief): Promise<BootstrappedBatches> => {
-  let discovered: string[];
+const PRIOR_CAPSULES_PATH = "prior-capsules.json";
 
+export const discoverLedger = async (sourceToken: string): Promise<LedgerDiscoveryResult> => {
+  // Phase 1: Read prior-capsules.json for prior sealed capsule segments
+  const priorCapsulesPath = `${inputDir}/${PRIOR_CAPSULES_PATH}`;
+  let priorRefs: PriorCapsuleRef[] = [];
   try {
-    discovered = await listBatchNames();
-    const stat = await fs.stat(getBatchInputDir(brief.sourceToken));
+    const raw = await fs.readFile(priorCapsulesPath, "utf8");
+    const parsed = parsePriorCapsulesFile(raw);
+    priorRefs = parsed.priorCapsules.map((entry) => ({
+      capsuleId: entry.capsuleId,
+      period: entry.period,
+      manifestPath: entry.manifestPath,
+      segmentHashes: [],
+      batchIds: entry.batchIds,
+    }));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw new PipelinePauseError(
+        [
+          "Pipeline paused.",
+          `prior-capsules.json is malformed: ${error instanceof Error ? error.message : String(error)}`,
+          "Fix the file and rerun.",
+        ].join("\n"),
+      );
+    }
+    // First quarter — no prior capsules
+  }
+
+  // Phase 2: Collect batch IDs from prior capsules
+  const priorBatchIds = priorRefs.flatMap((ref) => ref.batchIds);
+
+  // Phase 3: Verify current batch folder exists (stat only, no readdir)
+  try {
+    const stat = await fs.stat(getBatchInputDir(sourceToken));
     if (!stat.isDirectory()) {
       throw new Error("not a directory");
     }
@@ -38,17 +73,36 @@ export const bootstrapBatches = async (brief: Brief): Promise<BootstrappedBatche
     throw new PipelinePauseError(
       [
         "Pipeline paused.",
-        `Batch directory not found: ${getBatchInputDir(brief.sourceToken)}`,
-        `The current folder name must exactly match sourceToken from brief.md ("${brief.sourceToken}").`,
+        `Batch directory not found: ${getBatchInputDir(sourceToken)}`,
+        `The current folder name must exactly match sourceToken from brief.md ("${sourceToken}").`,
         "",
         "Expected structure:",
-        `  .input/batches/${brief.sourceToken}/firmenabc.com/*.csv`,
-        `  .input/batches/${brief.sourceToken}/<city>.stadtbranchenbuch.com/*.html`,
-        `  .input/batches/${brief.sourceToken}/branchenverzeichnis.org/**/*.html`,
-        `  .input/batches/${brief.sourceToken}/work5.de/**/*.html`,
+        `  .input/batches/${sourceToken}/firmenabc.com/*.csv`,
+        `  .input/batches/${sourceToken}/<city>.stadtbranchenbuch.com/*.html`,
+        `  .input/batches/${sourceToken}/branchenverzeichnis.org/**/*.html`,
+        `  .input/batches/${sourceToken}/work5.de/**/*.html`,
       ].join("\n"),
     );
   }
 
-  return { batchNames: selectCumulativeBatchNames(discovered, brief.sourceToken) };
+  // Combine: prior batch IDs + current sourceToken (deduplicated, sorted)
+  const batchSet = new Set<string>([...priorBatchIds, sourceToken]);
+  const currentBatchIds = [...batchSet].sort();
+
+  return {
+    currentBatchIds,
+    priorCapsuleSegments: priorRefs,
+    ledgerHead: "",
+  };
+};
+
+export const bootstrapBatches = async (brief: Brief): Promise<BootstrappedBatches> => {
+  const discovery = await discoverLedger(brief.sourceToken);
+
+  console.log(
+    `[bootstrap] Discovery: ${discovery.currentBatchIds.length} batch(es) ` +
+      `(${discovery.priorCapsuleSegments.length} prior capsule(s), current: ${brief.sourceToken})`,
+  );
+
+  return { batchNames: [...discovery.currentBatchIds], discovery };
 };

@@ -34,7 +34,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   await ensureOutputDir(outputRootDir);
 
   const { brief, rootBrief } = await bootstrapBrief();
-  const { batchNames } = await bootstrapBatches(brief);
+  const { batchNames, discovery } = await bootstrapBatches(brief);
 
   console.log(`\n[catalog-harvest] Batches found: ${batchNames.join(", ")}`);
   console.log(`[catalog-harvest] maxPages: ${brief.maxPages}\n`);
@@ -59,6 +59,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
       batchNames,
       brief,
       rootBrief,
+      discovery,
     },
     options,
   });
