@@ -120,4 +120,22 @@ describe("quarter scientific release boundary", () => {
     expect(result.status).toBe("fail");
     expect(result.violations).toContain("scientific_report_set_incomplete");
   });
+
+  it("blocks a release when a scientific report has status fail", () => {
+    const failedReports = reports.map((report) =>
+      report.reportType === "source-qc"
+        ? { ...report, status: "fail" as const, warnings: ["source_coverage_below_threshold"] }
+        : report,
+    );
+    const result = validateReleaseEvidence(
+      capsule,
+      failedReports,
+      rebuild,
+      [replica("offsite-a", "disk-a"), replica("offsite-b", "object-store-b")],
+      candidateHash,
+    );
+    expect(result.status).toBe("fail");
+    expect(result.violations).toContain("scientific_report_failed:source-qc");
+    expect(result.warnings).toContain("source_coverage_below_threshold");
+  });
 });

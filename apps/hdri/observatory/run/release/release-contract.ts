@@ -187,6 +187,15 @@ export const validateReleaseEvidence = (
   if (reports.length !== Object.keys(SCIENTIFIC_REPORTS).length) {
     violations.push("scientific_report_set_incomplete");
   }
+  const failedReports = reports.filter((report) => report.status !== "pass");
+  if (failedReports.length > 0) {
+    violations.push(
+      `scientific_report_failed:${failedReports
+        .map((report) => report.reportType)
+        .sort()
+        .join(",")}`,
+    );
+  }
   return {
     schemaVersion: "1",
     period: capsule.period,
