@@ -22,7 +22,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | --- | --- |
 | `build` | `pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/3-extract-profile/tsconfig.json --pretty false` |
 | `typecheck` | `pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/3-extract-profile/tsconfig.json --pretty false` |
-| `test` | `pnpm exec vitest run` |
+| `test` | `pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/3-extract-profile/vitest.config.ts` |
 | `dev` | `tsx -C @syrokomskyi/source watch run/run.ts` |
 | `start` | `tsx -C @syrokomskyi/source --max-old-space-size=2048 run/run.ts` |
 

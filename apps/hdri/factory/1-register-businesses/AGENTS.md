@@ -24,6 +24,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `typecheck` | `pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/1-register-businesses/tsconfig.json --noEmit` |
 | `dev` | `tsx -C @syrokomskyi/source watch run/run.ts` |
 | `start` | `tsx -C @syrokomskyi/source run/run.ts` |
+| `test` | `pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/1-register-businesses/vitest.config.ts` |
 
 ## Dependencies
 
