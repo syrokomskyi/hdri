@@ -23,8 +23,6 @@ import type Database from "better-sqlite3";
  * Tables:
  *   business_registry — one row per distinct eTLD+1 across all collaborating
  *                       devices for the current year
- *   registry_alias    — alternate domain forms that map to the same da_id
- *                       (subdomains, www-prefix, etc.)
  *
  * Provenance columns on business_registry record which device first observed
  * the business, when, and on which sourceToken — so that later audits can
@@ -50,16 +48,6 @@ export function migrateRegistry(db: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS br_domain_idx ON business_registry(domain);
     CREATE INDEX IF NOT EXISTS br_first_seen_token_idx ON business_registry(first_seen_source_token);
-
-    CREATE TABLE IF NOT EXISTS registry_alias (
-      da_id            TEXT NOT NULL,
-      alternate_domain TEXT NOT NULL,
-      source_token     TEXT NOT NULL,
-      device_id        TEXT NOT NULL,
-      added_at         INTEGER NOT NULL DEFAULT (unixepoch()),
-      PRIMARY KEY (da_id, alternate_domain)
-    );
-    CREATE INDEX IF NOT EXISTS ra_alt_idx ON registry_alias(alternate_domain);
   `);
 }
 

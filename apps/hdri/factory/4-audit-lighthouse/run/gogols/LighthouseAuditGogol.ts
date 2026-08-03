@@ -58,7 +58,7 @@ type LighthouseReport = {
   };
 };
 
-type Extracted = {
+export type Extracted = {
   performance: number | null;
   accessibility: number | null;
   bestPractices: number | null;
@@ -159,7 +159,7 @@ const runLighthouseLive = async (
 // DB upserts (tool-specific)
 // ---------------------------------------------------------------------------
 
-const upsertLighthouse = (
+export const upsertLighthouse = (
   db: Database.Database,
   siteId: number,
   provisionalAssetId: string,
@@ -284,7 +284,9 @@ export class LighthouseAuditGogol extends Gogol {
       // Resume: skip sites already recorded in audit_runs
       const auditedAssetIds = new Set(
         (
-          auditsDb.prepare(`SELECT provisional_asset_id FROM audit_runs WHERE tool = 'lighthouse'`).all() as {
+          auditsDb
+            .prepare(`SELECT provisional_asset_id FROM audit_runs WHERE tool = 'lighthouse'`)
+            .all() as {
             provisional_asset_id: string;
           }[]
         ).map((r) => r.provisional_asset_id),
@@ -325,7 +327,13 @@ export class LighthouseAuditGogol extends Gogol {
                   reportSha256: sha256,
                   source: "live",
                 });
-                upsertLighthouse(auditsDb, target.siteId, target.provisionalAssetId, extracted, sha256);
+                upsertLighthouse(
+                  auditsDb,
+                  target.siteId,
+                  target.provisionalAssetId,
+                  extracted,
+                  sha256,
+                );
 
                 results.push({
                   siteId: target.siteId,

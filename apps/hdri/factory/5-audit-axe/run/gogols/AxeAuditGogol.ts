@@ -69,7 +69,7 @@ type AxeReport = {
   nodesScanned?: number;
 };
 
-type Extracted = {
+export type Extracted = {
   violationsTotal: number;
   criticalCount: number;
   seriousCount: number;
@@ -146,7 +146,7 @@ const runAxeLive = async (target: AuditTarget, timeoutMs: number): Promise<AxeRe
 // DB upserts (tool-specific)
 // ---------------------------------------------------------------------------
 
-const upsertAxe = (
+export const upsertAxe = (
   db: Database.Database,
   siteId: number,
   provisionalAssetId: string,
@@ -238,17 +238,36 @@ export class AxeAuditGogol extends Gogol {
     const checkpoint = (target: AuditTarget, evidence: AxeEvidence): void => {
       if (evidence.result.ok) {
         upsertAuditRun(auditsDb, {
-          tool: "axe", siteId: target.siteId, provisionalAssetId: target.provisionalAssetId,
-          url: target.url, durationMs: evidence.durationMs, ok: true, errorClass: null,
-          errorMessage: null, reportSha256: evidence.result.reportSha256, source: "live",
+          tool: "axe",
+          siteId: target.siteId,
+          provisionalAssetId: target.provisionalAssetId,
+          url: target.url,
+          durationMs: evidence.durationMs,
+          ok: true,
+          errorClass: null,
+          errorMessage: null,
+          reportSha256: evidence.result.reportSha256,
+          source: "live",
         });
-        upsertAxe(auditsDb, target.siteId, target.provisionalAssetId, evidence.result.extracted, evidence.result.reportSha256);
+        upsertAxe(
+          auditsDb,
+          target.siteId,
+          target.provisionalAssetId,
+          evidence.result.extracted,
+          evidence.result.reportSha256,
+        );
       } else {
         upsertAuditRun(auditsDb, {
-          tool: "axe", siteId: target.siteId, provisionalAssetId: target.provisionalAssetId,
-          url: target.url, durationMs: evidence.durationMs, ok: false,
-          errorClass: evidence.result.errorClass, errorMessage: evidence.result.errorMessage,
-          reportSha256: null, source: "live",
+          tool: "axe",
+          siteId: target.siteId,
+          provisionalAssetId: target.provisionalAssetId,
+          url: target.url,
+          durationMs: evidence.durationMs,
+          ok: false,
+          errorClass: evidence.result.errorClass,
+          errorMessage: evidence.result.errorMessage,
+          reportSha256: null,
+          source: "live",
         });
       }
     };
@@ -256,11 +275,14 @@ export class AxeAuditGogol extends Gogol {
       const sha256 = journal.terminalResultSha256(keyFor(target));
       if (!sha256) continue;
       const evidence = await readExecutionCasObject<AxeEvidence>(capsuleDir, sha256);
-      if (evidence.provisionalAssetId !== target.provisionalAssetId) throw new Error(`Axe evidence identity mismatch: ${target.provisionalAssetId}`);
+      if (evidence.provisionalAssetId !== target.provisionalAssetId)
+        throw new Error(`Axe evidence identity mismatch: ${target.provisionalAssetId}`);
       checkpoint(target, evidence);
     }
     const pendingTargets = targets.filter((target) => !journal.isTerminal(keyFor(target)));
-    console.log(`[axe-audit] Resume: ${targets.length - pendingTargets.length} terminal, ${pendingTargets.length} remaining.`);
+    console.log(
+      `[axe-audit] Resume: ${targets.length - pendingTargets.length} terminal, ${pendingTargets.length} remaining.`,
+    );
     if (pendingTargets.length === 0) {
       console.log("[axe-audit] All targets already audited.");
     }
@@ -313,11 +335,8 @@ export class AxeAuditGogol extends Gogol {
             });
             if (!attempt) return;
             try {
-              const report = await withLeaseHeartbeat(
-                journal,
-                attempt,
-                leaseDurationMs,
-                () => runAxeLive(target, brief.timeoutMs),
+              const report = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, () =>
+                runAxeLive(target, brief.timeoutMs),
               );
 
               const { sha256 } = await writeReportToCas("axe", JSON.stringify(report));
@@ -325,18 +344,30 @@ export class AxeAuditGogol extends Gogol {
               const durationMs = Date.now() - startedAt;
 
               const payload: AxeEvidence = {
-                schemaVersion: 1, stage: "axe", siteId: target.siteId,
-                provisionalAssetId: target.provisionalAssetId, url: target.url, durationMs,
+                schemaVersion: 1,
+                stage: "axe",
+                siteId: target.siteId,
+                provisionalAssetId: target.provisionalAssetId,
+                url: target.url,
+                durationMs,
                 result: { ok: true, reportSha256: sha256, extracted },
               };
               const evidence = await writeExecutionCasObject(capsuleDir, payload);
               await journal.finish(attempt, {
-                eventId: mintAssetId(), now: new Date().toISOString(), state: "succeeded",
+                eventId: mintAssetId(),
+                now: new Date().toISOString(),
+                state: "succeeded",
                 resultSha256: evidence.sha256,
               });
               checkpoint(target, payload);
 
-              results.push({ siteId: target.siteId, ok: true, errorClass: null, durationMs, extracted });
+              results.push({
+                siteId: target.siteId,
+                ok: true,
+                errorClass: null,
+                durationMs,
+                extracted,
+              });
               completed++;
               logProgress(this.id, completed, totalTargets, progressInterval, true);
               console.log(
@@ -347,27 +378,47 @@ export class AxeAuditGogol extends Gogol {
               return;
             } catch (err) {
               const durationMs = Date.now() - startedAt;
-              const errorClass = err instanceof Error && /timeout/i.test(err.message) ? "timeout" : "error";
-              const errorMessage = err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500);
+              const errorClass =
+                err instanceof Error && /timeout/i.test(err.message) ? "timeout" : "error";
+              const errorMessage =
+                err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500);
               if (retryOrdinal < brief.retries) {
                 await journal.finish(attempt, {
-                  eventId: mintAssetId(), now: new Date().toISOString(), state: "retryable", errorClass,
+                  eventId: mintAssetId(),
+                  now: new Date().toISOString(),
+                  state: "retryable",
+                  errorClass,
                 });
-                await new Promise((resolve) => setTimeout(resolve, Math.min(5_000, 500 * 2 ** retryOrdinal)));
+                await new Promise((resolve) =>
+                  setTimeout(resolve, Math.min(5_000, 500 * 2 ** retryOrdinal)),
+                );
                 continue;
               }
               const payload: AxeEvidence = {
-                schemaVersion: 1, stage: "axe", siteId: target.siteId,
-                provisionalAssetId: target.provisionalAssetId, url: target.url, durationMs,
+                schemaVersion: 1,
+                stage: "axe",
+                siteId: target.siteId,
+                provisionalAssetId: target.provisionalAssetId,
+                url: target.url,
+                durationMs,
                 result: { ok: false, errorClass, errorMessage },
               };
               const evidence = await writeExecutionCasObject(capsuleDir, payload);
               await journal.finish(attempt, {
-                eventId: mintAssetId(), now: new Date().toISOString(), state: "observed-failure",
-                resultSha256: evidence.sha256, errorClass,
+                eventId: mintAssetId(),
+                now: new Date().toISOString(),
+                state: "observed-failure",
+                resultSha256: evidence.sha256,
+                errorClass,
               });
               checkpoint(target, payload);
-              results.push({ siteId: target.siteId, ok: false, errorClass, durationMs, extracted: null });
+              results.push({
+                siteId: target.siteId,
+                ok: false,
+                errorClass,
+                durationMs,
+                extracted: null,
+              });
               completed++;
               logProgress(this.id, completed, totalTargets, progressInterval, true);
               console.log(
@@ -387,12 +438,16 @@ export class AxeAuditGogol extends Gogol {
       now: new Date().toISOString(),
     });
 
-    const terminal = auditsDb.prepare(`
+    const terminal = auditsDb
+      .prepare(
+        `
       SELECT
         SUM(CASE WHEN ok = 1 THEN 1 ELSE 0 END) AS succeeded,
         SUM(CASE WHEN ok = 0 THEN 1 ELSE 0 END) AS failed
       FROM audit_runs WHERE tool = 'axe'
-    `).get() as { succeeded: number | null; failed: number | null };
+    `,
+      )
+      .get() as { succeeded: number | null; failed: number | null };
     assertStageComplete({
       targetCount: targets.length,
       succeeded: terminal.succeeded ?? 0,
