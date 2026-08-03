@@ -78,7 +78,9 @@ export class ReleaseQuarterGogol extends Gogol {
       );
     } catch (error) {
       const stderr = (error as { stderr?: Buffer }).stderr?.toString() ?? "";
-      throw new Error(`quarter-release failed: ${stderr || (error as Error).message}`);
+      throw new Error(`quarter-release failed: ${stderr || (error as Error).message}`, {
+        cause: error,
+      });
     }
   }
 }

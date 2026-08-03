@@ -60,7 +60,7 @@ export class MintAssetIdsGogol extends Gogol {
     let minted: number;
     let backfilled: number;
     let newRecords: VaultAssetIdentityRecord[];
-    let availabilityEvents = 0;
+    let availabilityEvents: number;
 
     try {
       // 2. Collect distinct provisional (asset_id, domain) pairs. asset_states carries the
@@ -135,7 +135,11 @@ export class MintAssetIdsGogol extends Gogol {
         }
       });
       doWrite();
-      availabilityEvents = materializeAvailabilityTransitions(db, ctx.state.runId ?? "", brief.period);
+      availabilityEvents = materializeAvailabilityTransitions(
+        db,
+        ctx.state.runId ?? "",
+        brief.period,
+      );
     } finally {
       db.close();
     }

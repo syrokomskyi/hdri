@@ -68,7 +68,9 @@ export class ValidateQuarterGogol extends Gogol {
         );
       } catch (error) {
         const stderr = (error as { stderr?: Buffer }).stderr?.toString() ?? "";
-        throw new Error(`Tool ${tool} failed: ${stderr || (error as Error).message}`);
+        throw new Error(`Tool ${tool} failed: ${stderr || (error as Error).message}`, {
+          cause: error,
+        });
       }
     };
 
