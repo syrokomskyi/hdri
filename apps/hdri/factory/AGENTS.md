@@ -14,6 +14,18 @@ Examples: `core_2026.db`, `registry_2026.db`, `liveness-2026-q3.db`, `pages-2026
 
 When updating `brief.md` for a new year, also update any downstream `brief.md` files that reference the path.
 
+## Quarterly evidence closure (hard rule)
+
+Frozen source projections are period-scoped and immutable. Commit the signed
+frame guard before publishing `frame-YYYY-qN.json` and
+`source-occurrences-YYYY-qN.ndjson`; a conflicting retry must leave both prior
+files unchanged. The ontology bridge must verify every source signature, ledger
+head, included batch set and occurrence hash before retaining any source bytes.
+
+Long-running network and browser attempts renew their filesystem lease through
+append-only heartbeats. Every stage retains its frozen target set and an
+Ed25519-signed completeness seal; both are included in the quarterly capsule.
+
 ## Pipeline structure
 
 The factory pipeline is a chain of **workspace applications**, not a single monolithic app. Each is a **crawl factory** component — it collects raw signals and emits them for downstream consumption by `apps/hdri/observatory`.

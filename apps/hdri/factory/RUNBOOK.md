@@ -140,8 +140,10 @@ Q2+Q3 frame without reparsing or replacing the Q2 segment.
 Acceptance writes an atomic Ed25519-signed batch segment containing every raw
 file hash, parser identity and parser version. The frozen frame has its own
 signature and binds the candidate list to the included batch IDs, ledger head
-and occurrence-projection hash. A changed file, signature or repeated batch ID
-blocks the run; accepted segments are never repaired in place.
+and the period-scoped `source-occurrences-<period>.ndjson` hash. The signed guard
+is committed before either canonical projection becomes visible. A changed file,
+signature, frame or repeated batch ID blocks the run without replacing the
+previous projection; accepted segments and frames are never repaired in place.
 0-harvest-source/.input/
   brief.md
   batches/
@@ -391,7 +393,10 @@ Liveness, profile and Axe freeze their complete target set before the first
 network request and append lease, retry and terminal events under the quarter
 capsule. Leases are atomic filesystem claims with durable attempt ordinals and
 fencing: a second process cannot request the same WorkKey, and an expired owner
-cannot commit after a replacement takes over. Mutable SQLite rows are checkpoints only. After power or network loss,
+cannot commit after a replacement takes over. Active browser/network work writes
+append-only heartbeats that extend its lease. Each frozen target set is retained,
+and completeness is committed as an Ed25519-signed stage seal. Mutable SQLite
+rows are checkpoints only. After power or network loss,
 rerun the same stage with the same `period` and `capsuleId`: terminal work is
 restored from immutable CAS evidence and is not requested again. `maxDomains`
 sessions are diagnostic and never seal a stage.
@@ -410,7 +415,10 @@ identity, vault shards and publication artifacts after the release gate, then
 writes `capsule-manifest.json` and detached `capsule-signature.json`. Until both
 files exist and verify, the quarter is not sealed and must not be published or
 used as the starting point for the next quarter. A retry first verifies an
-existing staging/final closure and performs no writes inside it.
+existing staging/final closure and performs no writes inside it. Before copying
+source evidence, the bridge verifies every segment signature, the signed frame,
+the ledger head, included batch set and occurrence-projection hash; any mismatch
+fails before the capsule is written.
 
 ---
 

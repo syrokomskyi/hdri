@@ -18,13 +18,16 @@ Pipeline:
    - `manifest.json` (period, ontology_version, app versions, bundle_hash)
    - `observations.ndjson` (signed)
    - signed source-batch segments, raw source bytes, occurrence projection and signed frame manifest
-   - immutable execution events, atomic lease/fencing evidence and result evidence
+   - immutable execution events, frozen target sets, append-only heartbeats, signed stage seals and result evidence
    - the quarter databases plus every referenced profile HTML and Axe JSON CAS object
    - frozen frame and ontology artifacts
 
 Quarter databases are retained through SQLite's consistent backup mechanism and
 checked before and after the snapshot. Existing staging closure is verified
 before the bridge returns idempotently; no file inside it is rewritten.
+Before the first source artifact is retained, the bridge verifies the full
+signed closure: batch envelopes, collector-bound keys, frame signature, ledger
+head, included batches and the period-specific occurrence projection hash.
 
 Observatory later adds the canonical UUID v7 identity map, vault shards,
 methodology and publication products. Only then is the capsule closed by
