@@ -17,13 +17,20 @@ Pipeline:
 5. **emit-bundle** — create the quarter staging capsule:
    - `manifest.json` (period, ontology_version, app versions, bundle_hash)
    - `observations.ndjson` (signed)
-   - immutable execution events and result evidence
+   - signed source-batch segments, raw source bytes, occurrence projection and signed frame manifest
+   - immutable execution events, atomic lease/fencing evidence and result evidence
    - the quarter databases plus every referenced profile HTML and Axe JSON CAS object
    - frozen frame and ontology artifacts
+
+Quarter databases are retained through SQLite's consistent backup mechanism and
+checked before and after the snapshot. Existing staging closure is verified
+before the bridge returns idempotently; no file inside it is rewritten.
 
 Observatory later adds the canonical UUID v7 identity map, vault shards,
 methodology and publication products. Only then is the capsule closed by
 `capsule-manifest.json` and a detached Ed25519 `capsule-signature.json`.
+Finalization is fail-closed: an existing manifest is verified before any write,
+including recovery of a missing detached signature.
 
 ## Why lettered (`a-`) instead of numbered
 

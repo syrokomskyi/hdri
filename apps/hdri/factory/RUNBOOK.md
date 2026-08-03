@@ -136,6 +136,12 @@ domains already present in Q2: this creates new provenance occurrences while the
 domain keeps the same provisional identity and canonical UUID v7. Never copy Q2
 files into the Q3 directory. The accepted source ledger projects the cumulative
 Q2+Q3 frame without reparsing or replacing the Q2 segment.
+
+Acceptance writes an atomic Ed25519-signed batch segment containing every raw
+file hash, parser identity and parser version. The frozen frame has its own
+signature and binds the candidate list to the included batch IDs, ledger head
+and occurrence-projection hash. A changed file, signature or repeated batch ID
+blocks the run; accepted segments are never repaired in place.
 0-harvest-source/.input/
   brief.md
   batches/
@@ -383,7 +389,9 @@ pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi
 
 Liveness, profile and Axe freeze their complete target set before the first
 network request and append lease, retry and terminal events under the quarter
-capsule. Mutable SQLite rows are checkpoints only. After power or network loss,
+capsule. Leases are atomic filesystem claims with durable attempt ordinals and
+fencing: a second process cannot request the same WorkKey, and an expired owner
+cannot commit after a replacement takes over. Mutable SQLite rows are checkpoints only. After power or network loss,
 rerun the same stage with the same `period` and `capsuleId`: terminal work is
 restored from immutable CAS evidence and is not requested again. `maxDomains`
 sessions are diagnostic and never seal a stage.
@@ -394,13 +402,15 @@ declared target has a successful or observed-failure result.
 
 ### Quarter closure
 
-The contract bridge creates a staging capsule containing the frozen frame,
-quarter databases, execution journal, referenced profile HTML, referenced Axe
-reports, signed observations and methodology. Observatory adds canonical UUID v7
+The contract bridge creates a staging capsule containing the signed source-ledger
+segments, raw batch files, occurrence projection, signed frozen frame, consistent
+SQLite backup snapshots, execution journal, referenced profile HTML, referenced
+Axe reports, signed observations and methodology. Observatory adds canonical UUID v7
 identity, vault shards and publication artifacts after the release gate, then
 writes `capsule-manifest.json` and detached `capsule-signature.json`. Until both
 files exist and verify, the quarter is not sealed and must not be published or
-used as the starting point for the next quarter.
+used as the starting point for the next quarter. A retry first verifies an
+existing staging/final closure and performs no writes inside it.
 
 ---
 
