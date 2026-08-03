@@ -11,12 +11,12 @@
 // @ai-invariant: finalization never writes after capsule-manifest.json exists
 
 import "@syrokomskyi/observatory-crypto/auto-env";
-import { loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
+import { getTransparencyKeysDir, loadSigningKeyFromEnv, loadVerificationKeys } from "@syrokomskyi/observatory-crypto";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { sealQuarterCapsule, verifyQuarterCapsuleArtifacts, verifyQuarterCapsuleSignature, type CapsuleArtifact, type CapsuleSignature, type QuarterCapsule } from "@syrokomskyi/factory-core";
+import { sealQuarterCapsule, verifyQuarterCapsuleArtifacts, verifyQuarterCapsuleSignature, verifyQuarterExecutionClosure, type CapsuleArtifact, type CapsuleSignature, type QuarterCapsule } from "@syrokomskyi/factory-core";
 import { writeParquet } from "@syrokomskyi/observatory-vault";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { Gogol } from "../pipeline/Gogol";
@@ -37,6 +37,7 @@ export class FinalizeQuarterCapsuleGogol extends Gogol {
   override async run(ctx: PipelineContext): Promise<void> {
     const { runId, capsuleDir, vaultShardPaths = [], martPaths = [], brief } = ctx.state;
     if (!runId || !capsuleDir) throw new Error("Capsule finalization requires synced Observatory run state");
+    const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
     const finalManifestPath = path.join(capsuleDir, "capsule-manifest.json");
     let finalCapsule: QuarterCapsule | null = null;
     try {
@@ -47,6 +48,11 @@ export class FinalizeQuarterCapsuleGogol extends Gogol {
     if (finalCapsule) {
       const signingKey = loadSigningKeyFromEnv();
       await verifyQuarterCapsuleArtifacts(capsuleDir, finalCapsule);
+      await verifyQuarterExecutionClosure(
+        capsuleDir,
+        finalCapsule.instrumentPlan.filter((entry) => entry.state === "required").map((entry) => entry.instrument),
+        verificationKeys,
+      );
       if (finalCapsule.period !== brief.period) throw new Error("Existing quarter capsule period mismatch");
       try {
         const signature = JSON.parse(await fsp.readFile(path.join(capsuleDir, "capsule-signature.json"), "utf8")) as CapsuleSignature;
@@ -63,6 +69,11 @@ export class FinalizeQuarterCapsuleGogol extends Gogol {
     const stagingPath = path.join(capsuleDir, "capsule-staging.json");
     const staging = JSON.parse(await fsp.readFile(stagingPath, "utf8")) as QuarterCapsule;
     if (staging.period !== brief.period) throw new Error("Factory staging capsule period mismatch");
+    await verifyQuarterExecutionClosure(
+      capsuleDir,
+      staging.instrumentPlan.filter((entry) => entry.state === "required").map((entry) => entry.instrument),
+      verificationKeys,
+    );
 
     const artifacts: CapsuleArtifact[] = [...staging.artifacts];
     const retain = async (stage: CapsuleArtifact["stage"], source: string, uri: string): Promise<void> => {

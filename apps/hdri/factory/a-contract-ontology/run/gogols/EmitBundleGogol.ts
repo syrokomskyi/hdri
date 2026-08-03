@@ -29,7 +29,9 @@ import type { AssetStateMapping, AssetStateRecord } from "@syrokomskyi/observato
 import { EmitBundleWriter } from "@syrokomskyi/observatory-emit";
 import { getTransparencyKeysDir, loadVerificationKeys, type SignedObservation } from "@syrokomskyi/observatory-crypto";
 import {
+  copyVerifiedArtifact,
   verifyQuarterCapsuleArtifacts,
+  verifyQuarterExecutionClosure,
   verifySourceClosure,
   writeQuarterCapsuleStaging,
   type CapsuleArtifact,
@@ -71,6 +73,8 @@ export class EmitBundleGogol extends Gogol {
     const capsuleDir = path.join(outputRootDir, "capsules", brief.period, brief.capsuleId);
     const emitDir = path.join(capsuleDir, "artifacts", "emit");
     const stagingPath = path.join(capsuleDir, "capsule-staging.json");
+    const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
+    const requiredStages = ["liveness", "profile", "axe"] as const;
     try {
       await fsp.access(path.join(capsuleDir, "capsule-manifest.json"));
       throw new Error(`Quarter capsule is already sealed: ${brief.period}/${brief.capsuleId}`);
@@ -83,12 +87,14 @@ export class EmitBundleGogol extends Gogol {
         throw new Error(`Quarter capsule staging identity mismatch: ${brief.period}/${brief.capsuleId}`);
       }
       await verifyQuarterCapsuleArtifacts(capsuleDir, existing);
+      await verifyQuarterExecutionClosure(capsuleDir, requiredStages, verificationKeys);
       ctx.state.manifest = JSON.parse(await fsp.readFile(path.join(emitDir, "manifest.json"), "utf8"));
       console.log(`[emit-bundle] Existing staging capsule verified; no artifacts rewritten.`);
       return;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
+    await verifyQuarterExecutionClosure(capsuleDir, requiredStages, verificationKeys);
     await fsp.mkdir(path.dirname(emitDir), { recursive: true });
 
     const writer = new EmitBundleWriter(emitDir, {
@@ -144,7 +150,6 @@ export class EmitBundleGogol extends Gogol {
     );
 
     const artifacts: CapsuleArtifact[] = [];
-    const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
     const retainDb = async (
       stage: "liveness" | "profile" | "axe",
       deviceId: string,
@@ -191,23 +196,8 @@ export class EmitBundleGogol extends Gogol {
     ): Promise<void> => {
       const uri = `artifacts/${stage}/${deviceId}/${relativeStoragePath.replaceAll(path.sep, "/")}`;
       const destination = path.join(capsuleDir, uri);
-      await fsp.mkdir(path.dirname(destination), { recursive: true });
-      try {
-        await fsp.copyFile(
-          source,
-          destination,
-          fs.constants.COPYFILE_EXCL | fs.constants.COPYFILE_FICLONE,
-        );
-      } catch (error) {
-        const code = (error as NodeJS.ErrnoException).code;
-        if (code === "EEXIST") {
-          // Idempotent retry: the closure check below proves the existing bytes.
-        } else {
-          throw error;
-        }
-      }
+      await copyVerifiedArtifact(source, destination, expectedSha256);
       const sha256 = await hashFile(destination);
-      if (sha256 !== expectedSha256) throw new Error(`CAS closure hash mismatch: ${relativeStoragePath}`);
       const stat = await fsp.stat(destination);
       artifacts.push({ stage, uri, sha256, bytes: stat.size });
     };
@@ -245,14 +235,12 @@ export class EmitBundleGogol extends Gogol {
     for (const item of coreDbs) {
       const ledgerRoot = path.resolve(path.dirname(item.coreDbPath), "..", "source-ledger");
       const sourceClosure = await verifySourceClosure(ledgerRoot, brief.period, verificationKeys);
-      const segmentRoot = path.join(ledgerRoot, "segments");
-      const segmentNames = (await fsp.readdir(segmentRoot)).filter((name) => name.endsWith(".json")).sort();
-      for (const name of segmentNames) {
-        const segmentPath = path.join(segmentRoot, name);
-        const segmentSha256 = await hashFile(segmentPath);
-        await retainCasFile("frame", item.deviceId, segmentPath, `source-ledger/segments/${name}`, segmentSha256);
-        const manifest = sourceClosure.manifests.find((candidate) => `${candidate.batchId}.json` === name);
-        if (!manifest) throw new Error(`Verified source manifest is missing for segment: ${name}`);
+      for (const manifest of sourceClosure.manifests) {
+        const relativeSegment = `segments/${manifest.batchId}.json`;
+        const segmentPath = path.join(ledgerRoot, relativeSegment);
+        const segmentSha256 = sourceClosure.artifactSha256.get(relativeSegment);
+        if (!segmentSha256) throw new Error(`Verified source hash is missing for segment: ${manifest.batchId}`);
+        await retainCasFile("frame", item.deviceId, segmentPath, `source-ledger/${relativeSegment}`, segmentSha256);
         const batchRoot = path.resolve(inputDir, "batches", manifest.batchId);
         for (const file of manifest.files) {
           const source = path.resolve(batchRoot, file.relativePath);
@@ -268,7 +256,9 @@ export class EmitBundleGogol extends Gogol {
         `frame-${brief.period}.manifest.json`,
       ]) {
         const source = path.join(ledgerRoot, "projections", name);
-        await retainCasFile("frame", item.deviceId, source, `source-ledger/projections/${name}`, await hashFile(source));
+        const expectedSha256 = sourceClosure.artifactSha256.get(`projections/${name}`);
+        if (!expectedSha256) throw new Error(`Verified source hash is missing for projection: ${name}`);
+        await retainCasFile("frame", item.deviceId, source, `source-ledger/projections/${name}`, expectedSha256);
       }
     }
     if (!artifacts.some((artifact) => artifact.stage === "frame")) {
