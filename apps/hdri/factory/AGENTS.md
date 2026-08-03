@@ -41,6 +41,8 @@ The combined batch set (prior batch IDs + current sourceToken) is passed to the 
 
 If any check fails, the pipeline pauses with an actionable error message. All three briefs must be set up before running any factory pipeline per the RUNBOOK pre-flight checklist.
 
+When reading sibling app briefs (contract ontology, observatory), use `gray-matter` to extract raw frontmatter fields directly from the `.input/brief.md` file. Do not import sibling app brief parsers — cross-app imports are forbidden by AGENTS.md package rules. Only extract the minimal fields needed (`capsuleId`, `period`).
+
 ## Pipeline structure
 
 The factory pipeline is a chain of **workspace applications**, not a single monolithic app. Each is a **crawl factory** component — it collects raw signals and emits them for downstream consumption by `apps/hdri/observatory`.
