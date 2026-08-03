@@ -65,7 +65,13 @@ const arg = (name: string): string | undefined => {
   const index = process.argv.indexOf(name);
   return index >= 0 ? process.argv[index + 1] : undefined;
 };
-for (const required of ["--candidate", "--evidence-dir", "--replica-config", "--vault-dir", "--public-archive-dir"]) {
+for (const required of [
+  "--candidate",
+  "--evidence-dir",
+  "--replica-config",
+  "--vault-dir",
+  "--public-archive-dir",
+]) {
   if (!arg(required)) throw new Error(`${required} is required`);
 }
 
@@ -77,25 +83,34 @@ const capsuleDir = path.dirname(candidatePath);
 const evidenceDir = path.resolve(arg("--evidence-dir")!);
 const vaultDir = path.resolve(arg("--vault-dir")!);
 const publicArchiveRoot = path.resolve(arg("--public-archive-dir")!);
-const replicaConfig = JSON.parse(await fs.readFile(path.resolve(arg("--replica-config")!), "utf8")) as ReplicaConfig[];
+const replicaConfig = JSON.parse(
+  await fs.readFile(path.resolve(arg("--replica-config")!), "utf8"),
+) as ReplicaConfig[];
 const candidate = JSON.parse(await fs.readFile(candidatePath, "utf8")) as QuarterCapsule;
 if (candidate.state !== "candidate") throw new Error("Release requires capsule-candidate.json");
 const candidateManifestSha256 = await sha256File(candidatePath);
 await verifyQuarterCapsuleArtifacts(capsuleDir, candidate);
 await verifyQuarterExecutionClosure(
   capsuleDir,
-  candidate.instrumentPlan.filter((entry) => entry.state === "required").map((entry) => entry.instrument),
+  candidate.instrumentPlan
+    .filter((entry) => entry.state === "required")
+    .map((entry) => entry.instrument),
   await loadVerificationKeys(getTransparencyKeysDir()),
 );
 
-if (replicaConfig.length < 2) throw new Error("At least two offsite replica destinations are required");
+if (replicaConfig.length < 2)
+  throw new Error("At least two offsite replica destinations are required");
 const destinationRoots = replicaConfig.map((item) => path.resolve(item.destinationDir));
 if (
-  replicaConfig.some((item) => item.offsite !== true || !item.replicaId.trim() || !item.mediaId.trim()) ||
+  replicaConfig.some(
+    (item) => item.offsite !== true || !item.replicaId.trim() || !item.mediaId.trim(),
+  ) ||
   new Set(replicaConfig.map((item) => item.replicaId)).size !== replicaConfig.length ||
   new Set(replicaConfig.map((item) => item.mediaId)).size < 2 ||
   new Set(destinationRoots).size !== replicaConfig.length ||
-  destinationRoots.some((root) => root === capsuleDir || root.startsWith(`${capsuleDir}${path.sep}`)) ||
+  destinationRoots.some(
+    (root) => root === capsuleDir || root.startsWith(`${capsuleDir}${path.sep}`),
+  ) ||
   destinationRoots.some((root, index) =>
     destinationRoots.some(
       (other, otherIndex) =>
@@ -115,7 +130,8 @@ const commitImmutable = async (target: string, bytes: Buffer | string): Promise<
     if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     const existing = await fs.readFile(target);
     const expected = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes);
-    if (!existing.equals(expected)) throw new Error(`Immutable release artifact conflicts: ${target}`);
+    if (!existing.equals(expected))
+      throw new Error(`Immutable release artifact conflicts: ${target}`);
   }
 };
 
@@ -128,7 +144,7 @@ const commitImmutableFile = async (
   const temp = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
   try {
     await fs.copyFile(source, temp, fsConstants.COPYFILE_EXCL | fsConstants.COPYFILE_FICLONE);
-    if (await sha256File(temp) !== expectedSha256) {
+    if ((await sha256File(temp)) !== expectedSha256) {
       throw new Error(`Release source changed while copying: ${path.basename(source)}`);
     }
     try {
@@ -139,7 +155,7 @@ const commitImmutableFile = async (
   } finally {
     await fs.rm(temp, { force: true }).catch(() => undefined);
   }
-  if (await sha256File(target) !== expectedSha256) {
+  if ((await sha256File(target)) !== expectedSha256) {
     throw new Error(`Immutable release artifact conflicts: ${target}`);
   }
 };
@@ -150,31 +166,40 @@ const reports = await readScientificReports(evidenceDir, candidate);
 const artifacts: CapsuleArtifact[] = [...candidate.artifacts];
 for (const filename of Object.keys(SCIENTIFIC_REPORTS)) {
   const uri = `artifacts/qc/release/${filename}`;
-  await commitImmutable(path.join(capsuleDir, uri), await fs.readFile(path.join(evidenceDir, filename)));
+  await commitImmutable(
+    path.join(capsuleDir, uri),
+    await fs.readFile(path.join(evidenceDir, filename)),
+  );
   artifacts.push(await artifactForFile(capsuleDir, uri));
 }
 
 const rebuildSource = path.join(capsuleDir, "release", "rebuild-receipt.json");
 const rebuild = JSON.parse(await fs.readFile(rebuildSource, "utf8")) as RebuildReceipt;
-await commitImmutable(path.join(releaseQcDir, "rebuild-receipt.json"), await fs.readFile(rebuildSource));
+await commitImmutable(
+  path.join(releaseQcDir, "rebuild-receipt.json"),
+  await fs.readFile(rebuildSource),
+);
 artifacts.push(await artifactForFile(capsuleDir, "artifacts/qc/release/rebuild-receipt.json"));
 
 const releaseCandidate: QuarterCapsule = { ...candidate, artifacts };
 const releaseCandidatePath = path.join(capsuleDir, "capsule-release-candidate.json");
 await commitImmutable(releaseCandidatePath, `${JSON.stringify(releaseCandidate, null, 2)}\n`);
 
-const copyArtifactSet = async (
-  destinationRoot: string,
-  capsule: QuarterCapsule,
-): Promise<void> => {
+const copyArtifactSet = async (destinationRoot: string, capsule: QuarterCapsule): Promise<void> => {
   const destinationCapsule = path.join(destinationRoot, candidate.period, candidate.capsuleId);
   for (const artifact of capsule.artifacts) {
     const source = path.join(capsuleDir, artifact.uri);
     const destination = path.join(destinationCapsule, artifact.uri);
     await commitImmutableFile(source, destination, artifact.sha256);
   }
-  await commitImmutable(path.join(destinationCapsule, "capsule-candidate.json"), await fs.readFile(candidatePath));
-  await commitImmutable(path.join(destinationCapsule, "capsule-release-candidate.json"), await fs.readFile(releaseCandidatePath));
+  await commitImmutable(
+    path.join(destinationCapsule, "capsule-candidate.json"),
+    await fs.readFile(candidatePath),
+  );
+  await commitImmutable(
+    path.join(destinationCapsule, "capsule-release-candidate.json"),
+    await fs.readFile(releaseCandidatePath),
+  );
 };
 
 for (let index = 0; index < replicaConfig.length; index++) {
@@ -194,7 +219,8 @@ try {
         receipt.capsuleId !== candidate.capsuleId ||
         receipt.replicaId !== config.replicaId ||
         receipt.mediaId !== config.mediaId ||
-        receipt.destinationId !== createHash("sha256").update(destinationRoots[index]!).digest("hex") ||
+        receipt.destinationId !==
+          createHash("sha256").update(destinationRoots[index]!).digest("hex") ||
         receipt.candidateManifestSha256 !== candidateManifestSha256 ||
         receipt.artifactCount !== releaseCandidate.artifacts.length ||
         receipt.status !== "pass" ||
@@ -215,6 +241,9 @@ try {
     offsite: true,
     destinationId: createHash("sha256").update(destinationRoots[index]!).digest("hex"),
     candidateManifestSha256,
+    // releaseCandidate includes candidate artifacts + 8 scientific reports + 1 rebuild receipt.
+    // +2 accounts for replica-receipts.json and validation-report.json added after this point.
+    // This converges with release-contract.ts: capsule.artifacts.length + 8 reports + 3 (rebuild + replica + validation).
     artifactCount: releaseCandidate.artifacts.length + 2,
     verifiedAt: new Date().toISOString(),
     status: "pass",
@@ -271,15 +300,26 @@ await fs.mkdir(path.dirname(publicArchiveDir), { recursive: true });
 try {
   await fs.rename(publicTemp, publicArchiveDir);
 } catch (error) {
-  if ((error as NodeJS.ErrnoException).code !== "EEXIST" && (error as NodeJS.ErrnoException).code !== "ENOTEMPTY") throw error;
-  if (await sha256Directory(publicArchiveDir) !== publicArchiveHash) throw new Error("Existing public archive conflicts with release");
+  if (
+    (error as NodeJS.ErrnoException).code !== "EEXIST" &&
+    (error as NodeJS.ErrnoException).code !== "ENOTEMPTY"
+  )
+    throw error;
+  if ((await sha256Directory(publicArchiveDir)) !== publicArchiveHash)
+    throw new Error("Existing public archive conflicts with release");
   await fs.rm(publicTemp, { recursive: true, force: true });
 }
 
 const finalManifestPath = path.join(capsuleDir, "capsule-manifest.json");
-const methodologyHash = createHash("sha256").update(
-  finalCapsule.artifacts.filter((item) => item.stage === "methodology").map((item) => `${item.uri}\0${item.sha256}`).sort().join("\n"),
-).digest("hex");
+const methodologyHash = createHash("sha256")
+  .update(
+    finalCapsule.artifacts
+      .filter((item) => item.stage === "methodology")
+      .map((item) => `${item.uri}\0${item.sha256}`)
+      .sort()
+      .join("\n"),
+  )
+  .digest("hex");
 const vaultHead = await sha256File(path.join(vaultDir, "vault-manifest.json"));
 const signingKey = loadSigningKeyFromEnv();
 const unsignedBase = {
@@ -298,7 +338,12 @@ const unsignedBase = {
   signingKeyId: signingKey.signingKeyId,
   collectorId: signingKey.collectorId,
 } as const;
-const releasePath = path.join(vaultDir, "releases", `period=${candidate.period}`, `${candidate.capsuleId}.json`);
+const releasePath = path.join(
+  vaultDir,
+  "releases",
+  `period=${candidate.period}`,
+  `${candidate.capsuleId}.json`,
+);
 let releaseManifest: QuarterReleaseManifest;
 try {
   releaseManifest = JSON.parse(await fs.readFile(releasePath, "utf8")) as QuarterReleaseManifest;
@@ -319,29 +364,47 @@ try {
 } catch (error) {
   if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   const unsigned = { ...unsignedBase, publishedAt: new Date().toISOString() };
-  const signature = crypto.sign(
-    null,
-    createHash("sha256").update(canonicalize(unsigned)).digest(),
-    crypto.createPrivateKey(signingKey.privateKeyPem),
-  ).toString("base64url");
+  const signature = crypto
+    .sign(
+      null,
+      createHash("sha256").update(canonicalize(unsigned)).digest(),
+      crypto.createPrivateKey(signingKey.privateKeyPem),
+    )
+    .toString("base64url");
   releaseManifest = { ...unsigned, signature };
   await commitImmutable(releasePath, `${JSON.stringify(releaseManifest, null, 2)}\n`);
 }
 
 for (let index = 0; index < destinationRoots.length; index++) {
-  const destinationCapsule = path.join(destinationRoots[index]!, candidate.period, candidate.capsuleId);
+  const destinationCapsule = path.join(
+    destinationRoots[index]!,
+    candidate.period,
+    candidate.capsuleId,
+  );
   for (const name of ["capsule-manifest.json", "capsule-signature.json"]) {
-    await commitImmutable(path.join(destinationCapsule, name), await fs.readFile(path.join(capsuleDir, name)));
+    await commitImmutable(
+      path.join(destinationCapsule, name),
+      await fs.readFile(path.join(capsuleDir, name)),
+    );
   }
-  await commitImmutable(path.join(destinationCapsule, "release-manifest.json"), await fs.readFile(releasePath));
+  await commitImmutable(
+    path.join(destinationCapsule, "release-manifest.json"),
+    await fs.readFile(releasePath),
+  );
 }
 
-process.stdout.write(`${JSON.stringify({
-  command: "hdri.quarter.release",
-  status: "pass",
-  period: candidate.period,
-  capsuleId: candidate.capsuleId,
-  publicArchiveHash,
-  replicasVerified: replicaReceipts.length,
-  releaseManifest: releasePath,
-}, null, 2)}\n`);
+process.stdout.write(
+  `${JSON.stringify(
+    {
+      command: "hdri.quarter.release",
+      status: "pass",
+      period: candidate.period,
+      capsuleId: candidate.capsuleId,
+      publicArchiveHash,
+      replicasVerified: replicaReceipts.length,
+      releaseManifest: releasePath,
+    },
+    null,
+    2,
+  )}\n`,
+);

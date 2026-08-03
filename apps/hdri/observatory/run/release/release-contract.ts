@@ -34,7 +34,8 @@ export type ScientificGateReport = Readonly<{
   violations: readonly string[];
   warnings: readonly string[];
   hardSuppressions: readonly string[];
-}> & Readonly<Record<string, unknown>>;
+}> &
+  Readonly<Record<string, unknown>>;
 
 export type RebuildReceipt = Readonly<{
   schemaVersion: "1";
@@ -97,7 +98,8 @@ export const sha256Directory = async (
       if (ignoredNames.has(entry.name)) continue;
       const absolute = path.join(dir, entry.name);
       const relative = path.relative(root, absolute).replaceAll(path.sep, "/");
-      if (entry.isSymbolicLink()) throw new Error(`Release archive cannot contain symlinks: ${relative}`);
+      if (entry.isSymbolicLink())
+        throw new Error(`Release archive cannot contain symlinks: ${relative}`);
       if (entry.isDirectory()) await walk(absolute);
       else if (entry.isFile()) rows.push(`${relative}\0${await sha256File(absolute)}`);
     }
@@ -112,7 +114,9 @@ export const readScientificReports = async (
 ): Promise<ScientificGateReport[]> => {
   const reports: ScientificGateReport[] = [];
   for (const [filename, reportType] of Object.entries(SCIENTIFIC_REPORTS)) {
-    const report = JSON.parse(await fs.readFile(path.join(evidenceDir, filename), "utf8")) as ScientificGateReport;
+    const report = JSON.parse(
+      await fs.readFile(path.join(evidenceDir, filename), "utf8"),
+    ) as ScientificGateReport;
     if (
       report.schemaVersion !== "1" ||
       report.reportType !== reportType ||
@@ -152,16 +156,22 @@ export const validateReleaseEvidence = (
   ) {
     violations.push("empty_scratch_rebuild_mismatch");
   }
-  const validReplicas = replicas.filter((receipt) =>
-    receipt.schemaVersion === "1" &&
-    receipt.period === capsule.period &&
-    receipt.capsuleId === capsule.capsuleId &&
-    receipt.candidateManifestSha256 === candidateManifestSha256 &&
-    receipt.offsite === true &&
-    receipt.status === "pass" &&
-    receipt.artifactCount === capsule.artifacts.length + Object.keys(SCIENTIFIC_REPORTS).length + 3 &&
-    /^[a-f0-9]{64}$/.test(receipt.destinationId) &&
-    Number.isFinite(Date.parse(receipt.verifiedAt)),
+  const validReplicas = replicas.filter(
+    (receipt) =>
+      receipt.schemaVersion === "1" &&
+      receipt.period === capsule.period &&
+      receipt.capsuleId === capsule.capsuleId &&
+      receipt.candidateManifestSha256 === candidateManifestSha256 &&
+      receipt.offsite === true &&
+      receipt.status === "pass" &&
+      // capsule is the original candidate (no release artifacts yet).
+      // +8 scientific reports + 3 (rebuild receipt + replica receipts + validation report).
+      // Converges with quarter-release.ts: releaseCandidate.artifacts.length + 2
+      // (releaseCandidate already has reports + rebuild, so only +2 for replica + validation).
+      receipt.artifactCount ===
+        capsule.artifacts.length + Object.keys(SCIENTIFIC_REPORTS).length + 3 &&
+      /^[a-f0-9]{64}$/.test(receipt.destinationId) &&
+      Number.isFinite(Date.parse(receipt.verifiedAt)),
   );
   const replicaIds = new Set(validReplicas.map((receipt) => receipt.replicaId));
   const mediaIds = new Set(validReplicas.map((receipt) => receipt.mediaId));
