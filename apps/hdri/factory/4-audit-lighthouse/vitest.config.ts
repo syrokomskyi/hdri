@@ -1,4 +1,7 @@
 import { defineConfig } from "vitest/config";
+import { config } from "dotenv";
+
+config({ path: "apps/hdri/.env" });
 
 export default defineConfig({
   test: {
