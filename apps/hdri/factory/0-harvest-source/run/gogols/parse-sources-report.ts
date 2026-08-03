@@ -18,7 +18,6 @@ import type { BatchReport, FileResult } from "./parse-sources-types.js";
 
 export const accumulateFileResult = (report: BatchReport, result: FileResult): void => {
   report.sourceFiles.push(result.stat);
-  report.noUrlWarnings += result.noUrlWarnings;
   report.skipSummary.noUrl += result.skipSummary.noUrl;
   report.skipSummary.badUrl += result.skipSummary.badUrl;
   report.skipSummary.stopDomain += result.skipSummary.stopDomain;
@@ -122,14 +121,13 @@ export const renderReportMd = (
     (sum, b) => sum + b.sourceFiles.reduce((s, f) => s + f.itemsParsed, 0),
     0,
   );
-  const totalNoUrlWarnings = batches.reduce((sum, b) => sum + b.noUrlWarnings, 0);
+  const totalBadUrl = batches.reduce((sum, b) => sum + b.skipSummary.badUrl, 0);
+  const totalStopDomain = batches.reduce((sum, b) => sum + b.skipSummary.stopDomain, 0);
+  const totalNoUrl = batches.reduce((sum, b) => sum + b.skipSummary.noUrl, 0);
   const totalRegistered = batches.reduce(
     (sum, b) => sum + b.sourceFiles.reduce((s, f) => s + f.itemsRegistered, 0),
     0,
   );
-  const totalBadUrl = batches.reduce((sum, b) => sum + b.skipSummary.badUrl, 0);
-  const totalStopDomain = batches.reduce((sum, b) => sum + b.skipSummary.stopDomain, 0);
-  const totalNoUrl = batches.reduce((sum, b) => sum + b.skipSummary.noUrl, 0);
   const totalSkipped = totalNoUrl + totalBadUrl + totalStopDomain;
 
   // Create source statistics table with each source as a column
@@ -148,14 +146,14 @@ export const renderReportMd = (
     ...sortedSources.map(([, s]) => String(s.itemsParsed)),
   ]);
   batchStatsTable.push([
-    "Items without URL (ignored by parser)",
-    String(totalNoUrlWarnings),
-    ...sortedSources.map(([, s]) => String(s.noUrlWarnings)),
-  ]);
-  batchStatsTable.push([
     "Sites registered",
     String(totalRegistered),
     ...sortedSources.map(([, s]) => String(s.itemsRegistered)),
+  ]);
+  batchStatsTable.push([
+    "Skipped — no URL",
+    String(totalNoUrl),
+    ...sortedSources.map(([, s]) => String(s.noUrl)),
   ]);
   batchStatsTable.push([
     "Skipped — bad URL",
