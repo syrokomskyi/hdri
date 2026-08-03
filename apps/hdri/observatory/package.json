@@ -39,6 +39,7 @@
     "start:and:build": "pnpm run build && pnpm run start",
     "test": "pnpm exec vitest run",
     "upgrade-packages": "pnpm up --latest",
+    "stream:rehearse": "tsx -C @syrokomskyi/source tools/streaming-rehearsal.ts",
     "changelog": "changelog-live",
     "changelog:init": "changelog-live init"
   },
