@@ -20,8 +20,8 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 
 | Script | Command |
 | --- | --- |
-| `build` | `pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/4-audit-lighthouse/tsconfig.json --noEmit` |
-| `typecheck` | `pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/4-audit-lighthouse/tsconfig.json --noEmit` |
+| `build` | `pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/4-audit-lighthouse/tsconfig.json --pretty false` |
+| `typecheck` | `pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/4-audit-lighthouse/tsconfig.json --pretty false` |
 | `dev` | `tsx -C @syrokomskyi/source watch run/run.ts` |
 | `start` | `tsx -C @syrokomskyi/source run/run.ts` |
 | `test` | `pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/4-audit-lighthouse/vitest.config.ts` |
@@ -47,12 +47,12 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `@types/node` `^26.1.2`
 - `better-sqlite3` `^13.0.2`
 - `chrome-launcher` `^1.2.1`
-- `csv-stringify` `^6.8.1`
+- `csv-stringify` `^6.8.2`
 - `dotenv` `^17.4.2`
 - `gray-matter` `^4.0.3`
 - `lighthouse` `^13.4.1`
 - `markdown-table` `^3.0.4`
 - `systeminformation` `^5.33.1`
-- `tsx` `^4.23.4`
+- `tsx` `^4.23.5`
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.

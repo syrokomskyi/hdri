@@ -47,12 +47,12 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `@types/node` `^26.1.2`
 - `better-sqlite3` `^13.0.2`
 - `cheerio` `^1.2.0`
-- `csv-parse` `^7.0.1`
-- `csv-stringify` `^6.8.1`
+- `csv-parse` `^7.0.2`
+- `csv-stringify` `^6.8.2`
 - `dotenv` `^17.4.2`
 - `drizzle-orm` `^0.45.2`
 - `gray-matter` `^4.0.3`
 - `markdown-table` `^3.0.4`
-- `tsx` `^4.23.4`
+- `tsx` `^4.23.5`
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.

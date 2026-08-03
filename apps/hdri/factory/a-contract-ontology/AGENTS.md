@@ -46,7 +46,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `better-sqlite3` `^13.0.2`
 - `dotenv` `^17.4.2`
 - `gray-matter` `^4.0.3`
-- `tsx` `^4.23.4`
+- `tsx` `^4.23.5`
 - `yaml` `^2.9.0`
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
