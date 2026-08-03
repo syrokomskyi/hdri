@@ -27,13 +27,20 @@ checked before and after the snapshot. Existing staging closure is verified
 before the bridge returns idempotently; no file inside it is rewritten.
 Before the first source artifact is retained, the bridge verifies the full
 signed closure: batch envelopes, collector-bound keys, frame signature, ledger
-head, included batches and the period-specific occurrence projection hash.
+head for the frame's exact included batches, derived frame hash and the
+period-specific occurrence projection hash. It retains only bytes matching the
+hashes captured by that verification, even if a source changes after preflight.
+Before any emit output is created it also reconstructs every required stage from
+append-only events, verifies all selected CAS objects and requires the frozen
+target and signed stage seal hashes to agree. Partial `maxDomains` sessions are
+therefore valid resumable diagnostics but cannot produce a staging capsule.
 
 Observatory later adds the canonical UUID v7 identity map, vault shards,
 methodology and publication products. Only then is the capsule closed by
 `capsule-manifest.json` and a detached Ed25519 `capsule-signature.json`.
-Finalization is fail-closed: an existing manifest is verified before any write,
-including recovery of a missing detached signature.
+Finalization is fail-closed: Observatory repeats required-stage verification and
+an existing manifest is verified before any write, including recovery of a
+missing detached signature.
 
 ## Why lettered (`a-`) instead of numbered
 

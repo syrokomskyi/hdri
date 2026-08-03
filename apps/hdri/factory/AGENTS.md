@@ -25,6 +25,16 @@ head, included batch set and occurrence hash before retaining any source bytes.
 Long-running network and browser attempts renew their filesystem lease through
 append-only heartbeats. Every stage retains its frozen target set and an
 Ed25519-signed completeness seal; both are included in the quarterly capsule.
+The ontology bridge must refuse emission unless every required stage proves the
+same target hash and result-set hash across its target artifact, event journal,
+CAS objects and signed seal. `maxDomains` runs intentionally remain unsealed and
+therefore cannot enter a staging or final capsule.
+
+A historical frame head covers exactly its signed `includedBatchIds`. Later
+quarter segments may coexist in the source ledger but must neither alter nor
+invalidate verification of an earlier frame. Retained source bytes are checked
+against hashes captured during verification; never establish the expected hash
+by rereading a potentially changed source after preflight.
 
 ## Pipeline structure
 

@@ -403,7 +403,11 @@ sessions are diagnostic and never seal a stage.
 
 Do not edit a brief, instrument version or target frame after work has begun.
 Configuration or target drift is rejected. A full stage seals only when every
-declared target has a successful or observed-failure result.
+declared target has a successful or observed-failure result. The bridge verifies
+the frozen target count/hash, exactly one matching stage-sealed event, every
+selected terminal event and CAS object, and the collector-bound Ed25519 stage
+seal before creating emit output. Therefore a diagnostic `maxDomains` run cannot
+be mistaken for a complete quarter.
 
 ### Quarter closure
 
@@ -418,7 +422,12 @@ used as the starting point for the next quarter. A retry first verifies an
 existing staging/final closure and performs no writes inside it. Before copying
 source evidence, the bridge verifies every segment signature, the signed frame,
 the ledger head, included batch set and occurrence-projection hash; any mismatch
-fails before the capsule is written.
+fails before the capsule is written. The head is rebuilt from the frame's exact
+signed `includedBatchIds`, so appending Q4 segments does not invalidate Q3.
+Expected source hashes come from that verified snapshot and are checked again on
+the copied capsule artifact, closing mutation races between preflight and retain.
+Observatory repeats the complete execution-evidence verification before final
+sealing and whenever it reopens an already sealed capsule.
 
 ---
 
