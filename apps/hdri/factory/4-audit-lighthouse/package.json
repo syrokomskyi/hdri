@@ -6,7 +6,8 @@
     "build": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/4-audit-lighthouse/tsconfig.json --noEmit",
     "typecheck": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/4-audit-lighthouse/tsconfig.json --noEmit",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
-    "start": "tsx -C @syrokomskyi/source run/run.ts"
+    "start": "tsx -C @syrokomskyi/source run/run.ts",
+    "test": "pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/4-audit-lighthouse/vitest.config.ts"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",

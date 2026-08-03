@@ -6,7 +6,8 @@
     "build": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/5-audit-axe/tsconfig.json --pretty false",
     "typecheck": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/5-audit-axe/tsconfig.json --pretty false",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
-    "start": "tsx -C @syrokomskyi/source run/run.ts"
+    "start": "tsx -C @syrokomskyi/source run/run.ts",
+    "test": "pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/5-audit-axe/vitest.config.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "^4.12.1",
