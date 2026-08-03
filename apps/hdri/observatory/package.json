@@ -58,20 +58,20 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.2",
     "better-sqlite3": "^13.0.2",
-    "csv-stringify": "^6.8.1",
-    "csv-parse": "^7.0.1",
+    "csv-parse": "^7.0.2",
+    "csv-stringify": "^6.8.2",
     "dotenv": "^17.4.2",
     "gray-matter": "^4.0.3",
     "markdown-table": "^3.0.4",
     "opentimestamps": "^0.4.9",
-    "tsx": "^4.23.4",
+    "tsx": "^4.23.5",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@wgogol/changelog-live": "workspace:*",
     "eslint": "~10.7.0",
-    "typescript-eslint": "^8.65.0",
+    "typescript-eslint": "^8.66.0",
     "vitest": "4.1.10"
   }
 }
