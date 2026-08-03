@@ -3,6 +3,10 @@
 <purpose>Defines and verifies the complete 16×7 Destatis population-frame contract used by HDRI releases.</purpose>
 <non-goals><item>Does not download official statistics or infer missing cells.</item></non-goals>
 </MODULE_CONTRACT>
+<CHANGE_SUMMARY>
+  <item>RFC-0033: add source URL domain validation (genesis.destatis.de, statistikportal.de).</item>
+  <item>RFC-0033: add reference year floor (>= 2020) validation.</item>
+</CHANGE_SUMMARY>
 */
 
 import { createHash } from "node:crypto";
