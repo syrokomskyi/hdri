@@ -13,6 +13,7 @@
   <item>Add maxSites logging at pipeline start for operational visibility.</item>
   <item>Replace maxSites log with maxPages log.</item>
   <item>Pass rootBrief into pipeline initialState so gogols can read factory-level configuration.</item>
+  <item>RFC-0043: wire validateBriefConsistency() guard after bootstrapBrief, before bootstrapBatches. Add --first-quarter / FIRST_QUARTER env var support.</item>
 </CHANGE_SUMMARY>
 */
 

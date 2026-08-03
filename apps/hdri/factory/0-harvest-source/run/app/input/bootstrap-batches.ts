@@ -12,6 +12,7 @@
   <item>RFC-0030: rewrite to two-phase discovery — prior capsules from prior-capsules.json + current batch folder verification.</item>
   <item>Remove raw folder scanning (listBatchNames) for prior quarters.</item>
   <item>Remove selectCumulativeBatchNames — prior batch IDs come from sealed manifests.</item>
+  <item>RFC-0043: add isFirstQuarter parameter; replace silent ENOENT catch with explicit PipelinePauseError or warning.</item>
 </CHANGE_SUMMARY>
 */
 

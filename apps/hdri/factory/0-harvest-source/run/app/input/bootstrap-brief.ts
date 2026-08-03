@@ -15,6 +15,7 @@
   <item>Merge root brief.md with app-local brief.md: app-local values override root values.</item>
   <item>Return parsed rootBrief so gogols can read factory-level configuration directly.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
+  <item>RFC-0043: add capsuleId to brief template.</item>
 </CHANGE_SUMMARY>
 */
 
