@@ -29,6 +29,7 @@ export type PipelineState = {
   capsuleDir?: string;
   vaultShardPaths?: string[];
   martPaths?: string[];
+  candidateManifestPath?: string;
 };
 
 export type PipelineAiServices = Record<string, never>;

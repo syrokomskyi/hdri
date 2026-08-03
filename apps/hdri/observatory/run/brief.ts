@@ -9,8 +9,7 @@
 <CHANGE_SUMMARY>
   <item>Initial creation of brief parser for observatory.</item>
   <item>Normalize period to lowercase — lowercase yyyy-qn is canonical across factory and observatory.</item>
-  <item>P0.4: add factoryContractRootDir for auto-discovery of emit bundle path.</item>
-  <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
+  <item>Use one capsule-addressed Factory discovery path and remove all legacy fallbacks.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -21,25 +20,9 @@ export type Brief = {
   period: string;
   ontologyVersion: string;
   codebookVersion: string;
-  /** @deprecated Use factoryContractDir — reads factory SQLite directly */
-  sourceDbDir: string;
-  /**
-   * @deprecated Use factoryContractDir. Kept for Phase A back-compat while
-   * SyncFromFactoryGogol is migrated to read a single contract bundle.
-   */
-  factoryEmitDirs: string[];
-  /**
-   * Path to a-contract-ontology's per-period emit directory, e.g.
-   * `<repo>/apps/hdri/factory/a-contract-ontology/.output/<DEVICE_ID>/emit/<period>/`.
-   *
-   * Empty string falls back to `factoryEmitDirs` for Phase A back-compat.
-   */
-  factoryContractDir: string;
-  /**
-   * Root directory of the factory workspace (e.g. `apps/hdri/factory/a-contract-ontology`).
-   * When set and `factoryContractDir` is empty, SyncFromFactory auto-discovers
-   * `.output/<DEVICE_ID>/emit/<period>/` for the current brief period.
-   */
+  /** UUID v7 of the exact Factory capsule consumed by this Observatory run. */
+  capsuleId: string;
+  /** Root directory of the a-contract-ontology workspace. */
   factoryContractRootDir: string;
   /** Absolute path to the vault directory (accumulates Parquet shards across runs) */
   vaultDir: string;
@@ -78,10 +61,14 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   const ontologyVersion = getString(data.ontologyVersion) ?? "1.0.0";
   const codebookVersion = getString(data.codebookVersion) ?? "hdri-v1.0.0";
-  const sourceDbDir = getString(data.sourceDbDir) ?? "";
-  const factoryEmitDirs = getStringArray(data.factoryEmitDirs);
-  const factoryContractDir = getString(data.factoryContractDir) ?? "";
-  const factoryContractRootDir = getString(data.factoryContractRootDir) ?? "";
+  const capsuleId = getString(data.capsuleId);
+  if (!capsuleId || !/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(capsuleId)) {
+    throw new Error("brief.md: capsuleId must be a UUID v7");
+  }
+  const factoryContractRootDir = getString(data.factoryContractRootDir);
+  if (!factoryContractRootDir) {
+    throw new Error("brief.md: missing required field: factoryContractRootDir");
+  }
   const vaultDir = getString(data.vaultDir) ?? "";
   const publicMode = getBoolean(data.publicMode, false);
 
@@ -90,9 +77,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     period,
     ontologyVersion,
     codebookVersion,
-    sourceDbDir,
-    factoryEmitDirs,
-    factoryContractDir,
+    capsuleId,
     factoryContractRootDir,
     vaultDir,
     publicMode,

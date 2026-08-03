@@ -13,7 +13,7 @@
   <item>Added COMPASS scaffolding to clarify module purpose, responsibilities, and boundaries.</item>
   <item>Remove incorrect file-level maxCountSitePerSourceFolder filter; site-per-folder limit now enforced downstream in ParseSourcesGogol.</item>
   <item>Add sourceFolder field to BatchSourceFile so the folder limit correctly targets the top-level source directory inside a batch.</item>
-  <item>listBatchNames remains as a utility but is no longer used for batch discovery; bootstrapBatches now uses brief.sourceToken directly.</item>
+  <item>Expose sorted batch discovery so preserved inputs can rebuild the cumulative frame.</item>
   <item>Remove obsolete CHANGE_SUMMARY item referencing deleted maxCountSitePerSourceFolder field.</item>
 </CHANGE_SUMMARY> 
 */

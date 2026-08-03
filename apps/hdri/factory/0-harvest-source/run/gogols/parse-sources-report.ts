@@ -14,7 +14,15 @@ import fs from "node:fs/promises";
 
 import { markdownTable } from "markdown-table";
 
-import type { BatchReport } from "./parse-sources-types.js";
+import type { BatchReport, FileResult } from "./parse-sources-types.js";
+
+export const accumulateFileResult = (report: BatchReport, result: FileResult): void => {
+  report.sourceFiles.push(result.stat);
+  report.noUrlWarnings += result.noUrlWarnings;
+  report.skipSummary.noUrl += result.skipSummary.noUrl;
+  report.skipSummary.badUrl += result.skipSummary.badUrl;
+  report.skipSummary.stopDomain += result.skipSummary.stopDomain;
+};
 
 /**
  * Read a source file, detecting its character encoding for HTML files.

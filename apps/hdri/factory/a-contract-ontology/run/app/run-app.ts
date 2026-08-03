@@ -53,7 +53,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
       livenessDbs: [],
       axeDbs: [],
       observationDbPath: null,
-      signedNdjsonPath: null,
+      signedObservationDbPath: null,
       manifest: null,
     },
     guide,

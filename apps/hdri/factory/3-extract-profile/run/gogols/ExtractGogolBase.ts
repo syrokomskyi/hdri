@@ -132,8 +132,12 @@ export abstract class ExtractGogolBase extends Gogol {
         return;
       }
 
-      const params = this.extractDom($, row);
-      ctx.domCache.evict(row.content_sha256);
+      let params: unknown[] | null;
+      try {
+        params = this.extractDom($, row);
+      } finally {
+        ctx.domCache.evict(row.content_sha256);
+      }
       if (params) {
         results.push({ sha256: row.content_sha256, params });
         parsed++;

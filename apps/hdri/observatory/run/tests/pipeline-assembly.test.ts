@@ -34,7 +34,7 @@ describe("Pipeline assembly", () => {
     // publish phase
     expect(ids).toContain("write-vault");
     expect(ids).toContain("export-mart");
-    expect(ids).toContain("finalize-quarter-capsule");
+    expect(ids).toContain("prepare-quarter-release");
 
     // Order: harvest → observe → interpret → publish
     expect(ids.indexOf("setup-observatory-run")).toBeLessThan(ids.indexOf("sync-from-factory"));
@@ -43,7 +43,7 @@ describe("Pipeline assembly", () => {
     expect(ids.indexOf("score-hdri")).toBeLessThan(ids.indexOf("build-cohorts"));
     expect(ids.indexOf("build-cohorts")).toBeLessThan(ids.indexOf("write-vault"));
     expect(ids.indexOf("write-vault")).toBeLessThan(ids.indexOf("export-mart"));
-    expect(ids.indexOf("export-mart")).toBeLessThan(ids.indexOf("finalize-quarter-capsule"));
+    expect(ids.indexOf("export-mart")).toBeLessThan(ids.indexOf("prepare-quarter-release"));
   });
 
   it("has exactly 9 gogols", () => {
@@ -57,9 +57,10 @@ describe("Brief parsing", () => {
     const brief = parseBriefMarkdown(`---
 outputLanguage: de
 period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
 ontologyVersion: "1.0.0"
 codebookVersion: "observatory-v1.0.0"
-sourceDbDir: "../factory/0-harvest-source/.output"
+factoryContractRootDir: "../factory/a-contract-ontology"
 publicMode: false
 skipGogols: []
 ---
@@ -79,6 +80,8 @@ Digital Observatory run brief.
     expect(() =>
       parseBriefMarkdown(`---
 period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+factoryContractRootDir: "../factory/a-contract-ontology"
 ---
 `),
     ).toThrow("outputLanguage");
@@ -88,6 +91,8 @@ period: "2025-Q2"
     expect(() =>
       parseBriefMarkdown(`---
 outputLanguage: de
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+factoryContractRootDir: "../factory/a-contract-ontology"
 ---
 `),
     ).toThrow("period");
@@ -97,11 +102,13 @@ outputLanguage: de
     const brief = parseBriefMarkdown(`---
 outputLanguage: de
 period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+factoryContractRootDir: "../factory/a-contract-ontology"
 ---
 `);
     expect(brief.ontologyVersion).toBe("1.0.0");
     expect(brief.codebookVersion).toBe("hdri-v1.0.0");
-    expect(brief.sourceDbDir).toBe("");
+    expect(brief.capsuleId).toMatch(/-7/);
     expect(brief.publicMode).toBe(false);
   });
 });

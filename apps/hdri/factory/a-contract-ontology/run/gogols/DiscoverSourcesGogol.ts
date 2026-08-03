@@ -56,10 +56,8 @@ export class DiscoverSourcesGogol extends Gogol {
 
       for (const fname of entries) {
         if (fname !== `pages-${brief.period}.db`) continue;
-        const sourceToken = brief.period;
         discoveredPages.push({
           deviceId: dev.deviceId,
-          sourceToken,
           pagesDbPath: path.join(dbDir, fname),
         });
       }

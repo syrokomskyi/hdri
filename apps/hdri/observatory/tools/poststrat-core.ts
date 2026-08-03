@@ -13,6 +13,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { assertCompletePopulationFrame, type ProvenancedPopulationFrame } from "./population-frame-contract";
 
 /**
  * Reference population frame: stratum key → relative weight (e.g. the count of
@@ -58,15 +59,12 @@ export async function loadPopulationFrame(inputDir: string): Promise<PopulationF
   const framePath = path.join(inputDir, "population-frame.json");
   try {
     const raw = await fs.readFile(framePath, "utf-8");
-    const parsed = JSON.parse(raw) as PopulationFrame;
-    if (!parsed.weights || Object.keys(parsed.weights).length === 0) return null;
-    // A frame with no positive weight (e.g. the shipped all-zero template copied
-    // verbatim) is treated as absent — never produce post-stratified output from it.
-    const totalWeight = Object.values(parsed.weights).reduce((s, w) => s + (w > 0 ? w : 0), 0);
-    if (totalWeight <= 0) return null;
+    const parsed = JSON.parse(raw) as ProvenancedPopulationFrame;
+    assertCompletePopulationFrame(parsed);
     return parsed;
-  } catch {
-    return null;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
   }
 }
 

@@ -72,7 +72,7 @@ import {
   upsertSite,
   upsertSourceSeed,
 } from "./parse-sources-db.js";
-import { readSourceFile, renderReportMd } from "./parse-sources-report.js";
+import { accumulateFileResult, readSourceFile, renderReportMd } from "./parse-sources-report.js";
 import type { BatchReport, FileResult } from "./parse-sources-types.js";
 
 // ---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ export class ParseSourcesGogol extends Gogol {
       console.log(`[parse-sources] Processing batch: ${batchName} (concurrency: ${concurrency})`);
 
       const allSourceFiles = await listBatchSourceFiles(batchName, brief);
-      const sourceManifest = await buildSourceBatchManifest(batchName, brief.sourceToken, allSourceFiles);
+      const sourceManifest = await buildSourceBatchManifest(batchName, allSourceFiles);
       const ledgerDir = path.join(outputRootDir, "data", "source-ledger");
       await checkSourceBatch(ledgerDir, sourceManifest, verificationKeys);
 
@@ -275,11 +275,7 @@ export class ParseSourcesGogol extends Gogol {
       for (const res of fileResults) {
         if (!res) continue;
 
-        batchReport.sourceFiles.push(res.stat);
-        batchReport.noUrlWarnings += res.noUrlWarnings;
-        batchReport.skipSummary.noUrl += res.skipSummary.noUrl;
-        batchReport.skipSummary.badUrl += res.skipSummary.badUrl;
-        batchReport.skipSummary.stopDomain += res.skipSummary.stopDomain;
+        accumulateFileResult(batchReport, res);
       }
 
       allBatchReports.push(batchReport);
@@ -382,7 +378,13 @@ export class ParseSourcesGogol extends Gogol {
     }
 
     if (maxPages < 0) {
-      await materializeLedgerProjection(db, path.join(outputRootDir, "data", "source-ledger"), brief.sourceToken, verificationKeys);
+      await materializeLedgerProjection(
+        db,
+        path.join(outputRootDir, "data", "source-ledger"),
+        brief.sourceToken,
+        batchNames,
+        verificationKeys,
+      );
     }
     db.close();
 
@@ -449,10 +451,9 @@ const hashFile = async (filePath: string): Promise<{ sha256: string; bytes: numb
 
 const buildSourceBatchManifest = async (
   batchId: string,
-  sourceToken: string,
   files: Awaited<ReturnType<typeof listBatchSourceFiles>>,
 ): Promise<SourceBatchManifest> => {
-  const parsed = parseSourceToken(sourceToken);
+  const parsed = parseSourceToken(batchId);
   const entries = [];
   for (const file of files) {
     const digest = await hashFile(file.absolutePath);
@@ -463,6 +464,7 @@ const buildSourceBatchManifest = async (
       parserVersion: "harvest-v1",
     });
   }
+  entries.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
   const batchHash = createHash("sha256")
     .update(JSON.stringify(entries))
     .digest("hex");
@@ -479,9 +481,18 @@ const materializeLedgerProjection = async (
   db: ReturnType<typeof openCoreSqlite>,
   ledgerDir: string,
   sourceToken: string,
+  includedBatchNames: readonly string[],
   verificationKeys: ReadonlyMap<string, VerificationKey>,
 ): Promise<void> => {
-  const manifests = await readSourceBatchManifests(ledgerDir, verificationKeys);
+  const included = new Set(includedBatchNames);
+  const manifests = (await readSourceBatchManifests(ledgerDir, verificationKeys)).filter((manifest) =>
+    included.has(manifest.batchId),
+  );
+  const discoveredIds = new Set(manifests.map((manifest) => manifest.batchId));
+  const missing = includedBatchNames.filter((batchName) => !discoveredIds.has(batchName));
+  if (missing.length > 0) {
+    throw new Error(`Frozen frame is missing sealed source batches: ${missing.join(", ")}`);
+  }
   const fileHashes = new Map<string, { batchHash: string; fileHash: string; period: HdriPeriod }>();
   for (const manifest of manifests) {
     for (const file of manifest.files) {
@@ -500,6 +511,7 @@ const materializeLedgerProjection = async (
   const occurrencePath = path.join(projectionDir, `source-occurrences-${period}.ndjson`);
   const occurrenceTemp = `${occurrencePath}.${process.pid}.${randomUUID()}.tmp`;
   const output = await fs.open(occurrenceTemp, "wx");
+  const candidateDomains = new Map<ProvisionalAssetId, string>();
   try {
     const rows = db.prepare(`
       SELECT s.domain, seed.source_path, seed.source_item_key
@@ -510,6 +522,8 @@ const materializeLedgerProjection = async (
     for (const row of rows) {
       const provenance = fileHashes.get(row.source_path);
       if (!provenance) continue;
+      const provisionalAssetId = deriveAssetId(row.domain) as ProvisionalAssetId;
+      candidateDomains.set(provisionalAssetId, row.domain);
       await output.write(`${JSON.stringify({
         sourceOccurrenceId: sourceOccurrenceId(
           provenance.batchHash,
@@ -518,7 +532,7 @@ const materializeLedgerProjection = async (
         ),
         batchId: row.source_path.split("/", 1)[0],
         periodAdded: provenance.period,
-        provisionalAssetId: deriveAssetId(row.domain),
+        provisionalAssetId,
         normalisedDomain: row.domain,
         disposition: "assertion",
       })}\n`);
@@ -529,22 +543,22 @@ const materializeLedgerProjection = async (
   }
 
   const occurrenceProjectionSha256 = (await hashFile(occurrenceTemp)).sha256;
-  const ledgerHead = await rebuildLedgerHead(ledgerDir);
-  const candidates = db.prepare(`SELECT domain FROM sites ORDER BY domain`).all() as { domain: string }[];
+  const includedBatchIds = manifests.map((manifest) => manifest.batchId).sort();
+  const ledgerHead = await rebuildLedgerHead(ledgerDir, includedBatchIds);
   const frame = freezeFrame(
     period,
-    candidates.map((row) => ({
-      sourceOccurrenceId: `frame-${deriveAssetId(row.domain)}`,
+    [...candidateDomains].sort(([a], [b]) => a.localeCompare(b)).map(([provisionalAssetId, domain]) => ({
+      sourceOccurrenceId: `frame-${provisionalAssetId}`,
       batchId: "accepted-ledger",
       periodAdded: period,
-      provisionalAssetId: deriveAssetId(row.domain) as ProvisionalAssetId,
-      normalisedDomain: row.domain,
+      provisionalAssetId,
+      normalisedDomain: domain,
       disposition: "assertion" as const,
     })),
     {
       ledgerHead,
       occurrenceProjectionSha256,
-      includedBatchIds: manifests.map((manifest) => manifest.batchId),
+      includedBatchIds,
     },
   );
   try {

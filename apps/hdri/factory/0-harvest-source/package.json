@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/0-harvest-source/tsconfig.json --noEmit",
-    "typecheck": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/0-harvest-source/tsconfig.json --noEmit",
+    "build": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/0-harvest-source/tsconfig.json --pretty false",
+    "typecheck": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/0-harvest-source/tsconfig.json --pretty false",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
     "start": "tsx -C @syrokomskyi/source run/run.ts"
   },

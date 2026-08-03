@@ -9,7 +9,7 @@
 <CHANGE_SUMMARY>
   <item>Added COMPASS scaffolding to define module purpose, responsibilities, and boundaries.</item>
   <item>Phase B cleanup: derive year/quarter from sourceToken instead of removed deprecated fields.</item>
-  <item>Pass brief into bootstrapBatches so batch discovery is driven by sourceToken.</item>
+  <item>Discover the current folder plus every preserved earlier batch for cumulative rebuild.</item>
   <item>Add maxSites logging at pipeline start for operational visibility.</item>
   <item>Replace maxSites log with maxPages log.</item>
   <item>Pass rootBrief into pipeline initialState so gogols can read factory-level configuration.</item>

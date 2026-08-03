@@ -78,33 +78,42 @@ export class SignObservationsGogol extends Gogol {
     `);
 
     let totalSigned = 0;
-    let totalSkipped = 0;
+    const runId = ctx.state.runId!;
 
     try {
-      const rows = db
+      const existingKeyIds = db
         .prepare(
-          `SELECT id, obs_json FROM observations WHERE signature IS NULL AND obs_json IS NOT NULL`,
+          `SELECT DISTINCT signing_key_id FROM observations
+           WHERE run_id = ? AND signature IS NOT NULL`,
         )
-        .all() as UnsignedRow[];
-
-      log.info("unsigned-count", `${rows.length} unsigned observations to sign`, {
-        unsignedCount: rows.length,
+        .pluck()
+        .all(runId) as string[];
+      if (existingKeyIds.some((keyId) => keyId !== key.signingKeyId)) {
+        throw new Error("Signing key changed inside one Observatory quarter run");
+      }
+      const unsignedCount = (
+        db.prepare(
+          `SELECT COUNT(*) AS n FROM observations
+           WHERE run_id = ? AND signature IS NULL AND obs_json IS NOT NULL`,
+        ).get(runId) as { n: number }
+      ).n;
+      log.info("unsigned-count", `${unsignedCount} unsigned observations to sign`, {
+        unsignedCount,
       });
-
-      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-        const batch = rows.slice(i, i + BATCH_SIZE);
+      const selectBatch = db.prepare(`
+        SELECT id, obs_json FROM observations
+        WHERE run_id = ? AND signature IS NULL AND obs_json IS NOT NULL AND id > ?
+        ORDER BY id LIMIT ?
+      `);
+      let lastId = "";
+      while (true) {
+        const batch = selectBatch.all(runId, lastId, BATCH_SIZE) as UnsignedRow[];
+        if (batch.length === 0) break;
 
         const batchSign = db.transaction(() => {
           let signed = 0;
-          let skipped = 0;
           for (const row of batch) {
-            let obs: Observation;
-            try {
-              obs = JSON.parse(row.obs_json) as Observation;
-            } catch {
-              skipped++;
-              continue;
-            }
+            const obs = JSON.parse(row.obs_json) as Observation;
             const signed_obs = signObservation(obs, key);
             updateSig.run(
               signed_obs.signature,
@@ -114,26 +123,31 @@ export class SignObservationsGogol extends Gogol {
               row.id,
             );
             signed++;
+            lastId = row.id;
           }
-          return { signed, skipped };
+          return signed;
         });
 
-        const { signed, skipped } = batchSign();
-        totalSigned += signed;
-        totalSkipped += skipped;
+        totalSigned += batchSign();
 
-        logProgress(this.id, totalSigned, rows.length, BATCH_SIZE, true);
+        logProgress(this.id, totalSigned, unsignedCount, BATCH_SIZE, true);
       }
+      const remaining = (
+        db.prepare(
+          `SELECT COUNT(*) AS n FROM observations
+           WHERE run_id = ? AND signature IS NULL AND obs_json IS NOT NULL`,
+        ).get(runId) as { n: number }
+      ).n;
+      if (remaining !== 0) throw new Error(`Unsigned observation closure is incomplete: ${remaining}`);
     } finally {
       db.close();
     }
 
     log.info(
       "sign-finished",
-      `Done. ${totalSigned} signed, ${totalSkipped} skipped (parse errors).`,
+      `Done. ${totalSigned} observations signed.`,
       {
         totalSigned,
-        totalSkipped,
       },
     );
 
@@ -146,7 +160,7 @@ export class SignObservationsGogol extends Gogol {
           signing_key_id: key.signingKeyId,
           collector_id: key.collectorId,
           total_signed: totalSigned,
-          total_skipped: totalSkipped,
+          total_skipped: 0,
           signed_at: new Date().toISOString(),
         },
         null,

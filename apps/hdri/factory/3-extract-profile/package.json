@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/3-extract-profile/tsconfig.json --noEmit",
-    "typecheck": "pnpm --dir ../../../.. exec tsc -p apps/hdri/factory/3-extract-profile/tsconfig.json --noEmit",
+    "build": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/3-extract-profile/tsconfig.json --pretty false",
+    "typecheck": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/3-extract-profile/tsconfig.json --pretty false",
+    "test": "pnpm exec vitest run",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
-    "start": "tsx -C @syrokomskyi/source --max-old-space-size=8192 run/run.ts"
+    "start": "tsx -C @syrokomskyi/source --max-old-space-size=2048 run/run.ts"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",

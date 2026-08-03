@@ -10,7 +10,7 @@
   <item>Extracted from monolithic main.ts as part of pipeline conversion.</item>
   <item>Add asset state harvesting from core_*.db for emit-bundle schema v2.</item>
   <item>Add gewerk_group in emitted asset states by deriving it from site_hwo_mappings with mapping_system = destatis_group.</item>
-  <item>Write immutable emit bundles to .output/emit/&lt;period&gt;/&lt;factory_run_id&gt;/ and persist emit_dir in pipeline state.</item>
+  <item>Write immutable emit bundles inside the period-and-capsule-addressed artifact root.</item>
   <item>Fail closed on existing staging closure and retain consistent SQLite snapshots plus transitive raw source evidence.</item>
   <item>Verify signed ledger, frame and occurrence closure before retaining any source evidence.</item>
   <item>Require consumer-verified target, event, CAS and signed stage closure before emitting quarterly artifacts.</item>
@@ -24,7 +24,6 @@ import fsp from "node:fs/promises";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import path from "node:path";
-import readline from "node:readline";
 import { deriveAssetId } from "@syrokomskyi/observatory-core";
 import type { AssetStateMapping, AssetStateRecord } from "@syrokomskyi/observatory-core";
 import { EmitBundleWriter } from "@syrokomskyi/observatory-emit";
@@ -67,8 +66,18 @@ export class EmitBundleGogol extends Gogol {
   override readonly id = "emit-bundle";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { brief, signedNdjsonPath, coreDbs, discoveredPages, livenessDbs, axeDbs, ontology } = ctx.state;
-    if (!signedNdjsonPath) throw new Error("No signed observation stream — run sign-bundle first");
+    const {
+      brief,
+      signedObservationDbPath,
+      coreDbs,
+      discoveredPages,
+      livenessDbs,
+      axeDbs,
+      ontology,
+    } = ctx.state;
+    if (!signedObservationDbPath) {
+      throw new Error("No signed observation store — run sign-bundle first");
+    }
 
     const factoryRunId = brief.capsuleId;
     const capsuleDir = path.join(outputRootDir, "capsules", brief.period, brief.capsuleId);
@@ -109,19 +118,72 @@ export class EmitBundleGogol extends Gogol {
     await writer.open();
 
     // ── Write observations ────────────────────────────────────────────────────
-    const lines = readline.createInterface({
-      input: fs.createReadStream(signedNdjsonPath, { encoding: "utf-8" }),
-      crlfDelay: Infinity,
-    });
-    for await (const line of lines) {
-      if (line.trim() !== "") writer.writeObservation(JSON.parse(line) as SignedObservation);
+    const committedObservations = writer.committedObservationCount;
+    const signedDb = new Database(signedObservationDbPath, { readonly: true, fileMustExist: true });
+    try {
+      const counts = signedDb.prepare(`
+        SELECT
+          (SELECT COUNT(*) FROM resolved_observations) AS resolved,
+          (SELECT COUNT(*) FROM signed_observations) AS signed,
+          (SELECT COALESCE(MAX(seq), 0) FROM signed_observations) AS max_seq
+      `).get() as { resolved: number; signed: number; max_seq: number };
+      if (counts.resolved === 0 || counts.signed !== counts.resolved || counts.max_seq !== counts.signed) {
+        throw new Error(
+          `Signed observation closure mismatch: resolved=${counts.resolved}, signed=${counts.signed}, max_seq=${counts.max_seq}`,
+        );
+      }
+      if (committedObservations > counts.signed) {
+        throw new Error("Signed observation store is shorter than the sealed emit checkpoint");
+      }
+      const rows = signedDb
+        .prepare(
+          `SELECT payload_json
+           FROM signed_observations
+           WHERE seq > ?
+           ORDER BY seq`,
+        )
+        .iterate(committedObservations) as IterableIterator<{ payload_json: string }>;
+      for (const row of rows) {
+        await writer.writeObservation(JSON.parse(row.payload_json) as SignedObservation);
+      }
+      const conflictCount = (
+        signedDb.prepare("SELECT COUNT(*) AS n FROM resolved_conflicts").get() as { n: number }
+      ).n;
+      const committedEvidence = writer.committedEvidenceCount;
+      if (committedEvidence > conflictCount) {
+        throw new Error("Conflict evidence store is shorter than the sealed emit checkpoint");
+      }
+      const conflicts = signedDb.prepare(`
+        SELECT conflict_key, winner_observation_id, loser_observation_id, loser_payload_json
+        FROM resolved_conflicts
+        WHERE seq > ?
+        ORDER BY seq
+      `).iterate(committedEvidence) as IterableIterator<{
+        conflict_key: string;
+        winner_observation_id: string;
+        loser_observation_id: string;
+        loser_payload_json: string;
+      }>;
+      for (const conflict of conflicts) {
+        await writer.writeEvidence({
+          evidenceType: "observation-conflict",
+          resolutionPolicyVersion: "latest-recorded-device-observation-v1",
+          conflictKey: conflict.conflict_key,
+          winnerObservationId: conflict.winner_observation_id,
+          loserObservationId: conflict.loser_observation_id,
+          loserObservation: JSON.parse(conflict.loser_payload_json),
+        });
+      }
+    } finally {
+      signedDb.close();
     }
 
     // ── Write asset states from upstream core_*.db ────────────────────────────
     let assetStateCount = 0;
+    const committedAssetStates = writer.committedAssetStateCount;
     for (const coreDb of coreDbs) {
       for (const rec of iterateAssetStates(coreDb.coreDbPath)) {
-        writer.writeAssetState(rec);
+        if (assetStateCount >= committedAssetStates) await writer.writeAssetState(rec);
         assetStateCount++;
       }
     }
@@ -130,23 +192,21 @@ export class EmitBundleGogol extends Gogol {
         `[emit-bundle] Harvested ${assetStateCount} asset state(s) from ${coreDbs.length} core DB(s)`,
       );
     }
+    if (assetStateCount < committedAssetStates) {
+      throw new Error("Asset-state stream is shorter than the sealed emit checkpoint");
+    }
 
     const manifest = await writer.commit();
-    const manifestWithDir = {
-      ...manifest,
-      emit_dir: emitDir,
-    };
-
     // Write manifest as step artifact.
     await fsp.writeFile(
       path.join(ctx.outputDir, "manifest.json"),
-      JSON.stringify(manifestWithDir, null, 2),
+      JSON.stringify(manifest, null, 2),
       "utf-8",
     );
 
     const bundleHash = manifest.bundle_hash ?? "";
     console.log(
-      `[emit-bundle] Wrote ${manifest.observation_count} observations, ${manifest.asset_state_count ?? 0} asset states to ${emitDir}\n` +
+      `[emit-bundle] Wrote ${manifest.observation_count} observations, ${manifest.asset_state_count} asset states to ${emitDir}\n` +
         `[emit-bundle] bundle_hash=${bundleHash.slice(0, 16)}…`,
     );
 
@@ -266,12 +326,17 @@ export class EmitBundleGogol extends Gogol {
       throw new Error(`No frozen source frame found for ${brief.period}`);
     }
 
-    for (const name of ["manifest.json", "observations.ndjson", "asset-states.ndjson"]) {
-      const emitPath = path.join(emitDir, name);
+    for (const uri of [
+      "manifest.json",
+      ...manifest.observation_partitions.map((partition) => partition.uri),
+      ...manifest.asset_state_partitions.map((partition) => partition.uri),
+      ...manifest.evidence_partitions.map((partition) => partition.uri),
+    ]) {
+      const emitPath = path.join(emitDir, uri);
       const emitStat = await fsp.stat(emitPath);
       artifacts.push({
         stage: "emit",
-        uri: `artifacts/emit/${name}`,
+        uri: `artifacts/emit/${uri}`,
         sha256: await hashFile(emitPath),
         bytes: emitStat.size,
       });
@@ -310,7 +375,7 @@ export class EmitBundleGogol extends Gogol {
       artifacts,
     };
     await writeQuarterCapsuleStaging(capsuleDir, capsule);
-    ctx.state.manifest = manifestWithDir;
+    ctx.state.manifest = manifest;
   }
 }
 

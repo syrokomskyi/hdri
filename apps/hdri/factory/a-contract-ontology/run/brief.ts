@@ -8,37 +8,20 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation.</item>
-  <item>Add optional sourceToken field to Brief type for two-file brief pattern.</item>
   <item>Make period regex case-insensitive to accept lowercase 'q' in YYYY-qn format.</item>
   <item>Normalize period to lowercase after validation — lowercase is the canonical format.</item>
-  <item>Add upstream DB path fields (harvestDbPath, registryDbPath, livenessDbPath, profileDbPath, lighthouseDbPath, axeDbPath) to Brief type and parser.</item>
+  <item>Remove unused direct database paths; discovery is period-scoped and filesystem-derived.</item>
 </CHANGE_SUMMARY>
 */
 
 import matter from "gray-matter";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
-
 export type Brief = {
   /** Period in `yyyy-qn` format (lowercase q). Hard quarterly boundary for the contract bundle. */
   period: string;
   /** Semver of the ontology used to validate observations. */
   ontologyVersion: string;
-  /** Canonical batch identifier from shared factory brief (optional, for logging). */
-  sourceToken: string;
   /** UUID v7 minted once for this quarterly capsule. */
   capsuleId: string;
-  /** Absolute or relative path to upstream core_YYYY.db (harvest). */
-  harvestDbPath: string;
-  /** Absolute or relative path to upstream registry_YYYY.db. */
-  registryDbPath: string;
-  /** Absolute or relative path to upstream liveness-YYYY-qN.db. */
-  livenessDbPath: string;
-  /** Absolute or relative path to upstream pages_*.db (profile). */
-  profileDbPath: string;
-  /** Absolute or relative path to upstream lighthouse_YYYY.db. */
-  lighthouseDbPath: string;
-  /** Absolute or relative path to upstream axe_YYYY.db. */
-  axeDbPath: string;
   skipGogols: string[];
 };
 
@@ -56,11 +39,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   const ontologyVersion =
     typeof data.ontologyVersion === "string" ? data.ontologyVersion.trim() || "1.0.0" : "1.0.0";
-
-  const sourceTokenRaw = typeof data.sourceToken === "string" ? data.sourceToken.trim() : "";
-  if (sourceTokenRaw) {
-    parseSourceToken(sourceTokenRaw); // validate format
-  }
 
   const skipGogols = Array.isArray(data.skipGogols)
     ? data.skipGogols.filter((x): x is string => typeof x === "string")
@@ -80,14 +58,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   return {
     period,
     ontologyVersion,
-    sourceToken: sourceTokenRaw,
     capsuleId,
-    harvestDbPath: getRequiredString(data.harvestDbPath, "harvestDbPath"),
-    registryDbPath: getRequiredString(data.registryDbPath, "registryDbPath"),
-    livenessDbPath: getRequiredString(data.livenessDbPath, "livenessDbPath"),
-    profileDbPath: getRequiredString(data.profileDbPath, "profileDbPath"),
-    lighthouseDbPath: getRequiredString(data.lighthouseDbPath, "lighthouseDbPath"),
-    axeDbPath: getRequiredString(data.axeDbPath, "axeDbPath"),
     skipGogols,
   };
 };

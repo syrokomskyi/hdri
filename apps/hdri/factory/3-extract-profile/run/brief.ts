@@ -16,7 +16,7 @@
   <item>parseBriefMarkdown now accepts optional sharedSourceToken parameter for two-file brief pattern.</item>
   <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @syrokomskyi/pipeline-node.</item>
   <item>Update registryDbPath comment to reference 1-register-businesses instead of catalog-harvest.</item>
-  <item>Add domCacheSize brief field with default 1000 for shared Cheerio DOM LRU cache.</item>
+  <item>Bound domCacheSize to 1..64 for production quarter runs.</item>
   <item>Revise domCacheSize comment to document realistic per-DOM RAM cost (~1–3 MB) and warn that 100k pages ≈ 100–300 GB.</item>
 </CHANGE_SUMMARY>
 */
@@ -64,9 +64,8 @@ export type Brief = {
    * Max Cheerio DOM instances to keep in the shared LRU cache.
    * Each parsed DOM can easily consume 1–3 MB ( Cheerio tree + string buffers).
    * 100 000 unique pages ≈ 100–300 GB RAM — not feasible.
-   * -1 = unlimited (keeps every page in memory; only safe for tiny batches).
-   * 0 = disabled (parse on every access — not recommended).
-   * Default: 2000 (≈ 2–6 GB peak, manageable on a 16 GB machine).
+   * Unlimited/disabled modes are forbidden for production quarter runs.
+   * Default: 16; maximum: 64.
    */
   domCacheSize: number;
   /**
@@ -128,6 +127,10 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   const zipcodesTablePath =
     typeof data.zipcodesTablePath === "string" ? data.zipcodesTablePath.trim() || null : null;
+  const domCacheSize = getFiniteNumber(data.domCacheSize, "domCacheSize") ?? 16;
+  if (!Number.isInteger(domCacheSize) || domCacheSize < 1 || domCacheSize > 64) {
+    throw new Error("brief.md: domCacheSize must be an integer between 1 and 64");
+  }
 
   return {
     sourceToken: parsedToken.raw,
@@ -141,7 +144,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     timeoutMs: getFiniteNumber(data.timeoutMs, "timeoutMs") ?? 20_000,
     maxDomains: getFiniteNumber(data.maxDomains, "maxDomains") ?? -1,
     skipGogols: getStringArray(data.skipGogols),
-    domCacheSize: getFiniteNumber(data.domCacheSize, "domCacheSize") ?? 1_000,
+    domCacheSize,
     collectImpressumContacts: data.collectImpressumContacts === true,
   };
 };

@@ -9,7 +9,7 @@
 <CHANGE_SUMMARY>
   <item>Created DomCache to eliminate redundant Cheerio.parse() calls across ~44 extractor gogols.</item>
   <item>Add in-flight promise deduplication so concurrent gogol workers do not parse the same page twice.</item>
-  <item>Respect capacity ≤ 0 as unlimited (no eviction) instead of accidentally dropping every entry.</item>
+  <item>Reject unbounded capacity; quarterly extraction always has a finite DOM memory budget.</item>
   <item>Remove `html` from DomCacheEntry — callers only need the CheerioAPI, halving per-entry memory.</item>
   <item>Add `evict()` method so callers can drop a DOM immediately after use, preventing memory accumulation across thousands of unique pages.</item>
 </CHANGE_SUMMARY>
@@ -32,6 +32,9 @@ export class DomCache {
   private missCount = 0;
 
   constructor(capacity: number) {
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 64) {
+      throw new Error("DomCache capacity must be an integer between 1 and 64");
+    }
     this.capacity = capacity;
   }
 
@@ -64,7 +67,7 @@ export class DomCache {
         const $ = load(html) as CheerioAPI;
         const entry: DomCacheEntry = { $ };
 
-        if (this.capacity > 0 && this.map.size >= this.capacity) {
+        if (this.map.size >= this.capacity) {
           const firstKey = this.map.keys().next().value as string;
           this.map.delete(firstKey);
         }
