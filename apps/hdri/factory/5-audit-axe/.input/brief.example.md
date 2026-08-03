@@ -2,6 +2,20 @@
 concurrency: 5
 timeoutMs: 45000
 retries: 1
+skipGogols: []
+instrumentPlan:
+  - instrument: liveness
+    state: required
+    reason: null
+  - instrument: profile
+    state: required
+    reason: null
+  - instrument: axe
+    state: required
+    reason: null
+  - instrument: lighthouse
+    state: disabled
+    reason: "Not configured for this quarter"
 ---
 
 # Axe Accessibility Audit Brief

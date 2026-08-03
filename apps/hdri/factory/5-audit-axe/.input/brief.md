@@ -10,4 +10,17 @@ retries: 2
 fixtureDir: ""
 
 skipGogols: []
+instrumentPlan:
+  - instrument: liveness
+    state: required
+    reason: null
+  - instrument: profile
+    state: required
+    reason: null
+  - instrument: axe
+    state: required
+    reason: null
+  - instrument: lighthouse
+    state: disabled
+    reason: "Not configured for Q3 2026"
 ---
