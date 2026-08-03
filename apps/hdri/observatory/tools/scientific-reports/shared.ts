@@ -7,7 +7,10 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { ScientificGateReport, ScientificReportType } from "../../run/release/release-contract";
+import type {
+  ScientificGateReport,
+  ScientificReportType,
+} from "../../run/release/release-contract";
 
 export const arg = (name: string): string | undefined => {
   const index = process.argv.indexOf(name);
@@ -20,7 +23,11 @@ export const requireArg = (name: string): string => {
   return value;
 };
 
-export const requireCommonArgs = (): { period: string; capsuleId: string; evidenceDir: string } => ({
+export const requireCommonArgs = (): {
+  period: string;
+  capsuleId: string;
+  evidenceDir: string;
+} => ({
   period: requireArg("--period"),
   capsuleId: requireArg("--capsule-id"),
   evidenceDir: path.resolve(requireArg("--evidence-dir")),
@@ -65,7 +72,16 @@ export const writeReport = async (
   };
   const targetPath = path.join(evidenceDir, filename);
   await fs.mkdir(path.dirname(targetPath), { recursive: true });
-  await fs.writeFile(targetPath, `${JSON.stringify(report, null, 2)}\n`, { flag: "wx" });
+  const reportBytes = `${JSON.stringify(report, null, 2)}\n`;
+  try {
+    await fs.writeFile(targetPath, reportBytes, { flag: "wx" });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    const existing = await fs.readFile(targetPath, "utf8");
+    if (existing !== reportBytes) {
+      throw new Error(`Scientific report already exists with different content: ${filename}`);
+    }
+  }
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   return report;
 };

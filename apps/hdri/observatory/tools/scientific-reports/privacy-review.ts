@@ -7,6 +7,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
 import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
@@ -29,9 +30,8 @@ if (!productsDir) {
     violations.push("products_dir_not_found");
   } else {
     if (policyPath && (await fileExists(path.resolve(policyPath)))) {
-      const policy = await readJsonFile<{ effectiveKMin?: number; hardFloor?: number }>(
-        path.resolve(policyPath),
-      );
+      const policyContent = await fs.readFile(path.resolve(policyPath), "utf8");
+      const policy = parseYaml(policyContent) as { effectiveKMin?: number; hardFloor?: number };
       if (typeof policy.effectiveKMin === "number") effectiveKMin = policy.effectiveKMin;
     }
 

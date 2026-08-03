@@ -35,6 +35,9 @@ describe("Pipeline assembly", () => {
     expect(ids).toContain("write-vault");
     expect(ids).toContain("export-mart");
     expect(ids).toContain("prepare-quarter-release");
+    expect(ids).toContain("seal-capsule");
+    expect(ids).toContain("validate-quarter");
+    expect(ids).toContain("release-quarter");
 
     // Order: harvest → observe → interpret → publish
     expect(ids.indexOf("setup-observatory-run")).toBeLessThan(ids.indexOf("sync-from-factory"));
@@ -44,11 +47,14 @@ describe("Pipeline assembly", () => {
     expect(ids.indexOf("build-cohorts")).toBeLessThan(ids.indexOf("write-vault"));
     expect(ids.indexOf("write-vault")).toBeLessThan(ids.indexOf("export-mart"));
     expect(ids.indexOf("export-mart")).toBeLessThan(ids.indexOf("prepare-quarter-release"));
+    expect(ids.indexOf("prepare-quarter-release")).toBeLessThan(ids.indexOf("seal-capsule"));
+    expect(ids.indexOf("seal-capsule")).toBeLessThan(ids.indexOf("validate-quarter"));
+    expect(ids.indexOf("validate-quarter")).toBeLessThan(ids.indexOf("release-quarter"));
   });
 
-  it("has exactly 9 gogols", () => {
+  it("has exactly 12 gogols", () => {
     const pipeline = createPipeline();
-    expect(pipeline.steps.length).toBe(9);
+    expect(pipeline.steps.length).toBe(12);
   });
 });
 

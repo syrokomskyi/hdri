@@ -32,7 +32,10 @@ const candidate = JSON.parse(await fs.readFile(candidatePath, "utf8")) as Quarte
 await verifyQuarterCapsuleArtifacts(capsuleDir, candidate);
 const reports = await readScientificReports(path.resolve(arg("--evidence-dir")!), candidate);
 const rebuild = JSON.parse(
-  await fs.readFile(path.join(capsuleDir, "release", "rebuild-receipt.json"), "utf8"),
+  await fs.readFile(
+    path.join(capsuleDir, "artifacts", "qc", "release", "rebuild-receipt.json"),
+    "utf8",
+  ),
 ) as RebuildReceipt;
 const candidateManifestSha256 = await sha256File(path.join(capsuleDir, "capsule-candidate.json"));
 let replicas: ReplicaReceipt[];
