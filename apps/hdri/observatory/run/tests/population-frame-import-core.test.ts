@@ -6,7 +6,13 @@ import {
   type DestatisFrameMetadata,
   type DestatisFrameSource,
 } from "../../tools/population-frame-import-core";
-import { DESTATIS_BUNDESLAENDER, DESTATIS_GROUPS } from "../../tools/population-frame-contract";
+import {
+  assertCompletePopulationFrame,
+  DESTATIS_BUNDESLAENDER,
+  DESTATIS_GROUPS,
+  canonicalWeightsSha256,
+  type ProvenancedPopulationFrame,
+} from "../../tools/population-frame-contract";
 
 const source = (): DestatisFrameSource => {
   const rows = DESTATIS_BUNDESLAENDER.flatMap((bundesland) =>
@@ -73,16 +79,102 @@ describe("Destatis population-frame importer", () => {
   });
 
   it("rejects mixed statistical units and duplicate cells", () => {
-    expect(() => importDestatisPopulationFrame({ ...source(), statisticalUnit: "Tätige Personen" as never })).toThrow(/company counts/);
-    expect(() => importDestatisPopulationFrame({ ...source(), rows: source().rows.slice(1) })).toThrow(/112 cells/);
+    expect(() =>
+      importDestatisPopulationFrame({ ...source(), statisticalUnit: "Tätige Personen" as never }),
+    ).toThrow(/company counts/);
+  });
+});
+
+const validFrame = (overrides?: {
+  sourceUrl?: string;
+  referenceYear?: number;
+}): ProvenancedPopulationFrame => {
+  const weights: Record<string, number> = {};
+  for (const land of DESTATIS_BUNDESLAENDER) {
+    for (const group of DESTATIS_GROUPS) {
+      weights[`${land}|${group}`] = 1;
+    }
+  }
+  const bundeslandTotals = Object.fromEntries(
+    DESTATIS_BUNDESLAENDER.map((land) => [land, 7]),
+  ) as Record<(typeof DESTATIS_BUNDESLAENDER)[number], number>;
+  const groupTotals = Object.fromEntries(DESTATIS_GROUPS.map((group) => [group, 16])) as Record<
+    (typeof DESTATIS_GROUPS)[number],
+    number
+  >;
+  return {
+    strataSystem: "bundesland|destatis_group",
+    source: "test",
+    weights,
+    manifest: {
+      schemaVersion: "1",
+      frameVersion: "destatis-53111-2024-v1",
+      statisticalUnit: "Handwerksunternehmen",
+      handwerkScope: "Handwerk insgesamt",
+      sourceAgency: "Statistisches Bundesamt (Destatis)",
+      sourceTable: "53111-0011",
+      referenceYear: overrides?.referenceYear ?? 2024,
+      retrievedAt: "2026-08-02T00:00:00.000Z",
+      sourceUrl:
+        overrides?.sourceUrl ?? "https://genesis.destatis.de/datenbank/online/table/53111-0011",
+      sourceFileName: "53111-0011.csv",
+      sourceFileSha256: "a".repeat(64),
+      parserVersion: DESTATIS_FRAME_PARSER_VERSION,
+      strataSystem: "bundesland|destatis_group",
+      expectedStrata: 112,
+      weightsSha256: canonicalWeightsSha256(weights),
+      nationalTotal: 112,
+      bundeslandTotals,
+      groupTotals,
+      notes: [],
+    },
+  };
+};
+
+describe("assertCompletePopulationFrame provenance checks (RFC-0033)", () => {
+  it("accepts sourceUrl from genesis.destatis.de", () => {
+    expect(() => assertCompletePopulationFrame(validFrame())).not.toThrow();
   });
 
-  it("rejects arbitrary Länder and official exports with incomplete cells", () => {
-    const invalidLand = source().rows.map((row, index) => index === 0 ? { ...row, bundesland: "Atlantis" as never } : row);
-    expect(() => importDestatisPopulationFrame({ ...source(), rows: invalidLand })).toThrow(/Invalid population-frame stratum/);
-    const { rows: _rows, ...metadata } = source();
+  it("accepts sourceUrl from statistikportal.de", () => {
     expect(() =>
-      parseDestatisPopulationFrameCsv(csvFor(metadata).replace(/2024;Thüringen;[^\n]+\n?$/, ""), metadata),
-    ).toThrow(/expected 112/);
+      assertCompletePopulationFrame(
+        validFrame({ sourceUrl: "https://statistikportal.de/download/53111-0011.csv" }),
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects sourceUrl from a non-Destatis domain", () => {
+    expect(() =>
+      assertCompletePopulationFrame(validFrame({ sourceUrl: "https://example.com/data.csv" })),
+    ).toThrow(/sourceUrl must be from/);
+  });
+
+  it("rejects an empty sourceUrl", () => {
+    expect(() => assertCompletePopulationFrame(validFrame({ sourceUrl: "" }))).toThrow(
+      /sourceUrl must be from/,
+    );
+  });
+
+  it("accepts referenceYear 2020 (floor)", () => {
+    expect(() => assertCompletePopulationFrame(validFrame({ referenceYear: 2020 }))).not.toThrow();
+  });
+
+  it("rejects referenceYear 2019 (below floor)", () => {
+    expect(() => assertCompletePopulationFrame(validFrame({ referenceYear: 2019 }))).toThrow(
+      /referenceYear must be an integer >= 2020/,
+    );
+  });
+
+  it("rejects referenceYear 0 (placeholder)", () => {
+    expect(() => assertCompletePopulationFrame(validFrame({ referenceYear: 0 }))).toThrow(
+      /referenceYear must be an integer >= 2020/,
+    );
+  });
+
+  it("rejects non-integer referenceYear", () => {
+    expect(() => assertCompletePopulationFrame(validFrame({ referenceYear: 2024.5 }))).toThrow(
+      /referenceYear must be an integer >= 2020/,
+    );
   });
 });

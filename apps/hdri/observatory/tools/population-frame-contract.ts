@@ -30,6 +30,8 @@ export const DESTATIS_BUNDESLAENDER = [
 export const DESTATIS_GROUPS = ["I", "II", "III", "IV", "V", "VI", "VII"] as const;
 export const EXPECTED_DESTATIS_STRATA = DESTATIS_BUNDESLAENDER.length * DESTATIS_GROUPS.length;
 
+const ALLOWED_SOURCE_DOMAINS = ["genesis.destatis.de", "statistikportal.de"] as const;
+
 export type DestatisGroup = (typeof DESTATIS_GROUPS)[number];
 export type DestatisBundesland = (typeof DESTATIS_BUNDESLAENDER)[number];
 
@@ -69,9 +71,7 @@ export const canonicalWeightsSha256 = (weights: Readonly<Record<string, number>>
 export const expectedPopulationFrameKeys = (): string[] =>
   DESTATIS_BUNDESLAENDER.flatMap((land) => DESTATIS_GROUPS.map((group) => `${land}|${group}`));
 
-export const assertCompletePopulationFrame = (
-  frame: ProvenancedPopulationFrame,
-): void => {
+export const assertCompletePopulationFrame = (frame: ProvenancedPopulationFrame): void => {
   if (!frame || typeof frame !== "object" || !frame.manifest || !frame.weights) {
     throw new Error("Population frame manifest and weights are required");
   }
@@ -85,7 +85,19 @@ export const assertCompletePopulationFrame = (
     manifest.sourceTable !== "53111-0011" ||
     manifest.expectedStrata !== EXPECTED_DESTATIS_STRATA
   ) {
-    throw new Error("Population frame manifest does not describe the canonical Destatis 53111-0011 frame");
+    throw new Error(
+      "Population frame manifest does not describe the canonical Destatis 53111-0011 frame",
+    );
+  }
+  if (!ALLOWED_SOURCE_DOMAINS.some((d) => manifest.sourceUrl.includes(d))) {
+    throw new Error(
+      `Population frame sourceUrl must be from ${ALLOWED_SOURCE_DOMAINS.join(" or ")}, got: ${manifest.sourceUrl}`,
+    );
+  }
+  if (!Number.isInteger(manifest.referenceYear) || manifest.referenceYear < 2020) {
+    throw new Error(
+      `Population frame referenceYear must be an integer >= 2020, got: ${manifest.referenceYear}`,
+    );
   }
   if (!manifest.frameVersion.trim() || !manifest.parserVersion.trim()) {
     throw new Error("Population frame requires frameVersion and parserVersion");
@@ -98,7 +110,10 @@ export const assertCompletePopulationFrame = (
   }
   const expectedKeys = expectedPopulationFrameKeys();
   const actualKeys = Object.keys(weights).sort();
-  if (actualKeys.length !== EXPECTED_DESTATIS_STRATA || actualKeys.join("\0") !== expectedKeys.sort().join("\0")) {
+  if (
+    actualKeys.length !== EXPECTED_DESTATIS_STRATA ||
+    actualKeys.join("\0") !== expectedKeys.sort().join("\0")
+  ) {
     throw new Error("Population frame must contain exactly the canonical 16×7 cells");
   }
   for (const [key, value] of Object.entries(weights)) {
@@ -109,8 +124,14 @@ export const assertCompletePopulationFrame = (
   if (canonicalWeightsSha256(weights) !== manifest.weightsSha256) {
     throw new Error("Population frame weights hash mismatch");
   }
-  const landTotals = Object.fromEntries(DESTATIS_BUNDESLAENDER.map((land) => [land, 0])) as Record<DestatisBundesland, number>;
-  const groupTotals = Object.fromEntries(DESTATIS_GROUPS.map((group) => [group, 0])) as Record<DestatisGroup, number>;
+  const landTotals = Object.fromEntries(DESTATIS_BUNDESLAENDER.map((land) => [land, 0])) as Record<
+    DestatisBundesland,
+    number
+  >;
+  const groupTotals = Object.fromEntries(DESTATIS_GROUPS.map((group) => [group, 0])) as Record<
+    DestatisGroup,
+    number
+  >;
   let nationalTotal = 0;
   for (const [key, value] of Object.entries(weights)) {
     const [land, group] = key.split("|") as [DestatisBundesland, DestatisGroup];
