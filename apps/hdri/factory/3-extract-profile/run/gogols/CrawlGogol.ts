@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Heartbeat long-running profile captures while retaining terminal CAS fencing.</item>
   <item>Created CrawlGogol as the pure-crawl replacement for the former CrawlAndExtractGogol.</item>
   <item>Renamed gogol id from 'crawl' to 'crawl-pages' to avoid collision with the 'crawl' phase id in phase-registry.ts.</item>
   <item>Fix HTTP fallback: fallback to HTTP on network-level failures (SSL_ERROR, ENOTFOUND, ETIMEDOUT) instead of keeping HTTPS result.</item>

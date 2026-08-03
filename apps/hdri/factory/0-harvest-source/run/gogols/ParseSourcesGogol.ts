@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Publish period-scoped frame projections only after their immutable signed guard succeeds.</item>
   <item>Refactor parsing architecture to use catalog-specific independent parsers via a registry.</item>
   <item>Support skipping files marked as 'ignored' by the parser to reduce log noise.</item>
   <item>Implement parallel parsing with ConcurrencyGate and batched SQLite transactions for radical speedup.</item>

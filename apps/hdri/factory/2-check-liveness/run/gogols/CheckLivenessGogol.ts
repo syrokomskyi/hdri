@@ -9,6 +9,7 @@ execution by skipping already-checked sites for the current batch.</purpose>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Renew execution leases while bounded liveness measurements are active.</item>
   <item>Added resume support: query already-checked sites from liveness.db and filter them out before processing. Early exit if all sites checked.</item>
   <item>Fixed artifacts to report full batch statistics from database (includes resumed sites), with optional incremental report for current run only.</item>
   <item>Replace hand-rolled CSV serialization with csv-stringify/sync package.</item>

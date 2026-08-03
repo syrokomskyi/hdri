@@ -8,6 +8,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Heartbeat browser audits so live attempts remain exclusive until terminal evidence commits.</item>
   <item>Initial implementation: fixture + live dual-mode axe runner with rate-limited concurrency, CAS persistence, and DB upserts.</item>
   <item>Switch from resumability to deterministic subset: always audit the first N live sites; use ON CONFLICT upsert for idempotent re-runs.</item>
   <item>Emit axe-results.csv with per-site violation counts for operator review.</item>
