@@ -78,7 +78,14 @@ type ProfileEvidence = {
   provisionalAssetId: string;
   domain: string;
   result:
-    | { ok: true; httpStatus: number; finalUrl: string; contentHash: string; contentLengthBytes: number; isNewContent: boolean }
+    | {
+        ok: true;
+        httpStatus: number;
+        finalUrl: string;
+        contentHash: string;
+        contentLengthBytes: number;
+        isNewContent: boolean;
+      }
     | { ok: false; httpStatus: number | null; errorCode: string; errorMsg: string | null };
 };
 
@@ -140,7 +147,7 @@ export class CrawlGogol extends Gogol {
     const capsuleDir = quarterCapsuleDir(factoryRootDir, brief.deviceId, period, brief.capsuleId);
     const journal = new QuarterExecutionJournal(
       quarterExecutionEventsDir(factoryRootDir, brief.deviceId, period, brief.capsuleId),
-      capsuleConfigSha256(period, brief.capsuleId),
+      capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan),
     );
     await journal.initialize(mintAssetId(), new Date().toISOString());
     const keyFor = (site: SiteRow): WorkKey => ({
@@ -160,9 +167,12 @@ export class CrawlGogol extends Gogol {
       const initialUrl = normalisePageUrl(`https://${site.domain}`);
       const sitePageId = getOrCreateSitePage(pagesDb, site.id, initialUrl, sha256Hex(initialUrl));
       if (!evidence.result.ok) {
-        const errorClass = evidence.result.httpStatus == null
-          ? "network"
-          : evidence.result.httpStatus >= 500 ? "http_5xx" : "http_4xx";
+        const errorClass =
+          evidence.result.httpStatus == null
+            ? "network"
+            : evidence.result.httpStatus >= 500
+              ? "http_5xx"
+              : "http_4xx";
         upsertPageObservation(pagesDb, sitePageId, evidenceSha256, false, errorClass);
         return;
       }
@@ -175,20 +185,24 @@ export class CrawlGogol extends Gogol {
       );
       const finalUrl = normalisePageUrl(result.finalUrl);
       const finalHash = sha256Hex(finalUrl);
-      if (finalHash !== sha256Hex(initialUrl)) upsertSitePage(pagesDb, site.id, finalUrl, finalHash);
+      if (finalHash !== sha256Hex(initialUrl))
+        upsertSitePage(pagesDb, site.id, finalUrl, finalHash);
       upsertPageObservation(pagesDb, sitePageId, result.contentHash, result.isNewContent);
     };
     for (const site of sites) {
       const sha256 = journal.terminalResultSha256(keyFor(site));
       if (!sha256) continue;
       const evidence = await readExecutionCasObject<ProfileEvidence>(capsuleDir, sha256);
-      if (evidence.provisionalAssetId !== site.provisionalAssetId) throw new Error(`Profile evidence identity mismatch: ${site.provisionalAssetId}`);
+      if (evidence.provisionalAssetId !== site.provisionalAssetId)
+        throw new Error(`Profile evidence identity mismatch: ${site.provisionalAssetId}`);
       checkpoint(site, evidence, sha256);
     }
     const originalCount = sites.length;
     sites = sites.filter((site) => !journal.isTerminal(keyFor(site)));
     const skippedCurrentBatch = originalCount - sites.length;
-    console.log(`[crawl] ${originalCount} target(s) — ${skippedCurrentBatch} terminal, ${sites.length} remaining`);
+    console.log(
+      `[crawl] ${originalCount} target(s) — ${skippedCurrentBatch} terminal, ${sites.length} remaining`,
+    );
 
     // ── 3. Crawl loop ─────────────────────────────────────────────────────
     const stats: CrawlStat[] = [];
@@ -237,7 +251,10 @@ export class CrawlGogol extends Gogol {
         };
       } else {
         const contentFilePath = getContentFilePath(fetched.contentHash);
-        const isNewContent = !(await fs.access(contentFilePath).then(() => true).catch(() => false));
+        const isNewContent = !(await fs
+          .access(contentFilePath)
+          .then(() => true)
+          .catch(() => false));
         if (isNewContent) {
           await fs.mkdir(path.dirname(contentFilePath), { recursive: true });
           const temp = `${contentFilePath}.${mintAssetId()}.tmp`;

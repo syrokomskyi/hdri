@@ -15,12 +15,17 @@
   <item>Enforce lowercase kebab-case validation on sourceToken.</item>
   <item>parseBriefMarkdown now accepts optional sharedSourceToken parameter for two-file brief pattern.</item>
   <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @syrokomskyi/pipeline-node.</item>
+  <item>RFC-0046: add instrumentPlan field parsed from brief frontmatter.</item>
 </CHANGE_SUMMARY>
 */
 
 import matter from "gray-matter";
 import { parseSourceToken, getDeviceId } from "@syrokomskyi/observatory-crypto";
-import { assertCapsuleId } from "@syrokomskyi/factory-core";
+import {
+  assertCapsuleId,
+  parseInstrumentPlanFromFrontmatter,
+  type InstrumentPlanEntry,
+} from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -48,6 +53,8 @@ export type Brief = {
   auditSampleSize: number;
   /** Absolute or app-root-relative path to liveness.db (read-only). */
   livenessDbPath: string;
+  /** Instrument plan for this quarter. Defaults to Lighthouse disabled. */
+  instrumentPlan: InstrumentPlanEntry[];
 };
 
 // ---------------------------------------------------------------------------
@@ -117,5 +124,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     skipGogols: getStringArray(data.skipGogols),
     auditSampleSize: getFiniteNumber(data.auditSampleSize, "auditSampleSize") ?? -1,
     livenessDbPath: getRequiredString(data.livenessDbPath, "livenessDbPath"),
+    instrumentPlan: parseInstrumentPlanFromFrontmatter(data.instrumentPlan),
   };
 };

@@ -219,7 +219,7 @@ export class AxeAuditGogol extends Gogol {
     const capsuleDir = quarterCapsuleDir(factoryRootDir, brief.deviceId, period, brief.capsuleId);
     const journal = new QuarterExecutionJournal(
       quarterExecutionEventsDir(factoryRootDir, brief.deviceId, period, brief.capsuleId),
-      capsuleConfigSha256(period, brief.capsuleId),
+      capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan),
     );
     await journal.initialize(mintAssetId(), new Date().toISOString());
     const keyFor = (target: AuditTarget): WorkKey => ({

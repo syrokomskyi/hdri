@@ -14,6 +14,7 @@
   <item>Fail closed on existing staging closure and retain consistent SQLite snapshots plus transitive raw source evidence.</item>
   <item>Verify signed ledger, frame and occurrence closure before retaining any source evidence.</item>
   <item>Require consumer-verified target, event, CAS and signed stage closure before emitting quarterly artifacts.</item>
+  <item>RFC-0046: read instrumentPlan from brief instead of hardcoding; derive requiredStages from plan.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: emit-bundle contract is immutable; never change manifest schema without version bump
@@ -27,9 +28,14 @@ import path from "node:path";
 import { deriveAssetId } from "@syrokomskyi/observatory-core";
 import type { AssetStateMapping, AssetStateRecord } from "@syrokomskyi/observatory-core";
 import { EmitBundleWriter } from "@syrokomskyi/observatory-emit";
-import { getTransparencyKeysDir, loadVerificationKeys, type SignedObservation } from "@syrokomskyi/observatory-crypto";
+import {
+  getTransparencyKeysDir,
+  loadVerificationKeys,
+  type SignedObservation,
+} from "@syrokomskyi/observatory-crypto";
 import {
   copyVerifiedArtifact,
+  DEFAULT_INSTRUMENT_PLAN,
   verifyQuarterCapsuleArtifacts,
   verifyQuarterExecutionClosure,
   verifySourceClosure,
@@ -84,7 +90,10 @@ export class EmitBundleGogol extends Gogol {
     const emitDir = path.join(capsuleDir, "artifacts", "emit");
     const stagingPath = path.join(capsuleDir, "capsule-staging.json");
     const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
-    const requiredStages = ["liveness", "profile", "axe"] as const;
+    const instrumentPlan = brief.instrumentPlan ?? DEFAULT_INSTRUMENT_PLAN;
+    const requiredStages = instrumentPlan
+      .filter((entry) => entry.state === "required")
+      .map((entry) => entry.instrument);
     try {
       await fsp.access(path.join(capsuleDir, "capsule-manifest.json"));
       throw new Error(`Quarter capsule is already sealed: ${brief.period}/${brief.capsuleId}`);
@@ -93,12 +102,20 @@ export class EmitBundleGogol extends Gogol {
     }
     try {
       const existing = JSON.parse(await fsp.readFile(stagingPath, "utf8")) as QuarterCapsule;
-      if (existing.state !== "staging" || existing.period !== brief.period || existing.capsuleId !== brief.capsuleId) {
-        throw new Error(`Quarter capsule staging identity mismatch: ${brief.period}/${brief.capsuleId}`);
+      if (
+        existing.state !== "staging" ||
+        existing.period !== brief.period ||
+        existing.capsuleId !== brief.capsuleId
+      ) {
+        throw new Error(
+          `Quarter capsule staging identity mismatch: ${brief.period}/${brief.capsuleId}`,
+        );
       }
       await verifyQuarterCapsuleArtifacts(capsuleDir, existing);
       await verifyQuarterExecutionClosure(capsuleDir, requiredStages, verificationKeys);
-      ctx.state.manifest = JSON.parse(await fsp.readFile(path.join(emitDir, "manifest.json"), "utf8"));
+      ctx.state.manifest = JSON.parse(
+        await fsp.readFile(path.join(emitDir, "manifest.json"), "utf8"),
+      );
       console.log(`[emit-bundle] Existing staging capsule verified; no artifacts rewritten.`);
       return;
     } catch (error) {
@@ -121,13 +138,21 @@ export class EmitBundleGogol extends Gogol {
     const committedObservations = writer.committedObservationCount;
     const signedDb = new Database(signedObservationDbPath, { readonly: true, fileMustExist: true });
     try {
-      const counts = signedDb.prepare(`
+      const counts = signedDb
+        .prepare(
+          `
         SELECT
           (SELECT COUNT(*) FROM resolved_observations) AS resolved,
           (SELECT COUNT(*) FROM signed_observations) AS signed,
           (SELECT COALESCE(MAX(seq), 0) FROM signed_observations) AS max_seq
-      `).get() as { resolved: number; signed: number; max_seq: number };
-      if (counts.resolved === 0 || counts.signed !== counts.resolved || counts.max_seq !== counts.signed) {
+      `,
+        )
+        .get() as { resolved: number; signed: number; max_seq: number };
+      if (
+        counts.resolved === 0 ||
+        counts.signed !== counts.resolved ||
+        counts.max_seq !== counts.signed
+      ) {
         throw new Error(
           `Signed observation closure mismatch: resolved=${counts.resolved}, signed=${counts.signed}, max_seq=${counts.max_seq}`,
         );
@@ -153,12 +178,16 @@ export class EmitBundleGogol extends Gogol {
       if (committedEvidence > conflictCount) {
         throw new Error("Conflict evidence store is shorter than the sealed emit checkpoint");
       }
-      const conflicts = signedDb.prepare(`
+      const conflicts = signedDb
+        .prepare(
+          `
         SELECT conflict_key, winner_observation_id, loser_observation_id, loser_payload_json
         FROM resolved_conflicts
         WHERE seq > ?
         ORDER BY seq
-      `).iterate(committedEvidence) as IterableIterator<{
+      `,
+        )
+        .iterate(committedEvidence) as IterableIterator<{
         conflict_key: string;
         winner_observation_id: string;
         loser_observation_id: string;
@@ -234,7 +263,9 @@ export class EmitBundleGogol extends Gogol {
       }
       const snapshotDb = new Database(destination, { readonly: true, fileMustExist: true });
       try {
-        const integrity = snapshotDb.pragma("integrity_check") as Array<{ integrity_check: string }>;
+        const integrity = snapshotDb.pragma("integrity_check") as Array<{
+          integrity_check: string;
+        }>;
         if (integrity.some((row) => row.integrity_check !== "ok")) {
           throw new Error(`SQLite capsule snapshot failed integrity_check: ${uri}`);
         }
@@ -266,13 +297,26 @@ export class EmitBundleGogol extends Gogol {
     for (const item of discoveredPages) {
       const db = new Database(item.pagesDbPath, { readonly: true, fileMustExist: true });
       try {
-        const rows = db.prepare("SELECT content_hash AS contentHash, storage_path AS storagePath FROM page_contents ORDER BY content_hash").all() as Array<{ contentHash: string; storagePath: string }>;
+        const rows = db
+          .prepare(
+            "SELECT content_hash AS contentHash, storage_path AS storagePath FROM page_contents ORDER BY content_hash",
+          )
+          .all() as Array<{ contentHash: string; storagePath: string }>;
         const outputRoot = path.dirname(path.dirname(path.dirname(item.pagesDbPath)));
         for (const row of rows) {
-          if (row.storagePath !== `data/content/${row.contentHash.slice(0, 2)}/${row.contentHash}.html`) {
+          if (
+            row.storagePath !==
+            `data/content/${row.contentHash.slice(0, 2)}/${row.contentHash}.html`
+          ) {
             throw new Error(`Non-canonical profile CAS path: ${row.storagePath}`);
           }
-          await retainCasFile("profile", item.deviceId, path.resolve(outputRoot, row.storagePath), row.storagePath, row.contentHash);
+          await retainCasFile(
+            "profile",
+            item.deviceId,
+            path.resolve(outputRoot, row.storagePath),
+            row.storagePath,
+            row.contentHash,
+          );
         }
       } finally {
         db.close();
@@ -282,11 +326,21 @@ export class EmitBundleGogol extends Gogol {
     for (const item of axeDbs) {
       const db = new Database(item.axeDbPath, { readonly: true, fileMustExist: true });
       try {
-        const rows = db.prepare("SELECT DISTINCT report_sha256 AS reportSha256 FROM axe_runs WHERE report_sha256 IS NOT NULL ORDER BY report_sha256").all() as Array<{ reportSha256: string }>;
+        const rows = db
+          .prepare(
+            "SELECT DISTINCT report_sha256 AS reportSha256 FROM axe_runs WHERE report_sha256 IS NOT NULL ORDER BY report_sha256",
+          )
+          .all() as Array<{ reportSha256: string }>;
         const outputRoot = path.dirname(path.dirname(path.dirname(item.axeDbPath)));
         for (const row of rows) {
           const relative = `data/audit-reports/axe/${row.reportSha256.slice(0, 2)}/${row.reportSha256}.json`;
-          await retainCasFile("axe", item.deviceId, path.resolve(outputRoot, relative), relative, row.reportSha256);
+          await retainCasFile(
+            "axe",
+            item.deviceId,
+            path.resolve(outputRoot, relative),
+            relative,
+            row.reportSha256,
+          );
         }
       } finally {
         db.close();
@@ -300,15 +354,28 @@ export class EmitBundleGogol extends Gogol {
         const relativeSegment = `segments/${manifest.batchId}.json`;
         const segmentPath = path.join(ledgerRoot, relativeSegment);
         const segmentSha256 = sourceClosure.artifactSha256.get(relativeSegment);
-        if (!segmentSha256) throw new Error(`Verified source hash is missing for segment: ${manifest.batchId}`);
-        await retainCasFile("frame", item.deviceId, segmentPath, `source-ledger/${relativeSegment}`, segmentSha256);
+        if (!segmentSha256)
+          throw new Error(`Verified source hash is missing for segment: ${manifest.batchId}`);
+        await retainCasFile(
+          "frame",
+          item.deviceId,
+          segmentPath,
+          `source-ledger/${relativeSegment}`,
+          segmentSha256,
+        );
         const batchRoot = path.resolve(inputDir, "batches", manifest.batchId);
         for (const file of manifest.files) {
           const source = path.resolve(batchRoot, file.relativePath);
           if (source !== batchRoot && !source.startsWith(`${batchRoot}${path.sep}`)) {
             throw new Error(`Source batch artifact escapes its batch root: ${file.relativePath}`);
           }
-          await retainCasFile("frame", item.deviceId, source, `source-ledger/raw/${manifest.batchId}/${file.relativePath}`, file.sha256);
+          await retainCasFile(
+            "frame",
+            item.deviceId,
+            source,
+            `source-ledger/raw/${manifest.batchId}/${file.relativePath}`,
+            file.sha256,
+          );
         }
       }
       for (const name of [
@@ -318,8 +385,15 @@ export class EmitBundleGogol extends Gogol {
       ]) {
         const source = path.join(ledgerRoot, "projections", name);
         const expectedSha256 = sourceClosure.artifactSha256.get(`projections/${name}`);
-        if (!expectedSha256) throw new Error(`Verified source hash is missing for projection: ${name}`);
-        await retainCasFile("frame", item.deviceId, source, `source-ledger/projections/${name}`, expectedSha256);
+        if (!expectedSha256)
+          throw new Error(`Verified source hash is missing for projection: ${name}`);
+        await retainCasFile(
+          "frame",
+          item.deviceId,
+          source,
+          `source-ledger/projections/${name}`,
+          expectedSha256,
+        );
       }
     }
     if (!artifacts.some((artifact) => artifact.stage === "frame")) {
@@ -347,7 +421,12 @@ export class EmitBundleGogol extends Gogol {
       await fsp.mkdir(path.dirname(methodologyPath), { recursive: true });
       await fsp.writeFile(methodologyPath, `${JSON.stringify(ontology, null, 2)}\n`, "utf8");
       const stat = await fsp.stat(methodologyPath);
-      artifacts.push({ stage: "methodology", uri: methodologyUri, sha256: await hashFile(methodologyPath), bytes: stat.size });
+      artifacts.push({
+        stage: "methodology",
+        uri: methodologyUri,
+        sha256: await hashFile(methodologyPath),
+        bytes: stat.size,
+      });
     }
 
     for (const evidenceRoot of [
@@ -358,7 +437,12 @@ export class EmitBundleGogol extends Gogol {
       for (const evidencePath of await walkFiles(evidenceRoot)) {
         const uri = path.relative(capsuleDir, evidencePath).replaceAll(path.sep, "/");
         const stat = await fsp.stat(evidencePath);
-        artifacts.push({ stage: "qc", uri, sha256: await hashFile(evidencePath), bytes: stat.size });
+        artifacts.push({
+          stage: "qc",
+          uri,
+          sha256: await hashFile(evidencePath),
+          bytes: stat.size,
+        });
       }
     }
 
@@ -366,12 +450,7 @@ export class EmitBundleGogol extends Gogol {
       period: brief.period,
       capsuleId: brief.capsuleId,
       state: "staging",
-      instrumentPlan: [
-        { instrument: "liveness", state: "required", reason: null },
-        { instrument: "profile", state: "required", reason: null },
-        { instrument: "axe", state: "required", reason: null },
-        { instrument: "lighthouse", state: "disabled", reason: "Q3 2026 instrument plan" },
-      ],
+      instrumentPlan,
       artifacts,
     };
     await writeQuarterCapsuleStaging(capsuleDir, capsule);
@@ -420,13 +499,17 @@ export function readAssetStates(coreDbPath: string): {
 export function* iterateAssetStates(coreDbPath: string): Generator<AssetStateRecord> {
   const db = new Database(coreDbPath, { readonly: true });
   try {
-    const rows = db.prepare(`
+    const rows = db
+      .prepare(
+        `
       SELECT s.id, s.domain, s.hwo_uid, s.hwo_provenance, s.bundesland, s.gemeinde,
              m.mapping_system, m.target_code, m.target_label, m.source
       FROM sites s
       LEFT JOIN site_hwo_mappings m ON m.site_id = s.id
       ORDER BY s.id, m.mapping_system, m.target_code
-    `).iterate() as IterableIterator<CoreSite & Partial<Omit<CoreMapping, "site_id">>>;
+    `,
+      )
+      .iterate() as IterableIterator<CoreSite & Partial<Omit<CoreMapping, "site_id">>>;
 
     let current: CoreSite | null = null;
     let mappings: AssetStateMapping[] = [];

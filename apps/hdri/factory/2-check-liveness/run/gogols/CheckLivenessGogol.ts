@@ -100,7 +100,7 @@ export class CheckLivenessGogol extends Gogol {
     const capsuleDir = quarterCapsuleDir(factoryRootDir, brief.deviceId, period, brief.capsuleId);
     const journal = new QuarterExecutionJournal(
       quarterExecutionEventsDir(factoryRootDir, brief.deviceId, period, brief.capsuleId),
-      capsuleConfigSha256(period, brief.capsuleId),
+      capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan),
     );
     await journal.initialize(mintAssetId(), new Date().toISOString());
     const keyFor = (site: SiteRow): WorkKey => ({
@@ -214,7 +214,8 @@ export class CheckLivenessGogol extends Gogol {
         checkSiteLiveness(site.domain, {
           timeoutMs: brief.timeoutMs,
           retryCount: brief.retryCount,
-        }));
+        }),
+      );
       const evidence = await writeExecutionCasObject(capsuleDir, {
         schemaVersion: 1,
         stage: "liveness",

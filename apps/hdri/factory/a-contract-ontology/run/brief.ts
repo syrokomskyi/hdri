@@ -11,10 +11,16 @@
   <item>Make period regex case-insensitive to accept lowercase 'q' in YYYY-qn format.</item>
   <item>Normalize period to lowercase after validation — lowercase is the canonical format.</item>
   <item>Remove unused direct database paths; discovery is period-scoped and filesystem-derived.</item>
+  <item>RFC-0046: add instrumentPlan field parsed from brief frontmatter with skipGogols consistency validation.</item>
 </CHANGE_SUMMARY>
 */
 
 import matter from "gray-matter";
+import {
+  parseInstrumentPlanFromFrontmatter,
+  type InstrumentPlanEntry,
+  type InstrumentId,
+} from "@syrokomskyi/factory-core";
 export type Brief = {
   /** Period in `yyyy-qn` format (lowercase q). Hard quarterly boundary for the contract bundle. */
   period: string;
@@ -23,6 +29,8 @@ export type Brief = {
   /** UUID v7 minted once for this quarterly capsule. */
   capsuleId: string;
   skipGogols: string[];
+  /** Instrument plan for this quarter. Defaults to Lighthouse disabled. */
+  instrumentPlan: InstrumentPlanEntry[];
 };
 
 const PERIOD_RE = /^(\d{4})-Q([1-4])$/i;
@@ -44,6 +52,22 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     ? data.skipGogols.filter((x): x is string => typeof x === "string")
     : [];
 
+  const instrumentPlan = parseInstrumentPlanFromFrontmatter(data.instrumentPlan);
+
+  const INSTRUMENT_GOGOL_MAP: Record<InstrumentId, string> = {
+    liveness: "2-check-liveness",
+    profile: "3-extract-profile",
+    axe: "5-audit-axe",
+    lighthouse: "4-audit-lighthouse",
+  };
+  for (const entry of instrumentPlan) {
+    if (entry.state === "required" && skipGogols.includes(INSTRUMENT_GOGOL_MAP[entry.instrument])) {
+      throw new Error(
+        `brief.md: instrument "${entry.instrument}" is required but its gogol "${INSTRUMENT_GOGOL_MAP[entry.instrument]}" is in skipGogols`,
+      );
+    }
+  }
+
   const getRequiredString = (value: unknown, name: string): string => {
     if (typeof value !== "string" || !value.trim()) {
       throw new Error(`brief.md: ${name} must be a non-empty string`);
@@ -60,5 +84,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     ontologyVersion,
     capsuleId,
     skipGogols,
+    instrumentPlan,
   };
 };

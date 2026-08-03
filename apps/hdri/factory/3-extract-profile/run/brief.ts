@@ -18,12 +18,17 @@
   <item>Update registryDbPath comment to reference 1-register-businesses instead of catalog-harvest.</item>
   <item>Bound domCacheSize to 1..64 for production quarter runs.</item>
   <item>Revise domCacheSize comment to document realistic per-DOM RAM cost (~1–3 MB) and warn that 100k pages ≈ 100–300 GB.</item>
+  <item>RFC-0046: add instrumentPlan field parsed from brief frontmatter.</item>
 </CHANGE_SUMMARY>
 */
 
 import matter from "gray-matter";
 import { parseSourceToken, getDeviceId } from "@syrokomskyi/observatory-crypto";
-import { assertCapsuleId } from "@syrokomskyi/factory-core";
+import {
+  assertCapsuleId,
+  parseInstrumentPlanFromFrontmatter,
+  type InstrumentPlanEntry,
+} from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -76,6 +81,8 @@ export type Brief = {
    * operator explicitly enabling it (with a lawful basis). Default: false.
    */
   collectImpressumContacts: boolean;
+  /** Instrument plan for this quarter. Defaults to Lighthouse disabled. */
+  instrumentPlan: InstrumentPlanEntry[];
 };
 
 // ---------------------------------------------------------------------------
@@ -146,5 +153,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     skipGogols: getStringArray(data.skipGogols),
     domCacheSize,
     collectImpressumContacts: data.collectImpressumContacts === true,
+    instrumentPlan: parseInstrumentPlanFromFrontmatter(data.instrumentPlan),
   };
 };
