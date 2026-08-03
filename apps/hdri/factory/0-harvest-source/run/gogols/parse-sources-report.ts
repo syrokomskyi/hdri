@@ -18,6 +18,7 @@ import type { BatchReport, FileResult } from "./parse-sources-types.js";
 
 export const accumulateFileResult = (report: BatchReport, result: FileResult): void => {
   report.sourceFiles.push(result.stat);
+  report.noUrlWarnings += result.noUrlWarnings;
   report.skipSummary.noUrl += result.skipSummary.noUrl;
   report.skipSummary.badUrl += result.skipSummary.badUrl;
   report.skipSummary.stopDomain += result.skipSummary.stopDomain;

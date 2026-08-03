@@ -27,6 +27,6 @@ describe("parse source QC arithmetic", () => {
     };
     accumulateFileResult(report, result);
     expect(report.skipSummary).toEqual({ noUrl: 1, badUrl: 1, stopDomain: 1 });
-    expect(report.noUrlWarnings).toBe(0);
+    expect(report.noUrlWarnings).toBe(2);
   });
 });
