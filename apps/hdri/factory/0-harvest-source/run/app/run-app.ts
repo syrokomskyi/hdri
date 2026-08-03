@@ -16,25 +16,94 @@
 </CHANGE_SUMMARY>
 */
 
+import path from "node:path";
+import matter from "gray-matter";
 import {
   createPipelineExecutionGuide,
   formatPipelineFinished,
   formatPipelineOverview,
   formatPipelineStart,
 } from "@syrokomskyi/pipeline-core";
-import { ensureOutputDir } from "@syrokomskyi/pipeline-node/context";
+import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
+import { ensureOutputDir, fileExists, readTextFile } from "@syrokomskyi/pipeline-node/context";
+import { validateBriefConsistency } from "@syrokomskyi/factory-core";
 import { inputDir, outputRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
 import { bootstrapBatches } from "./input/bootstrap-batches.js";
 import { bootstrapBrief } from "./input/bootstrap-brief.js";
 
+const isFirstQuarter =
+  process.argv.includes("--first-quarter") || process.env.FIRST_QUARTER === "true";
+
+const readSiblingBriefField = async (
+  briefPath: string,
+  briefName: string,
+): Promise<{ period: string; capsuleId: string }> => {
+  const exists = await fileExists(briefPath);
+  if (!exists) {
+    throw new PipelinePauseError(
+      [
+        "Pipeline paused.",
+        `${briefName} brief not found at ${briefPath}.`,
+        "Set up all briefs before running the factory per RUNBOOK pre-flight checklist.",
+      ].join("\n"),
+    );
+  }
+  const raw = await readTextFile(briefPath);
+  const parsed = matter(raw);
+  const data = parsed.data as Record<string, unknown>;
+  const period = typeof data.period === "string" ? data.period.trim().toLowerCase() : "";
+  const capsuleId = typeof data.capsuleId === "string" ? data.capsuleId.trim().toLowerCase() : "";
+  if (!period || !capsuleId) {
+    throw new PipelinePauseError(
+      [
+        "Pipeline paused.",
+        `${briefName} brief at ${briefPath} is missing period or capsuleId.`,
+        "Ensure both fields are set.",
+      ].join("\n"),
+    );
+  }
+  return { period, capsuleId };
+};
+
 export const runApp = async (options: PipelineRunOptions = {}): Promise<void> => {
   await ensureOutputDir(inputDir);
   await ensureOutputDir(outputRootDir);
 
   const { brief, rootBrief } = await bootstrapBrief();
-  const { batchNames, discovery } = await bootstrapBatches(brief);
+
+  // Pre-flight consistency guard (RFC-0043)
+  const factoryRootDir = path.resolve(inputDir, "..");
+  const contractOntologyBriefPath = path.join(
+    factoryRootDir,
+    "a-contract-ontology",
+    ".input",
+    "brief.md",
+  );
+  const observatoryBriefPath = path.resolve(
+    factoryRootDir,
+    "..",
+    "observatory",
+    ".input",
+    "brief.md",
+  );
+  const contractOntologyBrief = await readSiblingBriefField(
+    contractOntologyBriefPath,
+    "Contract ontology",
+  );
+  const observatoryBrief = await readSiblingBriefField(observatoryBriefPath, "Observatory");
+  const priorCapsulesExists = await fileExists(path.join(inputDir, "prior-capsules.json"));
+
+  validateBriefConsistency({
+    factoryRootBrief: { sourceToken: brief.sourceToken, capsuleId: brief.capsuleId },
+    contractOntologyBrief,
+    observatoryBrief,
+    priorCapsulesExists,
+    isFirstQuarter,
+  });
+
+  const { batchNames, discovery } = await bootstrapBatches(brief, isFirstQuarter);
 
   console.log(`\n[catalog-harvest] Batches found: ${batchNames.join(", ")}`);
   console.log(`[catalog-harvest] maxPages: ${brief.maxPages}\n`);

@@ -18,6 +18,7 @@
 
 import matter from "gray-matter";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import { assertCapsuleId } from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -25,6 +26,8 @@ export type Brief = {
    * Sole axis of idempotency for the factory pipeline (Phase A onwards).
    */
   sourceToken: string;
+  /** UUID v7 shared by every stage of this quarter. */
+  capsuleId: string;
   /**
    * Path to the zipcodes JSON file for geographic analysis.
    * Relative to app root or absolute path.
@@ -79,6 +82,9 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   }
   const parsedToken = parseSourceToken(sourceTokenRaw);
 
+  const capsuleId = typeof data.capsuleId === "string" ? data.capsuleId.trim().toLowerCase() : "";
+  assertCapsuleId(capsuleId);
+
   // zipcodesTablePath
   const zipcodesTablePath =
     typeof data.zipcodesTablePath === "string" ? data.zipcodesTablePath.trim() || null : null;
@@ -100,6 +106,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   return {
     sourceToken: parsedToken.raw,
+    capsuleId,
     zipcodesTablePath,
     exclude,
     maxPages,

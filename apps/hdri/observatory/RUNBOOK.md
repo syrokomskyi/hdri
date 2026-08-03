@@ -42,7 +42,7 @@ Key settings:
 
 ```yaml
 ---
-sourceToken: "2026-Q2-DE"
+sourceToken: "2026-q2-de-05"
 outputLanguage: de
 period: "2026-q3"
 capsuleId: "019..." # the same UUID v7 used by every Factory stage
@@ -83,10 +83,7 @@ pnpm start
 
 A run no longer publishes. It writes the whole quarter into a **staging** DB (`.output/db/staging/observatory_YYYY.db`), seeded as a consistent copy of the current canonical DB so prior quarters are preserved. The finished run is a `candidate` — the dashboard-facing `.output/db/observatory_YYYY.db` is untouched.
 
-After promotion and publication artifacts are complete, Observatory performs the
-sole final capsule seal. The resulting `capsule-manifest.json` verifies every
-root-relative artifact and `capsule-signature.json` authenticates that manifest.
-Factory staging output alone is not a sealed scientific quarter.
+After promotion and publication artifacts are complete, Observatory performs the sole final capsule seal. The resulting `capsule-manifest.json` verifies every root-relative artifact and `capsule-signature.json` authenticates that manifest. Factory staging output alone is not a sealed scientific quarter.
 
 ### 4a. Gate + promote to canonical (WP8)
 

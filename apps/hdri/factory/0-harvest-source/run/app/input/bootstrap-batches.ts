@@ -33,7 +33,10 @@ export type BootstrappedBatches = {
 
 const PRIOR_CAPSULES_PATH = "prior-capsules.json";
 
-export const discoverLedger = async (sourceToken: string): Promise<LedgerDiscoveryResult> => {
+export const discoverLedger = async (
+  sourceToken: string,
+  isFirstQuarter = false,
+): Promise<LedgerDiscoveryResult> => {
   // Phase 1: Read prior-capsules.json for prior sealed capsule segments
   const priorCapsulesPath = `${inputDir}/${PRIOR_CAPSULES_PATH}`;
   let priorRefs: PriorCapsuleRef[] = [];
@@ -57,7 +60,19 @@ export const discoverLedger = async (sourceToken: string): Promise<LedgerDiscove
         ].join("\n"),
       );
     }
-    // First quarter — no prior capsules
+    if (!isFirstQuarter) {
+      throw new PipelinePauseError(
+        [
+          "Pipeline paused.",
+          "prior-capsules.json not found.",
+          "If this is NOT the first quarter, run `pnpm quarter:init` in the observatory.",
+          "If this IS the first quarter, pass --first-quarter or set FIRST_QUARTER=true.",
+        ].join("\n"),
+      );
+    }
+    console.warn(
+      "[bootstrap] WARNING: prior-capsules.json not found. Running in first-quarter mode.",
+    );
   }
 
   // Phase 2: Collect batch IDs from prior capsules
@@ -96,8 +111,11 @@ export const discoverLedger = async (sourceToken: string): Promise<LedgerDiscove
   };
 };
 
-export const bootstrapBatches = async (brief: Brief): Promise<BootstrappedBatches> => {
-  const discovery = await discoverLedger(brief.sourceToken);
+export const bootstrapBatches = async (
+  brief: Brief,
+  isFirstQuarter = false,
+): Promise<BootstrappedBatches> => {
+  const discovery = await discoverLedger(brief.sourceToken, isFirstQuarter);
 
   console.log(
     `[bootstrap] Discovery: ${discovery.currentBatchIds.length} batch(es) ` +

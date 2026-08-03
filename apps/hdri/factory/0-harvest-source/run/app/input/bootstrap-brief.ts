@@ -34,7 +34,13 @@ export type BootstrappedBrief = {
   rootBrief: Brief;
 };
 
-const briefTemplate = ["---", 'sourceToken: "2026-q2-de"', "---", ""].join("\n");
+const briefTemplate = [
+  "---",
+  'sourceToken: "2026-q2-de"',
+  'capsuleId: "0198f000-0000-7000-8000-000000000000" # UUID v7',
+  "---",
+  "",
+].join("\n");
 
 export const bootstrapBrief = async (): Promise<BootstrappedBrief> => {
   // 1. Read root (factory-level) brief if it exists

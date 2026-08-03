@@ -31,6 +31,16 @@ A historical frame head covers exactly its signed `includedBatchIds`. Later quar
 
 The combined batch set (prior batch IDs + current sourceToken) is passed to the pipeline as `LedgerDiscoveryResult`. Single-folder scanning of `.input/batches` for prior quarters is explicitly forbidden.
 
+## Pre-flight consistency guard (RFC-0043)
+
+`0-harvest-source/run/app/run-app.ts` calls `validateBriefConsistency()` from `@syrokomskyi/factory-core` after `bootstrapBrief()` and before `bootstrapBatches()`. The guard checks:
+
+1. `capsuleId` matches across factory root brief, `a-contract-ontology` brief, and observatory brief.
+2. `sourceToken` period matches `contractOntologyBrief.period` and `observatoryBrief.period`.
+3. `prior-capsules.json` exists unless `--first-quarter` / `FIRST_QUARTER=true` is set.
+
+If any check fails, the pipeline pauses with an actionable error message. All three briefs must be set up before running any factory pipeline per the RUNBOOK pre-flight checklist.
+
 ## Pipeline structure
 
 The factory pipeline is a chain of **workspace applications**, not a single monolithic app. Each is a **crawl factory** component — it collects raw signals and emits them for downstream consumption by `apps/hdri/observatory`.
