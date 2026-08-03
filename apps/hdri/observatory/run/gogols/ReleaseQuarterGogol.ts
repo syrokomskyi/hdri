@@ -1,8 +1,8 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Releases the validated capsule: replicates artifacts, publishes public archive, and signs QuarterReleaseManifest.</purpose>
+<purpose>Releases the validated capsule: replicates artifacts, runs rebuild verification, publishes public archive, and signs QuarterReleaseManifest.</purpose>
 <non-goals>
-  <item>Does not validate — use ValidateQuarterGogol.</item>
+  <item>Does not validate scientific reports — use ValidateQuarterGogol.</item>
   <item>Does not seal — use SealCapsuleGogol.</item>
 </non-goals>
 </MODULE_CONTRACT>
@@ -50,16 +50,13 @@ export class ReleaseQuarterGogol extends Gogol {
     const publicArchiveDir = path.join(process.cwd(), "public-archive");
 
     const { execFileSync } = await import("node:child_process");
+    const toolsDir = path.join(import.meta.dirname, "..", "..", "tools");
     execFileSync(
-      "pnpm",
+      process.execPath,
       [
-        "--filter",
-        "@syrokomskyi/observatory",
-        "exec",
+        "--import",
         "tsx",
-        "--tsconfig",
-        "tsconfig.json",
-        "tools/quarter-release.ts",
+        path.join(toolsDir, "quarter-release.ts"),
         "--capsule",
         manifestPath,
         "--validation",
@@ -71,10 +68,7 @@ export class ReleaseQuarterGogol extends Gogol {
         "--public-archive-dir",
         publicArchiveDir,
       ],
-      {
-        stdio: "pipe",
-        cwd: process.cwd(),
-      },
+      { stdio: "pipe", cwd: process.cwd() },
     );
   }
 }

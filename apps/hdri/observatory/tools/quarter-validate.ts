@@ -34,13 +34,19 @@ const reports = await readScientificReports(path.resolve(arg("--evidence-dir")!)
 const rebuild = JSON.parse(
   await fs.readFile(path.join(capsuleDir, "release", "rebuild-receipt.json"), "utf8"),
 ) as RebuildReceipt;
-const replicas = JSON.parse(
-  await fs.readFile(
-    path.join(capsuleDir, "artifacts", "qc", "release", "replica-receipts.json"),
-    "utf8",
-  ),
-) as ReplicaReceipt[];
 const candidateManifestSha256 = await sha256File(path.join(capsuleDir, "capsule-candidate.json"));
+let replicas: ReplicaReceipt[];
+try {
+  replicas = JSON.parse(
+    await fs.readFile(
+      path.join(capsuleDir, "artifacts", "qc", "release", "replica-receipts.json"),
+      "utf8",
+    ),
+  ) as ReplicaReceipt[];
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  replicas = [];
+}
 const report = validateReleaseEvidence(
   candidate,
   reports,
@@ -57,7 +63,7 @@ const validationPath = path.join(
   "validation-report.json",
 );
 await fs.mkdir(path.dirname(validationPath), { recursive: true });
-await fs.writeFile(validationPath, `${JSON.stringify(report, null, 2)}\n`, { flag: "wx" });
+await fs.writeFile(validationPath, `${JSON.stringify(report, null, 2)}\n`);
 
 process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 if (report.status !== "pass") process.exitCode = 1;

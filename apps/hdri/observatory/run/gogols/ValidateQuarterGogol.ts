@@ -1,9 +1,10 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Validates the sealed capsule: generates scientific QC reports, rebuild receipt, and QuarterValidationReport.</purpose>
+<purpose>Validates the sealed capsule: generates 8 scientific QC reports and produces a QuarterValidationReport.</purpose>
 <non-goals>
   <item>Does not seal the capsule — use SealCapsuleGogol.</item>
-  <item>Does not publish or sign the release manifest — use ReleaseQuarterGogol.</item>
+  <item>Does not create replicas or publish — use ReleaseQuarterGogol.</item>
+  <item>Does not run rebuild verification — that is done by quarter:release after replicas exist.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
@@ -43,30 +44,26 @@ export class ValidateQuarterGogol extends Gogol {
     await fs.mkdir(evidenceDir, { recursive: true });
 
     const { execFileSync } = await import("node:child_process");
-    const tsxBase = ["--tsconfig", "tsconfig.json"];
+    const toolsDir = path.join(import.meta.dirname, "..", "..", "tools");
     const runTool = (tool: string, toolArgs: string[]): void => {
-      execFileSync(
-        "pnpm",
-        ["--filter", "@syrokomskyi/observatory", "exec", "tsx", ...tsxBase, tool, ...toolArgs],
-        {
-          stdio: "pipe",
-          cwd: process.cwd(),
-        },
-      );
+      execFileSync(process.execPath, ["--import", "tsx", path.join(toolsDir, tool), ...toolArgs], {
+        stdio: "pipe",
+        cwd: process.cwd(),
+      });
     };
 
     const scientificReports = [
-      "q2-restore.ts",
-      "source-qc.ts",
-      "classification-qc.ts",
-      "methodology-compare.ts",
-      "availability-report.ts",
-      "privacy-review.ts",
-      "methodology-snapshot.ts",
-      "reconcile-counts.ts",
+      "scientific-reports/q2-restore.ts",
+      "scientific-reports/source-qc.ts",
+      "scientific-reports/classification-qc.ts",
+      "scientific-reports/methodology-compare.ts",
+      "scientific-reports/availability-report.ts",
+      "scientific-reports/privacy-review.ts",
+      "scientific-reports/methodology-snapshot.ts",
+      "scientific-reports/reconcile-counts.ts",
     ];
     for (const report of scientificReports) {
-      runTool(path.join("tools", "scientific-reports", report), [
+      runTool(report, [
         "--period",
         ctx.state.brief.period,
         "--capsule-id",
@@ -76,27 +73,6 @@ export class ValidateQuarterGogol extends Gogol {
       ]);
     }
 
-    runTool("tools/quarter-rebuild-verify.ts", [
-      "--candidate",
-      path.join(capsuleDir, "capsule-candidate.json"),
-      "--scratch",
-      path.join(capsuleDir, "..", "scratch-rebuild"),
-      "--prepare",
-    ]);
-    runTool("tools/quarter-rebuild-verify.ts", [
-      "--candidate",
-      path.join(capsuleDir, "capsule-candidate.json"),
-      "--scratch",
-      path.join(capsuleDir, "..", "scratch-rebuild"),
-      "--primary-public",
-      path.join(capsuleDir, "artifacts", "publication"),
-    ]);
-
-    runTool("tools/quarter-validate.ts", [
-      "--candidate",
-      manifestPath,
-      "--evidence-dir",
-      evidenceDir,
-    ]);
+    runTool("quarter-validate.ts", ["--candidate", manifestPath, "--evidence-dir", evidenceDir]);
   }
 }

@@ -82,16 +82,6 @@ const sealedCapsule = JSON.parse(await fs.readFile(capsuleManifestPath, "utf8"))
 if (sealedCapsule.state !== "sealed") throw new Error("Release requires a sealed capsule manifest");
 await verifyQuarterCapsuleArtifacts(capsuleDir, sealedCapsule);
 
-const validation = JSON.parse(await fs.readFile(validationPath, "utf8")) as QuarterValidationReport;
-if (
-  validation.schemaVersion !== "1" ||
-  validation.period !== sealedCapsule.period ||
-  validation.capsuleId !== sealedCapsule.capsuleId ||
-  validation.status !== "pass"
-) {
-  throw new Error("Validation report must be a pass for this capsule");
-}
-
 if (replicaConfig.length < 2)
   throw new Error("At least two offsite replica destinations are required");
 const destinationRoots = replicaConfig.map((item) => path.resolve(item.destinationDir));
@@ -227,6 +217,31 @@ try {
     status: "pass",
   }));
   await commitImmutable(replicaReceiptsPath, `${JSON.stringify(replicaReceipts, null, 2)}\n`);
+}
+
+// Re-validate now that replica receipts exist.
+const { execFileSync } = await import("node:child_process");
+execFileSync(
+  process.execPath,
+  [
+    "--import",
+    "tsx",
+    path.join(import.meta.dirname, "quarter-validate.ts"),
+    "--candidate",
+    path.join(capsuleDir, "capsule-candidate.json"),
+    "--evidence-dir",
+    releaseQcDir,
+  ],
+  { stdio: "pipe" },
+);
+const validation = JSON.parse(await fs.readFile(validationPath, "utf8")) as QuarterValidationReport;
+if (
+  validation.schemaVersion !== "1" ||
+  validation.period !== sealedCapsule.period ||
+  validation.capsuleId !== sealedCapsule.capsuleId ||
+  validation.status !== "pass"
+) {
+  throw new Error("Validation report must be a pass for this capsule");
 }
 
 const publicArchiveDir = path.join(
