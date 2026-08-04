@@ -34,6 +34,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `quarter:validate` | `tsx -C @syrokomskyi/source tools/quarter-validate.ts` |
 | `quarter:release` | `tsx -C @syrokomskyi/source tools/quarter-release.ts` |
 | `quarter:seal-legacy` | `tsx -C @syrokomskyi/source tools/quarter-seal-legacy.ts` |
+| `quarter:init` | `tsx -C @syrokomskyi/source tools/quarter-init.ts` |
 | `promote` | `tsx -C @syrokomskyi/source tools/promote-to-canonical.ts` |
 | `gc:superseded` | `tsx -C @syrokomskyi/source tools/gc-superseded.ts` |
 | `tier:obs-json` | `tsx -C @syrokomskyi/source tools/tier-obs-json.ts` |
