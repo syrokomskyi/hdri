@@ -104,11 +104,37 @@ factoryContractRootDir: "../factory/a-contract-ontology"
     ).toThrow("period");
   });
 
+  it("throws on missing codebookId", () => {
+    expect(() =>
+      parseBriefMarkdown(`---
+outputLanguage: de
+period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+factoryContractRootDir: "../factory/a-contract-ontology"
+---
+`),
+    ).toThrow("codebookId");
+  });
+
+  it("throws on deprecated codebookVersion field", () => {
+    expect(() =>
+      parseBriefMarkdown(`---
+outputLanguage: de
+period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+codebookVersion: "observatory-v1"
+factoryContractRootDir: "../factory/a-contract-ontology"
+---
+`),
+    ).toThrow("deprecated");
+  });
+
   it("uses defaults for optional fields", () => {
     const brief = parseBriefMarkdown(`---
 outputLanguage: de
 period: "2025-Q2"
 capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+codebookId: "observatory-v1"
 factoryContractRootDir: "../factory/a-contract-ontology"
 ---
 `);

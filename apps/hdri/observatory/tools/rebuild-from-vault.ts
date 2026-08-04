@@ -121,7 +121,7 @@ async function main(): Promise<void> {
   );
 
   db.prepare(
-    `INSERT OR IGNORE INTO pipeline_runs
+    `INSERT OR REPLACE INTO pipeline_runs
        (run_id, pipeline_app, pipeline_version, period, ontology_version, codebook_id, codebook_version, started_at, status, publication_status)
      VALUES (?, 'observatory', 'rebuild', ?, ?, ?, ?, ?, 'finished', 'candidate')`,
   ).run(runId, period, ontologyVersion, codebook.id, codebook.version, new Date().toISOString());

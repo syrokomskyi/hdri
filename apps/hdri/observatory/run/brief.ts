@@ -10,6 +10,7 @@
   <item>Initial creation of brief parser for observatory.</item>
   <item>Normalize period to lowercase — lowercase yyyy-qn is canonical across factory and observatory.</item>
   <item>Use one capsule-addressed Factory discovery path and remove all legacy fallbacks.</item>
+  <item>Rename codebookVersion → codebookId; reject deprecated codebookVersion field instead of silently accepting it.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -61,8 +62,15 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   const period = periodRaw.toLowerCase();
 
   const ontologyVersion = getString(data.ontologyVersion) ?? "1.0.0";
-  const codebookId =
-    getString(data.codebookId) ?? getString(data.codebookVersion) ?? "observatory-v1";
+  const codebookId = getString(data.codebookId);
+  if (!codebookId) {
+    if (data.codebookVersion !== undefined) {
+      throw new Error(
+        "brief.md: codebookVersion is deprecated — rename to codebookId (holds the codebook id, not the scoring version)",
+      );
+    }
+    throw new Error('brief.md: missing required field: codebookId (e.g. "observatory-v1")');
+  }
   const capsuleId = getString(data.capsuleId);
   if (
     !capsuleId ||
