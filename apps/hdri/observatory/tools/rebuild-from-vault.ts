@@ -105,12 +105,6 @@ async function main(): Promise<void> {
     runId,
     now: new Date().toISOString(),
   });
-  db.prepare(
-    `INSERT OR IGNORE INTO pipeline_runs
-       (run_id, pipeline_app, pipeline_version, period, ontology_version, codebook_version, started_at, status, publication_status)
-     VALUES (?, 'observatory', 'rebuild', ?, ?, '', ?, 'finished', 'candidate')`,
-  ).run(runId, period, ontologyVersion, new Date().toISOString());
-
   console.log(`   ✓ observations rebuilt: ${insertedObs}`);
   console.log(`   ✓ asset_states rebuilt: ${insertedStates}`);
 
@@ -125,6 +119,12 @@ async function main(): Promise<void> {
     `   ✓ re-scored: ${summary.scored} scored, ${summary.skipped} skipped ` +
       `(codebook ${codebook.id} v${codebook.version})`,
   );
+
+  db.prepare(
+    `INSERT OR IGNORE INTO pipeline_runs
+       (run_id, pipeline_app, pipeline_version, period, ontology_version, codebook_id, codebook_version, started_at, status, publication_status)
+     VALUES (?, 'observatory', 'rebuild', ?, ?, ?, ?, ?, 'finished', 'candidate')`,
+  ).run(runId, period, ontologyVersion, codebook.id, codebook.version, new Date().toISOString());
 
   // 4. Optional integrity gate: compare computation_hashes against a source DB run.
   let exitCode = 0;

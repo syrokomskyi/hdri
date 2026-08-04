@@ -65,7 +65,7 @@ outputLanguage: de
 period: "2025-Q2"
 capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
 ontologyVersion: "1.0.0"
-codebookVersion: "observatory-v1.0.0"
+codebookId: "observatory-v1"
 factoryContractRootDir: "../factory/a-contract-ontology"
 publicMode: false
 skipGogols: []
@@ -77,7 +77,7 @@ Digital Observatory run brief.
     expect(brief.outputLanguage).toBe("de");
     expect(brief.period).toBe("2025-q2");
     expect(brief.ontologyVersion).toBe("1.0.0");
-    expect(brief.codebookVersion).toBe("observatory-v1.0.0");
+    expect(brief.codebookId).toBe("observatory-v1");
     expect(brief.publicMode).toBe(false);
     expect(brief.skipGogols).toEqual([]);
   });
@@ -113,7 +113,7 @@ factoryContractRootDir: "../factory/a-contract-ontology"
 ---
 `);
     expect(brief.ontologyVersion).toBe("1.0.0");
-    expect(brief.codebookVersion).toBe("hdri-v1.0.0");
+    expect(brief.codebookId).toBe("observatory-v1");
     expect(brief.capsuleId).toMatch(/-7/);
     expect(brief.publicMode).toBe(false);
   });

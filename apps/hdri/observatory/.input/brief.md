@@ -5,7 +5,7 @@ capsuleId: "0198f000-0000-7000-8000-000000000000"
 factoryContractRootDir: "../factory/a-contract-ontology"
 vaultDir: ".output/vault"
 ontologyVersion: "1.0.0"
-codebookVersion: "observatory-v1"
+codebookId: "observatory-v1"
 publicMode: false
 skipGogols: []
 ---

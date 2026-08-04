@@ -102,6 +102,13 @@ export class ScoreHdriGogol extends Gogol {
       // frozen per-period methodology snapshot (codebook + ontology + frame) is complete.
       const frameSha256 = await readFrameSha256();
       writeRunMethodology(db, runId, methodology, now, frameSha256);
+
+      // Update pipeline_runs.codebook_version from the placeholder (codebook id) to the
+      // real scoring version, so pipeline_runs carries the fact, not the intent.
+      db.prepare(`UPDATE pipeline_runs SET codebook_version = ? WHERE run_id = ?`).run(
+        codebook.version,
+        runId,
+      );
     } finally {
       db.close();
     }

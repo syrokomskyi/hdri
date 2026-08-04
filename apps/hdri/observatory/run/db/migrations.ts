@@ -496,4 +496,16 @@ export const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    id: 12,
+    name: "pipeline-runs-codebook-id",
+    up: (db) => {
+      // Separate the codebook *id* (intent, from brief) from the codebook *version*
+      // (fact, from scoring). codebook_version is NOT NULL from migration 1 and stays
+      // as a placeholder (the codebook id) until ScoreHdriGogol updates it to the real
+      // scoring version. Old rows get codebook_id = NULL; backfill from scores or
+      // run_methodology if needed.
+      addColumnIfMissing(db, "pipeline_runs", "codebook_id", "TEXT");
+    },
+  },
 ];

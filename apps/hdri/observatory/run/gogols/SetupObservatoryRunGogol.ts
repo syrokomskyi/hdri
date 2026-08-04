@@ -70,8 +70,8 @@ export class SetupObservatoryRunGogol extends Gogol {
       db.prepare(
         `
         INSERT INTO pipeline_runs
-          (run_id, pipeline_app, pipeline_version, period, ontology_version, codebook_version, started_at, status, publication_status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'running', 'candidate')
+          (run_id, pipeline_app, pipeline_version, period, ontology_version, codebook_id, codebook_version, started_at, status, publication_status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'running', 'candidate')
       `,
       ).run(
         runId,
@@ -79,7 +79,8 @@ export class SetupObservatoryRunGogol extends Gogol {
         SCHEMA_VERSION,
         ctx.state.brief.period,
         ctx.state.brief.ontologyVersion,
-        ctx.state.brief.codebookVersion,
+        ctx.state.brief.codebookId,
+        ctx.state.brief.codebookId,
         startedAt,
       );
     } finally {
@@ -96,7 +97,8 @@ export class SetupObservatoryRunGogol extends Gogol {
           run_id: runId,
           period: ctx.state.brief.period,
           ontology_version: ctx.state.brief.ontologyVersion,
-          codebook_version: ctx.state.brief.codebookVersion,
+          codebook_id: ctx.state.brief.codebookId,
+          codebook_version: ctx.state.brief.codebookId,
           started_at: startedAt,
           publication_status: "candidate",
         },

@@ -19,7 +19,8 @@ export type Brief = {
   outputLanguage: string;
   period: string;
   ontologyVersion: string;
-  codebookVersion: string;
+  /** Codebook identifier (e.g. "observatory-v1") — NOT the scoring version. */
+  codebookId: string;
   /** UUID v7 of the exact Factory capsule consumed by this Observatory run. */
   capsuleId: string;
   /** Root directory of the a-contract-ontology workspace. */
@@ -60,9 +61,13 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   const period = periodRaw.toLowerCase();
 
   const ontologyVersion = getString(data.ontologyVersion) ?? "1.0.0";
-  const codebookVersion = getString(data.codebookVersion) ?? "hdri-v1.0.0";
+  const codebookId =
+    getString(data.codebookId) ?? getString(data.codebookVersion) ?? "observatory-v1";
   const capsuleId = getString(data.capsuleId);
-  if (!capsuleId || !/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(capsuleId)) {
+  if (
+    !capsuleId ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(capsuleId)
+  ) {
     throw new Error("brief.md: capsuleId must be a UUID v7");
   }
   const factoryContractRootDir = getString(data.factoryContractRootDir);
@@ -76,7 +81,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     outputLanguage,
     period,
     ontologyVersion,
-    codebookVersion,
+    codebookId,
     capsuleId,
     factoryContractRootDir,
     vaultDir,
