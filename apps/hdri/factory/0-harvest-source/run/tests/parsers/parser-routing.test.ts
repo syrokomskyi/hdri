@@ -14,7 +14,8 @@ describe("getParserForSource routing", () => {
 
   it("routes external domain in nested structure to UnknownSourceParser", () => {
     const parser = getParserForSource("www.stadtbranchenbuch.com/30grad-solar.com");
-    expect(parser.sourceId).toBe("unknown:www.stadtbranchenbuch.com/30grad-solar.com");
+    expect(parser.sourceId).toBe("www.stadtbranchenbuch.com/30grad-solar.com");
+    expect(parser.constructor.name).toBe("UnknownSourceParser");
   });
 
   it("routes backnang.stadtbranchenbuch.com to BacknangStadtbranchenbuchComParser", () => {

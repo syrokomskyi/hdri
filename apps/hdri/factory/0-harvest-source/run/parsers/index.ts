@@ -48,18 +48,35 @@ const sourceParsers: SourceParser[] = [
  * Returns UnknownSourceParser if no specific parser is found.
  */
 export function getParserForSource(sourceId: string): SourceParser {
-  // Split into segments (e.g. "www.stadtbranchenbuch.com/darmstadt.stadtbranchenbuch.com" -> ["www.stadtbranchenbuch.com", "darmstadt.stadtbranchenbuch.com"])
   const segments = sourceId.split("/");
 
-  // Try exact match on joined segments from deepest to shallowest
-  for (let i = segments.length - 1; i >= 0; i--) {
+  if (segments.length === 1) {
+    // Single segment: try exact match, then subdomain pattern
+    const parser = sourceParsers.find((p) => p.sourceId === segments[0]);
+    if (parser) return parser;
+
+    if (
+      segments[0]!.endsWith(".stadtbranchenbuch.com") &&
+      segments[0] !== "www.stadtbranchenbuch.com"
+    ) {
+      const serpParser = sourceParsers.find((p) => p.sourceId === "backnang.stadtbranchenbuch.com");
+      if (serpParser) return serpParser;
+    }
+
+    return new UnknownSourceParser(sourceId);
+  }
+
+  // Multiple segments: try exact match on joined segments from deepest to shallowest,
+  // but skip the root segment (i=0) so external domains nested under a known source
+  // route to UnknownSourceParser instead of the root's parser
+  for (let i = segments.length - 1; i >= 1; i--) {
     const candidate = segments.slice(0, i + 1).join("/");
     const parser = sourceParsers.find((p) => p.sourceId === candidate);
     if (parser) return parser;
   }
 
-  // Fallback: check if any segment matches a known stadtbranchenbuch subdomain pattern
-  for (let i = segments.length - 1; i >= 0; i--) {
+  // Check deeper segments for stadtbranchenbuch subdomain pattern
+  for (let i = segments.length - 1; i >= 1; i--) {
     if (
       segments[i]!.endsWith(".stadtbranchenbuch.com") &&
       segments[i] !== "www.stadtbranchenbuch.com"
