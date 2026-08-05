@@ -14,6 +14,7 @@
   <item>Replace maxSites log with maxPages log.</item>
   <item>Pass rootBrief into pipeline initialState so gogols can read factory-level configuration.</item>
   <item>RFC-0043: wire validateBriefConsistency() guard after bootstrapBrief, before bootstrapBatches. Add --first-quarter / FIRST_QUARTER env var support.</item>
+  <item>RFC-0067: parse prior-capsules.json for capsuleIds and pass to guard.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -27,7 +28,7 @@ import {
 } from "@syrokomskyi/pipeline-core";
 import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
 import { ensureOutputDir, fileExists, readTextFile } from "@syrokomskyi/pipeline-node/context";
-import { validateBriefConsistency } from "@syrokomskyi/factory-core";
+import { validateBriefConsistency, parsePriorCapsulesFile } from "@syrokomskyi/factory-core";
 import { inputDir, outputRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
@@ -95,6 +96,11 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   );
   const observatoryBrief = await readSiblingBriefField(observatoryBriefPath, "Observatory");
   const priorCapsulesExists = await fileExists(path.join(inputDir, "prior-capsules.json"));
+  const priorCapsuleIds = priorCapsulesExists
+    ? parsePriorCapsulesFile(
+        await readTextFile(path.join(inputDir, "prior-capsules.json")),
+      ).priorCapsules.map((e) => e.capsuleId)
+    : [];
 
   validateBriefConsistency({
     factoryRootBrief: { sourceToken: brief.sourceToken, capsuleId: brief.capsuleId },
@@ -102,6 +108,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
     observatoryBrief,
     priorCapsulesExists,
     isFirstQuarter,
+    priorCapsuleIds,
   });
 
   const { batchNames, discovery } = await bootstrapBatches(brief, isFirstQuarter);

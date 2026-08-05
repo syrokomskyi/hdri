@@ -38,6 +38,7 @@ The combined batch set (prior batch IDs + current sourceToken) is passed to the 
 1. `capsuleId` matches across factory root brief, `a-contract-ontology` brief, and observatory brief.
 2. `sourceToken` period matches `contractOntologyBrief.period` and `observatoryBrief.period`.
 3. `prior-capsules.json` exists unless `--first-quarter` / `FIRST_QUARTER=true` is set.
+4. `capsuleId` is not reused from a prior quarter (checked against `prior-capsules.json` entries).
 
 If any check fails, the pipeline pauses with an actionable error message. All three briefs must be set up before running any factory pipeline per the RUNBOOK pre-flight checklist.
 

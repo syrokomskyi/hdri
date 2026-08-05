@@ -23,7 +23,7 @@ Before starting any pipeline:
 - [ ] Upstream pipeline completed (if not first)
 - [ ] `.input/brief.md` created from `brief.example.md`
 - [ ] `sourceToken` uses correct format: `YYYY-Qn-CC[-extra]`
-- [ ] One UUID v7 `capsuleId` has been minted for the quarter and copied unchanged into every Factory and Observatory brief
+- [ ] One UUID v7 `capsuleId` has been minted for the quarter and copied unchanged into every Factory and Observatory brief (uniqueness against prior quarters is checked automatically)
 - [ ] The new quarter batch directory contains only newly received source files; prior batch directories and all prior `.output` data are unchanged
 - [ ] Input data files in correct locations
 - [ ] Sufficient disk space (estimate 1GB per 1000 sites)
