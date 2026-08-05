@@ -7,7 +7,9 @@
     "typecheck": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/0-harvest-source/tsconfig.json --pretty false",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
     "start": "tsx -C @syrokomskyi/source run/run.ts",
-    "test": "pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/0-harvest-source/vitest.config.ts"
+    "test": "pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/0-harvest-source/vitest.config.ts",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",
@@ -22,6 +24,7 @@
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.1.2",
+    "@warpgogol/changelog-live": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "cheerio": "^1.2.0",
     "csv-parse": "^7.0.2",

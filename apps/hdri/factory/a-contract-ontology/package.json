@@ -7,7 +7,9 @@
     "typecheck": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/a-contract-ontology/tsconfig.json --pretty false",
     "test": "pnpm exec vitest run",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
-    "start": "tsx -C @syrokomskyi/source run/run.ts"
+    "start": "tsx -C @syrokomskyi/source run/run.ts",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",
@@ -20,6 +22,7 @@
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.1.2",
+    "@warpgogol/changelog-live": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "gray-matter": "^4.0.3",

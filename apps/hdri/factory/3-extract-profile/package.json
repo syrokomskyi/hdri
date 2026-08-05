@@ -7,7 +7,9 @@
     "typecheck": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/3-extract-profile/tsconfig.json --pretty false",
     "test": "pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/3-extract-profile/vitest.config.ts",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
-    "start": "tsx -C @syrokomskyi/source --max-old-space-size=2048 run/run.ts"
+    "start": "tsx -C @syrokomskyi/source --max-old-space-size=2048 run/run.ts",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",
@@ -22,6 +24,7 @@
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.1.2",
+    "@warpgogol/changelog-live": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "cheerio": "1.2.0",
     "csv-stringify": "^6.8.3",
