@@ -168,11 +168,21 @@ pnpm turbo run start --filter=@syrokomskyi/catalog-harvest
 
 ### Troubleshooting
 
-| Problem            | Solution                                           |
-| ------------------ | -------------------------------------------------- |
-| CSV parsing errors | Check encoding (must be UTF-8), verify delimiter   |
-| HTML parsing fails | Ensure files are valid HTML, not binary MHTML      |
-| 0 sites imported   | Check file paths, verify batch directory structure |
+| Problem | Solution |
+| --- | --- |
+| CSV parsing errors | Check encoding (must be UTF-8), verify delimiter |
+| HTML parsing fails | Ensure files are valid HTML, not binary MHTML |
+| 0 sites imported | Check file paths, verify batch directory structure |
+| Pipeline paused: "Registered 0 site(s), threshold is 1" | Parser produced no registrations. Check parser output, fix source format issues, then clear `source_file_stats` table (or delete `core_YYYY.db`) and rerun. See RFC-0068. |
+
+If the pipeline pauses with "Registered N site(s), threshold is M", the fail-fast guard (RFC-0068) has triggered. This means `SELECT COUNT(*) FROM sites` returned fewer than `minSitesThreshold` (default: 1). To recover:
+
+1. Investigate the root cause (parser bug, source format change, stop domain filter).
+2. Fix the parser or source files.
+3. Clear `source_file_stats` table or delete `core_YYYY.db` to force re-parsing.
+4. Rerun the pipeline.
+
+Do NOT set `minSitesThreshold: 0` to bypass the guard in production.
 
 ---
 
