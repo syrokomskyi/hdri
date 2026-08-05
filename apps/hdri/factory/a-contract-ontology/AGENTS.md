@@ -41,12 +41,12 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 
 **External:**
 
-- `@types/better-sqlite3` `^7.6.13`
+- `@types/better-sqlite3` `^9.6.0`
 - `@types/node` `^26.1.2`
-- `better-sqlite3` `^13.0.2`
+- `better-sqlite3` `^13.0.3`
 - `dotenv` `^17.4.2`
 - `gray-matter` `^4.0.3`
-- `tsx` `^4.23.5`
+- `tsx` `^4.23.7`
 - `yaml` `^2.9.0`
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.

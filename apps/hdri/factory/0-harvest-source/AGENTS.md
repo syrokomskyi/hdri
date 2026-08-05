@@ -43,16 +43,16 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 
 **External:**
 
-- `@types/better-sqlite3` `^7.6.13`
+- `@types/better-sqlite3` `^9.6.0`
 - `@types/node` `^26.1.2`
-- `better-sqlite3` `^13.0.2`
+- `better-sqlite3` `^13.0.3`
 - `cheerio` `^1.2.0`
 - `csv-parse` `^7.0.2`
-- `csv-stringify` `^6.8.2`
+- `csv-stringify` `^6.8.3`
 - `dotenv` `^17.4.2`
 - `drizzle-orm` `^0.45.2`
 - `gray-matter` `^4.0.3`
 - `markdown-table` `^3.0.4`
-- `tsx` `^4.23.5`
+- `tsx` `^4.23.7`
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
