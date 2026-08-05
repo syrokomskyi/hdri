@@ -7,7 +7,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Rename Catalog to Source in the registry and factory.</item>
-  <item>Fix getParserForSource to match top-level source directory for nested files.</item>
+  <item>Rewrite getParserForSource with deepest-match routing for nested directory structures (RFC-0069).</item>
   <item>Register HandwerkernetParser for handwerkernet.de.</item>
   <item>Register Work5Parser for work5.de.</item>
   <item>
@@ -48,18 +48,28 @@ const sourceParsers: SourceParser[] = [
  * Returns UnknownSourceParser if no specific parser is found.
  */
 export function getParserForSource(sourceId: string): SourceParser {
-  // Extract the first segment if there are multiple segments (e.g. "domain.com/sub" -> "domain.com")
-  const rootSourceId = sourceId.split("/")[0]!;
+  // Split into segments (e.g. "www.stadtbranchenbuch.com/darmstadt.stadtbranchenbuch.com" -> ["www.stadtbranchenbuch.com", "darmstadt.stadtbranchenbuch.com"])
+  const segments = sourceId.split("/");
 
-  // Try exact match first (e.g. "www.stadtbranchenbuch.com" or "backnang.stadtbranchenbuch.com")
-  let parser = sourceParsers.find((p) => p.sourceId === rootSourceId);
-
-  // Fallback for other city subdomains (e.g. "frankfurt.stadtbranchenbuch.com" -> use the Backnang parser as a generic SERP parser)
-  if (!parser && rootSourceId.endsWith(".stadtbranchenbuch.com")) {
-    parser = sourceParsers.find((p) => p.sourceId === "backnang.stadtbranchenbuch.com");
+  // Try exact match on joined segments from deepest to shallowest
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const candidate = segments.slice(0, i + 1).join("/");
+    const parser = sourceParsers.find((p) => p.sourceId === candidate);
+    if (parser) return parser;
   }
 
-  return parser ?? new UnknownSourceParser(sourceId);
+  // Fallback: check if any segment matches a known stadtbranchenbuch subdomain pattern
+  for (let i = segments.length - 1; i >= 0; i--) {
+    if (
+      segments[i]!.endsWith(".stadtbranchenbuch.com") &&
+      segments[i] !== "www.stadtbranchenbuch.com"
+    ) {
+      const parser = sourceParsers.find((p) => p.sourceId === "backnang.stadtbranchenbuch.com");
+      if (parser) return parser;
+    }
+  }
+
+  return new UnknownSourceParser(sourceId);
 }
 
 export * from "./types.js";

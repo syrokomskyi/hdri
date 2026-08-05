@@ -9,6 +9,7 @@
 <CHANGE_SUMMARY>
   <item>Rename StadtbranchenbuchDetailParser to WwwStadtbranchenbuchComParser.</item>
   <item>Ignore noise files (favicons, technical artifacts).</item>
+  <item>Add DOM fallback for websiteUrl when JSON-LD url is absent (RFC-0069).</item>
 </CHANGE_SUMMARY>
 */
 
@@ -92,7 +93,7 @@ export class WwwStadtbranchenbuchComParser implements SourceParser {
       city: cityFromDom ?? city,
       phone,
       email: null,
-      websiteUrl: this.normalizeUrl(jsonLd?.url ?? null),
+      websiteUrl: this.normalizeUrl(jsonLd?.url ?? null) || this.extractWebsiteUrlFromDom($),
       category,
       sourceProfileUrl,
       raw: {
@@ -187,6 +188,44 @@ export class WwwStadtbranchenbuchComParser implements SourceParser {
       }
     });
     return phone;
+  }
+
+  private extractWebsiteUrlFromDom($: cheerio.CheerioAPI): string | null {
+    // Pattern 1: link with class "homepage" (same as SERP parser)
+    const homepageHref = $("a.homepage").first().attr("href")?.trim();
+    if (homepageHref) return this.normalizeUrl(homepageHref);
+
+    // Pattern 2: dl address block with "Webseite" or "Homepage" dt
+    let url: string | null = null;
+    $("dl dt").each((_, dt): false | void => {
+      const dtText = $(dt).text().trim().toLowerCase();
+      if (dtText === "webseite" || dtText === "homepage" || dtText === "website") {
+        const dd = $(dt).next("dd");
+        const href = dd.find("a").first().attr("href")?.trim();
+        if (href) {
+          url = href;
+          return false;
+        }
+      }
+    });
+    if (url) return this.normalizeUrl(url);
+
+    // Pattern 3: any anchor with rel="nofollow" that points to an external domain
+    // (stadtbranchenbuch wraps external business links in nofollow anchors)
+    // Filter out internal stadtbranchenbuch.com links to avoid extracting profile URLs as website URLs
+    const externalHref = $('a[rel="nofollow"]').first().attr("href")?.trim();
+    if (externalHref && /^https?:\/\//i.test(externalHref)) {
+      try {
+        const hostname = new URL(externalHref).hostname;
+        if (!hostname.endsWith(".stadtbranchenbuch.com")) {
+          return this.normalizeUrl(externalHref);
+        }
+      } catch {
+        // Invalid URL — skip this pattern.
+      }
+    }
+
+    return null;
   }
 
   private extractCategory($: cheerio.CheerioAPI): string | null {
