@@ -13,6 +13,7 @@
   <item>Phase B cleanup: remove deprecated harvestYear, harvestQuarter, batchToken fields.</item>
   <item>Enforce lowercase kebab-case validation on sourceToken.</item>
   <item>Replace maxSites with maxPages: maxPages limits total source files parsed across all batches (-1 = unlimited).</item>
+  <item>Add minSitesThreshold field for empty-quarter fail-fast guard (RFC-0068).</item>
 </CHANGE_SUMMARY>
 */
 
@@ -41,6 +42,8 @@ export type Brief = {
   skipGogols: string[];
   /** Max concurrent files to parse in parallel. */
   parserConcurrency: number;
+  /** Minimum total registered sites required before sealing (default: 1). Set to 0 to disable. */
+  minSitesThreshold: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -112,5 +115,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     maxPages,
     skipGogols: getStringArray(data.skipGogols),
     parserConcurrency: getFiniteNumber(data.parserConcurrency, "parserConcurrency") ?? 20,
+    minSitesThreshold: getFiniteNumber(data.minSitesThreshold, "minSitesThreshold") ?? 1,
   };
 };
