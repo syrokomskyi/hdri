@@ -57,7 +57,7 @@
     "@syrokomskyi/pipeline-node": "workspace:*",
     "@syrokomskyi/pipeline-steps": "workspace:*",
     "@syrokomskyi/utils": "workspace:*",
-    "@types/better-sqlite3": "^7.6.13",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.1.2",
     "better-sqlite3": "^13.0.3",
     "csv-parse": "^7.0.2",
@@ -72,7 +72,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@wgogol/changelog-live": "workspace:*",
-    "eslint": "~10.7.0",
+    "eslint": "~10.8.0",
     "typescript-eslint": "^8.66.0",
     "vitest": "4.1.10"
   }
