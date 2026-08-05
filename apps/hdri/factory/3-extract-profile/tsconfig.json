@@ -2,7 +2,7 @@
   "extends": "../../../../tsconfig.app.json",
   "$schema": "https://json.schemastore.org/tsconfig",
   "include": ["run/**/*.ts", "run/**/*.d.ts"],
-  "exclude": ["node_modules", "**/dist/**", "**/build/**", ".input", ".output"],
+  "exclude": ["node_modules", "**/dist/**", "**/build/**", ".input", ".output", "**/*.test.ts"],
   "references": [
     { "path": "../../../../packages/business/business-core" },
     { "path": "../../../../packages/business/business-crawler" },
