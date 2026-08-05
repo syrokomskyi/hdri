@@ -1,0 +1,65 @@
+# extract.config.yaml — HDRI multi-app project export
+# RFC-0070: @warpgogol/repo-extract
+
+projectDir: apps/hdri
+destName: hdri
+
+appDirs:
+  - apps/hdri/factory
+  - apps/hdri/observatory
+  - apps/hdri/dashboard
+
+projectRootFiles:
+  - README.md
+  - README.en.md
+  - CONTRIBUTING.md
+  - CONTRIBUTING.en.md
+  - CONTACT.md
+  - CONTACT.en.md
+  - GOVERNANCE.md
+  - GOVERNANCE.en.md
+  - METHODOLOGY.md
+  - METHODOLOGY.en.md
+  - CODE_OF_CONDUCT.md
+  - SECURITY.md
+  - LICENSE
+  - ONBOARDING_AI.md
+  - CHANGELOG.md
+  - CHANGELOG.en.md
+  - CHANGELOG_PUBLIC.md
+  - CHANGELOG_PUBLIC.en.md
+  - changelog.config.yaml
+
+extraGitignore:
+  - "# Signing key — never commit private key material"
+  - "apps/hdri/observatory/.input/signing-key/"
+  - ""
+  - "# Dashboard debug"
+  - "/src/assets/data/debug-csv/"
+
+batchDataDir: apps/hdri/factory/.input/batches
+
+# Codebook is copied with a fixed filename — version is inside the file.
+# Dashboard uses import.meta.glob for auto-discovery.
+postProcess:
+  - action: copy
+    from: apps/hdri/observatory/.input/codebook.yaml
+    to: apps/hdri/dashboard/src/assets/data/public/codebook.yaml
+  - action: copy
+    from: apps/hdri/observatory/.input/codebook.yaml
+    to: apps/hdri/dashboard/public/codebook.yaml
+  - action: patch
+    file: apps/hdri/dashboard/.gitignore
+    removeLinesMatching: "codebook"
+  - action: patch
+    file: apps/hdri/dashboard/src/data/dashboard-data.ts
+    find: "codebook-observatory-*.yaml"
+    replace: "codebook.yaml"
+
+git:
+  remote: git@github.com:syrokomskyi/hdri.git
+  autoPush: true
+
+copyDirs:
+  - .agents
+  - .github
