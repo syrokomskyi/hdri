@@ -9,6 +9,10 @@ capsuleId: "0198f000-0000-7000-8000-000000000000"
 
 # Path to zipcodes JSON table for geographic enrichment (shared factory-level index)
 zipcodesTablePath: zipcodes.de.json
+
+# Minimum total registered sites required before sealing (default: 1).
+# Set to 0 to disable the guard (testing only — never use in production).
+# minSitesThreshold: 1
 ---
 
 # Harvest Brief
