@@ -33,6 +33,7 @@
   <item>Migrate shared concurrency primitive import from @syrokomskyi/business-rate-limit to @syrokomskyi/rate-limit.</item>
   <item>File-size refactor: extracted domain types, DB helpers, and report/source-file helpers into separate modules; gogol class now focuses on orchestration.</item>
   <item>Seal accepted batches and ledger-bound frame manifests with Ed25519 signatures.</item>
+  <item>Add empty-quarter fail-fast guard (RFC-0068): check site count before materializeLedgerProjection.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -79,6 +80,7 @@ import {
 } from "./parse-sources-db.js";
 import { accumulateFileResult, readSourceFile, renderReportMd } from "./parse-sources-report.js";
 import type { BatchReport, FileResult } from "./parse-sources-types.js";
+import { checkMinSitesGuard } from "./check-min-sites-guard.js";
 
 // ---------------------------------------------------------------------------
 // Gogol
@@ -393,6 +395,7 @@ export class ParseSourcesGogol extends Gogol {
     }
 
     if (maxPages < 0) {
+      checkMinSitesGuard(db, brief.minSitesThreshold, maxPages);
       await materializeLedgerProjection(
         db,
         path.join(outputRootDir, "data", "source-ledger"),
