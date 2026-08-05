@@ -14,3 +14,7 @@ Pipeline for Axe accessibility audit of live sites.
    pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
    ```
 4. Aggregated audit results are saved in `audits_YYYY.db`.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

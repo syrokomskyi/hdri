@@ -77,3 +77,7 @@ skipGogols: []
 `cutoffAt` is **not** specified — lowercase `YYYY-qN` is the immutable boundary.
 
 See the root README for the overall factory pipeline order and prerequisites.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

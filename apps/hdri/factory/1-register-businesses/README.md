@@ -33,3 +33,7 @@ skipGogols: []
 Without this layer, every downstream factory app (check-liveness, extract-profile, audit-\*) would have to discover sibling devices independently, duplicating logic. Centralising dedup here means downstream apps simply read `registry_<sourceToken>.db` and never see the multi-device complexity.
 
 See the root README for the overall factory pipeline order and prerequisites.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

@@ -134,3 +134,7 @@ apps/hdri/factory/
 | Skript | Zweck | Aufruf |
 | --- | --- | --- |
 | `batch-estimate.ts` | Grobe Schnellschätzung der Website-Anzahl in Batch-Eingabeordnern (Dateien, URL-Einträge, eindeutige Domains) ohne vollständige Pipeline-Ausführung | `pnpm estimate:hdri` |
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

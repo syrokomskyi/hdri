@@ -11,3 +11,7 @@ Pipeline for checking site availability via HTTP/HTTPS protocols (T1 — Availab
    pnpm turbo run start --filter=@syrokomskyi/site-liveness
    ```
 4. Check results will be saved in `liveness.db`.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

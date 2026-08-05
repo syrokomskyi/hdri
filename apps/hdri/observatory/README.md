@@ -173,3 +173,7 @@ Alle Export-Tools (`export-dashboard-data`, `export-dashboard-archive`, `ExportM
 - `@syrokomskyi/observatory-core` — Typen, Ontologie, Validierung, Hashing
 - `@syrokomskyi/hdri-codebook` — HDRI (Handwerk Digital Readiness Index) Bewertungsengine
 - `@syrokomskyi/pipeline-core`, `@syrokomskyi/pipeline-node`, `@syrokomskyi/pipeline-steps` — Gemeinsame Pipeline-Engine
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

@@ -195,3 +195,8 @@ Beiträge auf allen Ebenen sind willkommen — von der Korrektur eines Codebook-
 - **Einfach ein Gespräch beginnen** — eröffnen Sie ein [GitHub Issue](https://github.com/syrokomskyi/hdri/issues)
 
 > Dieses Projekt wird von einem unabhängigen Entwickler mit Sitz in Backnang, Baden-Württemberg, Deutschland, gepflegt. Kontakt: [`CONTACT.md`](CONTACT.md) · [github.com/syrokomskyi](https://github.com/syrokomskyi)
+
+## Changelog
+
+- [CHANGELOG.md](CHANGELOG.md)
+- [CHANGELOG_PUBLIC.md](CHANGELOG_PUBLIC.md)
