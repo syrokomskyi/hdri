@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@wgogol/changelog-live": "workspace:*",
+    "@warpgogol/changelog-live": "workspace:*",
     "eslint": "~10.8.0",
     "typescript-eslint": "^8.66.0",
     "vitest": "4.1.10"
