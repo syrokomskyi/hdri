@@ -10,7 +10,7 @@
   <item>Extracted from monolithic main.ts as part of pipeline conversion.</item>
   <item>Add core DB discovery for asset state emit-bundle support.</item>
   <item>Fix filename pattern matching to support both pages_*.db and pages-*.db formats.</item>
-  <item>Add support for simple period patterns like "2026-h1" alongside full sourceToken format.</item>
+  <item>Use strict quarter-only discovery for observation databases.</item>
   <item>Add AXE DB discovery for audit observation translation.</item>
 </CHANGE_SUMMARY>
 */
@@ -20,16 +20,13 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
-import {
-  listDeviceFolders,
-  parseSourceToken,
-  periodMatchesToken,
-} from "@syrokomskyi/observatory-crypto";
+import { listDeviceFolders } from "@syrokomskyi/observatory-crypto";
 import { Gogol } from "../pipeline/Gogol.js";
 import type {
   PipelineContext,
   DiscoveredAxeDb,
   DiscoveredCoreDb,
+  DiscoveredLivenessDb,
   DiscoveredPagesDb,
 } from "../pipeline/types.js";
 import { upstreamOutputRoots } from "../config.js";
@@ -43,6 +40,7 @@ export class DiscoverSourcesGogol extends Gogol {
 
     const discoveredPages: DiscoveredPagesDb[] = [];
     const coreDbs: DiscoveredCoreDb[] = [];
+    const livenessDbs: DiscoveredLivenessDb[] = [];
     const axeDbs: DiscoveredAxeDb[] = [];
 
     // ── Discover pages_*.db (profile) ────────────────────────────────────────
@@ -57,76 +55,20 @@ export class DiscoverSourcesGogol extends Gogol {
       }
 
       for (const fname of entries) {
-        // Support both pages_*.db and pages-*.db formats
-        if (!fname.startsWith("pages_") && !fname.startsWith("pages-")) continue;
-        if (!fname.endsWith(".db")) continue;
-
-        // Extract token after "pages_" or "pages-"
-        const sourceToken = fname.startsWith("pages_")
-          ? fname.slice("pages_".length, -".db".length)
-          : fname.slice("pages-".length, -".db".length);
-
-        let parsedToken: { year: number; quarter: number };
-        let isSimplePattern = false;
-
-        try {
-          parsedToken = parseSourceToken(sourceToken);
-        } catch {
-          // If parseSourceToken fails, try to match simple patterns like "2026-h1"
-          const simpleMatch = /^(\d{4})-(h[12]|q[1-4])$/.exec(sourceToken);
-          if (!simpleMatch) continue;
-          const year = parseInt(simpleMatch[1], 10);
-          const period = simpleMatch[2];
-          // Convert h1/h2 to quarters: h1 covers Q1+Q2, h2 covers Q3+Q4
-          // For current quarter matching, h1 should match both Q1 and Q2
-          const quarter = period === "h1" ? 2 : period === "h2" ? 4 : parseInt(period.slice(1), 10);
-          parsedToken = { year, quarter };
-          isSimplePattern = true;
-        }
-
-        // Check period matching
-        if (isSimplePattern) {
-          // For simple patterns like "2026-h1", check if the period matches
-          const briefYear = parsePeriod(brief.period).year;
-          const briefQuarter = parsePeriod(brief.period).quarter;
-          if (parsedToken.year !== briefYear) continue;
-
-          // h1 covers Q1+Q2, h2 covers Q3+Q4
-          const sourceToken = fname.startsWith("pages_")
-            ? fname.slice("pages_".length, -".db".length)
-            : fname.slice("pages-".length, -".db".length);
-
-          const simpleMatch = /^(\d{4})-(h[12]|q[1-4])$/.exec(sourceToken);
-          if (simpleMatch) {
-            const period = simpleMatch[2];
-            if (period === "h1" && briefQuarter !== 1 && briefQuarter !== 2) continue;
-            if (period === "h2" && briefQuarter !== 3 && briefQuarter !== 4) continue;
-            if (period.startsWith("q") && parseInt(period.slice(1), 10) !== briefQuarter) continue;
-          }
-        } else {
-          // For full sourceToken format, use periodMatchesToken
-          if (!periodMatchesToken(brief.period, sourceToken)) continue;
-        }
-
-        const registryDbPath = path.join(
-          upstreamOutputRoots.registry,
-          dev.deviceId,
-          "data",
-          "db",
-          `registry_${parsedToken.year}.db`,
-        );
-        if (!fs.existsSync(registryDbPath)) {
-          console.warn(
-            `[discover-sources] ${dev.deviceId}/${fname}: missing matching registry_${parsedToken.year}.db — skipped`,
-          );
-          continue;
-        }
+        if (fname !== `pages-${brief.period}.db`) continue;
         discoveredPages.push({
           deviceId: dev.deviceId,
-          sourceToken,
           pagesDbPath: path.join(dbDir, fname),
-          registryDbPath,
         });
+      }
+    }
+
+    // ── Discover liveness-YYYY-qN.db ────────────────────────────────────────
+    const livenessDevices = await listDeviceFolders(upstreamOutputRoots.liveness);
+    for (const dev of livenessDevices) {
+      const livenessDbPath = path.join(dev.path, "data", "db", `liveness-${brief.period}.db`);
+      if (fs.existsSync(livenessDbPath)) {
+        livenessDbs.push({ deviceId: dev.deviceId, livenessDbPath });
       }
     }
 
@@ -142,22 +84,9 @@ export class DiscoverSourcesGogol extends Gogol {
     // ── Discover axe_YYYY.db (axe audit) ──────────────────────────────────────
     const axeDevices = await listDeviceFolders(upstreamOutputRoots.axe);
     for (const dev of axeDevices) {
-      const axePath = path.join(dev.path, "data", "db", `axe_${year}.db`);
-      const registryDbPath = path.join(
-        upstreamOutputRoots.registry,
-        dev.deviceId,
-        "data",
-        "db",
-        `registry_${year}.db`,
-      );
+      const axePath = path.join(dev.path, "data", "db", `axe-${brief.period}.db`);
       if (fs.existsSync(axePath)) {
-        if (!fs.existsSync(registryDbPath)) {
-          console.warn(
-            `[discover-sources] ${dev.deviceId}/axe_${year}.db: missing matching registry_${year}.db — skipped`,
-          );
-          continue;
-        }
-        axeDbs.push({ deviceId: dev.deviceId, axeDbPath: axePath, registryDbPath });
+        axeDbs.push({ deviceId: dev.deviceId, axeDbPath: axePath });
       }
     }
 
@@ -169,9 +98,11 @@ export class DiscoverSourcesGogol extends Gogol {
           period: brief.period,
           pagesCount: discoveredPages.length,
           coreCount: coreDbs.length,
+          livenessCount: livenessDbs.length,
           axeCount: axeDbs.length,
           sources: discoveredPages,
           coreDbs,
+          livenessDbs,
           axeDbs,
         },
         null,
@@ -181,12 +112,13 @@ export class DiscoverSourcesGogol extends Gogol {
     );
 
     console.log(
-      `[discover-sources] ${discoveredPages.length} pages_*.db, ${coreDbs.length} core_*.db, ${axeDbs.length} axe_*.db across ` +
+      `[discover-sources] ${discoveredPages.length} pages DB(s), ${coreDbs.length} core DB(s), ${livenessDbs.length} liveness DB(s), ${axeDbs.length} axe DB(s) across ` +
         `${new Set(discoveredPages.map((d) => d.deviceId)).size} device(s) for period ${brief.period}`,
     );
 
     ctx.state.discoveredPages = discoveredPages;
     ctx.state.coreDbs = coreDbs;
+    ctx.state.livenessDbs = livenessDbs;
     ctx.state.axeDbs = axeDbs;
   }
 }

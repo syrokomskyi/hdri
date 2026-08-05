@@ -7,6 +7,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial definition of types for signed observations and key configurations.</item>
+  <item>Allow verification keys to carry a transparency-bound collector identity.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -47,4 +48,6 @@ export type SigningKeyConfig = {
 export type VerificationKey = {
   readonly publicKeyPem: string;
   readonly signingKeyId: string;
+  /** Collector identity bound by the transparency registry when available. */
+  readonly collectorId?: string;
 };

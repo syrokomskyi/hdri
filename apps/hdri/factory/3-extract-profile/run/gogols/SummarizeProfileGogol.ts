@@ -25,14 +25,15 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import Database from "better-sqlite3";
 import { markdownTable } from "markdown-table";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { toFactoryRelativePath } from "../config.js";
 import { hashDatabaseFile } from "@syrokomskyi/business-core/cross-db";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { openPagesDb } from "../db/connection.js";
 import { getPagesDbPath } from "../paths.js";
+import { assertStageComplete } from "@syrokomskyi/factory-core";
 
 /** Entry in the zipcodes JSON file */
 type ZipcodeEntry = {
@@ -102,10 +103,8 @@ export class SummarizeProfileGogol extends Gogol {
   }
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { pagesDbName, brief } = ctx.state;
-    const { year, quarter } = parseSourceToken(brief.sourceToken);
-    const half: 1 | 2 = quarter <= 2 ? 1 : 2;
-    const pagesDbPath = getPagesDbPath(year, half);
+    const { pagesDbName, brief, resolvedLivenessDbPath } = ctx.state;
+    const pagesDbPath = getPagesDbPath(pagesDbName);
     const db = openPagesDb(pagesDbPath);
 
     // Load geographic index for reports
@@ -250,6 +249,30 @@ export class SummarizeProfileGogol extends Gogol {
       }
     }
 
+    const terminalProfiles = (
+      db.prepare(`
+        SELECT
+          COUNT(DISTINCT CASE WHEN po.error_class = 'ok' THEN sp.site_id END) AS succeeded,
+          COUNT(DISTINCT CASE WHEN po.error_class <> 'ok' THEN sp.site_id END) AS failed
+        FROM site_pages sp
+        JOIN page_observations po ON po.site_page_id = sp.id
+        WHERE sp.source = 'homepage'
+      `).get() as { succeeded: number; failed: number }
+    );
+    const livenessDb = new Database(resolvedLivenessDbPath, { readonly: true });
+    const targetProfiles = (
+      livenessDb.prepare(`SELECT COUNT(*) AS n FROM liveness_checks WHERE is_live = 1`).get() as {
+        n: number;
+      }
+    ).n;
+    livenessDb.close();
+    assertStageComplete({
+      targetCount: targetProfiles,
+      succeeded: terminalProfiles.succeeded,
+      observedFailures: terminalProfiles.failed,
+      approvedExclusions: 0,
+      quarantined: 0,
+    });
     db.close();
 
     console.log(`[summarize-profile] Computing SHA-256 of ${pagesDbName}.db...`);

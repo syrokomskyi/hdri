@@ -3,13 +3,13 @@
 <purpose>Operator CLI to make the WP4 post-stratification frame production-ready (WP16, (d)).
 Validates .input/population-frame.json against the strata that actually appear in the published
 data — what is missing, unknown, or invalid, and whether projected coverage clears the suppression
-threshold — and can emit a template keyed by those real strata. Read-only; never invents a weight.</purpose>
+threshold. Read-only; never invents a weight.</purpose>
 <non-goals>
   <item>Does not write the frame, mutate the DB, or produce post-stratified numbers.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>WP16 (d): population-frame validation + template CLI over the shared frame-core.</item>
+  <item>RFC-0029: provenance-locked population-frame validation over the shared frame-core.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: publication is gated by k-anonymity enforcement; never publish suppressed groups
@@ -21,9 +21,8 @@ import Database from "better-sqlite3";
 import { inputDir, outputRootDir } from "../run/config";
 import { getObservatoryDbPath } from "../run/db/connection";
 import { loadPopulationFrame } from "./poststrat-core";
-import { buildTemplateFrame, validateFrame } from "./frame-core";
+import { validateFrame } from "./frame-core";
 
-const TEMPLATE = process.argv.includes("--template");
 const DB_DIR = path.join(outputRootDir, "db");
 
 function argValue(flag: string): string | undefined {
@@ -96,19 +95,12 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (TEMPLATE) {
-    const tpl = buildTemplateFrame(sampleStrata.keys());
-    console.log(JSON.stringify(tpl, null, 2));
-    return;
-  }
-
   console.log("🧮 Population-frame validation (post-stratification readiness)");
   console.log(`   sampled strata (published): ${sampleStrata.size}`);
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
   const frame = await loadPopulationFrame(inputDir);
   if (!frame) {
-    // Absent (or all-zero) frame is a valid state — post-stratification is simply disabled.
     const framePath = path.join(inputDir, "population-frame.json");
     const exists = await fsp
       .access(framePath)
@@ -116,11 +108,11 @@ async function main(): Promise<void> {
       .catch(() => false);
     console.log(
       exists
-        ? "Frame present but has no positive weights (all-zero template) — post-stratification is OFF."
+        ? "Frame present but unusable — post-stratification is OFF."
         : "No .input/population-frame.json — post-stratification is OFF (descriptive/panel trends still ship).",
     );
     console.log(
-      "Generate a matching template:  pnpm run frame:template > .input/population-frame.json",
+      "Import the preserved official Destatis 53111-0011 export with frame:import.",
     );
     return;
   }
@@ -132,7 +124,11 @@ async function main(): Promise<void> {
   );
   console.log(
     `   projected weight coverage: ${(v.projectedWeightCoverage * 100).toFixed(1)}%  ` +
-      `(threshold ${(0.6 * 100).toFixed(0)}% → ${v.meetsThreshold ? "OK" : "SUPPRESSED"})`,
+      `(threshold ${(0.95 * 100).toFixed(0)}% → ${v.meetsThreshold ? "OK" : "SUPPRESSED"})`,
+  );
+  console.log(
+    `   minimum dimension coverage: Land ${(v.minimumBundeslandCoverage * 100).toFixed(1)}%  ·  ` +
+      `group ${(v.minimumGroupCoverage * 100).toFixed(1)}%  (threshold 80%)`,
   );
 
   if (v.invalidWeights.length > 0) {

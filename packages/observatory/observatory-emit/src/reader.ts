@@ -1,149 +1,74 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Reads, validates, and streams data from emit-bundle directories, ensuring data integrity through SHA-256 verification.</purpose>
-<non-goals>
-  <item>Does not modify or write data to the emit-bundle directories.</item>
-  <item>Does not handle network operations or remote data fetching.</item>
-</non-goals>
+<purpose>Streams and verifies every immutable partition in a forward-only emit bundle.</purpose>
+<non-goals><item>Does not accept monolithic or legacy manifests.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY>
-  <item>Initial implementation of emit-bundle reading and validation functions.</item>
-</CHANGE_SUMMARY>
 */
 
-import crypto from "node:crypto";
+import crypto, { createHash } from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import type { AssetStateRecord, Observation } from "@syrokomskyi/observatory-core";
-import type { EmitBundle, EmitManifest } from "./types.js";
+import type { EmitBundle, EmitManifest, EmitPartition } from "./types.js";
 import { parseEmitManifest } from "./schema.js";
 
-/**
- * Reads and validates the manifest from an emit-bundle directory. Validation runs
- * through the zod contract ({@link parseEmitManifest}) so a malformed or drifted bundle
- * is rejected at the boundary — a mistyped count, a renamed field, or a
- * present/absent-hash inconsistency fails here rather than silently downstream.
- */
-export async function readEmitManifest(emitDir: string): Promise<EmitManifest> {
-  const raw = await fsp.readFile(path.join(emitDir, "manifest.json"), "utf-8");
+export const readEmitManifest = async (emitDir: string): Promise<EmitManifest> => {
+  const manifestPath = path.join(emitDir, "manifest.json");
   try {
-    return parseEmitManifest(JSON.parse(raw) as unknown);
-  } catch (err) {
-    throw new Error(
-      `Invalid emit-bundle manifest at ${path.join(emitDir, "manifest.json")}: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
-      { cause: err },
-    );
+    return parseEmitManifest(JSON.parse(await fsp.readFile(manifestPath, "utf8")));
+  } catch (error) {
+    throw new Error(`Invalid emit-bundle manifest at ${manifestPath}`, { cause: error });
+  }
+};
+
+export const readEmitBundle = async (emitDir: string): Promise<EmitBundle> => ({ manifest: await readEmitManifest(emitDir), emitDir });
+
+async function* streamPartitions<T>(bundle: EmitBundle, parts: readonly EmitPartition[], expectedSetHash: string | null): AsyncGenerator<T> {
+  const setHash = parts.length === 0 ? null : createHash("sha256").update(parts.map((part) => `${part.uri}\0${part.row_count}\0${part.sha256}`).join("\n")).digest("hex");
+  if (setHash !== expectedSetHash) throw new Error("Emit partition-set hash mismatch");
+  for (const part of parts) {
+    const hash = crypto.createHash("sha256");
+    let count = 0;
+    const lines = readline.createInterface({ input: fs.createReadStream(path.join(bundle.emitDir, part.uri), { encoding: "utf8" }), crlfDelay: Infinity });
+    for await (const line of lines) {
+      if (!line.trim()) continue;
+      hash.update(`${line}\n`);
+      count++;
+      yield JSON.parse(line) as T;
+    }
+    if (count !== part.row_count || hash.digest("hex") !== part.sha256) throw new Error(`Emit partition integrity check failed: ${part.uri}`);
   }
 }
 
-/** Opens an emit-bundle for streaming read. */
-export async function readEmitBundle(emitDir: string): Promise<EmitBundle> {
-  const manifest = await readEmitManifest(emitDir);
-  const dataDir = manifest.emit_dir ?? emitDir;
-  return { manifest, emitDir: dataDir };
-}
-
-/**
- * Streams observations from a bundle one at a time.
- * Verifies the SHA-256 of the observations file against manifest.bundle_hash
- * after the stream is fully consumed.
- *
- * @throws if hash mismatch after full read.
- */
 export async function* streamObservations(bundle: EmitBundle): AsyncGenerator<Observation> {
-  const obsPath = path.join(bundle.emitDir, "observations.ndjson");
-
-  if (bundle.manifest.observation_count === 0) return;
-
-  const fileStream = fs.createReadStream(obsPath, { encoding: "utf-8" });
-  const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
-
-  const hash = crypto.createHash("sha256");
   let count = 0;
-
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-    hash.update(line + "\n");
-    yield JSON.parse(line) as Observation;
+  for await (const observation of streamPartitions<Observation>(bundle, bundle.manifest.observation_partitions, bundle.manifest.bundle_hash)) {
     count++;
+    yield observation;
   }
-
-  if (bundle.manifest.bundle_hash !== null) {
-    const actual = hash.digest("hex");
-    if (actual !== bundle.manifest.bundle_hash) {
-      throw new Error(
-        `Emit-bundle integrity check failed for run_id=${bundle.manifest.run_id}: ` +
-          `expected ${bundle.manifest.bundle_hash}, got ${actual}`,
-      );
-    }
-  }
-
-  if (count !== bundle.manifest.observation_count) {
-    throw new Error(
-      `Emit-bundle row count mismatch for run_id=${bundle.manifest.run_id}: ` +
-        `manifest says ${bundle.manifest.observation_count}, read ${count}`,
-    );
-  }
+  if (count !== bundle.manifest.observation_count) throw new Error("Emit observation count mismatch");
 }
 
-/**
- * Streams asset state records from a bundle one at a time.
- * Verifies the SHA-256 against manifest.asset_states_hash after full read.
- *
- * Returns immediately if the bundle has no asset state file (v1 compat).
- *
- * @throws if hash mismatch after full read.
- */
 export async function* streamAssetStates(bundle: EmitBundle): AsyncGenerator<AssetStateRecord> {
-  const statePath = path.join(bundle.emitDir, "asset-states.ndjson");
-
-  const count = bundle.manifest.asset_state_count ?? 0;
-  if (count === 0) return;
-
-  let fileStream: fs.ReadStream | undefined;
-  try {
-    fileStream = fs.createReadStream(statePath, { encoding: "utf-8" });
-  } catch {
-    // File missing but manifest claims non-zero count → throw
-    throw new Error(
-      `Missing asset-states.ndjson for run_id=${bundle.manifest.run_id}` +
-        `(manifest says ${count} entries)`,
-    );
+  let count = 0;
+  for await (const state of streamPartitions<AssetStateRecord>(bundle, bundle.manifest.asset_state_partitions, bundle.manifest.asset_states_hash)) {
+    count++;
+    yield state;
   }
+  if (count !== bundle.manifest.asset_state_count) throw new Error("Emit asset-state count mismatch");
+}
 
-  const rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Infinity,
-  });
-
-  const hash = crypto.createHash("sha256");
-  let actualCount = 0;
-
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-    hash.update(line + "\n");
-    yield JSON.parse(line) as AssetStateRecord;
-    actualCount++;
+export async function* streamEvidence<T = unknown>(bundle: EmitBundle): AsyncGenerator<T> {
+  let count = 0;
+  for await (const record of streamPartitions<T>(
+    bundle,
+    bundle.manifest.evidence_partitions,
+    bundle.manifest.evidence_hash,
+  )) {
+    count++;
+    yield record;
   }
-
-  if (bundle.manifest.asset_states_hash != null) {
-    const actual = hash.digest("hex");
-    if (actual !== bundle.manifest.asset_states_hash) {
-      throw new Error(
-        `Asset-state integrity check failed for run_id=${bundle.manifest.run_id}: ` +
-          `expected ${bundle.manifest.asset_states_hash}, got ${actual}`,
-      );
-    }
-  }
-
-  if (actualCount !== count) {
-    throw new Error(
-      `Asset-state row count mismatch for run_id=${bundle.manifest.run_id}: ` +
-        `manifest says ${count}, read ${actualCount}`,
-    );
-  }
+  if (count !== bundle.manifest.evidence_count) throw new Error("Emit evidence count mismatch");
 }

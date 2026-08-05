@@ -16,10 +16,10 @@ import { AUDITS_DB_PREFIX } from "./constants.js";
 
 export const getDbDir = (): string => path.join(outputRootDir, "data", "db");
 
-export const getAuditsDbName = (year: number): string => `${AUDITS_DB_PREFIX}_${year}`;
+export const getAuditsDbName = (period: string | number): string => `${AUDITS_DB_PREFIX}-${period}`;
 
-export const getAuditsDbPath = (year: number): string =>
-  path.join(getDbDir(), `${getAuditsDbName(year)}.db`);
+export const getAuditsDbPath = (period: string | number): string =>
+  path.join(getDbDir(), `${getAuditsDbName(period)}.db`);
 
 /** Root for content-addressed audit reports (one subdir per tool). */
 export const getReportsRootDir = (): string => path.join(outputRootDir, "data", "audit-reports");

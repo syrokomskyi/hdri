@@ -19,7 +19,7 @@ export type { WriteResult, VaultAssetIdentityRecord, VaultAssetStateRecord } fro
 export { VaultReader } from "./reader.js";
 
 // DuckDB session (pooled)
-export { DuckDbSession } from "./duckdb.js";
+export { DuckDbSession, writeParquet } from "./duckdb.js";
 
 // Path helpers and shard-kind mapping
 export {

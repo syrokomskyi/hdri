@@ -45,8 +45,8 @@ export class SignSourceGogol extends SignSourceStep<PipelineContext> {
   }
 
   protected override getDbPath(ctx: PipelineContext): string {
-    const { year } = parseSourceToken(ctx.state.brief.sourceToken);
-    return getLivenessDbPath(year);
+    const { year, quarter } = parseSourceToken(ctx.state.brief.sourceToken);
+    return getLivenessDbPath(`${year}-q${quarter}`);
   }
 
   protected override getSourceToken(ctx: PipelineContext): string {

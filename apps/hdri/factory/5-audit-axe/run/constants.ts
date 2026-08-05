@@ -19,5 +19,5 @@ export const OWNER_APP = "site-axe-audit";
 /** Human-readable pipeline version for logs and artifacts. */
 export const PIPELINE_VER = "v1";
 
-/** Canonical DB name prefix — actual filename is axe_{year}.db. */
+/** Canonical DB name prefix — actual filename is axe-YYYY-qN.db. */
 export const AUDITS_DB_PREFIX = "axe";

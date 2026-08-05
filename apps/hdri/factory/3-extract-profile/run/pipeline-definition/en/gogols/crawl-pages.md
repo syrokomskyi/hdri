@@ -10,7 +10,7 @@ details: >-
   fetchPageContent() from @syrokomskyi/business-crawler: tries HTTPS first, then HTTP
   on any network-level failure. Stores raw HTML on disk under
   data/content/{sha256[0:2]}/{sha256}.html (CAS). Upserts page_contents,
-  site_pages (pages_YYYY.db), and page_observations. No signal extraction is
+  site_pages (pages-YYYY-qN.db), and page_observations. No signal extraction is
   performed — that is the responsibility of the Extract gogols in Phase 2.
   Runs with bounded concurrency (brief.concurrency). Respects rescanPolicy
   (skip / if-stale / always). If brief.liveOnly is false, all domains from

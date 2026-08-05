@@ -12,11 +12,17 @@
   <item>parseBriefMarkdown now accepts optional sharedSourceToken parameter for two-file brief pattern.</item>
   <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @syrokomskyi/pipeline-node.</item>
   <item>Update registryDbPath comment to reference 1-register-businesses instead of catalog-harvest.</item>
+  <item>RFC-0046: add instrumentPlan field parsed from brief frontmatter.</item>
 </CHANGE_SUMMARY>
 */
 
 import matter from "gray-matter";
 import { parseSourceToken, getDeviceId } from "@syrokomskyi/observatory-crypto";
+import {
+  assertCapsuleId,
+  parseInstrumentPlanFromFrontmatter,
+  type InstrumentPlanEntry,
+} from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -24,6 +30,8 @@ export type Brief = {
    * Sole axis of idempotency.
    */
   sourceToken: string;
+  /** UUID v7 shared by every stage of this quarter. */
+  capsuleId: string;
   /**
    * Absolute or app-root-relative path to the 1-register-businesses registry.db.
    * Example: "../1-register-businesses/.output/${DEVICE_ID}/data/db/registry_2026.db"
@@ -46,6 +54,8 @@ export type Brief = {
   maxDomains: number;
   /** List of gogol IDs to skip during this run. */
   skipGogols: string[];
+  /** Instrument plan for this quarter. Defaults to Lighthouse disabled. */
+  instrumentPlan: InstrumentPlanEntry[];
 };
 
 // ---------------------------------------------------------------------------
@@ -86,6 +96,8 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     );
   }
   const parsedToken = parseSourceToken(sourceTokenRaw);
+  const capsuleId = typeof data.capsuleId === "string" ? data.capsuleId.trim().toLowerCase() : "";
+  assertCapsuleId(capsuleId);
 
   // registryDbPath
   const registryDbPath = typeof data.registryDbPath === "string" ? data.registryDbPath.trim() : "";
@@ -100,6 +112,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   return {
     sourceToken: parsedToken.raw,
+    capsuleId,
     registryDbPath,
     deviceId: getDeviceId(),
     year: parsedToken.year,
@@ -108,5 +121,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     retryCount,
     maxDomains,
     skipGogols: getStringArray(data.skipGogols),
+    instrumentPlan: parseInstrumentPlanFromFrontmatter(data.instrumentPlan),
   };
 };

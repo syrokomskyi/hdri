@@ -37,6 +37,12 @@ afterEach(() => {
 });
 
 describe("cross-year identity registry (WP12)", () => {
+  it("treats a missing legacy asset-state partition as an empty optional stream", async () => {
+    const reader = new VaultReader(vaultDir);
+    await expect(reader.getAssetStateRecords(2026)).resolves.toEqual([]);
+    reader.close();
+  });
+
   it("returns an empty map before any shard exists", async () => {
     const map = await new VaultReader(vaultDir).getIdentityMap();
     expect(map.size).toBe(0);

@@ -7,6 +7,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation of schema metadata management and compatibility checks.</item>
+  <item>Fix assertSchemaCompat: add AS aliases to SELECT so better-sqlite3 returns camelCase property names matching SchemaMeta type.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -60,10 +61,9 @@ export const assertSchemaCompat = (
   let meta: SchemaMeta | undefined;
   try {
     meta = db
-      .prepare<
-        [],
-        SchemaMeta
-      >(`SELECT owner_app, schema_version, built_at FROM ${qualifiedTable} LIMIT 1`)
+      .prepare<[], SchemaMeta>(
+        `SELECT owner_app AS ownerApp, schema_version AS schemaVersion, built_at AS builtAt FROM ${qualifiedTable} LIMIT 1`,
+      )
       .get();
   } catch {
     throw new SchemaCompatError(

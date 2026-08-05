@@ -13,11 +13,13 @@
   <item>Phase B cleanup: remove deprecated harvestYear, harvestQuarter, batchToken fields.</item>
   <item>Enforce lowercase kebab-case validation on sourceToken.</item>
   <item>Replace maxSites with maxPages: maxPages limits total source files parsed across all batches (-1 = unlimited).</item>
+  <item>Add minSitesThreshold field for empty-quarter fail-fast guard (RFC-0068).</item>
 </CHANGE_SUMMARY>
 */
 
 import matter from "gray-matter";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import { assertCapsuleId } from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -25,6 +27,8 @@ export type Brief = {
    * Sole axis of idempotency for the factory pipeline (Phase A onwards).
    */
   sourceToken: string;
+  /** UUID v7 shared by every stage of this quarter. */
+  capsuleId: string;
   /**
    * Path to the zipcodes JSON file for geographic analysis.
    * Relative to app root or absolute path.
@@ -38,6 +42,8 @@ export type Brief = {
   skipGogols: string[];
   /** Max concurrent files to parse in parallel. */
   parserConcurrency: number;
+  /** Minimum total registered sites required before sealing (default: 1). Set to 0 to disable. */
+  minSitesThreshold: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -79,6 +85,9 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   }
   const parsedToken = parseSourceToken(sourceTokenRaw);
 
+  const capsuleId = typeof data.capsuleId === "string" ? data.capsuleId.trim().toLowerCase() : "";
+  assertCapsuleId(capsuleId);
+
   // zipcodesTablePath
   const zipcodesTablePath =
     typeof data.zipcodesTablePath === "string" ? data.zipcodesTablePath.trim() || null : null;
@@ -100,10 +109,12 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   return {
     sourceToken: parsedToken.raw,
+    capsuleId,
     zipcodesTablePath,
     exclude,
     maxPages,
     skipGogols: getStringArray(data.skipGogols),
     parserConcurrency: getFiniteNumber(data.parserConcurrency, "parserConcurrency") ?? 20,
+    minSitesThreshold: getFiniteNumber(data.minSitesThreshold, "minSitesThreshold") ?? 1,
   };
 };

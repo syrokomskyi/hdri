@@ -14,19 +14,23 @@
 */
 
 import fsp from "node:fs/promises";
+import crypto from "node:crypto";
 import path from "node:path";
 import Database from "better-sqlite3";
 import {
   AXE_SIGNAL_MAP,
+  classifyLivenessOutcome,
   EXT_SIGNAL_MAP,
   deriveAssetId,
-  newId,
+  observationKey,
+  sha256Json,
   type AxeSignalMapping,
   type ExtSignalMapping,
   type Observation,
 } from "@syrokomskyi/observatory-core";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext, IngestedObs } from "../pipeline/types.js";
+import { outputRootDir } from "../config.js";
 
 const APP_VERSION = "0.1.0";
 const APP_ID = "a-contract-ontology";
@@ -39,13 +43,9 @@ type ContentRow = {
   [col: string]: unknown;
 };
 
-type DomainJoinRow = {
-  domain: string;
-  content_sha256: string;
-};
-
 type AxeAuditRunRow = {
   site_id: number;
+  provisional_asset_id: string;
   fetched_at: number | null;
   ok: number;
   error_class: string | null;
@@ -54,6 +54,7 @@ type AxeAuditRunRow = {
 
 type AxeMetricRow = {
   site_id: number;
+  provisional_asset_id: string;
   violations_total: number | null;
   critical_count: number | null;
   serious_count: number | null;
@@ -63,21 +64,92 @@ type AxeMetricRow = {
   axe_version: string | null;
 };
 
-type SiteDomainRow = {
-  site_id: number;
+type LivenessRow = {
+  provisional_asset_id: string;
   domain: string;
+  checked_at: number;
+  http_status: number | null;
+  latency_ms: number | null;
+  is_live: number;
+  error_code: string | null;
 };
 
 export class TranslateOntologyGogol extends Gogol {
   override readonly id = "translate-ontology";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { brief, discoveredPages, axeDbs, ontology } = ctx.state;
+    const { brief, discoveredPages, livenessDbs, axeDbs, ontology } = ctx.state;
     if (!ontology) throw new Error("Ontology not loaded — run bootstrap first");
     if (discoveredPages.length === 0)
       throw new Error("No discovered sources — run discover-sources first");
 
-    const allObs: IngestedObs[] = [];
+    const observationDbPath = path.join(
+      outputRootDir,
+      "capsules",
+      brief.period,
+      brief.capsuleId,
+      "staging",
+      "translation",
+      "observations.sqlite",
+    );
+    await fsp.mkdir(path.dirname(observationDbPath), { recursive: true });
+    const observationDb = new Database(observationDbPath);
+    observationDb.exec(`
+      PRAGMA journal_mode=WAL;
+      PRAGMA synchronous=NORMAL;
+      CREATE TABLE IF NOT EXISTS translation_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS observations (
+        seq INTEGER PRIMARY KEY AUTOINCREMENT,
+        observation_id TEXT NOT NULL UNIQUE,
+        conflict_key TEXT NOT NULL,
+        recorded_at TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        payload_sha256 TEXT NOT NULL,
+        payload_json TEXT NOT NULL
+      );
+      DROP INDEX IF EXISTS observations_conflict_order;
+      CREATE INDEX observations_conflict_order
+        ON observations(conflict_key, recorded_at DESC, device_id DESC, observation_id DESC);
+    `);
+    assertTranslationIdentity(observationDb, {
+      period: brief.period,
+      capsule_id: brief.capsuleId,
+      ontology_version: brief.ontologyVersion,
+    });
+    const insertObservation = observationDb.prepare(
+      `INSERT INTO observations(
+         observation_id, conflict_key, recorded_at, device_id, payload_sha256, payload_json
+       ) VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(observation_id) DO UPDATE SET
+         observation_id = observations.observation_id
+       WHERE observations.payload_sha256 = excluded.payload_sha256`,
+    );
+    let observationCount = 0;
+    let transactionRows = 0;
+    observationDb.exec("BEGIN IMMEDIATE");
+    const appendObservation = (obs: IngestedObs): void => {
+      const payloadJson = JSON.stringify(obs);
+      const result = insertObservation.run(
+        obs.observation_id,
+        `${obs.asset_id}\u0000${obs.signal_path}`,
+        obs.recorded_at,
+        obs._device_id,
+        crypto.createHash("sha256").update(payloadJson).digest("hex"),
+        payloadJson,
+      );
+      if (result.changes !== 1) {
+        throw new Error(`Observation identity drift inside capsule: ${obs.observation_id}`);
+      }
+      observationCount++;
+      transactionRows++;
+      if (transactionRows >= 10_000) {
+        observationDb.exec("COMMIT; BEGIN IMMEDIATE");
+        transactionRows = 0;
+      }
+    };
     let untranslated = 0;
     const unknownSignals = new Set<string>();
     const deprecatedSignals = new Set<string>();
@@ -86,28 +158,9 @@ export class TranslateOntologyGogol extends Gogol {
 
     for (const src of discoveredPages) {
       const pagesDb = new Database(src.pagesDbPath, { readonly: true });
-      const runId = newId();
-      const now = new Date().toISOString();
+      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "profile"]);
+      const recordedAt = periodStart(brief.period);
       try {
-        pagesDb.exec(`ATTACH DATABASE '${src.registryDbPath.replace(/'/g, "''")}' AS registry`);
-        const joinRows = pagesDb
-          .prepare(
-            `
-          SELECT DISTINCT s.domain, po.content_sha256
-          FROM page_observations po
-          JOIN site_pages sp ON sp.id = po.site_page_id
-          JOIN registry.sites s ON s.id = sp.site_id
-        `,
-          )
-          .all() as DomainJoinRow[];
-
-        const contentToDomain = new Map<string, string>();
-        for (const r of joinRows) {
-          if (r.domain && r.content_sha256) {
-            contentToDomain.set(r.content_sha256, r.domain.trim().toLowerCase());
-          }
-        }
-
         for (const mapping of EXT_SIGNAL_MAP) {
           const ontDef = ontologySignals[mapping.signalPath];
           if (!ontDef) {
@@ -123,10 +176,20 @@ export class TranslateOntologyGogol extends Gogol {
             .get(mapping.table) as { name: string } | undefined;
           if (!tableExists) continue;
 
-          const rows = pagesDb.prepare(`SELECT * FROM "${mapping.table}"`).all() as ContentRow[];
+          const rows = pagesDb
+            .prepare(`
+              SELECT ext.*, sp.url_norm
+              FROM "${mapping.table}" ext
+              JOIN page_observations po ON po.content_sha256 = ext.content_sha256
+              JOIN site_pages sp ON sp.id = po.site_page_id
+              ORDER BY ext.content_sha256, sp.url_norm
+            `)
+            .iterate() as IterableIterator<ContentRow & { url_norm: string }>;
           for (const row of rows) {
-            const domain = contentToDomain.get(row.content_sha256);
-            if (!domain) {
+            let domain: string;
+            try {
+              domain = new URL(row.url_norm).hostname.toLowerCase();
+            } catch {
               untranslated++;
               continue;
             }
@@ -136,10 +199,11 @@ export class TranslateOntologyGogol extends Gogol {
               domain,
               runId,
               brief.ontologyVersion,
-              now,
-              src.sourceToken,
+              recordedAt,
+              brief.capsuleId,
+              brief.period,
             );
-            if (obs) allObs.push({ ...obs, _device_id: src.deviceId });
+            if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
           }
         }
       } finally {
@@ -147,44 +211,97 @@ export class TranslateOntologyGogol extends Gogol {
       }
     }
 
-    for (const src of axeDbs) {
-      const axeDb = new Database(src.axeDbPath, { readonly: true });
-      const registryDb = new Database(src.registryDbPath, { readonly: true });
-      const runId = newId();
-      const now = new Date().toISOString();
+
+    for (const src of livenessDbs) {
+      const livenessDb = new Database(src.livenessDbPath, { readonly: true });
+      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "liveness"]);
+      const recordedAt = periodStart(brief.period);
       try {
-        const siteRows = registryDb
-          .prepare(`SELECT id AS site_id, domain FROM sites ORDER BY id`)
-          .all() as SiteDomainRow[];
-        const domainBySiteId = new Map<number, string>();
-        for (const row of siteRows) {
-          if (row.domain) {
-            domainBySiteId.set(row.site_id, row.domain.trim().toLowerCase());
+        const rows = livenessDb.prepare(`
+          SELECT provisional_asset_id, domain, checked_at, http_status, latency_ms, is_live, error_code
+          FROM liveness_checks
+          ORDER BY provisional_asset_id
+        `).iterate() as IterableIterator<LivenessRow>;
+        for (const row of rows) {
+          const observedAt = new Date(row.checked_at * 1000).toISOString();
+          const outcome = classifyLivenessOutcome({
+            isLive: row.is_live === 1,
+            httpStatus: row.http_status,
+            errorCode: row.error_code,
+          });
+          const signals: Array<{
+            signalPath: string;
+            value: boolean | number | string | null;
+            valueType: "bool" | "num" | "str";
+          }> = [
+            { signalPath: "transport.http.status_code", value: row.http_status, valueType: "num" },
+            { signalPath: "transport.http.latency_ms", value: row.latency_ms, valueType: "num" },
+            { signalPath: "availability.website.outcome", value: outcome, valueType: "str" },
+            { signalPath: "availability.website.is_reachable", value: row.is_live === 1, valueType: "bool" },
+            { signalPath: "availability.website.error_code", value: row.error_code, valueType: "str" },
+          ];
+          for (const { signalPath, value, valueType } of signals) {
+            if (value == null) continue;
+            if (!ontologySignals[signalPath]) {
+              unknownSignals.add(signalPath);
+              continue;
+            }
+            appendObservation({
+              observation_id: observationKey({
+                period: brief.period,
+                capsuleId: brief.capsuleId,
+                provisionalAssetId: row.provisional_asset_id,
+                signalPath,
+                sourceResultSha256: sha256Json(row),
+                extractorVersion: "liveness-v1",
+              }),
+              asset_id: row.provisional_asset_id,
+              crawl_id: runId,
+              signal_path: signalPath,
+              value_bool: valueType === "bool" ? Boolean(value) : null,
+              value_num: valueType === "num" ? Number(value) : null,
+              value_str: valueType === "str" ? String(value) : null,
+              value_json: null,
+              value_type: valueType,
+              observed_at: observedAt,
+              recorded_at: observedAt || recordedAt,
+              collector_version: COLLECTOR_VERSION,
+              probe_version: "liveness-v1",
+              ruleset_version: brief.ontologyVersion,
+              source_hash: null,
+              crawl_hash: brief.capsuleId,
+              evidence_ref: null,
+              confidence: 1,
+              status: "active",
+              superseded_by: null,
+              deprecated_reason: null,
+              _device_id: src.deviceId,
+            });
           }
         }
+      } finally {
+        livenessDb.close();
+      }
+    }
 
-        const auditRunBySiteId = new Map<number, AxeAuditRunRow>();
-        const auditRows = axeDb
-          .prepare(
-            `
-          SELECT site_id, fetched_at, ok, error_class, error_message
-          FROM audit_runs
-          WHERE tool = 'axe'
-        `,
-          )
-          .all() as AxeAuditRunRow[];
-        for (const row of auditRows) {
-          auditRunBySiteId.set(row.site_id, row);
-        }
-
+    for (const src of axeDbs) {
+      const axeDb = new Database(src.axeDbPath, { readonly: true });
+      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "axe"]);
+      const recordedAt = periodStart(brief.period);
+      try {
         const metricRows = axeDb
           .prepare(
             `
-          SELECT site_id, violations_total, critical_count, serious_count, moderate_count, minor_count, nodes_scanned, axe_version
-          FROM axe_runs
+          SELECT ax.site_id, ax.provisional_asset_id, ax.violations_total, ax.critical_count,
+                 ax.serious_count, ax.moderate_count, ax.minor_count, ax.nodes_scanned,
+                 ax.axe_version, ar.fetched_at, ar.ok, ar.error_class, ar.error_message
+          FROM axe_runs ax
+          LEFT JOIN audit_runs ar
+            ON ar.tool = 'axe' AND ar.provisional_asset_id = ax.provisional_asset_id
+          ORDER BY ax.provisional_asset_id
         `,
           )
-          .all() as AxeMetricRow[];
+          .iterate() as IterableIterator<AxeMetricRow & AxeAuditRunRow>;
 
         for (const mapping of AXE_SIGNAL_MAP) {
           const ontDef = ontologySignals[mapping.signalPath];
@@ -198,12 +315,7 @@ export class TranslateOntologyGogol extends Gogol {
         }
 
         for (const row of metricRows) {
-          const domain = domainBySiteId.get(row.site_id);
-          if (!domain) {
-            untranslated++;
-            continue;
-          }
-          const auditRun = auditRunBySiteId.get(row.site_id);
+          const auditRun: AxeAuditRunRow | undefined = row.ok == null ? undefined : row;
           if (auditRun && auditRun.ok !== 1) {
             continue;
           }
@@ -211,24 +323,28 @@ export class TranslateOntologyGogol extends Gogol {
             const obs = buildAxeObservation(
               row,
               mapping,
-              domain,
+              row.provisional_asset_id,
               runId,
               brief.ontologyVersion,
-              now,
-              brief.sourceToken,
+              recordedAt,
+              brief.capsuleId,
               auditRun,
+              brief.period,
             );
-            if (obs) allObs.push({ ...obs, _device_id: src.deviceId });
+            if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
           }
         }
       } finally {
         axeDb.close();
-        registryDb.close();
       }
     }
 
+    observationDb.exec("COMMIT");
+    const persistedCount = (
+      observationDb.prepare("SELECT COUNT(*) AS n FROM observations").get() as { n: number }
+    ).n;
     console.log(
-      `[translate-ontology] Ingested ${allObs.length} obs. ` +
+      `[translate-ontology] Reconciled ${observationCount} obs; ${persistedCount} persisted. ` +
         `${unknownSignals.size} unknown signal(s) skipped, ${deprecatedSignals.size} deprecated kept, ` +
         `${untranslated} rows lacked content→domain mapping.`,
     );
@@ -249,9 +365,32 @@ export class TranslateOntologyGogol extends Gogol {
       );
     }
 
-    ctx.state.allObs = allObs;
+    observationDb.close();
+    ctx.state.observationDbPath = observationDbPath;
   }
 }
+
+const assertTranslationIdentity = (
+  db: Database.Database,
+  expected: Readonly<Record<string, string>>,
+): void => {
+  const select = db.prepare("SELECT value FROM translation_meta WHERE key = ?");
+  const insert = db.prepare("INSERT INTO translation_meta(key, value) VALUES (?, ?)");
+  for (const [key, value] of Object.entries(expected)) {
+    const existing = select.get(key) as { value: string } | undefined;
+    if (existing && existing.value !== value) {
+      throw new Error(`Translation store ${key} mismatch: expected ${value}, found ${existing.value}`);
+    }
+    if (!existing) insert.run(key, value);
+  }
+};
+
+const periodStart = (period: string): string => {
+  const match = /^(\d{4})-q([1-4])$/.exec(period);
+  if (!match) throw new Error(`Invalid period: ${period}`);
+  const month = (Number(match[2]) - 1) * 3 + 1;
+  return `${match[1]}-${String(month).padStart(2, "0")}-01T00:00:00.000Z`;
+};
 
 function buildObservation(
   row: ContentRow,
@@ -260,7 +399,8 @@ function buildObservation(
   runId: string,
   ontologyVersion: string,
   now: string,
-  sourceToken: string,
+  capsuleId: string,
+  period: string,
 ): Observation | null {
   const assetId = deriveAssetId(domain);
   const observedAt = row.extracted_at ? new Date(row.extracted_at * 1000).toISOString() : now;
@@ -287,7 +427,14 @@ function buildObservation(
   }
 
   return {
-    observation_id: newId(),
+    observation_id: observationKey({
+      period,
+      capsuleId,
+      provisionalAssetId: assetId,
+      signalPath: mapping.signalPath,
+      sourceResultSha256: row.content_sha256,
+      extractorVersion: row.extractor_ver ?? "rule_v3",
+    }),
     asset_id: assetId,
     crawl_id: runId,
     signal_path: mapping.signalPath,
@@ -297,12 +444,12 @@ function buildObservation(
     value_json: valueJson,
     value_type: mapping.valueType,
     observed_at: observedAt,
-    recorded_at: now,
+    recorded_at: observedAt,
     collector_version: COLLECTOR_VERSION,
     probe_version: row.extractor_ver ?? "rule_v3",
     ruleset_version: ontologyVersion,
     source_hash: row.content_sha256,
-    crawl_hash: sourceToken,
+    crawl_hash: capsuleId,
     evidence_ref: null,
     confidence: 1,
     status: "active",
@@ -314,12 +461,13 @@ function buildObservation(
 function buildAxeObservation(
   row: AxeMetricRow,
   mapping: AxeSignalMapping,
-  domain: string,
+  provisionalAssetId: string,
   runId: string,
   ontologyVersion: string,
   now: string,
-  sourceToken: string,
+  capsuleId: string,
   auditRun: AxeAuditRunRow | undefined,
+  period: string,
 ): Observation | null {
   const rawValue = row[mapping.column as keyof AxeMetricRow];
   if (rawValue == null) {
@@ -336,8 +484,15 @@ function buildAxeObservation(
     : now;
 
   return {
-    observation_id: newId(),
-    asset_id: deriveAssetId(domain),
+    observation_id: observationKey({
+      period,
+      capsuleId,
+      provisionalAssetId,
+      signalPath: mapping.signalPath,
+      sourceResultSha256: sha256Json(row),
+      extractorVersion: row.axe_version ?? "axe-unknown",
+    }),
+    asset_id: provisionalAssetId,
     crawl_id: runId,
     signal_path: mapping.signalPath,
     value_bool: null,
@@ -346,12 +501,12 @@ function buildAxeObservation(
     value_json: null,
     value_type: mapping.valueType,
     observed_at: observedAt,
-    recorded_at: now,
+    recorded_at: observedAt,
     collector_version: COLLECTOR_VERSION,
     probe_version: row.axe_version,
     ruleset_version: ontologyVersion,
     source_hash: null,
-    crawl_hash: sourceToken,
+    crawl_hash: capsuleId,
     evidence_ref: null,
     confidence: 1,
     status: "active",

@@ -1,0 +1,14 @@
+{
+  "sourceAgency": "Statistisches Bundesamt (Destatis)",
+  "tableCode": "53111-0011",
+  "statisticalUnit": "Handwerksunternehmen",
+  "handwerkScope": "Handwerk insgesamt",
+  "referenceYear": 2024,
+  "retrievedAt": "2026-08-03T00:00:00.000Z",
+  "sourceUrl": "https://genesis.destatis.de/datenbank/online/statistic/53111/table/53111-0011",
+  "sourceFileName": "53111-0011.csv",
+  "sourceFileSha256": "REPLACE_WITH_SHA256_OF_THE_PRESERVED_OFFICIAL_EXPORT",
+  "parserVersion": "destatis-53111-0011-csv-v1",
+  "frameVersion": "destatis-53111-2024-v1",
+  "notes": []
+}

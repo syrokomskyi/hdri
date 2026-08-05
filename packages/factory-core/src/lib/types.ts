@@ -16,7 +16,6 @@ import type { PipelineArtifacts, PipelineStepLike } from "@syrokomskyi/pipeline-
 import type { NodePipelineContext } from "@syrokomskyi/pipeline-node/types";
 
 export interface HdriFactoryBriefBase {
-  sourceToken: string;
   skipGogols: string[];
 }
 

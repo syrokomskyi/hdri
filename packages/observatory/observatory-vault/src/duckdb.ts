@@ -22,6 +22,7 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { once } from "node:events";
 import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
 
 /**
@@ -53,6 +54,15 @@ export class DuckDbSession {
     await conn.run(sql);
   }
 
+  /** Streams result chunks without retaining prior chunks in the V8 heap. */
+  async *stream<T = Record<string, unknown>>(sql: string): AsyncIterable<T[]> {
+    const conn = await this.connect();
+    const result = await conn.stream(sql);
+    for await (const chunk of result.yieldRowObjectJs()) {
+      yield chunk as unknown as T[];
+    }
+  }
+
   close(): void {
     if (this.conn) {
       this.conn.closeSync();
@@ -70,7 +80,7 @@ export class DuckDbSession {
  * Uses a temp NDJSON file as the bridge from JS → DuckDB → Parquet.
  * ZSTD compression, row-group size tuned for small shards.
  */
-export async function writeParquet(objects: object[], outPath: string): Promise<void> {
+export async function writeParquet(objects: readonly object[], outPath: string): Promise<void> {
   if (objects.length === 0) {
     throw new Error("writeParquet: objects array must not be empty");
   }
@@ -81,16 +91,15 @@ export async function writeParquet(objects: object[], outPath: string): Promise<
   );
 
   try {
-    await new Promise<void>((resolve, reject) => {
-      const stream = fs.createWriteStream(tmp, { encoding: "utf-8" });
-      stream.on("error", reject);
-      stream.on("finish", resolve);
-      for (let i = 0; i < objects.length; i++) {
-        stream.write(JSON.stringify(objects[i]));
-        stream.write("\n");
+    const stream = fs.createWriteStream(tmp, { encoding: "utf-8", highWaterMark: 16 * 1024 * 1024 });
+    const streamError = once(stream, "error").then(([error]) => Promise.reject(error));
+    for (let i = 0; i < objects.length; i++) {
+      if (!stream.write(`${JSON.stringify(objects[i])}\n`)) {
+        await Promise.race([once(stream, "drain"), streamError]);
       }
-      stream.end();
-    });
+    }
+    stream.end();
+    await Promise.race([once(stream, "finish"), streamError]);
 
     const fwdTmp = tmp.replace(/\\/g, "/");
     const fwdOut = outPath.replace(/\\/g, "/");

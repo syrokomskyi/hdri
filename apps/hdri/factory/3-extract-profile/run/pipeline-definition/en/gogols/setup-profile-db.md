@@ -2,9 +2,9 @@
 factory: setup-profile-db
 title: Setup Profile DB
 purpose: >-
-  Idempotently create and migrate pages_YYYY.db, stamping _schema_meta.
+  Idempotently create and migrate pages-YYYY-qN.db, stamping _schema_meta.
 details: >-
-  Creates the DB output directory if needed, opens pages_YYYY.db (name derived
+  Creates the DB output directory if needed, opens pages-YYYY-qN.db (name derived
   from brief.profileYear + brief.profileHalf), runs migratePages() to create
   page_contents, page_observations, content_extractions, and content_contacts
   tables with all indexes, then stamps _schema_meta with owner_app=site-profile

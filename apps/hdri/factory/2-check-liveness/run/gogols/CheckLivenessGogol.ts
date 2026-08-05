@@ -9,6 +9,7 @@ execution by skipping already-checked sites for the current batch.</purpose>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Renew execution leases while bounded liveness measurements are active.</item>
   <item>Added resume support: query already-checked sites from liveness.db and filter them out before processing. Early exit if all sites checked.</item>
   <item>Fixed artifacts to report full batch statistics from database (includes resumed sites), with optional incremental report for current run only.</item>
   <item>Replace hand-rolled CSV serialization with csv-stringify/sync package.</item>
@@ -26,17 +27,30 @@ import path from "node:path";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import { markdownTable } from "markdown-table";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import { mintAssetId } from "@syrokomskyi/observatory-core";
+import {
+  QuarterExecutionJournal,
+  capsuleConfigSha256,
+  quarterCapsuleDir,
+  quarterExecutionEventsDir,
+  readExecutionCasObject,
+  withLeaseHeartbeat,
+  writeExecutionCasObject,
+  type HdriPeriod,
+  type WorkKey,
+} from "@syrokomskyi/factory-core";
 import { checkSiteLiveness } from "@syrokomskyi/business-crawler/liveness";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { openLivenessSqlite, openReadOnlySqlite } from "../db/connection.js";
+import { factoryRootDir } from "../config.js";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type SiteRow = { id: number; domain: string };
+type SiteRow = { id: number; domain: string; provisionalAssetId: string };
 
 type CheckStat = {
   domain: string;
@@ -67,45 +81,49 @@ export class CheckLivenessGogol extends Gogol {
     // ── 1. Load domains from registry.db ────────────────────────────────────
     const coreDb = openReadOnlySqlite(resolvedRegistryDbPath);
 
-    const query = `SELECT id, domain FROM sites ORDER BY id`;
+    const query = `
+      SELECT s.id, s.domain, br.da_id AS provisionalAssetId
+      FROM sites s JOIN business_registry br ON br.domain = s.domain
+      ORDER BY br.da_id`;
 
     let sites = coreDb.prepare(query).all() as SiteRow[];
     coreDb.close();
 
+    const stageTargetSites = sites;
     if (brief.maxDomains >= 0) {
       sites = sites.slice(0, brief.maxDomains);
     }
 
-    // ── 1b. Skip already-checked sites (resume support) ─────────────────────
-    const { year } = parseSourceToken(brief.sourceToken);
-    const resumeDb = openLivenessSqlite(year);
-    const checkedRows = resumeDb.prepare(`SELECT site_id FROM liveness_checks`).all() as {
-      site_id: number;
-    }[];
-    const checkedSiteIds = new Set(checkedRows.map((r) => r.site_id));
-    resumeDb.close();
-
-    const originalCount = sites.length;
-    sites = sites.filter((s) => !checkedSiteIds.has(s.id));
-    const skippedCount = originalCount - sites.length;
-
-    console.log(
-      `[check-liveness] ${originalCount} domain(s) total` +
-        ` — ${skippedCount} already checked, ${sites.length} remaining` +
-        ` — concurrency=${brief.concurrency} timeout=${brief.timeoutMs}ms`,
+    // ── 1b. Rebuild resume truth from append-only capsule events ────────────
+    const { year, quarter } = parseSourceToken(brief.sourceToken);
+    const period = `${year}-q${quarter}` as HdriPeriod;
+    const capsuleDir = quarterCapsuleDir(factoryRootDir, brief.deviceId, period, brief.capsuleId);
+    const journal = new QuarterExecutionJournal(
+      quarterExecutionEventsDir(factoryRootDir, brief.deviceId, period, brief.capsuleId),
+      capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan),
     );
+    await journal.initialize(mintAssetId(), new Date().toISOString());
+    const keyFor = (site: SiteRow): WorkKey => ({
+      period,
+      capsuleId: brief.capsuleId,
+      stageId: "liveness",
+      provisionalAssetId: site.provisionalAssetId as WorkKey["provisionalAssetId"],
+      instrumentVersion: "liveness-v2",
+    });
+    await journal.declareStageTargets({
+      stageId: "liveness",
+      keys: stageTargetSites.map(keyFor),
+      eventId: mintAssetId(),
+      now: new Date().toISOString(),
+    });
 
-    if (sites.length === 0) {
-      console.log(`[check-liveness] All sites already checked. Nothing to do.`);
-      return;
-    }
-
-    // ── 2. Prepare liveness.db writes ───────────────────────────────────────
-    const liveDb = openLivenessSqlite(year);
+    // ── 2. Prepare checkpoint DB writes ─────────────────────────────────────
+    const liveDb = openLivenessSqlite(period);
 
     const insertStmt = liveDb.prepare<
       [
         number,
+        string,
         string,
         number | null,
         string | null,
@@ -117,12 +135,13 @@ export class CheckLivenessGogol extends Gogol {
       ]
     >(`
       INSERT INTO liveness_checks (
-        site_id, domain,
+        site_id, provisional_asset_id, domain,
         http_status, final_url, redirect_count,
         latency_ms, is_live,
         error_code, error_msg
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(site_id) DO UPDATE SET
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(provisional_asset_id) DO UPDATE SET
+        site_id        = excluded.site_id,
         domain         = excluded.domain,
         http_status    = excluded.http_status,
         final_url      = excluded.final_url,
@@ -134,19 +153,18 @@ export class CheckLivenessGogol extends Gogol {
         checked_at     = unixepoch()
     `);
 
-    // ── 3. Run checks with concurrency pool ─────────────────────────────────
-    const stats: CheckStat[] = [];
-    let completed = 0;
-    const logInterval = Math.max(1, Math.min(100, Math.floor(sites.length / 50)));
-
-    const processOne = async (site: SiteRow): Promise<void> => {
-      const result = await checkSiteLiveness(site.domain, {
-        timeoutMs: brief.timeoutMs,
-        retryCount: brief.retryCount,
-      });
-
+    type LivenessResult = Awaited<ReturnType<typeof checkSiteLiveness>>;
+    type LivenessEvidence = {
+      schemaVersion: 1;
+      stage: "liveness";
+      siteId: number;
+      provisionalAssetId: string;
+      result: LivenessResult;
+    };
+    const checkpoint = (site: SiteRow, result: LivenessResult): void => {
       insertStmt.run(
         site.id,
+        site.provisionalAssetId,
         result.domain,
         result.httpStatus,
         result.finalUrl,
@@ -156,6 +174,62 @@ export class CheckLivenessGogol extends Gogol {
         result.errorCode,
         result.errorMsg,
       );
+    };
+
+    for (const site of sites) {
+      const sha256 = journal.terminalResultSha256(keyFor(site));
+      if (!sha256) continue;
+      const evidence = await readExecutionCasObject<LivenessEvidence>(capsuleDir, sha256);
+      if (evidence.provisionalAssetId !== site.provisionalAssetId) {
+        throw new Error(`Liveness evidence identity mismatch: ${site.provisionalAssetId}`);
+      }
+      checkpoint(site, evidence.result);
+    }
+
+    const originalCount = sites.length;
+    sites = sites.filter((site) => !journal.isTerminal(keyFor(site)));
+    const skippedCount = originalCount - sites.length;
+    console.log(
+      `[check-liveness] ${originalCount} domain(s) total — ${skippedCount} terminal, ${sites.length} remaining` +
+        ` — concurrency=${brief.concurrency} timeout=${brief.timeoutMs}ms`,
+    );
+
+    // ── 3. Run checks with concurrency pool ─────────────────────────────────
+    const stats: CheckStat[] = [];
+    let completed = 0;
+    const logInterval = Math.max(1, Math.min(100, Math.floor(sites.length / 50)));
+
+    const processOne = async (site: SiteRow): Promise<void> => {
+      const startedAt = new Date();
+      const leaseDurationMs = brief.timeoutMs * (brief.retryCount + 1) + 60_000;
+      const attempt = await journal.begin({
+        key: keyFor(site),
+        attemptId: mintAssetId(),
+        leaseOwner: brief.deviceId,
+        now: startedAt.toISOString(),
+        leaseExpiresAt: new Date(startedAt.getTime() + leaseDurationMs).toISOString(),
+      });
+      if (!attempt) return;
+      const result = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, () =>
+        checkSiteLiveness(site.domain, {
+          timeoutMs: brief.timeoutMs,
+          retryCount: brief.retryCount,
+        }),
+      );
+      const evidence = await writeExecutionCasObject(capsuleDir, {
+        schemaVersion: 1,
+        stage: "liveness",
+        siteId: site.id,
+        provisionalAssetId: site.provisionalAssetId,
+        result,
+      } satisfies LivenessEvidence);
+      await journal.finish(attempt, {
+        eventId: mintAssetId(),
+        now: new Date().toISOString(),
+        state: "succeeded",
+        resultSha256: evidence.sha256,
+      });
+      checkpoint(site, result);
 
       stats.push({
         domain: result.domain,
@@ -184,10 +258,19 @@ export class CheckLivenessGogol extends Gogol {
 
     await Promise.all(Array.from({ length: Math.min(brief.concurrency, sites.length) }, worker));
 
+    if (brief.maxDomains < 0) {
+      await journal.sealStage({
+        stageId: "liveness",
+        keys: stageTargetSites.map(keyFor),
+        eventId: mintAssetId(),
+        now: new Date().toISOString(),
+      });
+    }
+
     liveDb.close();
 
     // ── 4. Load full batch stats from database (includes resumed sites) ─────
-    const reportDb = openLivenessSqlite(year);
+    const reportDb = openLivenessSqlite(period);
 
     const totalChecked = (
       reportDb.prepare(`SELECT COUNT(*) AS n FROM liveness_checks`).get() as { n: number }

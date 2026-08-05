@@ -23,6 +23,10 @@ import { WriteVaultGogol } from "../gogols/WriteVaultGogol";
 import { ScoreHdriGogol } from "../gogols/ScoreHdriGogol";
 import { BuildCohortsGogol } from "../gogols/BuildCohortsGogol";
 import { ExportMartGogol } from "../gogols/ExportMartGogol";
+import { PrepareQuarterReleaseGogol } from "../gogols/PrepareQuarterReleaseGogol";
+import { SealCapsuleGogol } from "../gogols/SealCapsuleGogol";
+import { ValidateQuarterGogol } from "../gogols/ValidateQuarterGogol";
+import { ReleaseQuarterGogol } from "../gogols/ReleaseQuarterGogol";
 
 export const createGogolById = createGogolRegistry<Gogol>({
   loadGogolDeclaration,
@@ -36,5 +40,9 @@ export const createGogolById = createGogolRegistry<Gogol>({
     "score-hdri": () => new ScoreHdriGogol(),
     "build-cohorts": () => new BuildCohortsGogol(),
     "export-mart": () => new ExportMartGogol(),
+    "prepare-quarter-release": () => new PrepareQuarterReleaseGogol(),
+    "seal-capsule": () => new SealCapsuleGogol(),
+    "validate-quarter": () => new ValidateQuarterGogol(),
+    "release-quarter": () => new ReleaseQuarterGogol(),
   },
 });

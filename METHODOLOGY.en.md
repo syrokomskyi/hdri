@@ -137,7 +137,7 @@ The published descriptive index is a **repeated cross-section**: each quarter ag
 
 The dashboard addresses this in two ways:
 
-1. **Caution flag** — when the relative change in the number of cases `|ΔN|/N` exceeds the threshold 0.5, the cross-sectional delta is not suppressed, but its reliability is downgraded to "with caution" and marked `sample_frame_changed`. The descriptive value stays visible.
+1. **Caution flag** — when the relative change in the number of cases `|ΔN|/N` exceeds the threshold 0.1, the cross-sectional delta is not suppressed, but its reliability is downgraded to "with caution" and marked `sample_frame_changed`. The descriptive value stays visible.
 2. **Panel trend (longitudinal)** — additionally, a **like-for-like comparison** over the intersection of the same businesses (stable `asset_id`) is published (`comparisons/panel-trends.json`). Because the same assets are compared, this delta is **immune to composition effects**. It reports the mean and median of the score change, a **deterministic 95% bootstrap confidence interval** (fixed seed ⇒ reproducible), and the **coverage** (panel N ÷ current N). A change is considered statistically robust when the confidence interval excludes zero.
 
 ### 6.5 Comparability across version changes
@@ -146,7 +146,7 @@ Scores from different codebook or ontology versions are **not comparable**. If t
 
 ### 6.6 Post-stratification (optional, frame-bound)
 
-To correct the composition effect in principle, a **post-stratified** overall value can be published that reweights the stratum means onto a reference population frame (stratum = `bundesland|destatis_group`). This frame is **operator-provided** (`apps/hdri/observatory/.input/population-frame.json`, stratum → weight, e.g. establishment counts per stratum). **Without a real frame, no post-stratified figures are emitted** — fabricated weights would violate the scientific integrity of the index. If the covered frame weight is below 60%, the value is suppressed.
+To correct the composition effect in principle, a **post-stratified** overall value can be published that reweights the stratum means onto a reference population frame (stratum = `bundesland|destatis_group`). This frame is **operator-provided** (`apps/hdri/observatory/.input/population-frame.json`, stratum → weight, using one consistent official statistical unit). **Without a real frame, no post-stratified figures are emitted**. A headline requires at least 95% of total frame weight and at least 80% coverage within every Bundesland and every Destatis group; otherwise it is suppressed.
 
 ---
 

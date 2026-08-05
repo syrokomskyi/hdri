@@ -9,6 +9,7 @@
 <CHANGE_SUMMARY>
   <item>Initial implementation — extracted from app-local LlmCostReportGogol in apps/site.</item>
   <item>Added real OpenRouter pricing for all light-tier and medium-tier models so cost reports reflect actual spend instead of DEFAULT_PRICING fallback.</item>
+  <item>RFC-0065: Added estimation warning block at top of Insights section when estimatedCalls > 0 — shows call counts, ±15% dollar range, and affected gogol names.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -387,7 +388,13 @@ export abstract class LlmCostReportStep<
 
     lines.push(...this.buildPerGogolSection(records));
     lines.push(
-      ...this.buildInsightsSection(records, totalCalls, totalInputTokens, totalOutputTokens),
+      ...this.buildInsightsSection(
+        records,
+        totalCalls,
+        totalInputTokens,
+        totalOutputTokens,
+        totalCost,
+      ),
     );
 
     return lines.join("\n");
@@ -438,6 +445,7 @@ export abstract class LlmCostReportStep<
     totalCalls: number,
     totalInputTokens: number,
     totalOutputTokens: number,
+    totalCost: number,
   ): string[] {
     const failedCalls = records.filter((r) => !r.hasResponse);
     const apiCalls = records.filter((r) => r.usageSource === "api").length;
@@ -452,9 +460,28 @@ export abstract class LlmCostReportStep<
       ...byInputSize.map((r) => [r.gogolId, r.model, formatTokens(r.inputTokens)]),
     ];
 
-    const lines: string[] = [
-      "## Insights",
-      "",
+    const lines: string[] = ["## Insights", ""];
+
+    if (estimatedCalls > 0) {
+      const percentage = Math.round((estimatedCalls / totalCalls) * 100);
+      const dollarRange = totalCost * 0.15;
+      const affectedGogols = new Map<string, number>();
+      for (const r of records) {
+        if (r.usageSource === "estimated") {
+          affectedGogols.set(r.gogolId, (affectedGogols.get(r.gogolId) ?? 0) + 1);
+        }
+      }
+      const gogolList = [...affectedGogols.entries()]
+        .map(([id, count]) => `${id} (${count})`)
+        .join(", ");
+      lines.push(
+        `> ⚠️ **Cost accuracy warning:** ${estimatedCalls} of ${totalCalls} calls (${percentage}%) used estimated token counts (~4 chars/token).`,
+        `> Actual cost may differ by ±15% (±${formatCurrency(dollarRange)}). Affected gogols: ${gogolList}.`,
+        "",
+      );
+    }
+
+    lines.push(
       `- **Total LLM calls:** ${totalCalls}`,
       `- **Calls with API usage data:** ${apiCalls}`,
       `- **Calls with estimated tokens:** ${estimatedCalls}`,
@@ -474,7 +501,7 @@ export abstract class LlmCostReportStep<
       "- Pricing is based on a configurable table inside `LlmCostReportStep`.",
       "- Image generation calls (gpt-image-1.5, gemini image models) use per-call pricing, not token-based pricing.",
       "",
-    ];
+    );
 
     return lines;
   }

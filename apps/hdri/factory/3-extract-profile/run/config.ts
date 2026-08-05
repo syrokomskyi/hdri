@@ -42,6 +42,7 @@ export const briefInputDir = paths.briefInputDir;
 export const outputRootDir = paths.outputRootDir;
 export const evidenceDir = paths.evidenceDir;
 export const promptsDir = paths.promptsDir;
+export const factoryRootDir = paths.factoryRootDir;
 
 /**
  * Root of the upstream 2-check-liveness pipeline output.

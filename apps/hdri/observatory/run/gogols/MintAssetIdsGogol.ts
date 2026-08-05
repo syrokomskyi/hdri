@@ -34,6 +34,7 @@ import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";
 import { outputRootDir } from "../config";
+import { materializeAvailabilityTransitions } from "../availability/availability-store";
 
 type AssetRow = {
   asset_id: string;
@@ -59,6 +60,7 @@ export class MintAssetIdsGogol extends Gogol {
     let minted: number;
     let backfilled: number;
     let newRecords: VaultAssetIdentityRecord[];
+    let availabilityEvents: number;
 
     try {
       // 2. Collect distinct provisional (asset_id, domain) pairs. asset_states carries the
@@ -133,6 +135,11 @@ export class MintAssetIdsGogol extends Gogol {
         }
       });
       doWrite();
+      availabilityEvents = materializeAvailabilityTransitions(
+        db,
+        ctx.state.runId ?? "",
+        brief.period,
+      );
     } finally {
       db.close();
     }
@@ -176,6 +183,7 @@ export class MintAssetIdsGogol extends Gogol {
           backfilled_into_registry: backfilled,
           identity_shard: identityShard,
           minted_at: now,
+          availability_events_materialized: availabilityEvents,
         },
         null,
         2,

@@ -16,13 +16,19 @@
   <item>parseBriefMarkdown now accepts optional sharedSourceToken parameter for two-file brief pattern.</item>
   <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @syrokomskyi/pipeline-node.</item>
   <item>Update registryDbPath comment to reference 1-register-businesses instead of catalog-harvest.</item>
-  <item>Add domCacheSize brief field with default 1000 for shared Cheerio DOM LRU cache.</item>
+  <item>Bound domCacheSize to 1..64 for production quarter runs.</item>
   <item>Revise domCacheSize comment to document realistic per-DOM RAM cost (~1–3 MB) and warn that 100k pages ≈ 100–300 GB.</item>
+  <item>RFC-0046: add instrumentPlan field parsed from brief frontmatter.</item>
 </CHANGE_SUMMARY>
 */
 
 import matter from "gray-matter";
 import { parseSourceToken, getDeviceId } from "@syrokomskyi/observatory-crypto";
+import {
+  assertCapsuleId,
+  parseInstrumentPlanFromFrontmatter,
+  type InstrumentPlanEntry,
+} from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -30,6 +36,8 @@ export type Brief = {
    * Sole axis of idempotency.
    */
   sourceToken: string;
+  /** UUID v7 shared by every stage of this quarter. */
+  capsuleId: string;
   /**
    * Absolute or app-root-relative path to the 1-register-businesses registry.db.
    * Site-profile needs read-write access — it owns the site_pages table.
@@ -61,9 +69,8 @@ export type Brief = {
    * Max Cheerio DOM instances to keep in the shared LRU cache.
    * Each parsed DOM can easily consume 1–3 MB ( Cheerio tree + string buffers).
    * 100 000 unique pages ≈ 100–300 GB RAM — not feasible.
-   * -1 = unlimited (keeps every page in memory; only safe for tiny batches).
-   * 0 = disabled (parse on every access — not recommended).
-   * Default: 2000 (≈ 2–6 GB peak, manageable on a 16 GB machine).
+   * Unlimited/disabled modes are forbidden for production quarter runs.
+   * Default: 16; maximum: 64.
    */
   domCacheSize: number;
   /**
@@ -74,6 +81,8 @@ export type Brief = {
    * operator explicitly enabling it (with a lawful basis). Default: false.
    */
   collectImpressumContacts: boolean;
+  /** Instrument plan for this quarter. Defaults to Lighthouse disabled. */
+  instrumentPlan: InstrumentPlanEntry[];
 };
 
 // ---------------------------------------------------------------------------
@@ -114,6 +123,8 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     );
   }
   const parsedToken = parseSourceToken(sourceTokenRaw);
+  const capsuleId = typeof data.capsuleId === "string" ? data.capsuleId.trim().toLowerCase() : "";
+  assertCapsuleId(capsuleId);
 
   const registryDbPath = typeof data.registryDbPath === "string" ? data.registryDbPath.trim() : "";
   if (!registryDbPath) throw new Error("brief.md: registryDbPath must be a non-empty string");
@@ -123,9 +134,14 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   const zipcodesTablePath =
     typeof data.zipcodesTablePath === "string" ? data.zipcodesTablePath.trim() || null : null;
+  const domCacheSize = getFiniteNumber(data.domCacheSize, "domCacheSize") ?? 16;
+  if (!Number.isInteger(domCacheSize) || domCacheSize < 1 || domCacheSize > 64) {
+    throw new Error("brief.md: domCacheSize must be an integer between 1 and 64");
+  }
 
   return {
     sourceToken: parsedToken.raw,
+    capsuleId,
     registryDbPath,
     livenessDbPath,
     zipcodesTablePath,
@@ -135,7 +151,8 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     timeoutMs: getFiniteNumber(data.timeoutMs, "timeoutMs") ?? 20_000,
     maxDomains: getFiniteNumber(data.maxDomains, "maxDomains") ?? -1,
     skipGogols: getStringArray(data.skipGogols),
-    domCacheSize: getFiniteNumber(data.domCacheSize, "domCacheSize") ?? 1_000,
+    domCacheSize,
     collectImpressumContacts: data.collectImpressumContacts === true,
+    instrumentPlan: parseInstrumentPlanFromFrontmatter(data.instrumentPlan),
   };
 };

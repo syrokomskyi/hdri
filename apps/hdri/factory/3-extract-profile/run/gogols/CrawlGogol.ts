@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Heartbeat long-running profile captures while retaining terminal CAS fencing.</item>
   <item>Created CrawlGogol as the pure-crawl replacement for the former CrawlAndExtractGogol.</item>
   <item>Renamed gogol id from 'crawl' to 'crawl-pages' to avoid collision with the 'crawl' phase id in phase-registry.ts.</item>
   <item>Fix HTTP fallback: fallback to HTTP on network-level failures (SSL_ERROR, ENOTFOUND, ETIMEDOUT) instead of keeping HTTPS result.</item>
@@ -30,8 +31,20 @@ import fs from "node:fs/promises";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
 import { markdownTable } from "markdown-table";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { fetchPageContent } from "@syrokomskyi/business-crawler/fetch-page";
+import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import { mintAssetId } from "@syrokomskyi/observatory-core";
+import {
+  QuarterExecutionJournal,
+  capsuleConfigSha256,
+  quarterCapsuleDir,
+  quarterExecutionEventsDir,
+  readExecutionCasObject,
+  withLeaseHeartbeat,
+  writeExecutionCasObject,
+  type HdriPeriod,
+  type WorkKey,
+} from "@syrokomskyi/factory-core";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
@@ -50,12 +63,31 @@ import {
   getContentRelativePath,
   getPagesDbPath,
 } from "../paths.js";
+import { factoryRootDir } from "../config.js";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type SiteRow = { id: number; domain: string };
+type SiteRow = { id: number; domain: string; provisionalAssetId: string };
+
+type ProfileEvidence = {
+  schemaVersion: 1;
+  stage: "profile";
+  siteId: number;
+  provisionalAssetId: string;
+  domain: string;
+  result:
+    | {
+        ok: true;
+        httpStatus: number;
+        finalUrl: string;
+        contentHash: string;
+        contentLengthBytes: number;
+        isNewContent: boolean;
+      }
+    | { ok: false; httpStatus: number | null; errorCode: string; errorMsg: string | null };
+};
 
 type CrawlStat = {
   domain: string;
@@ -75,11 +107,7 @@ export class CrawlGogol extends Gogol {
   override readonly id = "crawl-pages";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { resolvedRegistryDbPath, resolvedLivenessDbPath, brief } = ctx.state;
-
-    // Derive year/half from sourceToken (B.1 cleanup)
-    const { year, quarter } = parseSourceToken(brief.sourceToken);
-    const half: 1 | 2 = quarter <= 2 ? 1 : 2;
+    const { resolvedRegistryDbPath, resolvedLivenessDbPath, brief, pagesDbName } = ctx.state;
 
     // ── 1. Build domain list ──────────────────────────────────────────────
     const livenessDb = openReadOnlyDb(resolvedLivenessDbPath);
@@ -91,7 +119,7 @@ export class CrawlGogol extends Gogol {
     sites = livenessDb
       .prepare(
         `
-      SELECT DISTINCT site_id AS id, domain
+      SELECT DISTINCT site_id AS id, domain, provisional_asset_id AS provisionalAssetId
       FROM liveness_checks
       WHERE is_live = 1
       ORDER BY site_id
@@ -101,6 +129,7 @@ export class CrawlGogol extends Gogol {
 
     livenessDb.close();
 
+    const stageTargetSites = sites;
     if (brief.maxDomains >= 0) sites = sites.slice(0, brief.maxDomains);
 
     console.log(
@@ -108,56 +137,72 @@ export class CrawlGogol extends Gogol {
     );
 
     // ── 2. Open pages DB ──────────────────────────────────────────────────
-    const pagesDbPath = getPagesDbPath(year, half);
+    const pagesDbPath = getPagesDbPath(pagesDbName);
     const pagesDb = openPagesDb(pagesDbPath);
     await fs.mkdir(getContentDir(), { recursive: true });
 
-    // ── 2b. Skip already-observed homepages for current batch (resume support) ──
-    const observedSiteIds = new Set<number>();
-
-    try {
-      const observed = pagesDb
-        .prepare<[], { site_id: number }>(
-          `
-          SELECT DISTINCT sp.site_id
-          FROM page_observations po
-          JOIN site_pages sp ON sp.id = po.site_page_id
-          WHERE sp.source = 'homepage'
-        `,
-        )
-        .all() as { site_id: number }[];
-
-      for (const row of observed) {
-        observedSiteIds.add(row.site_id);
-      }
-    } catch (e) {
-      // Table doesn't exist on first run - proceed with empty set
-      const err = e as { message?: string };
-      if (err.message?.includes("no such table")) {
-        console.log(
-          "[crawl] page_observations table not found (first run), proceeding with all sites",
-        );
-      } else {
-        throw e;
-      }
-    }
-
-    const originalCount = sites.length;
-
-    // Filter out sites that already have any page observed in current batch
-    sites = sites.filter((site) => !observedSiteIds.has(site.id));
-
-    const skippedCurrentBatch = originalCount - sites.length;
-
-    console.log(
-      `[crawl] ${originalCount} domain(s) total — ${skippedCurrentBatch} already observed in current batch, ${sites.length} remaining`,
+    // ── 2b. Resume from immutable execution events, not mutable page rows ───
+    const parsed = parseSourceToken(brief.sourceToken);
+    const period = `${parsed.year}-q${parsed.quarter}` as HdriPeriod;
+    const capsuleDir = quarterCapsuleDir(factoryRootDir, brief.deviceId, period, brief.capsuleId);
+    const journal = new QuarterExecutionJournal(
+      quarterExecutionEventsDir(factoryRootDir, brief.deviceId, period, brief.capsuleId),
+      capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan),
     );
-
-    if (sites.length === 0) {
-      console.log(`[crawl] All pages already observed. Nothing to do.`);
-      pagesDb.close();
-      return;
+    await journal.initialize(mintAssetId(), new Date().toISOString());
+    const keyFor = (site: SiteRow): WorkKey => ({
+      period,
+      capsuleId: brief.capsuleId,
+      stageId: "profile",
+      provisionalAssetId: site.provisionalAssetId as WorkKey["provisionalAssetId"],
+      instrumentVersion: "profile-v2",
+    });
+    await journal.declareStageTargets({
+      stageId: "profile",
+      keys: stageTargetSites.map(keyFor),
+      eventId: mintAssetId(),
+      now: new Date().toISOString(),
+    });
+    const checkpoint = (site: SiteRow, evidence: ProfileEvidence, evidenceSha256: string): void => {
+      const initialUrl = normalisePageUrl(`https://${site.domain}`);
+      const sitePageId = getOrCreateSitePage(pagesDb, site.id, initialUrl, sha256Hex(initialUrl));
+      if (!evidence.result.ok) {
+        const errorClass =
+          evidence.result.httpStatus == null
+            ? "network"
+            : evidence.result.httpStatus >= 500
+              ? "http_5xx"
+              : "http_4xx";
+        upsertPageObservation(pagesDb, sitePageId, evidenceSha256, false, errorClass);
+        return;
+      }
+      const result = evidence.result;
+      upsertPageContent(
+        pagesDb,
+        result.contentHash,
+        getContentRelativePath(result.contentHash),
+        result.contentLengthBytes,
+      );
+      const finalUrl = normalisePageUrl(result.finalUrl);
+      const finalHash = sha256Hex(finalUrl);
+      if (finalHash !== sha256Hex(initialUrl))
+        upsertSitePage(pagesDb, site.id, finalUrl, finalHash);
+      upsertPageObservation(pagesDb, sitePageId, result.contentHash, result.isNewContent);
+    };
+    for (const site of sites) {
+      const sha256 = journal.terminalResultSha256(keyFor(site));
+      if (!sha256) continue;
+      const evidence = await readExecutionCasObject<ProfileEvidence>(capsuleDir, sha256);
+      if (evidence.provisionalAssetId !== site.provisionalAssetId)
+        throw new Error(`Profile evidence identity mismatch: ${site.provisionalAssetId}`);
+      checkpoint(site, evidence, sha256);
     }
+    const originalCount = sites.length;
+    sites = sites.filter((site) => !journal.isTerminal(keyFor(site)));
+    const skippedCurrentBatch = originalCount - sites.length;
+    console.log(
+      `[crawl] ${originalCount} target(s) — ${skippedCurrentBatch} terminal, ${sites.length} remaining`,
+    );
 
     // ── 3. Crawl loop ─────────────────────────────────────────────────────
     const stats: CrawlStat[] = [];
@@ -167,109 +212,112 @@ export class CrawlGogol extends Gogol {
 
     const processOne = async (site: SiteRow): Promise<void> => {
       const url = `https://${site.domain}`;
-      const urlNorm = normalisePageUrl(url);
-      const urlSha256 = sha256Hex(urlNorm);
+      const startedAt = new Date();
+      const leaseDurationMs = brief.timeoutMs * 2 + 60_000;
+      const attempt = await journal.begin({
+        key: keyFor(site),
+        attemptId: mintAssetId(),
+        leaseOwner: brief.deviceId,
+        now: startedAt.toISOString(),
+        leaseExpiresAt: new Date(startedAt.getTime() + leaseDurationMs).toISOString(),
+      });
+      if (!attempt) return;
 
-      // Get existing site_page_id if it exists
-      const existingSitePage = pagesDb
-        .prepare<
-          [number, string],
-          { id: number }
-        >(`SELECT id FROM site_pages WHERE site_id = ? AND url_sha256 = ?`)
-        .get(site.id, urlSha256) as { id: number } | undefined;
+      const fetched = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, async () => {
+        const result = await fetchPageContent(url, { timeoutMs: brief.timeoutMs });
+        return result.ok
+          ? result
+          : result.errorCode === "SSL_ERROR" ||
+              result.errorCode === "ENOTFOUND" ||
+              result.errorCode === "ETIMEDOUT"
+            ? await fetchPageContent(`http://${site.domain}`, { timeoutMs: brief.timeoutMs })
+            : result;
+      });
 
-      let sitePageId: number;
-
-      // If site_page exists, check for previous batch observation to possibly skip (rescanPolicy)
-      if (existingSitePage) {
-        sitePageId = existingSitePage.id;
-        const existing = pagesDb
-          .prepare<
-            [number],
-            { content_sha256: string; observed_at: number; error_class: string }
-          >(`SELECT content_sha256, observed_at, error_class FROM page_observations WHERE site_page_id = ? ORDER BY observed_at DESC LIMIT 1`)
-          .get(sitePageId) as
-          | { content_sha256: string; observed_at: number; error_class: string }
-          | undefined;
-
-        if (existing) {
-          // B.2: Hardcoded rescan policy - OK rows never re-fetched, error rows always re-fetched
-          if (existing.error_class === "ok") {
-            // Previous observation was successful - never re-fetch OK rows
-            stats.push({
-              domain: site.domain,
-              ok: true,
-              httpStatus: 200,
-              isNewContent: false,
-              errorCode: null,
-              skipped: true,
-            });
-            return;
-          }
-          // Previous observation had an error - always re-fetch error rows
-          // (proceed to re-fetch below)
-        }
+      let evidencePayload: ProfileEvidence;
+      if (!fetched.ok || fetched.httpStatus === null || fetched.httpStatus >= 400) {
+        evidencePayload = {
+          schemaVersion: 1,
+          stage: "profile",
+          siteId: site.id,
+          provisionalAssetId: site.provisionalAssetId,
+          domain: site.domain,
+          result: {
+            ok: false,
+            httpStatus: fetched.ok ? fetched.httpStatus : null,
+            errorCode: fetched.ok ? `HTTP_${fetched.httpStatus}` : fetched.errorCode,
+            errorMsg: fetched.ok ? `HTTP ${fetched.httpStatus}` : fetched.errorMsg,
+          },
+        };
       } else {
-        // site_page doesn't exist yet - create it
-        sitePageId = getOrCreateSitePage(pagesDb, site.id, urlNorm, urlSha256);
+        const contentFilePath = getContentFilePath(fetched.contentHash);
+        const isNewContent = !(await fs
+          .access(contentFilePath)
+          .then(() => true)
+          .catch(() => false));
+        if (isNewContent) {
+          await fs.mkdir(path.dirname(contentFilePath), { recursive: true });
+          const temp = `${contentFilePath}.${mintAssetId()}.tmp`;
+          await fs.writeFile(temp, fetched.html, "utf8");
+          try {
+            await fs.link(temp, contentFilePath);
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+          } finally {
+            await fs.unlink(temp).catch(() => undefined);
+          }
+        } else if (sha256Hex(await fs.readFile(contentFilePath, "utf8")) !== fetched.contentHash) {
+          throw new Error(`Profile content CAS collision: ${fetched.contentHash}`);
+        }
+        evidencePayload = {
+          schemaVersion: 1,
+          stage: "profile",
+          siteId: site.id,
+          provisionalAssetId: site.provisionalAssetId,
+          domain: site.domain,
+          result: {
+            ok: true,
+            httpStatus: fetched.httpStatus,
+            finalUrl: fetched.finalUrl,
+            contentHash: fetched.contentHash,
+            contentLengthBytes: fetched.contentLengthBytes,
+            isNewContent,
+          },
+        };
       }
 
-      const result = await fetchPageContent(url, { timeoutMs: brief.timeoutMs });
-      const fetched = result.ok
-        ? result
-        : result.errorCode === "SSL_ERROR" ||
-            result.errorCode === "ENOTFOUND" ||
-            result.errorCode === "ETIMEDOUT"
-          ? await fetchPageContent(`http://${site.domain}`, { timeoutMs: brief.timeoutMs })
-          : result;
+      const evidence = await writeExecutionCasObject(capsuleDir, evidencePayload);
+      await journal.finish(attempt, {
+        eventId: mintAssetId(),
+        now: new Date().toISOString(),
+        state: evidencePayload.result.ok ? "succeeded" : "observed-failure",
+        resultSha256: evidence.sha256,
+        ...(!evidencePayload.result.ok ? { errorClass: evidencePayload.result.errorCode } : {}),
+      });
+      checkpoint(site, evidencePayload, evidence.sha256);
 
       completed++;
-      if (fetched.ok) Atomics.add(okCountShared, 0, 1);
+      if (evidencePayload.result.ok) Atomics.add(okCountShared, 0, 1);
       if (completed % logEvery === 0 || completed === sites.length) {
         logProgress(this.id, completed, sites.length, logEvery, true);
       }
 
-      if (!fetched.ok || fetched.httpStatus === null || fetched.httpStatus >= 400) {
+      if (!evidencePayload.result.ok) {
         stats.push({
           domain: site.domain,
           ok: false,
-          httpStatus: fetched.ok ? fetched.httpStatus : null,
+          httpStatus: evidencePayload.result.httpStatus,
           isNewContent: false,
-          errorCode: fetched.ok
-            ? `HTTP_${fetched.httpStatus}`
-            : (fetched as { errorCode: string }).errorCode,
+          errorCode: evidencePayload.result.errorCode,
         });
         return;
       }
 
-      const sha256 = fetched.contentHash;
-      const storagePath = getContentRelativePath(sha256);
-      const contentFilePath = getContentFilePath(sha256);
-
-      const isNewContent = !(await fs
-        .access(contentFilePath)
-        .then(() => true)
-        .catch(() => false));
-      if (isNewContent) {
-        await fs.mkdir(path.dirname(contentFilePath), { recursive: true });
-        await fs.writeFile(contentFilePath, fetched.html, "utf-8");
-      }
-
-      upsertPageContent(pagesDb, sha256, storagePath, fetched.contentLengthBytes);
-
-      const finalUrlNorm = normalisePageUrl(fetched.finalUrl);
-      const finalUrlSha256 = sha256Hex(finalUrlNorm);
-      if (finalUrlSha256 !== urlSha256) {
-        upsertSitePage(pagesDb, site.id, finalUrlNorm, finalUrlSha256);
-      }
-
-      upsertPageObservation(pagesDb, sitePageId, sha256, isNewContent);
-
       stats.push({
         domain: site.domain,
         ok: true,
-        httpStatus: fetched.httpStatus,
-        isNewContent,
+        httpStatus: evidencePayload.result.httpStatus,
+        isNewContent: evidencePayload.result.isNewContent,
         errorCode: null,
       });
     };
@@ -285,6 +333,15 @@ export class CrawlGogol extends Gogol {
     await Promise.all(
       Array.from({ length: Math.min(brief.concurrency, sites.length || 1) }, worker),
     );
+
+    if (brief.maxDomains < 0) {
+      await journal.sealStage({
+        stageId: "profile",
+        keys: stageTargetSites.map(keyFor),
+        eventId: mintAssetId(),
+        now: new Date().toISOString(),
+      });
+    }
 
     pagesDb.close();
 

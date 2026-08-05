@@ -88,3 +88,8 @@ export { parseOntology, readOntologyFile } from "./ontology/loader.js";
 // Value invariant (owned by value.ts)
 export type { ObservationValueFields } from "./value.js";
 export { countPopulatedValues, makeValueFields } from "./value.js";
+
+export { classifyLivenessOutcome, deriveAvailabilityTransition, LIVENESS_OUTCOME_POLICY_VERSION, withAvailabilityOntologyV2 } from "./availability.js";
+export type { AvailabilityTransition, LivenessOutcome, RawLivenessAttempt, WebsiteAvailabilityEvent, WebsitePanelState } from "./availability.js";
+export { canCommitCheckpoint, observationKey } from "./streaming.js";
+export type { ObservationKeyInput, StreamCheckpoint } from "./streaming.js";

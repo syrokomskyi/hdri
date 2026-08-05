@@ -9,10 +9,12 @@ Crawl factory components that collect raw signals and prepare them for the Digit
 ```
 0-harvest-source → 1-register-businesses → 2-check-liveness → 3-extract-profile → 4-audit-lighthouse → 5-audit-axe
      ↓                     ↓                      ↓                    ↓                    ↓                    ↓
-  core_YYYY.db       registry_YYYY.db       liveness_YYYY.db    pages_YYYY.db    lighthouse_YYYY.db      axe_YYYY.db
+  core_YYYY.db       registry_YYYY.db       liveness-YYYY-qN.db pages-YYYY-qN.db lighthouse-YYYY-qN.db   axe-YYYY-qN.db
 ```
 
 Each pipeline depends on the previous one. **Always run in this order.**
+
+Each new quarter folder contains only new source files. Known domains may occur again: Harvest records the new source occurrence while retaining the same stable asset identity. Fully processed batches are sealed as immutable ledger segments; the same batch name with different bytes is rejected. Previously sealed `.input` and `.output` artifacts are never overwritten or deleted.
 
 ## Phase overview
 
@@ -20,10 +22,10 @@ Each pipeline depends on the previous one. **Always run in this order.**
 | --- | --- | --- |
 | `0-harvest-source` | Ingest source catalogs from public directories (chambers of crafts, IHK, trade listings), parse business data | `core_YYYY.db` |
 | `1-register-businesses` | Deduplicate domains, mint deterministic asset IDs | `registry_YYYY.db` |
-| `2-check-liveness` | Check HTTP/HTTPS availability | `liveness_YYYY.db` |
-| `3-extract-profile` | Crawl homepages, extract 42 signal types | `pages_YYYY.db` |
-| `4-audit-lighthouse` | Run Lighthouse performance audits | `lighthouse_YYYY.db` |
-| `5-audit-axe` | Run axe accessibility audits | `axe_YYYY.db` |
+| `2-check-liveness` | Check HTTP/HTTPS availability | `liveness-YYYY-qN.db` |
+| `3-extract-profile` | Crawl homepages and extract signals | `pages-YYYY-qN.db` |
+| `4-audit-lighthouse` | Run optional Lighthouse performance audits | `lighthouse-YYYY-qN.db` |
+| `5-audit-axe` | Run axe accessibility audits | `axe-YYYY-qN.db` |
 
 Note: HDRI scoring and publication live in `apps/hdri/observatory`, not here.
 
@@ -66,17 +68,18 @@ pnpm install
    # Phase 3: Extract profiles
    pnpm turbo run start --filter=@syrokomskyi/site-profile
 
-   # Phase 4: Lighthouse audits
-   pnpm turbo run start --filter=@syrokomskyi/site-lighthouse-audit
+   # Phase 4: Lighthouse is disabled by the Q3 2026 instrument plan
 
    # Phase 5: axe audits
    pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
    ```
 
-Or run the entire chain at once:
+For Q3, run the chain without phase 4; a missing Lighthouse value means `disabled`, never null or zero.
+
+Or run the configured chain at once:
 
 ```bash
-pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi/register-businesses --filter=@syrokomskyi/site-liveness --filter=@syrokomskyi/site-profile --filter=@syrokomskyi/site-lighthouse-audit --filter=@syrokomskyi/site-axe-audit
+pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi/register-businesses --filter=@syrokomskyi/site-liveness --filter=@syrokomskyi/site-profile --filter=@syrokomskyi/site-axe-audit
 ```
 
 ## Configuration
@@ -87,7 +90,7 @@ Each phase has its own `brief.md` in `<phase>/.input/brief.md`. Shared configura
 
 The publication pipeline enforces k-anonymity:
 
-- Default mode is `enforce` (fails if any stratum has fewer than k_min=5 sites)
+- Default mode is `enforce` (fails if any stratum has fewer than effective k=12 sites)
 - Override to `warn` for development only
 - Publication mode `public` omits identifying data (domain, gewerk, bundesland, real site_id)
 - Publication mode `internal` includes identifying data for internal use
@@ -106,15 +109,15 @@ apps/hdri/factory/
     registry_YYYY.db           # Deduplicated business registry
     <step>-sign-source/        # Signature manifest
   2-check-liveness/.output/
-    liveness_YYYY.db           # Availability status
+    liveness-YYYY-qN.db        # Availability status for this quarter
   3-extract-profile/.output/
-    pages_YYYY.db              # Page observations + ext_* signals
+    pages-YYYY-qN.db           # Page observations + ext_* signals
     data/content/              # CAS HTML storage
   4-audit-lighthouse/.output/
-    lighthouse_YYYY.db         # Lighthouse metrics
+    lighthouse-YYYY-qN.db      # optional Lighthouse metrics
     data/audit-reports/        # CAS audit JSON
   5-audit-axe/.output/
-    axe_YYYY.db                # axe violations
+    axe-YYYY-qN.db             # axe violations for this quarter
     data/audit-reports/        # CAS audit JSON
 ```
 

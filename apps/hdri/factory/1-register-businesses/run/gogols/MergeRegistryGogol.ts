@@ -77,6 +77,10 @@ export class MergeRegistryGogol extends Gogol {
       INSERT INTO business_registry
         (da_id, domain, bundesland, gemeinde, first_seen_source_token, first_seen_device_id, first_seen_at, sites_count)
       VALUES (?, ?, ?, ?, ?, ?, unixepoch(), ?)
+      ON CONFLICT(da_id) DO UPDATE SET
+        bundesland = COALESCE(excluded.bundesland, business_registry.bundesland),
+        gemeinde = COALESCE(excluded.gemeinde, business_registry.gemeinde),
+        sites_count = MAX(business_registry.sites_count, excluded.sites_count)
     `);
 
     let totalRowsRead = 0;
@@ -134,8 +138,6 @@ export class MergeRegistryGogol extends Gogol {
     const dedupedCount = totalRowsRead - aggregates.length;
 
     const merge = db.transaction(() => {
-      db.prepare("DELETE FROM registry_alias").run();
-      db.prepare("DELETE FROM business_registry").run();
       for (const item of aggregates) {
         insertRegistry.run(
           item.daId,
@@ -166,10 +168,12 @@ export class MergeRegistryGogol extends Gogol {
       INSERT INTO sites
         (domain, hwo_uid, hwo_confidence, hwo_provenance, bundesland, gemeinde, created_at)
       VALUES (?, NULL, NULL, NULL, ?, ?, unixepoch())
+      ON CONFLICT(domain) DO UPDATE SET
+        bundesland = COALESCE(excluded.bundesland, sites.bundesland),
+        gemeinde = COALESCE(excluded.gemeinde, sites.gemeinde)
     `);
 
     const sitesTx = db.transaction(() => {
-      db.prepare("DELETE FROM sites").run();
       for (const item of aggregates) {
         insertSite.run(item.domain, item.bundesland, item.gemeinde);
       }

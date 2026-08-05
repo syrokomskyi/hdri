@@ -267,5 +267,6 @@ export class ExportMartGogol extends Gogol {
       fileCount: files.length,
       martDir,
     });
+    ctx.state.martPaths = files.map((file) => path.join(martDir, file.name));
   }
 }

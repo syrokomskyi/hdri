@@ -32,17 +32,18 @@ export class SetupLivenessDbGogol extends Gogol {
 
   override async run(ctx: PipelineContext): Promise<void> {
     const { brief } = ctx.state;
-    const { year } = parseSourceToken(brief.sourceToken);
-    const dbPath = getLivenessDbPath(year);
+    const { year, quarter } = parseSourceToken(brief.sourceToken);
+    const period = `${year}-q${quarter}`;
+    const dbPath = getLivenessDbPath(period);
 
     await setupFactoryDb({
       dbDir: getDbDir(),
-      openDb: () => openLivenessSqlite(year),
+      openDb: () => openLivenessSqlite(period),
       migrate: migrateLiveness,
       stampMeta: stampLivenessMeta,
       ownerApp: OWNER_APP,
       schemaVersion: LIVENESS_SCHEMA_VERSION,
-      dbLabel: `liveness_${year}.db`,
+      dbLabel: `liveness-${period}.db`,
       artifactLabel: "Liveness DB",
       dbPath: toFactoryRelativePath(dbPath),
       outputDir: ctx.getGogolOutputDir(this.id),

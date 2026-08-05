@@ -140,17 +140,19 @@ export const upsertPageObservation = (
   sitePageId: number,
   contentSha256: string,
   isNewContent: boolean,
+  errorClass = "ok",
 ): void => {
   pagesDb
     .prepare(
       `
-    INSERT INTO page_observations (site_page_id, content_sha256, is_new_content)
-    VALUES (?, ?, ?)
+    INSERT INTO page_observations (site_page_id, content_sha256, is_new_content, error_class)
+    VALUES (?, ?, ?, ?)
     ON CONFLICT(site_page_id) DO UPDATE SET
       content_sha256 = excluded.content_sha256,
       is_new_content = excluded.is_new_content,
+      error_class    = excluded.error_class,
       observed_at    = unixepoch()
   `,
     )
-    .run(sitePageId, contentSha256, isNewContent ? 1 : 0);
+    .run(sitePageId, contentSha256, isNewContent ? 1 : 0, errorClass);
 };

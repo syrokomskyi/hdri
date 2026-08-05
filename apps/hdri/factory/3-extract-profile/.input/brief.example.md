@@ -2,6 +2,20 @@
 concurrency: 20
 timeoutMs: 30000
 retries: 2
+skipGogols: []
+instrumentPlan:
+  - instrument: liveness
+    state: required
+    reason: null
+  - instrument: profile
+    state: required
+    reason: null
+  - instrument: axe
+    state: required
+    reason: null
+  - instrument: lighthouse
+    state: disabled
+    reason: "Not configured for this quarter"
 ---
 
 # Site Profile Extraction Brief

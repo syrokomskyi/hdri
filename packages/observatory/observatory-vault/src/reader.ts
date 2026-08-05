@@ -63,6 +63,20 @@ export class VaultReader {
     }
   }
 
+  /** Streams observation rows in native DuckDB chunks for bounded-memory rebuilds. */
+  async *streamAllObservations(year?: number): AsyncIterable<Array<Record<string, unknown>>> {
+    const glob = shardKindGlob(this.vaultDir, "observations", year);
+    try {
+      yield* this.session.stream<Record<string, unknown>>(
+        `SELECT * FROM read_parquet('${glob}', hive_partitioning=true)`,
+      );
+    } catch (error) {
+      // Match getAllObservations' optional-empty behavior only for a missing glob.
+      if (String(error).includes("No files found that match the pattern")) return;
+      throw error;
+    }
+  }
+
   /**
    * Returns a map of `observation_id → value_json` (aliased as `obs_json`) for a given
    * factory run, used by the tiering rehydrate path. Absorbs the SQL construction that
@@ -162,9 +176,16 @@ export class VaultReader {
    */
   async getAssetStateRecords(year?: number): Promise<VaultAssetStateRecord[]> {
     const glob = shardKindGlob(this.vaultDir, "asset_states", year);
-    return this.session.query<VaultAssetStateRecord>(
-      `SELECT * FROM read_parquet('${glob}', hive_partitioning=true)`,
-    );
+    try {
+      return await this.session.query<VaultAssetStateRecord>(
+        `SELECT * FROM read_parquet('${glob}', hive_partitioning=true)`,
+      );
+    } catch {
+      // Q2 predates self-contained asset-state shards. An empty result is the
+      // compatibility signal used by rebuild-from-vault to load the preserved
+      // emit bundle instead; a missing optional partition is not corruption.
+      return [];
+    }
   }
 
   /**

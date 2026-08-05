@@ -161,9 +161,7 @@ jobs:
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         shell: cmd
-        run: >
-          set GYP_MSVS_VERSION=2022 && set npm_config_msvs_version=2022 && call "%VS_DEV_CMD%" -arch=x64
-          && pnpm install --frozen-lockfile
+        run: call "%VS_DEV_CMD%" -arch=x64 && pnpm install --frozen-lockfile
       # Tests resolve the vault/core/codebook packages via their built dist.
       - run: >
           npx turbo run build

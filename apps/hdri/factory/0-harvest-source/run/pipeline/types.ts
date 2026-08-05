@@ -21,7 +21,7 @@ import type {
   PipelineArtifacts as SharedPipelineArtifacts,
 } from "@syrokomskyi/pipeline-core";
 import type { NodePipelineContext } from "@syrokomskyi/pipeline-node/types";
-import type { HdriFactoryContextExtras } from "@syrokomskyi/factory-core";
+import type { HdriFactoryContextExtras, LedgerDiscoveryResult } from "@syrokomskyi/factory-core";
 import type { Brief } from "../brief.js";
 
 // ---------------------------------------------------------------------------
@@ -34,6 +34,8 @@ export type PipelineState = {
   brief: Brief;
   /** Factory-level (root) brief, before app-local overrides. */
   rootBrief: Brief;
+  /** Two-phase discovery result: prior capsule segments + current batch IDs. */
+  discovery: LedgerDiscoveryResult;
 };
 
 // ---------------------------------------------------------------------------

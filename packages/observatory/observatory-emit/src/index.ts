@@ -26,5 +26,6 @@ export {
   readEmitBundle,
   readEmitManifest,
   streamAssetStates,
+  streamEvidence,
   streamObservations,
 } from "./reader.js";

@@ -20,7 +20,7 @@ import type {
 import type { NodePipelineContext } from "@syrokomskyi/pipeline-node/types";
 import type { HdriFactoryContextExtras } from "@syrokomskyi/factory-core";
 import type { Observation, SignalOntology } from "@syrokomskyi/observatory-core";
-import type { SignedObservation } from "@syrokomskyi/observatory-crypto";
+import type { EmitManifest } from "@syrokomskyi/observatory-emit";
 import type { Brief } from "../brief.js";
 
 // ---------------------------------------------------------------------------
@@ -29,25 +29,10 @@ import type { Brief } from "../brief.js";
 
 export type DiscoveredPagesDb = {
   deviceId: string;
-  sourceToken: string;
   pagesDbPath: string;
-  registryDbPath: string;
 };
 
 export type IngestedObs = Observation & { _device_id: string };
-
-export type EmitBundleManifest = {
-  run_id: string;
-  app_id: string;
-  period: string;
-  emitted_at?: string;
-  ontology_version?: string;
-  collector_version?: string;
-  observation_count: number;
-  asset_state_count?: number;
-  bundle_hash: string | null;
-  emit_dir?: string;
-};
 
 export type DiscoveredCoreDb = {
   deviceId: string;
@@ -57,7 +42,11 @@ export type DiscoveredCoreDb = {
 export type DiscoveredAxeDb = {
   deviceId: string;
   axeDbPath: string;
-  registryDbPath: string;
+};
+
+export type DiscoveredLivenessDb = {
+  deviceId: string;
+  livenessDbPath: string;
 };
 
 export type PipelineState = {
@@ -65,11 +54,11 @@ export type PipelineState = {
   ontology: SignalOntology | null;
   discoveredPages: DiscoveredPagesDb[];
   coreDbs: DiscoveredCoreDb[];
+  livenessDbs: DiscoveredLivenessDb[];
   axeDbs: DiscoveredAxeDb[];
-  allObs: IngestedObs[];
-  resolvedObs: IngestedObs[];
-  signed: SignedObservation[];
-  manifest: EmitBundleManifest | null;
+  observationDbPath: string | null;
+  signedObservationDbPath: string | null;
+  manifest: EmitManifest | null;
 };
 
 // ---------------------------------------------------------------------------

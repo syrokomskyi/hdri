@@ -1,70 +1,56 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Defines and enforces runtime validation for the emit-bundle manifest to ensure data integrity between factory and observatory components.</purpose>
-<non-goals>
-  <item>Does not handle compile-time type checking beyond schema alignment.</item>
-</non-goals>
+<purpose>Validates partitioned emit manifests at the Factory-to-Observatory boundary.</purpose>
+<non-goals><item>Does not read partition bytes.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY>
-  <item>Initial implementation of the EmitManifestSchema for runtime validation.</item>
-</CHANGE_SUMMARY>
 */
 
 import { z } from "zod";
 import type { EmitManifest } from "./types.js";
 
-/**
- * Runtime contract for the emit-bundle manifest — the formal factory↔observatory
- * handoff. `types.ts` gives compile-time shape; this gives *runtime* enforcement so a
- * malformed or drifted bundle (a factory app that renamed a field, dropped a hash, or
- * shipped a wrong-typed count) is rejected at the boundary instead of corrupting the
- * observatory downstream. The reader validates every manifest through this schema.
- *
- * Kept deliberately in lockstep with {@link EmitManifest}: the `satisfies` check at the
- * bottom fails to compile if the two ever diverge, so the contract cannot silently rot.
- */
-export const EmitManifestSchema = z
-  .object({
-    schema_version: z.enum(["1", "2"]),
-    format: z.literal("ndjson-v1"),
+const sha256 = z.string().regex(/^[0-9a-f]{64}$/);
+const partition = (kind: "observations" | "asset-states" | "evidence") => z.object({
+  uri: z.string().regex(new RegExp(`^${kind}/part-\\d{6}\\.ndjson$`)),
+  row_count: z.number().int().positive(),
+  sha256,
+});
 
-    app_id: z.string().min(1),
-    collector_version: z.string().min(1),
-    ruleset_version: z.string().min(1),
-    ontology_version: z.string().min(1),
+export const EmitManifestSchema = z.object({
+  schema_version: z.literal("3"),
+  format: z.literal("ndjson-partitioned-v1"),
+  app_id: z.string().min(1),
+  collector_version: z.string().min(1),
+  ruleset_version: z.string().min(1),
+  ontology_version: z.string().min(1),
+  run_id: z.string().min(1),
+  period: z.string().regex(/^\d{4}-q[1-4]$/),
+  emitted_at: z.string().datetime(),
+  partition_rows: z.number().int().min(1_000).max(1_000_000),
+  observation_count: z.number().int().nonnegative(),
+  observation_partitions: z.array(partition("observations")),
+  evidence_count: z.number().int().nonnegative(),
+  evidence_partitions: z.array(partition("evidence")),
+  evidence_hash: sha256.nullable(),
+  bundle_hash: sha256.nullable(),
+  asset_state_count: z.number().int().nonnegative(),
+  asset_state_partitions: z.array(partition("asset-states")),
+  asset_states_hash: sha256.nullable(),
+}).superRefine((manifest, ctx) => {
+  const observationRows = manifest.observation_partitions.reduce((sum, part) => sum + part.row_count, 0);
+  const stateRows = manifest.asset_state_partitions.reduce((sum, part) => sum + part.row_count, 0);
+  const evidenceRows = manifest.evidence_partitions.reduce((sum, part) => sum + part.row_count, 0);
+  if (observationRows !== manifest.observation_count) ctx.addIssue({ code: "custom", message: "observation partition counts do not reconcile" });
+  if (stateRows !== manifest.asset_state_count) ctx.addIssue({ code: "custom", message: "asset-state partition counts do not reconcile" });
+  if (evidenceRows !== manifest.evidence_count) ctx.addIssue({ code: "custom", message: "evidence partition counts do not reconcile" });
+  if ((manifest.observation_count > 0) !== (manifest.bundle_hash !== null)) ctx.addIssue({ code: "custom", message: "bundle_hash presence does not reconcile" });
+  if ((manifest.asset_state_count > 0) !== (manifest.asset_states_hash !== null)) ctx.addIssue({ code: "custom", message: "asset_states_hash presence does not reconcile" });
+  if ((manifest.evidence_count > 0) !== (manifest.evidence_hash !== null)) ctx.addIssue({ code: "custom", message: "evidence_hash presence does not reconcile" });
+});
 
-    run_id: z.string().min(1),
-    period: z.string().min(1),
-    emitted_at: z.string().min(1),
-
-    observation_count: z.number().int().nonnegative(),
-    evidence_count: z.number().int().nonnegative(),
-    bundle_hash: z.string().nullable(),
-
-    asset_state_count: z.number().int().nonnegative().optional(),
-    asset_states_hash: z.string().nullable().optional(),
-
-    emit_dir: z.string().optional(),
-  })
-  // A non-empty observations file must carry a hash, and vice-versa: the count and the
-  // integrity anchor cannot disagree, or streamObservations' verification is meaningless.
-  .refine((m) => m.observation_count > 0 === (m.bundle_hash !== null), {
-    message: "bundle_hash must be present iff observation_count > 0",
-    path: ["bundle_hash"],
-  });
-
-// Compile-time guard: the schema output must exactly model the hand-written type.
-// If EmitManifest and the schema drift, one of these assignments stops compiling.
 export type EmitManifestFromSchema = z.infer<typeof EmitManifestSchema>;
-const _schemaModelsType = (m: EmitManifest): EmitManifestFromSchema => m;
-const _typeModelsSchema = (m: EmitManifestFromSchema): EmitManifest => m;
+const _schemaModelsType = (manifest: EmitManifest): EmitManifestFromSchema => manifest;
+const _typeModelsSchema = (manifest: EmitManifestFromSchema): EmitManifest => manifest;
 void _schemaModelsType;
 void _typeModelsSchema;
 
-/**
- * Parses and validates a raw manifest object, throwing a descriptive error if it does
- * not satisfy the contract. Returns the typed manifest on success.
- */
-export function parseEmitManifest(raw: unknown): EmitManifest {
-  return EmitManifestSchema.parse(raw) as EmitManifest;
-}
+export const parseEmitManifest = (raw: unknown): EmitManifest => EmitManifestSchema.parse(raw) as EmitManifest;

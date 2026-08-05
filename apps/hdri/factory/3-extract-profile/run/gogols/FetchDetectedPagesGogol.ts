@@ -24,7 +24,6 @@ import fs from "node:fs/promises";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
 import { markdownTable } from "markdown-table";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { fetchPageContent } from "@syrokomskyi/business-crawler/fetch-page";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
@@ -121,14 +120,10 @@ export class FetchDetectedPagesGogol extends Gogol {
   override readonly id = "fetch-detected-pages";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { brief } = ctx.state;
-
-    // Derive year/half from sourceToken (B.1 cleanup)
-    const { year, quarter } = parseSourceToken(brief.sourceToken);
-    const half: 1 | 2 = quarter <= 2 ? 1 : 2;
+    const { pagesDbName, brief } = ctx.state;
 
     // ── 1. Collect detected URLs from ext_* tables ─────────────────────────────
-    const pagesDbPath = getPagesDbPath(year, half);
+    const pagesDbPath = getPagesDbPath(pagesDbName);
     const pagesDb = openPagesDb(pagesDbPath);
 
     const detectedUrls: DetectedUrlRow[] = [];

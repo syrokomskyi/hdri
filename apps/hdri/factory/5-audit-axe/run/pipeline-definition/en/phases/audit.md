@@ -3,9 +3,9 @@ title: Phase 1 · Audit · Aggregate · Snapshot
 purpose: >-
   Run axe against every target in the sub-sampled cohort under
   rate-limited execution, persist raw reports to CAS, store per-tool metrics in
-  axe_YYYY.db, and snapshot the database with full upstream provenance.
+  axe-YYYY-qN.db, and snapshot the database with full upstream provenance.
 entryCriteria:
-  - axe_YYYY.db is initialised (Phase 0 complete).
+  - axe-YYYY-qN.db is initialised (Phase 0 complete).
   - The audit cohort is loaded into pipeline state.
   - Either a fixture directory exists or the required live tool is installable (playwright + @axe-core/playwright).
 successSignals:

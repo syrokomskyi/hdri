@@ -7,6 +7,8 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation of database attachment, detachment, and hashing functions.</item>
+  <item>Fix attachDatabase: replace file: URI with plain path ATTACH + PRAGMA query_only for readonly enforcement.</item>
+  <item>Sanitize alias parameter to prevent SQL injection via bracket quoting breakout.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -57,18 +59,24 @@ export type AttachOptions = {
  *                        expectedVersion: 'v1', expectedOwner: 'site-liveness' });
  *   db.prepare('SELECT * FROM [liveness].site_availability LIMIT 10').all();
  */
-export const attachDatabase = (db: Database.Database, opts: AttachOptions): void => {
-  const mode = (opts.readonly ?? true) ? "ro" : "rwc";
-  const safePath = opts.path.replace(/'/g, "''");
+const sanitizeAlias = (alias: string): string => alias.replace(/]/g, "]]");
 
-  db.prepare(`ATTACH DATABASE 'file:${safePath}?mode=${mode}' AS [${opts.alias}]`).run();
+export const attachDatabase = (db: Database.Database, opts: AttachOptions): void => {
+  const safePath = opts.path.replace(/'/g, "''");
+  const safeAlias = sanitizeAlias(opts.alias);
+
+  db.prepare(`ATTACH DATABASE '${safePath}' AS [${safeAlias}]`).run();
+
+  if (opts.readonly ?? true) {
+    db.prepare(`PRAGMA [${safeAlias}].query_only = 1`).run();
+  }
 
   try {
-    assertSchemaCompat(db, opts.alias, opts.expectedVersion, opts.expectedOwner);
+    assertSchemaCompat(db, safeAlias, opts.expectedVersion, opts.expectedOwner);
   } catch (err) {
     // Detach before re-throwing so the caller's db is left in a clean state
     try {
-      db.prepare(`DETACH DATABASE [${opts.alias}]`).run();
+      db.prepare(`DETACH DATABASE [${safeAlias}]`).run();
     } catch {
       /* ignore */
     }
@@ -81,8 +89,9 @@ export const attachDatabase = (db: Database.Database, opts: AttachOptions): void
  * Safe to call even if the alias was never attached (swallows error).
  */
 export const detachDatabase = (db: Database.Database, alias: string): void => {
+  const safeAlias = sanitizeAlias(alias);
   try {
-    db.prepare(`DETACH DATABASE [${alias}]`).run();
+    db.prepare(`DETACH DATABASE [${safeAlias}]`).run();
   } catch {
     // not attached — nothing to do
   }

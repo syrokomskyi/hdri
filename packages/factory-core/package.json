@@ -5,9 +5,10 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "scripts": {
     "build": "pnpm exec tsc -p tsconfig.build.json",
+    "test": "pnpm exec vitest run",
     "lint": "pnpm exec eslint src --ext .ts",
     "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit",
     "upgrade-packages": "pnpm up --latest",
@@ -18,7 +19,7 @@
     "./package.json": "./package.json",
     ".": {
       "@syrokomskyi/source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
@@ -37,11 +38,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/better-sqlite3": "^7.6.13",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.1.2",
-    "eslint": "~10.7.0",
+    "better-sqlite3": "^13.0.3",
+    "eslint": "~10.8.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "^8.65.0",
+    "typescript-eslint": "^8.66.0",
     "vitest": "4.1.10"
   }
 }

@@ -8,7 +8,7 @@ operatingRules:
   - Observations are append-only and never overwritten.
   - Signal paths must be validated against the ontology before write.
   - Scores are versioned by codebook; old scores are never deleted.
-  - Public output enforces k-anonymity with minimum group size 5.
+  - Public output enforces k-anonymity with minimum group size 12.
 members:
   - id: harvest
   - id: observe

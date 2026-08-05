@@ -81,46 +81,54 @@ export function assetStateRecordsForVault(
   db: Database.Database,
   runId: string,
 ): VaultAssetStateRecord[] {
-  const states = db
-    .prepare(
-      `SELECT asset_id, domain, gewerk_group, hwo_uid, hwo_provenance, bundesland, gemeinde, period
-       FROM asset_states WHERE run_id = ? ORDER BY asset_id`,
-    )
-    .all(runId) as AssetStateDbRow[];
+  return [...iterateAssetStateRecordsForVault(db, runId)];
+}
 
-  const mapRows = db
-    .prepare(
-      `SELECT asset_id, mapping_system, target_code, target_label, source
-       FROM asset_hwo_mappings WHERE run_id = ?`,
-    )
-    .all(runId) as MappingDbRow[];
-
-  const mappingsByAsset = new Map<string, AssetStateMapping[]>();
-  for (const m of mapRows) {
-    let list = mappingsByAsset.get(m.asset_id);
-    if (!list) {
-      list = [];
-      mappingsByAsset.set(m.asset_id, list);
+export function* iterateAssetStateRecordsForVault(
+  db: Database.Database,
+  runId: string,
+): Generator<VaultAssetStateRecord> {
+  const rows = db.prepare(`
+    SELECT s.asset_id, s.domain, s.gewerk_group, s.hwo_uid, s.hwo_provenance,
+           s.bundesland, s.gemeinde, s.period,
+           m.mapping_system, m.target_code, m.target_label, m.source
+    FROM asset_states s
+    LEFT JOIN asset_hwo_mappings m
+      ON m.asset_id = s.asset_id AND m.run_id = s.run_id
+    WHERE s.run_id = ?
+    ORDER BY s.asset_id, m.mapping_system, m.target_code
+  `).iterate(runId) as IterableIterator<AssetStateDbRow & Partial<MappingDbRow>>;
+  let current: AssetStateDbRow | null = null;
+  let mappings: AssetStateMapping[] = [];
+  const build = (): VaultAssetStateRecord | null => current ? {
+    asset_id: current.asset_id,
+    domain: current.domain,
+    gewerk_group: current.gewerk_group,
+    hwo_uid: current.hwo_uid,
+    hwo_provenance: current.hwo_provenance,
+    bundesland: current.bundesland,
+    gemeinde: current.gemeinde,
+    mappings,
+    period: current.period ?? "",
+  } : null;
+  for (const row of rows) {
+    if (current && row.asset_id !== current.asset_id) {
+      const record = build();
+      if (record) yield record;
+      mappings = [];
     }
-    list.push({
-      mapping_system: m.mapping_system,
-      target_code: m.target_code,
-      target_label: m.target_label,
-      source: m.source,
-    });
+    current = row;
+    if (row.mapping_system && row.target_code && row.source) {
+      mappings.push({
+        mapping_system: row.mapping_system,
+        target_code: row.target_code,
+        target_label: row.target_label ?? null,
+        source: row.source,
+      });
+    }
   }
-
-  return states.map((s) => ({
-    asset_id: s.asset_id,
-    domain: s.domain,
-    gewerk_group: s.gewerk_group,
-    hwo_uid: s.hwo_uid,
-    hwo_provenance: s.hwo_provenance,
-    bundesland: s.bundesland,
-    gemeinde: s.gemeinde,
-    mappings: mappingsByAsset.get(s.asset_id) ?? [],
-    period: s.period ?? "",
-  }));
+  const final = build();
+  if (final) yield final;
 }
 
 /**

@@ -16,6 +16,7 @@
 
 import matter from "gray-matter";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import { assertCapsuleId } from "@syrokomskyi/factory-core";
 
 export type Brief = {
   /**
@@ -23,6 +24,8 @@ export type Brief = {
    * Sole axis of idempotency.
    */
   sourceToken: string;
+  /** UUID v7 shared by every stage of this quarter. */
+  capsuleId: string;
   /**
    * Absolute or app-root-relative path to the upstream core.db.
    * Example: "../0-harvest-source/.output/${DEVICE_ID}/data/db/core_2026.db"
@@ -49,6 +52,9 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   }
   parseSourceToken(tokenRaw); // validate format
 
+  const capsuleId = typeof data.capsuleId === "string" ? data.capsuleId.trim().toLowerCase() : "";
+  assertCapsuleId(capsuleId);
+
   const coreDbPath = typeof data.coreDbPath === "string" ? data.coreDbPath.trim() : "";
   if (!coreDbPath) {
     throw new Error("brief.md: coreDbPath must be a non-empty string");
@@ -58,5 +64,5 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     ? data.skipGogols.filter((x): x is string => typeof x === "string")
     : [];
 
-  return { sourceToken: tokenRaw, coreDbPath, skipGogols: skip };
+  return { sourceToken: tokenRaw, capsuleId, coreDbPath, skipGogols: skip };
 };

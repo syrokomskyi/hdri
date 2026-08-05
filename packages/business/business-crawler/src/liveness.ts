@@ -25,9 +25,9 @@ const RETRY_DELAY_MS = 500;
 // Error classification
 // ---------------------------------------------------------------------------
 
-type ErrorInfo = { errorCode: string; errorMsg: string };
+export type ErrorInfo = { errorCode: string; errorMsg: string };
 
-const classifyError = (err: unknown, timedOut: boolean): ErrorInfo => {
+export const classifyError = (err: unknown, timedOut: boolean): ErrorInfo => {
   // Node.js fetch wraps the real network error in TypeError.cause.
   // Check cause.code first for the most reliable classification.
   const causeCode =

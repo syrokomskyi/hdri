@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Publish period-scoped frame projections only after their immutable signed guard succeeds.</item>
   <item>Refactor parsing architecture to use catalog-specific independent parsers via a registry.</item>
   <item>Support skipping files marked as 'ignored' by the parser to reduce log noise.</item>
   <item>Implement parallel parsing with ConcurrencyGate and batched SQLite transactions for radical speedup.</item>
@@ -31,10 +32,15 @@
   <item>Use single-line progress output via logProgress singleLine flag.</item>
   <item>Migrate shared concurrency primitive import from @syrokomskyi/business-rate-limit to @syrokomskyi/rate-limit.</item>
   <item>File-size refactor: extracted domain types, DB helpers, and report/source-file helpers into separate modules; gogol class now focuses on orchestration.</item>
+  <item>Seal accepted batches and ledger-bound frame manifests with Ed25519 signatures.</item>
+  <item>Add empty-quarter fail-fast guard (RFC-0068): check site count before materializeLedgerProjection.</item>
 </CHANGE_SUMMARY>
 */
 
+import "@syrokomskyi/observatory-crypto/auto-env";
 import fs from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { createHash, randomUUID } from "node:crypto";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
 import { normaliseDomain, isStopDomain } from "@syrokomskyi/business-core/ids";
@@ -42,19 +48,39 @@ import { ConcurrencyGate } from "@syrokomskyi/rate-limit";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import {
+  getTransparencyKeysDir,
+  loadVerificationKeys,
+  parseSourceToken,
+  type VerificationKey,
+} from "@syrokomskyi/observatory-crypto";
+import {
+  checkSourceBatch,
+  freezeFrame,
+  publishFrozenFrameProjection,
+  readSourceBatchManifests,
+  rebuildLedgerHead,
+  sealSourceBatch,
+  sourceOccurrenceId,
+  type HdriPeriod,
+  type ProvisionalAssetId,
+  type SourceBatchManifest,
+} from "@syrokomskyi/factory-core";
+import { deriveAssetId } from "@syrokomskyi/observatory-core";
 import { listBatchSourceFiles } from "../source-files.js";
 import { getParserForSource } from "../parsers/index.js";
 import { openCoreSqlite } from "../db/connection.js";
 import { getDbDir } from "../paths.js";
+import { outputRootDir } from "../config.js";
 import {
   insertSkippedSeed,
   upsertFileStat,
   upsertSite,
   upsertSourceSeed,
 } from "./parse-sources-db.js";
-import { readSourceFile, renderReportMd } from "./parse-sources-report.js";
+import { accumulateFileResult, readSourceFile, renderReportMd } from "./parse-sources-report.js";
 import type { BatchReport, FileResult } from "./parse-sources-types.js";
+import { checkMinSitesGuard } from "./check-min-sites-guard.js";
 
 // ---------------------------------------------------------------------------
 // Gogol
@@ -65,9 +91,11 @@ export class ParseSourcesGogol extends Gogol {
 
   override async run(ctx: PipelineContext): Promise<void> {
     const { batchNames, brief } = ctx.state;
-    const { year } = parseSourceToken(brief.sourceToken);
+    const { year, quarter } = parseSourceToken(brief.sourceToken);
+    const currentPeriod = `${year}-q${quarter}` as HdriPeriod;
     const maxPages = brief.maxPages;
     const concurrency = brief.parserConcurrency;
+    const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
 
     await fs.mkdir(getDbDir(), { recursive: true });
     const db = openCoreSqlite(year);
@@ -108,6 +136,13 @@ export class ParseSourcesGogol extends Gogol {
       console.log(`[parse-sources] Processing batch: ${batchName} (concurrency: ${concurrency})`);
 
       const allSourceFiles = await listBatchSourceFiles(batchName, brief);
+      const sourceManifest = await buildSourceBatchManifest(
+        batchName,
+        allSourceFiles,
+        currentPeriod,
+      );
+      const ledgerDir = path.join(outputRootDir, "data", "source-ledger");
+      await checkSourceBatch(ledgerDir, sourceManifest, verificationKeys);
 
       // Pre-filter: exclude files already processed in previous runs
       // This avoids I/O overhead from reading and checking already-processed files
@@ -252,11 +287,7 @@ export class ParseSourcesGogol extends Gogol {
       for (const res of fileResults) {
         if (!res) continue;
 
-        batchReport.sourceFiles.push(res.stat);
-        batchReport.noUrlWarnings += res.noUrlWarnings;
-        batchReport.skipSummary.noUrl += res.skipSummary.noUrl;
-        batchReport.skipSummary.badUrl += res.skipSummary.badUrl;
-        batchReport.skipSummary.stopDomain += res.skipSummary.stopDomain;
+        accumulateFileResult(batchReport, res);
       }
 
       allBatchReports.push(batchReport);
@@ -266,8 +297,22 @@ export class ParseSourcesGogol extends Gogol {
         `[parse-sources] Batch ${batchName} done: ${batchReport.sourceFiles.length} source files processed`,
       );
 
-      // Per-batch CSVs
       const batchOutDir = path.join(outDir, "batches", batchName);
+      if (maxPages < 0) {
+        const sealResult = await sealSourceBatch(
+          ledgerDir,
+          sourceManifest,
+          undefined,
+          verificationKeys,
+        );
+        const ledgerHead = await rebuildLedgerHead(ledgerDir);
+        await ctx.writeTextFile(
+          path.join(batchOutDir, "source-batch-manifest.json"),
+          `${JSON.stringify({ ...sourceManifest, sealResult, ledgerHead }, null, 2)}\n`,
+        );
+      }
+
+      // Per-batch CSVs
       await ctx.writeTextFile(
         path.join(batchOutDir, "sources.csv"),
         csvStringify([
@@ -349,6 +394,16 @@ export class ParseSourcesGogol extends Gogol {
       }
     }
 
+    if (maxPages < 0) {
+      checkMinSitesGuard(db, brief.minSitesThreshold, maxPages);
+      await materializeLedgerProjection(
+        db,
+        path.join(outputRootDir, "data", "source-ledger"),
+        brief.sourceToken,
+        batchNames,
+        verificationKeys,
+      );
+    }
     db.close();
 
     await ctx.writeTextFile(
@@ -400,3 +455,149 @@ export class ParseSourcesGogol extends Gogol {
     );
   }
 }
+
+const hashFile = async (filePath: string): Promise<{ sha256: string; bytes: number }> => {
+  const hash = createHash("sha256");
+  let bytes = 0;
+  for await (const chunk of createReadStream(filePath)) {
+    const buffer = chunk as Buffer;
+    hash.update(buffer);
+    bytes += buffer.length;
+  }
+  return { sha256: hash.digest("hex"), bytes };
+};
+
+const buildSourceBatchManifest = async (
+  batchId: string,
+  files: Awaited<ReturnType<typeof listBatchSourceFiles>>,
+  period: HdriPeriod,
+): Promise<SourceBatchManifest> => {
+  const entries = [];
+  for (const file of files) {
+    const digest = await hashFile(file.absolutePath);
+    entries.push({
+      relativePath: file.logicalPath,
+      ...digest,
+      parserId: file.sourceFolder,
+      parserVersion: "harvest-v1",
+    });
+  }
+  entries.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  const batchHash = createHash("sha256").update(JSON.stringify(entries)).digest("hex");
+  return {
+    schemaVersion: "1",
+    batchId,
+    periodAdded: period,
+    batchHash,
+    files: entries,
+  };
+};
+
+const materializeLedgerProjection = async (
+  db: ReturnType<typeof openCoreSqlite>,
+  ledgerDir: string,
+  sourceToken: string,
+  includedBatchNames: readonly string[],
+  verificationKeys: ReadonlyMap<string, VerificationKey>,
+): Promise<void> => {
+  const included = new Set(includedBatchNames);
+  const manifests = (await readSourceBatchManifests(ledgerDir, verificationKeys)).filter(
+    (manifest) => included.has(manifest.batchId),
+  );
+  const discoveredIds = new Set(manifests.map((manifest) => manifest.batchId));
+  const missing = includedBatchNames.filter((batchName) => !discoveredIds.has(batchName));
+  if (missing.length > 0) {
+    throw new Error(`Frozen frame is missing sealed source batches: ${missing.join(", ")}`);
+  }
+  const fileHashes = new Map<string, { batchHash: string; fileHash: string; period: HdriPeriod }>();
+  for (const manifest of manifests) {
+    for (const file of manifest.files) {
+      fileHashes.set(`${manifest.batchId}/${file.relativePath}`, {
+        batchHash: manifest.batchHash,
+        fileHash: file.sha256,
+        period: manifest.periodAdded,
+      });
+    }
+  }
+
+  const projectionDir = path.join(ledgerDir, "projections");
+  await fs.mkdir(projectionDir, { recursive: true });
+  const parsed = parseSourceToken(sourceToken);
+  const period = `${parsed.year}-q${parsed.quarter}` as HdriPeriod;
+  const occurrencePath = path.join(projectionDir, `source-occurrences-${period}.ndjson`);
+  const occurrenceTemp = `${occurrencePath}.${process.pid}.${randomUUID()}.tmp`;
+  const output = await fs.open(occurrenceTemp, "wx");
+  const candidateDomains = new Map<ProvisionalAssetId, string>();
+  try {
+    const rows = db
+      .prepare(
+        `
+      SELECT s.domain, seed.source_path, seed.source_item_key
+      FROM site_source_seeds seed
+      JOIN sites s ON s.id = seed.site_id
+      ORDER BY seed.source_path, seed.source_item_key, s.domain
+    `,
+      )
+      .iterate() as IterableIterator<{
+      domain: string;
+      source_path: string;
+      source_item_key: string;
+    }>;
+    for (const row of rows) {
+      const provenance = fileHashes.get(row.source_path);
+      if (!provenance) continue;
+      const provisionalAssetId = deriveAssetId(row.domain) as ProvisionalAssetId;
+      candidateDomains.set(provisionalAssetId, row.domain);
+      await output.write(
+        `${JSON.stringify({
+          sourceOccurrenceId: sourceOccurrenceId(
+            provenance.batchHash,
+            provenance.fileHash,
+            row.source_item_key,
+          ),
+          batchId: row.source_path.split("/", 1)[0],
+          periodAdded: provenance.period,
+          provisionalAssetId,
+          normalisedDomain: row.domain,
+          disposition: "assertion",
+        })}\n`,
+      );
+    }
+    await output.sync();
+  } finally {
+    await output.close();
+  }
+
+  const occurrenceProjectionSha256 = (await hashFile(occurrenceTemp)).sha256;
+  const includedBatchIds = manifests.map((manifest) => manifest.batchId).sort();
+  const ledgerHead = await rebuildLedgerHead(ledgerDir, includedBatchIds);
+  const frame = freezeFrame(
+    period,
+    [...candidateDomains]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([provisionalAssetId, domain]) => ({
+        sourceOccurrenceId: `frame-${provisionalAssetId}`,
+        batchId: "accepted-ledger",
+        periodAdded: period,
+        provisionalAssetId,
+        normalisedDomain: domain,
+        disposition: "assertion" as const,
+      })),
+    {
+      ledgerHead,
+      occurrenceProjectionSha256,
+      includedBatchIds,
+    },
+  );
+  try {
+    await publishFrozenFrameProjection(
+      ledgerDir,
+      frame,
+      occurrenceTemp,
+      undefined,
+      verificationKeys,
+    );
+  } finally {
+    await fs.unlink(occurrenceTemp).catch(() => undefined);
+  }
+};

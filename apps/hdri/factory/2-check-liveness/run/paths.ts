@@ -18,5 +18,5 @@ import { outputRootDir } from "./config.js";
 
 export const getDbDir = (): string => path.join(outputRootDir, "data", "db");
 
-export const getLivenessDbPath = (year: number): string =>
-  path.join(getDbDir(), `liveness_${year}.db`);
+export const getLivenessDbPath = (period: string): string =>
+  path.join(getDbDir(), `liveness-${period}.db`);

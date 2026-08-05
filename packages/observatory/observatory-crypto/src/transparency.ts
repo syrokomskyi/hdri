@@ -9,6 +9,7 @@
   <item>Initial implementation of transparency-key helpers for signature verification.</item>
   <item>Import findRepoRoot from env.ts instead of device.ts (module split).</item>
   <item>Add deep verifyUpstream entry point — loads keys + verifies manifest in one call.</item>
+  <item>Bind transparency verification keys to their collector identity.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -56,7 +57,7 @@ export async function loadVerificationKeys(transparencyDir: string): Promise<Ver
     const publicKeyPem = await fsp.readFile(path.join(transparencyDir, file), "utf-8");
     const fingerprint = crypto.createHash("sha256").update(publicKeyPem).digest("hex").slice(0, 16);
     const signingKeyId = `${deviceId}-${fingerprint}`;
-    keysByKeyId.set(signingKeyId, { publicKeyPem, signingKeyId });
+    keysByKeyId.set(signingKeyId, { publicKeyPem, signingKeyId, collectorId: deviceId });
   }
 
   return keysByKeyId;

@@ -10,6 +10,9 @@
       "path": "./packages/business/business-crawler"
     },
     {
+      "path": "./packages/changelog-live"
+    },
+    {
       "path": "./packages/factory-core"
     },
     {

@@ -21,6 +21,8 @@ export type SnapshotFileEntry = {
   path: string;
   bytes: number;
   sha256: string;
+  access?: "public" | "internal" | "restricted";
+  role?: string;
 };
 
 export type SnapshotRunInfo = {
@@ -68,6 +70,18 @@ export type VerifyResult = {
   missing: string[];
 };
 
+const resolveSnapshotEntry = (rootDir: string, relativePath: string): string => {
+  if (!relativePath || path.isAbsolute(relativePath) || relativePath.split(/[\\/]/).includes("..")) {
+    throw new Error(`Unsafe snapshot manifest path: ${relativePath}`);
+  }
+  const root = path.resolve(rootDir);
+  const resolved = path.resolve(root, relativePath);
+  if (!resolved.startsWith(`${root}${path.sep}`) && resolved !== root) {
+    throw new Error(`Snapshot entry escapes root: ${relativePath}`);
+  }
+  return resolved;
+};
+
 /** Re-hash every file listed in `manifest` under `rootDir` and compare. */
 export async function verifyManifest(
   rootDir: string,
@@ -76,7 +90,13 @@ export async function verifyManifest(
   const mismatches: string[] = [];
   const missing: string[] = [];
   for (const entry of manifest.files) {
-    const abs = path.join(rootDir, entry.path);
+    let abs: string;
+    try {
+      abs = resolveSnapshotEntry(rootDir, entry.path);
+    } catch {
+      mismatches.push(entry.path);
+      continue;
+    }
     try {
       const stat = await fsp.stat(abs);
       if (stat.size !== entry.bytes) {

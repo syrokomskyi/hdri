@@ -9,10 +9,12 @@ Crawl-Factory-Komponenten, die Rohsignale sammeln und für das Digital Observato
 ```
 0-harvest-source → 1-register-businesses → 2-check-liveness → 3-extract-profile → 4-audit-lighthouse → 5-audit-axe
      ↓                     ↓                      ↓                    ↓                    ↓                    ↓
-  core_YYYY.db       registry_YYYY.db       liveness_YYYY.db    pages_YYYY.db    lighthouse_YYYY.db      axe_YYYY.db
+  core_YYYY.db       registry_YYYY.db       liveness-YYYY-qN.db pages-YYYY-qN.db lighthouse-YYYY-qN.db   axe-YYYY-qN.db
 ```
 
 Jede Pipeline hängt von der vorherigen ab. **Immer in dieser Reihenfolge ausführen.**
+
+Jeder neue Quartalsordner enthält ausschließlich neue Quelldateien. Bekannte Domains dürfen darin erneut vorkommen: Harvest speichert die neue Quellenbeobachtung, behält aber dieselbe stabile Asset-Identität. Vollständig verarbeitete Batches werden als unveränderliche Ledger-Segmente versiegelt; derselbe Name mit anderen Bytes wird abgelehnt. Bereits versiegelte `.input`- und `.output`-Artefakte werden niemals überschrieben oder gelöscht.
 
 ## Phasenübersicht
 
@@ -20,10 +22,10 @@ Jede Pipeline hängt von der vorherigen ab. **Immer in dieser Reihenfolge ausfü
 | --- | --- | --- |
 | `0-harvest-source` | Quellkataloge aus öffentlichen Verzeichnissen (Handwerkskammer, IHK, Branchenbörsen) erfassen und parsen | `core_YYYY.db` |
 | `1-register-businesses` | Domänen deduplizieren, deterministische Asset-IDs prägen | `registry_YYYY.db` |
-| `2-check-liveness` | HTTP/HTTPS-Erreichbarkeit prüfen | `liveness_YYYY.db` |
-| `3-extract-profile` | Startseiten crawlen, 42 Signaltypen extrahieren | `pages_YYYY.db` |
-| `4-audit-lighthouse` | Lighthouse-Leistungsaudits ausführen | `lighthouse_YYYY.db` |
-| `5-audit-axe` | axe-Barrierefreiheitsaudits ausführen | `axe_YYYY.db` |
+| `2-check-liveness` | HTTP/HTTPS-Erreichbarkeit prüfen | `liveness-YYYY-qN.db` |
+| `3-extract-profile` | Startseiten crawlen, Signaltypen extrahieren | `pages-YYYY-qN.db` |
+| `4-audit-lighthouse` | Optionale Lighthouse-Leistungsaudits | `lighthouse-YYYY-qN.db` |
+| `5-audit-axe` | axe-Barrierefreiheitsaudits ausführen | `axe-YYYY-qN.db` |
 
 Hinweis: HDRI-Bewertung und Veröffentlichung befinden sich in `apps/hdri/observatory`, nicht hier.
 
@@ -66,17 +68,18 @@ pnpm install
    # Phase 3: Profile extrahieren
    pnpm turbo run start --filter=@syrokomskyi/site-profile
 
-   # Phase 4: Lighthouse-Audits
-   pnpm turbo run start --filter=@syrokomskyi/site-lighthouse-audit
+   # Phase 4: Lighthouse ist im Q3-2026-Instrumentplan deaktiviert
 
    # Phase 5: axe-Audits
    pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
    ```
 
-Oder führen Sie die gesamte Kette auf einmal aus:
+Für Q3 wird die Kette ohne Phase 4 ausgeführt; ein fehlender Lighthouse-Wert ist `disabled`, niemals null oder 0.
+
+Oder führen Sie die konfigurierte Kette auf einmal aus:
 
 ```bash
-pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi/register-businesses --filter=@syrokomskyi/site-liveness --filter=@syrokomskyi/site-profile --filter=@syrokomskyi/site-lighthouse-audit --filter=@syrokomskyi/site-axe-audit
+pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi/register-businesses --filter=@syrokomskyi/site-liveness --filter=@syrokomskyi/site-profile --filter=@syrokomskyi/site-axe-audit
 ```
 
 ## Konfiguration
@@ -87,7 +90,7 @@ Jede Phase hat ihre eigene `brief.md` in `<phase>/.input/brief.md`. Gemeinsame K
 
 Die Veröffentlichungspipeline erzwingt K-Anonymität:
 
-- Standardmodus ist `enforce` (Fehlschlag, wenn eine Schicht weniger als k_min=5 Websites hat)
+- Standardmodus ist `enforce` (Fehlschlag, wenn eine Schicht weniger als effektiv k=12 Websites hat)
 - Nur für die Entwicklung auf `warn` umstellen
 - Veröffentlichungsmodus `public` entfernt identifizierende Daten (Domäne, gewerk, bundesland, echte site_id)
 - Veröffentlichungsmodus `internal` enthält identifizierende Daten für den internen Gebrauch
@@ -106,15 +109,15 @@ apps/hdri/factory/
     registry_YYYY.db           # Dedupliziertes Unternehmensregister
     <step>-sign-source/        # Signaturmanifest
   2-check-liveness/.output/
-    liveness_YYYY.db           # Erreichbarkeitsstatus
+    liveness-YYYY-qN.db        # Erreichbarkeitsstatus dieses Quartals
   3-extract-profile/.output/
-    pages_YYYY.db              # Seitenbeobachtungen + ext_*-Signale
+    pages-YYYY-qN.db           # Seitenbeobachtungen + ext_*-Signale
     data/content/              # CAS-HTML-Speicher
   4-audit-lighthouse/.output/
-    lighthouse_YYYY.db         # Lighthouse-Metriken
+    lighthouse-YYYY-qN.db      # optionale Lighthouse-Metriken
     data/audit-reports/        # CAS-Audit-JSON
   5-audit-axe/.output/
-    axe_YYYY.db                # axe-Verletzungen
+    axe-YYYY-qN.db             # axe-Verletzungen dieses Quartals
     data/audit-reports/        # CAS-Audit-JSON
 ```
 
@@ -125,3 +128,9 @@ apps/hdri/factory/
 - [`apps/hdri/observatory`](../observatory) — Asset-Zustandsverfolgung, HDRI-Bewertung, Mart-Generierung
 - [`METHODOLOGY.md`](../../METHODOLOGY.md) — Wissenschaftliche Methodik des HDRI
 - [`GOVERNANCE.md`](../../GOVERNANCE.md) — Projekt-Governance und Rollen
+
+## Werkzeugskripte
+
+| Skript | Zweck | Aufruf |
+| --- | --- | --- |
+| `batch-estimate.ts` | Grobe Schnellschätzung der Website-Anzahl in Batch-Eingabeordnern (Dateien, URL-Einträge, eindeutige Domains) ohne vollständige Pipeline-Ausführung | `pnpm estimate:hdri` |

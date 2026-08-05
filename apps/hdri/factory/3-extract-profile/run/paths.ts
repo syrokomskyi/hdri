@@ -15,13 +15,11 @@ import { outputRootDir } from "./config.js";
 export const getDbDir = (): string => path.join(outputRootDir, "data", "db");
 
 /**
- * Canonical name for the pages DB derived from profile year and half.
- * E.g. "pages-2026-h1" → file "pages-2026-h1.db"
+ * Canonical name for an immutable quarter-local profile database.
  */
-export const getPagesDbName = (year: number, half: 1 | 2): string => `pages-${year}-h${half}`;
+export const getPagesDbName = (period: string): string => `pages-${period}`;
 
-export const getPagesDbPath = (year: number, half: 1 | 2): string =>
-  path.join(getDbDir(), `${getPagesDbName(year, half)}.db`);
+export const getPagesDbPath = (pagesDbName: string): string => path.join(getDbDir(), `${pagesDbName}.db`);
 
 /**
  * Root directory for CAS page content files.

@@ -13,7 +13,7 @@ const INIT = {
   ruleset_version: "1.3.0",
   ontology_version: "1.1.0",
   run_id: "0192f3a4-5b6c-7d8e-9f01-234567890abc",
-  period: "2026-Q2",
+  period: "2026-q2",
 } as const;
 
 const makeObs = (id: string): Observation => ({
@@ -56,8 +56,8 @@ async function writeAndReadBack(observations: Observation[], states: AssetStateR
   try {
     const w = new EmitBundleWriter(emitDir, INIT);
     await w.open();
-    for (const o of observations) w.writeObservation(o);
-    for (const s of states) w.writeAssetState(s);
+    for (const o of observations) await w.writeObservation(o);
+    for (const s of states) await w.writeAssetState(s);
     await w.commit();
 
     const bundle = await readEmitBundle(emitDir);

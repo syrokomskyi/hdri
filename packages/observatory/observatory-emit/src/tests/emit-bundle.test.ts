@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { AssetStateRecord, Observation } from "@syrokomskyi/observatory-core";
 import { EmitBundleWriter } from "../writer.js";
-import { readEmitBundle, streamAssetStates, streamObservations } from "../reader.js";
+import { readEmitBundle, streamAssetStates, streamEvidence, streamObservations } from "../reader.js";
 import { EmitManifestSchema, parseEmitManifest } from "../schema.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +30,7 @@ const INIT = {
   ruleset_version: "1.3.0",
   ontology_version: "1.1.0",
   run_id: "0192f3a4-5b6c-7d8e-9f01-234567890abc",
-  period: "2026-Q2",
+  period: "2026-q2",
 } as const;
 
 const obs = (id: string): Observation => ({
@@ -79,8 +79,8 @@ afterEach(() => {
 async function writeBundle(observations: Observation[], states: AssetStateRecord[]): Promise<void> {
   const w = new EmitBundleWriter(emitDir, INIT);
   await w.open();
-  for (const o of observations) w.writeObservation(o);
-  for (const s of states) w.writeAssetState(s);
+  for (const o of observations) await w.writeObservation(o);
+  for (const s of states) await w.writeAssetState(s);
   await w.commit();
 }
 
@@ -112,13 +112,48 @@ describe("emit-bundle round-trip", () => {
     for await (const o of streamObservations(bundle)) read.push(o);
     expect(read).toEqual([]);
   });
+
+  it("streams conflict evidence through the same hash-verified partition contract", async () => {
+    const writer = new EmitBundleWriter(emitDir, INIT, { partitionRows: 1_000 });
+    await writer.open();
+    await writer.writeEvidence({ evidenceType: "observation-conflict", loserObservationId: "o-1" });
+    const manifest = await writer.commit();
+    expect(manifest.evidence_count).toBe(1);
+    expect(manifest.evidence_hash).toMatch(/^[0-9a-f]{64}$/);
+    const records: unknown[] = [];
+    for await (const record of streamEvidence(await readEmitBundle(emitDir))) records.push(record);
+    expect(records).toEqual([{ evidenceType: "observation-conflict", loserObservationId: "o-1" }]);
+  });
+
+  it("resumes after interruption from the last sealed partition without duplicates", async () => {
+    const observations = Array.from({ length: 1_200 }, (_, index) => obs(`o-${index}`));
+    const interrupted = new EmitBundleWriter(emitDir, INIT, { partitionRows: 1_000 });
+    await interrupted.open();
+    for (const item of observations.slice(0, 1_100)) await interrupted.writeObservation(item);
+    await interrupted.abort();
+    const staleTemp = path.join(emitDir, "observations", "part-000001.ndjson.stale.tmp");
+    await fsp.writeFile(staleTemp, "partial\n");
+
+    const resumed = new EmitBundleWriter(emitDir, INIT, { partitionRows: 1_000 });
+    await resumed.open();
+    await expect(fsp.access(staleTemp)).rejects.toMatchObject({ code: "ENOENT" });
+    expect(resumed.committedObservationCount).toBe(1_000);
+    for (const item of observations.slice(resumed.committedObservationCount)) {
+      await resumed.writeObservation(item);
+    }
+    await resumed.commit();
+
+    const ids: string[] = [];
+    for await (const item of streamObservations(await readEmitBundle(emitDir))) ids.push(item.observation_id);
+    expect(ids).toEqual(observations.map((item) => item.observation_id));
+  });
 });
 
 describe("emit-bundle integrity enforcement", () => {
   it("rejects a tampered observations file (hash mismatch)", async () => {
     await writeBundle([obs("o1")], []);
     await fsp.appendFile(
-      path.join(emitDir, "observations.ndjson"),
+      path.join(emitDir, "observations", "part-000000.ndjson"),
       JSON.stringify(obs("evil")) + "\n",
     );
 
@@ -158,7 +193,7 @@ describe("emit-bundle manifest contract (zod)", () => {
   it("the reader surfaces a malformed manifest as a descriptive error", async () => {
     await fsp.writeFile(
       path.join(emitDir, "manifest.json"),
-      JSON.stringify({ format: "ndjson-v1" }),
+      JSON.stringify({ format: "ndjson-partitioned-v1" }),
     );
     await expect(readEmitBundle(emitDir)).rejects.toThrow(/Invalid emit-bundle manifest/);
   });
@@ -166,17 +201,24 @@ describe("emit-bundle manifest contract (zod)", () => {
 
 function validManifest() {
   return {
-    schema_version: "2",
-    format: "ndjson-v1",
+    schema_version: "3",
+    format: "ndjson-partitioned-v1",
     app_id: "3-extract-profile",
     collector_version: "c@1.0.0",
     ruleset_version: "1.0.0",
     ontology_version: "1.0.0",
     run_id: "r1",
-    period: "2026-Q2",
+    period: "2026-q2",
     emitted_at: "2026-05-01T12:00:00.000Z",
     observation_count: 0,
+    partition_rows: 100_000,
+    observation_partitions: [],
     evidence_count: 0,
+    evidence_partitions: [],
+    evidence_hash: null,
     bundle_hash: null,
+    asset_state_count: 0,
+    asset_state_partitions: [],
+    asset_states_hash: null,
   };
 }

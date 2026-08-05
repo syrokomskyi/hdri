@@ -19,7 +19,7 @@ by downstream analytics and public transparency tooling.</purpose>
 
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { VaultWriter, obsShardPath, statesShardPath } from "@syrokomskyi/observatory-vault";
+import { VaultWriter, resolveShardPaths } from "@syrokomskyi/observatory-vault";
 import type { SignedObservation } from "@syrokomskyi/observatory-crypto";
 import type { Observation } from "@syrokomskyi/observatory-core";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
@@ -28,7 +28,7 @@ import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";
 import { outputRootDir } from "../config";
-import { assetStateRecordsForVault } from "../rebuild/rebuild-core";
+import { iterateAssetStateRecordsForVault } from "../rebuild/rebuild-core";
 
 type SyncedRow = {
   run_id: string;
@@ -46,11 +46,14 @@ type SignedObsRow = {
 
 type ShardResult = {
   factoryRunId: string;
+  shardRunId: string;
   appId: string;
   shardPath: string;
   count: number;
   skipped: boolean;
 };
+
+const VAULT_PARTITION_ROWS = 100_000;
 
 export class WriteVaultGogol extends Gogol {
   override readonly id = "write-vault";
@@ -80,7 +83,7 @@ export class WriteVaultGogol extends Gogol {
     const db = openObservatoryDb(year);
     const writer = new VaultWriter(vaultDir);
     const results: ShardResult[] = [];
-    let assetStatesShard: { shardPath: string; count: number; skipped: boolean } | null;
+    const assetStateShards: ShardResult[] = [];
 
     try {
       // Find factory runs synced during this observatory run
@@ -103,101 +106,111 @@ export class WriteVaultGogol extends Gogol {
       }
 
       for (const { run_id: factoryRunId, app_id: appId, obs_count } of syncedRuns) {
-        // Idempotency: skip if shard already exists
-        const shardPath = obsShardPath(vaultDir, year, factoryRunId);
-
-        try {
-          await fsp.access(shardPath);
-          log.info("shard-exists", `Shard exists — skipping factory run_id=${factoryRunId}`, {
-            factoryRunId,
-          });
-          results.push({ factoryRunId, appId, shardPath, count: obs_count, skipped: true });
-          continue;
-        } catch {
-          // File does not exist — proceed with write
-        }
-
-        // Load signed observations for this factory run
         const rows = db
           .prepare(
             `
           SELECT obs_json, signature, signed_at, signing_key_id, collector_id
           FROM observations
           WHERE factory_run_id = ? AND signature IS NOT NULL AND obs_json IS NOT NULL
+          ORDER BY id
         `,
           )
-          .all(factoryRunId) as SignedObsRow[];
+          .iterate(factoryRunId) as IterableIterator<SignedObsRow>;
 
-        if (rows.length === 0) {
-          log.info(
-            "no-signed-obs",
-            `No signed observations for factory run_id=${factoryRunId} — skipping shard`,
-            { factoryRunId },
-          );
-          results.push({ factoryRunId, appId, shardPath: "", count: 0, skipped: true });
-          continue;
-        }
+        let part = 0;
+        let seen = 0;
+        let chunk: SignedObservation[] = [];
+        const flush = async (): Promise<void> => {
+          if (chunk.length === 0) return;
+          const partRunId = `${factoryRunId}-part-${String(part).padStart(6, "0")}`;
+          const shardPath = resolveShardPaths(vaultDir, "observations", year, partRunId).shardPath;
+          try {
+            await fsp.access(shardPath);
+            results.push({ factoryRunId, shardRunId: partRunId, appId, shardPath, count: chunk.length, skipped: true });
+          } catch {
+            const result = await writer.writeShard("observations", chunk as readonly object[], {
+              year,
+              runId: partRunId,
+            });
+            results.push({ factoryRunId, shardRunId: partRunId, appId, shardPath: result.shardPath, count: result.count, skipped: false });
+          }
+          part++;
+          chunk = [];
+        };
 
-        const signed: SignedObservation[] = rows.map((row) => {
+        for (const row of rows) {
           const obs = JSON.parse(row.obs_json) as Observation;
-          return {
+          chunk.push({
             ...obs,
             signature: row.signature,
             signed_at: row.signed_at,
             signing_key_id: row.signing_key_id,
             collector_id: row.collector_id,
-          };
-        });
+          });
+          seen++;
+          if (chunk.length >= VAULT_PARTITION_ROWS) await flush();
+        }
+        await flush();
 
-        log.info("writing-shard", `Writing ${signed.length} obs → ${path.basename(shardPath)}`, {
-          shardPath: path.basename(shardPath),
-          count: signed.length,
-        });
-        const result = await writer.writeShard("observations", signed as readonly object[], {
-          year,
-          runId: factoryRunId,
-        });
-        results.push({
-          factoryRunId,
-          appId,
-          shardPath: result.shardPath,
-          count: result.count,
-          skipped: false,
-        });
+        if (seen !== obs_count) {
+          throw new Error(
+            `Signed observation count mismatch for ${factoryRunId}: expected ${obs_count}, found ${seen}`,
+          );
+        }
+
+        if (seen === 0) {
+          log.info(
+            "no-signed-obs",
+            `No signed observations for factory run_id=${factoryRunId} — skipping shard`,
+            { factoryRunId },
+          );
+          results.push({ factoryRunId, shardRunId: factoryRunId, appId, shardPath: "", count: 0, skipped: true });
+        }
       }
 
       // Additively persist this run's asset_states to the vault (one shard keyed by the
       // observatory run_id). Storing the self-contained AssetStateRecord + period makes a
       // future quarter rebuildable from the vault alone, without the factory emit-bundle.
-      const statesShard = statesShardPath(vaultDir, year, runId);
-      try {
-        await fsp.access(statesShard);
-        log.info("asset-states-shard-exists", `Asset-states shard exists — skipping`, {
-          shardPath: path.basename(statesShard),
-        });
-        const existingCount = (
-          db.prepare(`SELECT COUNT(*) AS c FROM asset_states WHERE run_id = ?`).get(runId) as {
-            c: number;
-          }
-        ).c;
-        assetStatesShard = { shardPath: statesShard, count: existingCount, skipped: true };
-      } catch {
-        const stateRecords = assetStateRecordsForVault(db, runId);
-        if (stateRecords.length === 0) {
-          log.info("no-asset-states", "No asset_states for this run — skipping asset-states shard");
-          assetStatesShard = { shardPath: "", count: 0, skipped: true };
-        } else {
-          log.info(
-            "writing-asset-states",
-            `Writing ${stateRecords.length} asset states → ${path.basename(statesShard)}`,
-            { count: stateRecords.length },
-          );
-          const res = await writer.writeShard("asset_states", stateRecords as readonly object[], {
-            year,
-            runId,
+      let statePart = 0;
+      let stateChunk: object[] = [];
+      const flushStates = async (): Promise<void> => {
+        if (stateChunk.length === 0) return;
+        const partRunId = `${runId}-part-${String(statePart).padStart(6, "0")}`;
+        const shardPath = resolveShardPaths(vaultDir, "asset_states", year, partRunId).shardPath;
+        try {
+          await fsp.access(shardPath);
+          assetStateShards.push({
+            factoryRunId: runId,
+            shardRunId: partRunId,
+            appId: "observatory",
+            shardPath,
+            count: stateChunk.length,
+            skipped: true,
           });
-          assetStatesShard = { shardPath: res.shardPath, count: res.count, skipped: false };
+        } catch {
+          const result = await writer.writeShard("asset_states", stateChunk, {
+            year,
+            runId: partRunId,
+          });
+          assetStateShards.push({
+            factoryRunId: runId,
+            shardRunId: partRunId,
+            appId: "observatory",
+            shardPath: result.shardPath,
+            count: result.count,
+            skipped: false,
+          });
         }
+        statePart++;
+        stateChunk = [];
+      };
+      for (const state of iterateAssetStateRecordsForVault(db, runId)) {
+        stateChunk.push(state);
+        if (stateChunk.length >= VAULT_PARTITION_ROWS) await flushStates();
+      }
+      await flushStates();
+      if (assetStateShards.length === 0) {
+        log.info("no-asset-states", "No asset_states for this run — skipping asset-state shards");
       }
     } finally {
       db.close();
@@ -211,16 +224,16 @@ export class WriteVaultGogol extends Gogol {
       if (!r.shardPath || r.count === 0 || !r.skipped) continue;
       await writer.recordShard("observations", r.shardPath, {
         year,
-        runId: r.factoryRunId,
+        runId: r.shardRunId,
         rows: r.count,
       });
       recorded++;
     }
-    if (assetStatesShard?.shardPath && assetStatesShard.count > 0 && assetStatesShard.skipped) {
-      await writer.recordShard("asset_states", assetStatesShard.shardPath, {
+    for (const shard of assetStateShards.filter((item) => item.skipped)) {
+      await writer.recordShard("asset_states", shard.shardPath, {
         year,
-        runId,
-        rows: assetStatesShard.count,
+        runId: shard.shardRunId,
+        rows: shard.count,
       });
       recorded++;
     }
@@ -251,11 +264,15 @@ export class WriteVaultGogol extends Gogol {
           total_written: totalWritten,
           shards_written: shardsWritten,
           shards_skipped: results.filter((r) => r.skipped).length,
-          asset_states: assetStatesShard,
+          asset_state_shards: assetStateShards,
         },
         null,
         2,
       ),
     );
+    ctx.state.vaultShardPaths = [
+      ...results.map((result) => result.shardPath).filter(Boolean),
+      ...assetStateShards.map((result) => result.shardPath).filter(Boolean),
+    ];
   }
 }

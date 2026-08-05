@@ -19,6 +19,7 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { markdownTable } from "markdown-table";
+import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { openLivenessSqlite, openReadOnlySqlite } from "../db/connection.js";
@@ -42,7 +43,7 @@ export class LivenessByBundeslandGogol extends Gogol {
 
   override async run(ctx: PipelineContext): Promise<void> {
     const { state } = ctx;
-    const { year } = state.brief;
+    const { year, quarter } = parseSourceToken(state.brief.sourceToken);
     const registryDbPath = state.resolvedRegistryDbPath;
 
     if (!fs.existsSync(registryDbPath)) {
@@ -53,7 +54,7 @@ export class LivenessByBundeslandGogol extends Gogol {
     }
 
     const coreDb = openReadOnlySqlite(registryDbPath);
-    const livenessDb = openLivenessSqlite(year);
+    const livenessDb = openLivenessSqlite(`${year}-q${quarter}`);
 
     try {
       // 1. Read sites with bundesland from registry.db

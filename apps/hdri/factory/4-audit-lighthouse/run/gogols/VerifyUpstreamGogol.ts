@@ -14,6 +14,7 @@
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
 
 import { VerifyUpstreamStep } from "@syrokomskyi/pipeline-steps";
+import { periodFromSourceToken } from "@syrokomskyi/observatory-crypto";
 import { toFactoryRelativePath, upstreamProfileOutputRoot } from "../config.js";
 import type { PipelineContext } from "../pipeline/types.js";
 
@@ -26,7 +27,7 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
       "Check ed25519 signatures on every upstream 3-extract-profile pages.db before ingestion.",
     decisionType: "auto" as const,
     inputs: [
-      "3-extract-profile/.output/<deviceId>/data/db/pages-YYYY-h*.db",
+      "3-extract-profile/.output/<deviceId>/data/db/pages-YYYY-qN.db",
       "3-extract-profile/.output/<deviceId>/*-sign-source/source-signature.json",
       "<repo-root>/transparency/keys/*.pem",
     ],
@@ -51,8 +52,7 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
   }
 
   protected override getDbFilenames(ctx: PipelineContext): string[] {
-    const year = ctx.state.brief.year;
-    return [`pages-${year}-h1.db`, `pages-${year}-h2.db`];
+    return [`pages-${periodFromSourceToken(ctx.state.brief.sourceToken)}.db`];
   }
 
   protected override getYear(ctx: PipelineContext): number {

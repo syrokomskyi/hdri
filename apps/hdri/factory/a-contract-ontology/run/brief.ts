@@ -8,36 +8,29 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation.</item>
-  <item>Add optional sourceToken field to Brief type for two-file brief pattern.</item>
   <item>Make period regex case-insensitive to accept lowercase 'q' in YYYY-qn format.</item>
   <item>Normalize period to lowercase after validation — lowercase is the canonical format.</item>
-  <item>Add upstream DB path fields (harvestDbPath, registryDbPath, livenessDbPath, profileDbPath, lighthouseDbPath, axeDbPath) to Brief type and parser.</item>
+  <item>Remove unused direct database paths; discovery is period-scoped and filesystem-derived.</item>
+  <item>RFC-0046: add instrumentPlan field parsed from brief frontmatter with skipGogols consistency validation.</item>
 </CHANGE_SUMMARY>
 */
 
 import matter from "gray-matter";
-import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
-
+import {
+  parseInstrumentPlanFromFrontmatter,
+  type InstrumentPlanEntry,
+  type InstrumentId,
+} from "@syrokomskyi/factory-core";
 export type Brief = {
   /** Period in `yyyy-qn` format (lowercase q). Hard quarterly boundary for the contract bundle. */
   period: string;
   /** Semver of the ontology used to validate observations. */
   ontologyVersion: string;
-  /** Canonical batch identifier from shared factory brief (optional, for logging). */
-  sourceToken: string;
-  /** Absolute or relative path to upstream core_YYYY.db (harvest). */
-  harvestDbPath: string;
-  /** Absolute or relative path to upstream registry_YYYY.db. */
-  registryDbPath: string;
-  /** Absolute or relative path to upstream liveness_YYYY.db. */
-  livenessDbPath: string;
-  /** Absolute or relative path to upstream pages_*.db (profile). */
-  profileDbPath: string;
-  /** Absolute or relative path to upstream lighthouse_YYYY.db. */
-  lighthouseDbPath: string;
-  /** Absolute or relative path to upstream axe_YYYY.db. */
-  axeDbPath: string;
+  /** UUID v7 minted once for this quarterly capsule. */
+  capsuleId: string;
   skipGogols: string[];
+  /** Instrument plan for this quarter. Defaults to Lighthouse disabled. */
+  instrumentPlan: InstrumentPlanEntry[];
 };
 
 const PERIOD_RE = /^(\d{4})-Q([1-4])$/i;
@@ -55,14 +48,25 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   const ontologyVersion =
     typeof data.ontologyVersion === "string" ? data.ontologyVersion.trim() || "1.0.0" : "1.0.0";
 
-  const sourceTokenRaw = typeof data.sourceToken === "string" ? data.sourceToken.trim() : "";
-  if (sourceTokenRaw) {
-    parseSourceToken(sourceTokenRaw); // validate format
-  }
-
   const skipGogols = Array.isArray(data.skipGogols)
     ? data.skipGogols.filter((x): x is string => typeof x === "string")
     : [];
+
+  const instrumentPlan = parseInstrumentPlanFromFrontmatter(data.instrumentPlan);
+
+  const INSTRUMENT_GOGOL_MAP: Record<InstrumentId, string> = {
+    liveness: "2-check-liveness",
+    profile: "3-extract-profile",
+    axe: "5-audit-axe",
+    lighthouse: "4-audit-lighthouse",
+  };
+  for (const entry of instrumentPlan) {
+    if (entry.state === "required" && skipGogols.includes(INSTRUMENT_GOGOL_MAP[entry.instrument])) {
+      throw new Error(
+        `brief.md: instrument "${entry.instrument}" is required but its gogol "${INSTRUMENT_GOGOL_MAP[entry.instrument]}" is in skipGogols`,
+      );
+    }
+  }
 
   const getRequiredString = (value: unknown, name: string): string => {
     if (typeof value !== "string" || !value.trim()) {
@@ -70,17 +74,16 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     }
     return value.trim();
   };
+  const capsuleId = getRequiredString(data.capsuleId, "capsuleId").toLowerCase();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(capsuleId)) {
+    throw new Error("brief.md: capsuleId must be a UUID v7");
+  }
 
   return {
     period,
     ontologyVersion,
-    sourceToken: sourceTokenRaw,
-    harvestDbPath: getRequiredString(data.harvestDbPath, "harvestDbPath"),
-    registryDbPath: getRequiredString(data.registryDbPath, "registryDbPath"),
-    livenessDbPath: getRequiredString(data.livenessDbPath, "livenessDbPath"),
-    profileDbPath: getRequiredString(data.profileDbPath, "profileDbPath"),
-    lighthouseDbPath: getRequiredString(data.lighthouseDbPath, "lighthouseDbPath"),
-    axeDbPath: getRequiredString(data.axeDbPath, "axeDbPath"),
+    capsuleId,
     skipGogols,
+    instrumentPlan,
   };
 };

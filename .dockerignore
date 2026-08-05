@@ -1,0 +1,15 @@
+.git
+.plan
+.scratch
+.vscode
+**/node_modules
+**/dist
+**/.astro
+**/.output
+**/.input
+**/.inticles
+**/coverage
+**/old-*
+ops/axiom/runtime
+ops/axiom/.env
+spec

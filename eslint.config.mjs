@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import { backpressurePlugin } from "./eslint-rules/no-unguarded-stream-write.mjs";
 
 export default tseslint.config(
   {
@@ -49,6 +50,13 @@ export default tseslint.config(
     files: ["packages/strings/src/**/*.{ts,tsx,mts,cts}"],
     rules: {
       "no-restricted-imports": ["error", { patterns: ["@syrokomskyi/pipeline-*"] }],
+    },
+  },
+  {
+    plugins: { backpressure: backpressurePlugin },
+    files: ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+    rules: {
+      "backpressure/no-unguarded-stream-write": "error",
     },
   },
 );

@@ -36,20 +36,21 @@ type LighthouseAverages = {
 export class SummarizeAuditGogol extends SummarizeAuditStep<PipelineContext, LighthouseAverages> {
   override readonly id = "summarize-audit";
 
-  protected override getAuditsDbPath(year: number): string {
-    return getAuditsDbPath(year);
+  protected override getAuditsDbPath(period: string): string {
+    return getAuditsDbPath(period);
   }
 
-  protected override getAuditsDbName(year: number): string {
-    return getAuditsDbName(year);
+  protected override getAuditsDbName(period: string): string {
+    return getAuditsDbName(period);
   }
 
   protected override openAuditsDb(dbPath: string): Database.Database {
     return openAuditsDb(dbPath);
   }
 
-  protected override getYear(ctx: PipelineContext): number {
-    return parseSourceToken(ctx.state.brief.sourceToken).year;
+  protected override getPeriod(ctx: PipelineContext): string {
+    const { year, quarter } = parseSourceToken(ctx.state.brief.sourceToken);
+    return `${year}-q${quarter}`;
   }
 
   protected override getRegistryDbPath(ctx: PipelineContext): string {

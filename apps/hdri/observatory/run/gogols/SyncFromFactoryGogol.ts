@@ -10,10 +10,9 @@
 <CHANGE_SUMMARY>
   <item>Initial implementation: emit-bundle → observatory DB sync (P0.2.8).</item>
   <item>Add asset state ingestion from bundle asset-states.ndjson.</item>
-  <item>P0.4: auto-discover emit bundle via factoryContractRootDir; write period, factory_run_id, crawl_hash; store run_id as observatory runId.</item>
+  <item>Resolve exactly one period-and-capsule-addressed Factory emit bundle.</item>
   <item>Store gewerk_group from emitted asset states for downstream industry cohorting.</item>
   <item>Replace raw console.log/console.warn with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
-  <item>Fix auto-discovery path: look for manifest.json at .output/&lt;DEVICE_ID&gt;/ level instead of inside emit/&lt;period&gt;/, since readEmitBundle now resolves data files via manifest.emit_dir.</item>
   <item>Persist source bundle metadata on synced runs and show single-line progress while inserting large bundles.</item>
   <item>Fix checkBundle to include observatory_run_id, so re-running the observatory pipeline after a codebook change correctly syncs the bundle for the new run.</item>
   <item>WP1: stream observations in bounded chunks instead of buffering whole bundles (avoids OOM at ~100k-site Q3 scale); dedup asset states across all bundles of a run (last-wins) to prevent the (asset_id, valid_from) PK collision on multi-bundle/multi-device syncs; write synced_bundles idempotency markers last for crash-safe partial syncs.</item>
@@ -22,21 +21,27 @@
 // @ai-invariant: emit-bundle contract is immutable; never change manifest schema without version bump
 
 import path from "node:path";
-import fsp from "node:fs/promises";
 import {
   readEmitBundle,
   streamAssetStates,
+  streamEvidence,
   streamObservations,
 } from "@syrokomskyi/observatory-emit";
 import type { AssetStateRecord } from "@syrokomskyi/observatory-core";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { getDeviceId } from "@syrokomskyi/observatory-crypto";
+import { VaultReader } from "@syrokomskyi/observatory-vault";
 import { createJsonLogger } from "@syrokomskyi/pipeline-core";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";
 import { OBS_CHUNK, streamInsertObservations, writeAssetStatesDeduped } from "../db/sync-writers";
+import { outputRootDir } from "../config";
+import {
+  collectPanelEligibleAssetIds,
+  filterPanelEligibleObservations,
+} from "../eligibility/panel-eligibility";
 
 type BundleResult = {
   emitDir: string;
@@ -44,6 +49,9 @@ type BundleResult = {
   appId: string;
   obsInserted: number;
   assetStatesInserted: number;
+  observationsIgnoredNeverLive: number;
+  assetStatesIgnoredNeverLive: number;
+  evidenceRecordsVerified: number;
   skipped: boolean;
 };
 
@@ -53,16 +61,6 @@ export class SyncFromFactoryGogol extends Gogol {
   override async validateBeforeStart(ctx: PipelineContext): Promise<void> {
     if (!ctx.state.runId) {
       throw new Error("Missing run_id — setup-observatory-run must run first");
-    }
-    const { brief } = ctx.state;
-    if (
-      !brief.factoryContractDir &&
-      !brief.factoryContractRootDir &&
-      !brief.factoryEmitDirs?.length
-    ) {
-      throw new Error(
-        "brief.factoryContractDir, factoryContractRootDir, or factoryEmitDirs must be set",
-      );
     }
   }
 
@@ -77,11 +75,31 @@ export class SyncFromFactoryGogol extends Gogol {
       pipeline: "observatory",
     }).withContext({ gogol: this.id });
 
-    // Phase A: resolve single contract bundle path — explicit dir, auto-discovery, or legacy fallback.
-    const emitDirs: string[] = await resolveEmitDirs(brief, log);
+    const deviceId = getDeviceId();
+    const capsuleDir = path.join(
+      brief.factoryContractRootDir,
+      ".output",
+      deviceId,
+      "capsules",
+      brief.period,
+      brief.capsuleId,
+    );
+    const emitDirs = [path.join(capsuleDir, "artifacts", "emit")];
+    ctx.state.capsuleDir = capsuleDir;
 
     const db = openObservatoryDb(year);
     const results: BundleResult[] = [];
+    const locallyAccepted = db
+      .prepare("SELECT provisional_id FROM asset_id_map")
+      .pluck()
+      .all() as string[];
+    const vaultDir = brief.vaultDir
+      ? path.resolve(brief.vaultDir)
+      : path.join(outputRootDir, "vault");
+    const previouslyAccepted = new Set([
+      ...locallyAccepted,
+      ...(await new VaultReader(vaultDir).getIdentityMap()).keys(),
+    ]);
 
     const insertBundle = db.prepare(`
       INSERT OR IGNORE INTO synced_bundles
@@ -119,6 +137,9 @@ export class SyncFromFactoryGogol extends Gogol {
       for (const emitDir of emitDirs) {
         const bundle = await readEmitBundle(emitDir);
         const { manifest } = bundle;
+        if (manifest.period !== brief.period || manifest.run_id !== brief.capsuleId) {
+          throw new Error("Factory emit manifest does not match the configured quarter capsule");
+        }
 
         if (checkBundle.get(manifest.run_id, runId)) {
           log.info("bundle-already-synced", `run_id=${manifest.run_id} already synced — skipping`, {
@@ -131,6 +152,9 @@ export class SyncFromFactoryGogol extends Gogol {
             appId: manifest.app_id,
             obsInserted: 0,
             assetStatesInserted: 0,
+            observationsIgnoredNeverLive: 0,
+            assetStatesIgnoredNeverLive: 0,
+            evidenceRecordsVerified: 0,
             skipped: true,
           });
           continue;
@@ -140,13 +164,25 @@ export class SyncFromFactoryGogol extends Gogol {
           appId: manifest.app_id,
           factoryRunId: manifest.run_id,
           observationCount: manifest.observation_count,
-          assetStateCount: manifest.asset_state_count ?? 0,
+          assetStateCount: manifest.asset_state_count,
         });
 
-        // ── Stream + chunk-insert observations (bounded memory) ────────────────
+        const admission = await collectPanelEligibleAssetIds(
+          streamObservations(bundle),
+          previouslyAccepted,
+        );
+        if (admission.observationsScanned !== manifest.observation_count) {
+          throw new Error("Factory observation count changed during panel admission scan");
+        }
+        let observationsIgnoredNeverLive = 0;
+        // ── Stream + chunk-insert admitted observations (bounded memory) ───────
         const { inserted: obsInserted, seen: obsSeen } = await streamInsertObservations(
           db,
-          streamObservations(bundle),
+          filterPanelEligibleObservations(
+            streamObservations(bundle),
+            admission.eligibleAssetIds,
+            () => observationsIgnoredNeverLive++,
+          ),
           {
             runId,
             ontologyVersion: manifest.ontology_version,
@@ -159,9 +195,18 @@ export class SyncFromFactoryGogol extends Gogol {
 
         // ── Stream asset states → dedup into the run-level map (last-wins) ──────
         let assetSeen = 0;
+        let assetStatesIgnoredNeverLive = 0;
         for await (const st of streamAssetStates(bundle)) {
-          assetStateById.set(st.asset_id, { record: st, period: manifest.period });
           assetSeen += 1;
+          if (admission.eligibleAssetIds.has(st.asset_id)) {
+            assetStateById.set(st.asset_id, { record: st, period: manifest.period });
+          } else {
+            assetStatesIgnoredNeverLive++;
+          }
+        }
+        let evidenceRecordsVerified = 0;
+        for await (const _evidence of streamEvidence(bundle)) {
+          evidenceRecordsVerified++;
         }
 
         bundleRecords.push({
@@ -169,9 +214,9 @@ export class SyncFromFactoryGogol extends Gogol {
           appId: manifest.app_id,
           period: manifest.period,
           emittedAt: manifest.emitted_at,
-          obsCount: manifest.observation_count,
+          obsCount: obsSeen,
           bundleHash: manifest.bundle_hash,
-          assetStateCount: manifest.asset_state_count ?? assetSeen,
+          assetStateCount: assetSeen - assetStatesIgnoredNeverLive,
         });
 
         log.info(
@@ -182,6 +227,9 @@ export class SyncFromFactoryGogol extends Gogol {
             obsInserted,
             obsSeen,
             assetStatesSeen: assetSeen,
+            observationsIgnoredNeverLive,
+            assetStatesIgnoredNeverLive,
+            evidenceRecordsVerified,
           },
         );
         results.push({
@@ -190,6 +238,9 @@ export class SyncFromFactoryGogol extends Gogol {
           appId: manifest.app_id,
           obsInserted,
           assetStatesInserted: assetSeen,
+          observationsIgnoredNeverLive,
+          assetStatesIgnoredNeverLive,
+          evidenceRecordsVerified,
           skipped: false,
         });
       }
@@ -258,37 +309,4 @@ export class SyncFromFactoryGogol extends Gogol {
       },
     );
   }
-}
-
-/**
- * Resolves emit-bundle directories in priority order:
- * 1. explicit factoryContractDir
- * 2. auto-discovered from factoryContractRootDir + DEVICE_ID + period
- * 3. legacy factoryEmitDirs
- */
-async function resolveEmitDirs(
-  brief: import("../brief").Brief,
-  log: import("@syrokomskyi/pipeline-core").JsonLogger,
-): Promise<string[]> {
-  if (brief.factoryContractDir) {
-    return [brief.factoryContractDir];
-  }
-
-  if (brief.factoryContractRootDir) {
-    const deviceId = getDeviceId();
-    const autoDir = path.join(brief.factoryContractRootDir, ".output", deviceId);
-    try {
-      await fsp.access(path.join(autoDir, "manifest.json"));
-      log.info("auto-discovered-bundle", `Auto-discovered bundle: ${autoDir}`, { autoDir });
-      return [autoDir];
-    } catch {
-      log.warn(
-        "auto-discover-fallback",
-        `factoryContractRootDir set but no manifest.json found at ${autoDir} — falling back to factoryEmitDirs`,
-        { autoDir },
-      );
-    }
-  }
-
-  return brief.factoryEmitDirs;
 }

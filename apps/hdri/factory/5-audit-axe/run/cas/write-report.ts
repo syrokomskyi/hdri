@@ -22,11 +22,24 @@ export const writeReportToCas = async (
   const sha256 = createHash("sha256").update(reportJson).digest("hex");
   const casPath = getReportCasPath(tool, sha256);
   await fs.mkdir(path.dirname(casPath), { recursive: true });
+  const existingMatches = async (): Promise<boolean> => {
+    try {
+      return createHash("sha256").update(await fs.readFile(casPath)).digest("hex") === sha256;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+      throw error;
+    }
+  };
+  if (await existingMatches()) return { sha256, casPath };
+  const temp = `${casPath}.${process.pid}.${Date.now()}.tmp`;
+  await fs.writeFile(temp, reportJson, { encoding: "utf8", flag: "wx" });
   try {
-    await fs.access(casPath);
-    // Already present — CAS is immutable by sha.
-  } catch {
-    await fs.writeFile(casPath, reportJson, "utf-8");
+    await fs.link(temp, casPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+  } finally {
+    await fs.unlink(temp).catch(() => undefined);
   }
+  if (!(await existingMatches())) throw new Error(`Audit report CAS collision: ${sha256}`);
   return { sha256, casPath };
 };

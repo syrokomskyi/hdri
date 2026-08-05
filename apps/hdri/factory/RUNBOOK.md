@@ -9,7 +9,7 @@ The factory consists of 6 sequential pipelines:
 ```
 0-harvest-source → 1-register-businesses → 2-check-liveness → 3-extract-profile → 4-audit-lighthouse → 5-audit-axe
      ↓                     ↓                      ↓                    ↓                    ↓                    ↓
-  core_YYYY.db       registry_YYYY.db       liveness_YYYY.db    pages_YYYY.db    lighthouse_YYYY.db      axe_YYYY.db
+  core_YYYY.db       registry_YYYY.db       liveness-YYYY-qN.db pages-YYYY-qN.db lighthouse-YYYY-qN.db   axe-YYYY-qN.db
 ```
 
 Each pipeline depends on the previous one. **Always run in order.**
@@ -23,6 +23,8 @@ Before starting any pipeline:
 - [ ] Upstream pipeline completed (if not first)
 - [ ] `.input/brief.md` created from `brief.example.md`
 - [ ] `sourceToken` uses correct format: `YYYY-Qn-CC[-extra]`
+- [ ] One UUID v7 `capsuleId` has been minted for the quarter and copied unchanged into every Factory and Observatory brief (uniqueness against prior quarters is checked automatically)
+- [ ] The new quarter batch directory contains only newly received source files; prior batch directories and all prior `.output` data are unchanged
 - [ ] Input data files in correct locations
 - [ ] Sufficient disk space (estimate 1GB per 1000 sites)
 - [ ] Chrome/Chromium installed (for audit pipelines)
@@ -103,7 +105,8 @@ Root brief is the single source of truth for geographic and other shared indexes
 
 ```yaml
 ---
-sourceToken: "2026-q2-de-05"
+sourceToken: "2026-q3-de-01"
+capsuleId: "019..." # UUID v7; one value for the complete quarter
 zipcodesTablePath: zipcodes.de.json
 ---
 ```
@@ -127,6 +130,20 @@ Do **not** add `zipcodesTablePath` to `0-harvest-source/.input/brief.md` or `1-r
 Place catalog files in `.input/batches/<batch-name>/`:
 
 ```
+
+For Q3, add only `2026-q3-de-01/` with the new source files. A source may repeat
+domains already present in Q2: this creates new provenance occurrences while the
+domain keeps the same provisional identity and canonical UUID v7. Never copy Q2
+files into the Q3 directory. The accepted source ledger projects the cumulative
+Q2+Q3 frame without reparsing or replacing the Q2 segment.
+
+Acceptance writes an atomic Ed25519-signed batch segment containing every raw
+file hash, parser identity and parser version. The frozen frame has its own
+signature and binds the candidate list to the included batch IDs, ledger head
+and the period-scoped `source-occurrences-<period>.ndjson` hash. The signed guard
+is committed before either canonical projection becomes visible. A changed file,
+signature, frame or repeated batch ID blocks the run without replacing the
+previous projection; accepted segments and frames are never repaired in place.
 0-harvest-source/.input/
   brief.md
   batches/
@@ -151,11 +168,21 @@ pnpm turbo run start --filter=@syrokomskyi/catalog-harvest
 
 ### Troubleshooting
 
-| Problem            | Solution                                           |
-| ------------------ | -------------------------------------------------- |
-| CSV parsing errors | Check encoding (must be UTF-8), verify delimiter   |
-| HTML parsing fails | Ensure files are valid HTML, not binary MHTML      |
-| 0 sites imported   | Check file paths, verify batch directory structure |
+| Problem | Solution |
+| --- | --- |
+| CSV parsing errors | Check encoding (must be UTF-8), verify delimiter |
+| HTML parsing fails | Ensure files are valid HTML, not binary MHTML |
+| 0 sites imported | Check file paths, verify batch directory structure |
+| Pipeline paused: "Registered 0 site(s), threshold is 1" | Parser produced no registrations. Check parser output, fix source format issues, then clear `source_file_stats` table (or delete `core_YYYY.db`) and rerun. See RFC-0068. |
+
+If the pipeline pauses with "Registered N site(s), threshold is M", the fail-fast guard (RFC-0068) has triggered. This means `SELECT COUNT(*) FROM sites` returned fewer than `minSitesThreshold` (default: 1). To recover:
+
+1. Investigate the root cause (parser bug, source format change, stop domain filter).
+2. Fix the parser or source files.
+3. Clear `source_file_stats` table or delete `core_YYYY.db` to force re-parsing.
+4. Rerun the pipeline.
+
+Do NOT set `minSitesThreshold: 0` to bypass the guard in production.
 
 ---
 
@@ -211,7 +238,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-liveness
 
 ### Success Criteria
 
-- `2-check-liveness/.output/liveness_YYYY.db` exists
+- `2-check-liveness/.output/<device>/data/db/liveness-YYYY-qN.db` exists
 - Report shows % of live sites (typically 60-80%)
 - No timeout errors in bulk
 
@@ -236,11 +263,12 @@ pnpm turbo run start --filter=@syrokomskyi/site-liveness
 
 ### Configuration Notes
 
-This pipeline has **hardcoded policies** (Phase B):
+This pipeline has quarter-scoped policies:
 
 - Only live sites are crawled (`liveOnly = true`)
-- Successful pages are never re-fetched
-- Failed pages are always re-fetched on next run
+- A terminal result is never fetched again while resuming the same quarter capsule
+- A new quarter has a new capsule and therefore captures the site again
+- HTTP and network failures are terminal observed evidence after the bounded policy is exhausted
 
 ### Run
 
@@ -250,7 +278,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-profile
 
 ### Success Criteria
 
-- `3-extract-profile/.output/pages_YYYY.db` exists
+- `3-extract-profile/.output/<device>/data/db/pages-YYYY-qN.db` exists
 - `data/content/` contains HTML files in CAS layout
 - Report shows >70% crawl success rate
 
@@ -267,17 +295,19 @@ After crawl completes, these signals are extracted automatically:
 
 ### Troubleshooting
 
-| Problem              | Solution                                                  |
-| -------------------- | --------------------------------------------------------- |
-| High error rate      | Check site-blocking, reduce concurrency, increase timeout |
-| Empty ext\_\* tables | Ensure crawl succeeded before signal extraction           |
-| Out of disk space    | CAS storage grows with each site, clean old runs          |
+| Problem | Solution |
+| --- | --- |
+| High error rate | Check site-blocking, reduce concurrency, increase timeout |
+| Empty ext\_\* tables | Ensure crawl succeeded before signal extraction |
+| Out of disk space | Stop the run and add storage; sealed quarterly artifacts are never deleted |
 
 ---
 
 ## Phase 4: Audit Lighthouse
 
-**Purpose:** Performance audit of all live sites using Lighthouse.
+**Q3 2026 status:** disabled by the instrument plan. Do not run this phase for Q3 and do not substitute missing Lighthouse values with zero.
+
+**Purpose in a future enabled quarter:** Performance audit of all live sites using Lighthouse.
 
 ### Prerequisites
 
@@ -292,7 +322,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-lighthouse-audit
 
 ### Success Criteria
 
-- `4-audit-lighthouse/.output/lighthouse_YYYY.db` exists
+- `4-audit-lighthouse/.output/<device>/data/db/lighthouse-YYYY-qN.db` exists
 - `lighthouse_runs` table populated
 - Report shows audit completion rate
 
@@ -326,7 +356,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
 
 ### Success Criteria
 
-- `5-audit-axe/.output/axe_YYYY.db` exists
+- `5-audit-axe/.output/<device>/data/db/axe-YYYY-qN.db` exists
 - `axe_runs` table populated with violation counts
 - Report shows audit completion rate
 
@@ -354,17 +384,28 @@ pnpm turbo run start --filter=@syrokomskyi/catalog-harvest
 pnpm turbo run start --filter=@syrokomskyi/register-businesses
 pnpm turbo run start --filter=@syrokomskyi/site-liveness
 pnpm turbo run start --filter=@syrokomskyi/site-profile
-pnpm turbo run start --filter=@syrokomskyi/site-lighthouse-audit
+# Q3: Lighthouse is explicitly disabled
 pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
+pnpm turbo run start --filter=@syrokomskyi/contract-ontology
 ```
 
 Or use the monorepo root:
 
 ```bash
-pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi/register-businesses --filter=@syrokomskyi/site-liveness --filter=@syrokomskyi/site-profile --filter=@syrokomskyi/site-lighthouse-audit --filter=@syrokomskyi/site-axe-audit
+pnpm turbo run start --filter=@syrokomskyi/catalog-harvest --filter=@syrokomskyi/register-businesses --filter=@syrokomskyi/site-liveness --filter=@syrokomskyi/site-profile --filter=@syrokomskyi/site-axe-audit
 ```
 
 **Note:** This runs dependencies in parallel where possible, but respects the pipeline chain order.
+
+### Safe restart contract
+
+Liveness, profile and Axe freeze their complete target set before the first network request and append lease, retry and terminal events under the quarter capsule. Leases are atomic filesystem claims with durable attempt ordinals and fencing: a second process cannot request the same WorkKey, and an expired owner cannot commit after a replacement takes over. Active browser/network work writes append-only heartbeats that extend its lease. Each frozen target set is retained, and completeness is committed as an Ed25519-signed stage seal. Mutable SQLite rows are checkpoints only. After power or network loss, rerun the same stage with the same `period` and `capsuleId`: terminal work is restored from immutable CAS evidence and is not requested again. `maxDomains` sessions are diagnostic and never seal a stage.
+
+Do not edit a brief, instrument version or target frame after work has begun. Configuration or target drift is rejected. A full stage seals only when every declared target has a successful or observed-failure result. The bridge verifies the frozen target count/hash, exactly one matching stage-sealed event, every selected terminal event and CAS object, and the collector-bound Ed25519 stage seal before creating emit output. Therefore a diagnostic `maxDomains` run cannot be mistaken for a complete quarter.
+
+### Quarter closure
+
+The contract bridge creates a staging capsule containing the signed source-ledger segments, raw batch files, occurrence projection, signed frozen frame, consistent SQLite backup snapshots, execution journal, referenced profile HTML, referenced Axe reports, signed observations and methodology. Observatory adds canonical UUID v7 identity, vault shards and publication artifacts after the release gate, then writes `capsule-manifest.json` and detached `capsule-signature.json`. Until both files exist and verify, the quarter is not sealed and must not be published or used as the starting point for the next quarter. A retry first verifies an existing staging/final closure and performs no writes inside it. Before copying source evidence, the bridge verifies every segment signature, the signed frame, the ledger head, included batch set and occurrence-projection hash; any mismatch fails before the capsule is written. The head is rebuilt from the frame's exact signed `includedBatchIds`, so appending Q4 segments does not invalidate Q3. Expected source hashes come from that verified snapshot and are checked again on the copied capsule artifact, closing mutation races between preflight and retain. Observatory repeats the complete execution-evidence verification before final sealing and whenever it reopens an already sealed capsule.
 
 ---
 
@@ -382,15 +423,15 @@ apps/hdri/factory/
     registry_YYYY.db           # Deduplicated business registry
     <step>-sign-source/        # Signature manifest
   2-check-liveness/.output/
-    liveness_YYYY.db           # Availability status
+    liveness-YYYY-qN.db        # Availability status
   3-extract-profile/.output/
-    pages_YYYY.db              # Page observations + ext_* signals
+    pages-YYYY-qN.db           # Page observations + ext_* signals
     data/content/              # CAS HTML storage
   4-audit-lighthouse/.output/
-    lighthouse_YYYY.db         # Lighthouse metrics
+    lighthouse-YYYY-qN.db      # optional Lighthouse metrics
     data/audit-reports/        # CAS audit JSON
   5-audit-axe/.output/
-    axe_YYYY.db                # Axe violations
+    axe-YYYY-qN.db             # Axe violations
     data/audit-reports/        # CAS audit JSON
 ```
 

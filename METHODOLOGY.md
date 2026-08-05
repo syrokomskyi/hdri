@@ -137,7 +137,7 @@ Der veröffentlichte deskriptive Index ist ein **wiederholter Querschnitt**: Jed
 
 Das Dashboard begegnet dem zweifach:
 
-1. **Vorsicht-Kennzeichnung** — Übersteigt die relative Änderung der Fallzahl `|ΔN|/N` den Schwellenwert 0,5, wird der querschnittsbasierte Delta nicht unterdrückt, aber seine Verlässlichkeit auf „Mit Vorsicht" herabgestuft und mit `sample_frame_changed` markiert. Der deskriptive Wert bleibt sichtbar.
+1. **Vorsicht-Kennzeichnung** — Übersteigt die relative Änderung der Fallzahl `|ΔN|/N` den Schwellenwert 0,1, wird der querschnittsbasierte Delta nicht unterdrückt, aber seine Verlässlichkeit auf „Mit Vorsicht" herabgestuft und mit `sample_frame_changed` markiert. Der deskriptive Wert bleibt sichtbar.
 2. **Panel-Trend (Längsschnitt)** — Zusätzlich wird ein **like-for-like-Vergleich** über die Schnittmenge derselben Betriebe (stabile `asset_id`) veröffentlicht (`comparisons/panel-trends.json`). Da dieselben Assets verglichen werden, ist dieser Delta **immun gegen Zusammensetzungseffekte**. Berichtet werden Mittelwert und Median der Score-Änderung, ein **deterministisches 95 %-Bootstrap-Konfidenzintervall** (fester Seed ⇒ reproduzierbar) sowie die **Abdeckung** (Panel-N ÷ aktuelles N). Eine Änderung gilt als statistisch belastbar, wenn das Konfidenzintervall die Null ausschließt.
 
 ### 6.5 Vergleichbarkeit bei Versionswechseln
@@ -146,7 +146,7 @@ Scores aus unterschiedlichen Codebook- oder Ontologie-Versionen sind **nicht ver
 
 ### 6.6 Post-Stratifizierung (optional, rahmengebunden)
 
-Um den Zusammensetzungseffekt grundsätzlich zu korrigieren, kann ein **post-stratifizierter** Gesamtwert veröffentlicht werden, der die Stratum-Mittelwerte auf einen Referenz-Populationsrahmen umgewichtet (Stratum = `bundesland|destatis_group`). Dieser Rahmen ist **operator-bereitgestellt** (`apps/hdri/observatory/.input/population-frame.json`, Stratum → Gewicht, z. B. Betriebszahlen je Stratum). **Ohne realen Rahmen werden keine post-stratifizierten Zahlen ausgegeben** — fabrizierte Gewichte würden die wissenschaftliche Integrität des Index verletzen. Liegt die abgedeckte Rahmengewichtung unter 60 %, wird der Wert unterdrückt.
+Um den Zusammensetzungseffekt grundsätzlich zu korrigieren, kann ein **post-stratifizierter** Gesamtwert veröffentlicht werden, der die Stratum-Mittelwerte auf einen Referenz-Populationsrahmen umgewichtet (Stratum = `bundesland|destatis_group`). Dieser Rahmen ist **operator-bereitgestellt** (`apps/hdri/observatory/.input/population-frame.json`, Stratum → Gewicht, mit einer einheitlichen amtlichen statistischen Einheit). **Ohne realen Rahmen werden keine post-stratifizierten Zahlen ausgegeben**. Ein Headline-Wert erfordert mindestens 95 % des gesamten Rahmengewichts sowie mindestens 80 % Abdeckung in jedem Bundesland und jeder Destatis-Gruppe; andernfalls wird er unterdrückt.
 
 ---
 
@@ -161,7 +161,7 @@ Die aggregierten, anonymisierten Quartalsdaten werden auf **[handwerk-index.de](
 - **Codebook** — Versioniert in `codebook.yaml` (aktuell v1.3.0). Eine Änderung der Gewichte oder Regeln erfordert eine neue Codebook-Version.
 - **Ontologie** — Versioniert in `ontology.yaml` (aktuell v1.0.0). Neue Signale erhalten ein `introduced_in`-Datum.
 - **Datenbanken** — Jedes Quartal erzeugt neue `*_YYYY.db`-Dateien; historische Daten werden nicht überschrieben.
-- **Reproduzierbarkeit** — Durch deterministische Asset-ID-Ableitung (SHA-256 über Domain + `sourceToken`) und Seeded-Sampling können identische Stichproben bei erneuten Läufen erzeugt werden.
+- **Reproduzierbarkeit** — Die vorläufige Asset-ID wird deterministisch aus der normalisierten Domain abgeleitet; der kanonische UUID-v7-Identifier wird im append-only Identity-Register genau einmal zugeordnet. Source-Token dokumentieren Herkunft und Quartal, sind aber kein Teil der Site-Identität.
 
 ---
 

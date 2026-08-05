@@ -100,7 +100,9 @@ export function loadSigningKeyFromEnv(): SigningKeyConfig {
     privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
   }
 
-  const publicKeyPem = privateKey.export({ type: "spki", format: "pem" }) as string;
+  const publicKeyPem = crypto
+    .createPublicKey(privateKey)
+    .export({ type: "spki", format: "pem" }) as string;
   const fingerprint = crypto.createHash("sha256").update(publicKeyPem).digest("hex").slice(0, 16);
   const signingKeyId = `${deviceId}-${fingerprint}`;
 

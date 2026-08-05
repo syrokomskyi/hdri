@@ -20,9 +20,10 @@ import { parseBriefMarkdown, type Brief } from "../../brief";
 const BRIEF_TEMPLATE = `---
 outputLanguage: de
 period: "2025-q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
 ontologyVersion: "1.0.0"
 codebookVersion: "hdri-v1.0.0"
-sourceDbDir: "../factory/0-harvest-source/.output"
+factoryContractRootDir: "../factory/a-contract-ontology"
 publicMode: false
 skipGogols: []
 ---

@@ -183,6 +183,13 @@ Compass validation is provided by Forge, not per-app npm scripts:
 - Never add `MODULE_MAP`, `<keywords>`, `<responsibilities>`, or `COMPASS_BLOCK` to any file. `forge compass.validate` will fail with `COMPASS-FORBIDDEN-01`.
 - `forge compass.validate` exit code must be 0 before the task is considered complete.
 
+## CI and GitHub Actions
+
+- Run scripts from the package that owns the dependency, not from the monorepo root with `pnpm exec`. For example, if `tsx` is in `packages/hdri-codebook`, run `pnpm --filter @syrokomskyi/hdri-codebook exec tsx ...` instead of `pnpm exec tsx ...` from root.
+- Add `concurrency` groups to workflows to cancel superseded runs and save CI minutes.
+- Keep GitHub Actions versions up to date; Node 20 is deprecated, use Node 24.
+- Scope workflow commands to the owning workspace package to avoid `ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL`.
+
 ## Anti-patterns
 
 - Do not copy pipeline framework files from one app to another when the concern belongs in `packages/*`.

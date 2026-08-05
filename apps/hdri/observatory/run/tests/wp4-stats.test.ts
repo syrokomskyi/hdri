@@ -17,6 +17,12 @@ import {
   loadPopulationFrame,
   type PopulationFrame,
 } from "../../tools/poststrat-core";
+import {
+  DESTATIS_FRAME_PARSER_VERSION,
+  importDestatisPopulationFrame,
+  type DestatisFrameSource,
+} from "../../tools/population-frame-import-core";
+import { DESTATIS_BUNDESLAENDER, DESTATIS_GROUPS } from "../../tools/population-frame-contract";
 
 // ── stats-core ───────────────────────────────────────────────────────────────
 
@@ -169,8 +175,23 @@ describe("poststrat-core", () => {
   it("suppresses periods with insufficient frame coverage", () => {
     const thin = [{ period: "2026-q2", assets: [{ stratumKey: "Hessen|III", score: 40 }] }];
     const [pt] = buildPostStratTrends(thin, frame);
-    expect(pt!.suppressed).toBe(true); // only 30% coverage < 0.6
+    expect(pt!.suppressed).toBe(true); // only 30% coverage < 0.95
     expect(pt!.weightedMean).toBeNull();
+  });
+
+  it("suppresses a headline when a Bundesland or industry group is below 80% coverage", () => {
+    const unevenFrame = {
+      strataSystem: "bundesland|destatis_group",
+      source: "official",
+      weights: { "Bayern|I": 96, "Bayern|II": 4 },
+    };
+    const [point] = buildPostStratTrends(
+      [{ period: "2026-q3", assets: [{ stratumKey: "Bayern|I", score: 70 }] }],
+      unevenFrame,
+    );
+    expect(point!.weightCoverage).toBe(0.96);
+    expect(point!.minimumGroupCoverage).toBe(0);
+    expect(point!.suppressed).toBe(true);
   });
 });
 
@@ -187,24 +208,38 @@ describe("loadPopulationFrame", () => {
     expect(await loadPopulationFrame(dir)).toBeNull();
   });
 
-  it("treats the all-zero template as absent (no fabricated output)", async () => {
+  it("rejects a malformed or placeholder frame instead of silently treating it as absent", async () => {
     const zero = {
       strataSystem: "bundesland|destatis_group",
       source: "x",
       weights: { "Bayern|III": 0, "Hessen|III": 0 },
     };
     fs.writeFileSync(path.join(dir, "population-frame.json"), JSON.stringify(zero));
-    expect(await loadPopulationFrame(dir)).toBeNull();
+    await expect(loadPopulationFrame(dir)).rejects.toThrow(/manifest/);
   });
 
-  it("loads a frame with positive weights", async () => {
-    const f = {
-      strataSystem: "bundesland|destatis_group",
-      source: "real",
-      weights: { "Bayern|III": 70 },
+  it("loads a complete provenance-locked official frame", async () => {
+    const rows = DESTATIS_BUNDESLAENDER.flatMap((bundesland) =>
+      DESTATIS_GROUPS.map((destatisGroup) => ({ bundesland, destatisGroup, companies: 1 })),
+    );
+    const source: DestatisFrameSource = {
+      sourceAgency: "Statistisches Bundesamt (Destatis)",
+      tableCode: "53111-0011",
+      statisticalUnit: "Handwerksunternehmen",
+      handwerkScope: "Handwerk insgesamt",
+      referenceYear: 2024,
+      retrievedAt: "2026-08-02T00:00:00.000Z",
+      sourceUrl: "https://genesis.destatis.de/datenbank/online/table/53111-0011",
+      sourceFileName: "53111-0011.csv",
+      sourceFileSha256: "a".repeat(64),
+      parserVersion: DESTATIS_FRAME_PARSER_VERSION,
+      frameVersion: "destatis-53111-2024-v1",
+      notes: [],
+      rows,
     };
+    const f = importDestatisPopulationFrame(source);
     fs.writeFileSync(path.join(dir, "population-frame.json"), JSON.stringify(f));
     const loaded = await loadPopulationFrame(dir);
-    expect(loaded?.weights["Bayern|III"]).toBe(70);
+    expect(loaded?.weights["Bayern|III"]).toBe(1);
   });
 });

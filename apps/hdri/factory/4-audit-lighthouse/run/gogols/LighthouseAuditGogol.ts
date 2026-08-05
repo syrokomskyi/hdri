@@ -58,7 +58,7 @@ type LighthouseReport = {
   };
 };
 
-type Extracted = {
+export type Extracted = {
   performance: number | null;
   accessibility: number | null;
   bestPractices: number | null;
@@ -159,19 +159,21 @@ const runLighthouseLive = async (
 // DB upserts (tool-specific)
 // ---------------------------------------------------------------------------
 
-const upsertLighthouse = (
+export const upsertLighthouse = (
   db: Database.Database,
   siteId: number,
+  provisionalAssetId: string,
   x: Extracted,
   reportSha256: string | null,
 ): void => {
   db.prepare(
     `
     INSERT INTO lighthouse_runs (
-      site_id, performance, accessibility, best_practices, seo,
+      site_id, provisional_asset_id, performance, accessibility, best_practices, seo,
       lcp_ms, cls, tbt_ms, lighthouse_version, report_sha256
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(site_id) DO UPDATE SET
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(provisional_asset_id) DO UPDATE SET
+      site_id            = excluded.site_id,
       performance        = excluded.performance,
       accessibility      = excluded.accessibility,
       best_practices     = excluded.best_practices,
@@ -184,6 +186,7 @@ const upsertLighthouse = (
   `,
   ).run(
     siteId,
+    provisionalAssetId,
     x.performance,
     x.accessibility,
     x.bestPractices,
@@ -219,7 +222,8 @@ export class LighthouseAuditGogol extends Gogol {
 
     try {
       // Derive year from sourceToken (B.1 cleanup)
-      const { year } = parseSourceToken(brief.sourceToken);
+      const { year, quarter } = parseSourceToken(brief.sourceToken);
+      const period = `${year}-q${quarter}`;
 
       // Phase B: Query registry.db for live sites, respecting sample size
       const registryDb = openRegistryDbReadOnly(resolvedRegistryDbPath);
@@ -275,20 +279,22 @@ export class LighthouseAuditGogol extends Gogol {
       const totalTargets = targets.length;
       const progressInterval = Math.max(1, Math.min(10, Math.floor(totalTargets / 5)));
 
-      const auditsDb = openAuditsDb(getAuditsDbPath(year));
+      const auditsDb = openAuditsDb(getAuditsDbPath(period));
 
       // Resume: skip sites already recorded in audit_runs
-      const auditedSiteIds = new Set(
+      const auditedAssetIds = new Set(
         (
-          auditsDb.prepare(`SELECT site_id FROM audit_runs WHERE tool = 'lighthouse'`).all() as {
-            site_id: number;
+          auditsDb
+            .prepare(`SELECT provisional_asset_id FROM audit_runs WHERE tool = 'lighthouse'`)
+            .all() as {
+            provisional_asset_id: string;
           }[]
-        ).map((r) => r.site_id),
+        ).map((r) => r.provisional_asset_id),
       );
-      const pendingTargets = targets.filter((t) => !auditedSiteIds.has(t.siteId));
-      if (auditedSiteIds.size > 0) {
+      const pendingTargets = targets.filter((t) => !auditedAssetIds.has(t.provisionalAssetId));
+      if (auditedAssetIds.size > 0) {
         console.log(
-          `[lighthouse-audit] Resuming: ${auditedSiteIds.size} already audited, ${pendingTargets.length} remaining.`,
+          `[lighthouse-audit] Resuming: ${auditedAssetIds.size} already audited, ${pendingTargets.length} remaining.`,
         );
       }
       if (pendingTargets.length === 0) {
@@ -312,6 +318,7 @@ export class LighthouseAuditGogol extends Gogol {
                 upsertAuditRun(auditsDb, {
                   tool: "lighthouse",
                   siteId: target.siteId,
+                  provisionalAssetId: target.provisionalAssetId,
                   url: target.url,
                   durationMs,
                   ok: true,
@@ -320,7 +327,13 @@ export class LighthouseAuditGogol extends Gogol {
                   reportSha256: sha256,
                   source: "live",
                 });
-                upsertLighthouse(auditsDb, target.siteId, extracted, sha256);
+                upsertLighthouse(
+                  auditsDb,
+                  target.siteId,
+                  target.provisionalAssetId,
+                  extracted,
+                  sha256,
+                );
 
                 results.push({
                   siteId: target.siteId,
@@ -347,6 +360,7 @@ export class LighthouseAuditGogol extends Gogol {
                 upsertAuditRun(auditsDb, {
                   tool: "lighthouse",
                   siteId: target.siteId,
+                  provisionalAssetId: target.provisionalAssetId,
                   url: target.url,
                   durationMs,
                   ok: false,

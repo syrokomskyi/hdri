@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PopulationFrame } from "../../tools/poststrat-core";
-import { buildTemplateFrame, validateFrame } from "../../tools/frame-core";
+import { validateFrame } from "../../tools/frame-core";
 
 const frame = (weights: Record<string, number>): PopulationFrame => ({
   strataSystem: "bundesland|destatis_group",
@@ -35,9 +35,9 @@ describe("validateFrame (post-stratification readiness)", () => {
     expect(v.coveredStrata).toBe(1);
   });
 
-  it("projects coverage as covered / total POSITIVE frame weight and applies the 60% threshold", () => {
+  it("projects coverage as covered / total positive frame weight and applies the 95% threshold", () => {
     const sample = new Map([["Bayern|I", 100]]);
-    // Bayern|I covered (weight 30) out of total positive 100 → 30% < 60% → suppressed.
+    // Bayern|I covered (weight 30) out of total positive 100 → 30% < 95% → suppressed.
     const v = validateFrame(frame({ "Bayern|I": 30, "Berlin|I": 70 }), sample);
     expect(v.projectedWeightCoverage).toBe(0.3);
     expect(v.meetsThreshold).toBe(false);
@@ -61,15 +61,18 @@ describe("validateFrame (post-stratification readiness)", () => {
     expect(v.positiveFrameStrata).toBe(0);
     expect(v.ok).toBe(false);
   });
-});
 
-describe("buildTemplateFrame", () => {
-  it("emits an all-zero frame keyed by the real sampled strata, sorted", () => {
-    const tpl = buildTemplateFrame(["Berlin|I", "Bayern|II", "Bayern|I"]);
-    expect(Object.keys(tpl.weights)).toEqual(["Bayern|I", "Bayern|II", "Berlin|I"]);
-    expect(Object.values(tpl.weights)).toEqual([0, 0, 0]);
-    expect(tpl.strataSystem).toBe("bundesland|destatis_group");
-    // Round-trips through validateFrame as an unusable (all-zero) frame.
-    expect(validateFrame(tpl, new Map([["Bayern|I", 10]])).ok).toBe(false);
+  it("fails when national coverage is high but one Land falls below the 80% floor", () => {
+    const sample = new Map([
+      ["Bayern|I", 100],
+      ["Berlin|I", 100],
+    ]);
+    const v = validateFrame(
+      frame({ "Bayern|I": 990, "Berlin|I": 5, "Berlin|II": 5 }),
+      sample,
+    );
+    expect(v.projectedWeightCoverage).toBe(0.995);
+    expect(v.minimumBundeslandCoverage).toBe(0.5);
+    expect(v.ok).toBe(false);
   });
 });

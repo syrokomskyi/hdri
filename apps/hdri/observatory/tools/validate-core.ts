@@ -121,9 +121,10 @@ export function collectFindings(dbPath: string, opts: CollectOptions = {}): Find
 
     // ── Per published run structural checks ───────────────────────────────────
     for (const run of publishedRuns) {
-      // Authoritative scoring version lives in scores, not pipeline_runs (which
-      // stores brief.codebookVersion and is frequently the codebook *id*, not the
-      // version). Cross-quarter comparability must key off the real scoring version.
+      // pipeline_runs.codebook_version is updated to the real scoring version by
+      // ScoreHdriGogol after scoring. Cross-quarter comparability keys off the
+      // authoritative version in scores. The WARN fires only for legacy runs that
+      // were not updated (pre-variant-A) or if scoring was skipped.
       const scoringVersions = db
         .prepare(`SELECT DISTINCT codebook_version FROM scores WHERE run_id = ?`)
         .all(run.run_id) as Array<{ codebook_version: string }>;

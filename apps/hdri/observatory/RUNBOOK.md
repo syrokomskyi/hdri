@@ -42,9 +42,10 @@ Key settings:
 
 ```yaml
 ---
-sourceToken: "2026-Q2-DE"
+sourceToken: "2026-q3-de-05"
 outputLanguage: de
-period: "2026-Q2"
+period: "2026-q3"
+capsuleId: "019..." # the same UUID v7 used by every Factory stage
 sourceDbDir: "../factory/0-harvest-source/.output"
 publicMode: false
 ---
@@ -62,8 +63,9 @@ The factory pipelines must complete before running observatory:
 pnpm turbo run start --filter=@syrokomskyi/catalog-harvest
 pnpm turbo run start --filter=@syrokomskyi/site-liveness
 pnpm turbo run start --filter=@syrokomskyi/site-profile
-pnpm turbo run start --filter=@syrokomskyi/site-lighthouse-audit  # optional
-pnpm turbo run start --filter=@syrokomskyi/site-axe-audit          # optional
+# Q3 Lighthouse is disabled by the frozen instrument plan
+pnpm turbo run start --filter=@syrokomskyi/site-axe-audit
+pnpm turbo run start --filter=@syrokomskyi/contract-ontology
 ```
 
 Or use the factory RUNBOOK for step-by-step instructions:
@@ -80,6 +82,8 @@ pnpm start
 ```
 
 A run no longer publishes. It writes the whole quarter into a **staging** DB (`.output/db/staging/observatory_YYYY.db`), seeded as a consistent copy of the current canonical DB so prior quarters are preserved. The finished run is a `candidate` — the dashboard-facing `.output/db/observatory_YYYY.db` is untouched.
+
+After promotion and publication artifacts are complete, Observatory performs the sole final capsule seal. The resulting `capsule-manifest.json` verifies every root-relative artifact and `capsule-signature.json` authenticates that manifest. Factory staging output alone is not a sealed scientific quarter.
 
 ### 4a. Gate + promote to canonical (WP8)
 

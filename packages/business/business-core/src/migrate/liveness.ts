@@ -30,6 +30,7 @@ export const migrateLiveness = (db: Database.Database): void => {
     CREATE TABLE IF NOT EXISTS liveness_checks (
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       site_id         INTEGER NOT NULL,
+      provisional_asset_id TEXT NOT NULL UNIQUE,
       domain          TEXT NOT NULL,
       checked_at      INTEGER NOT NULL DEFAULT (unixepoch()),
       http_status     INTEGER,
@@ -45,5 +46,6 @@ export const migrateLiveness = (db: Database.Database): void => {
     );
     CREATE INDEX IF NOT EXISTS lc_live_idx   ON liveness_checks(is_live);
     CREATE INDEX IF NOT EXISTS lc_domain_idx ON liveness_checks(domain);
+    CREATE INDEX IF NOT EXISTS lc_asset_idx  ON liveness_checks(provisional_asset_id);
   `);
 };

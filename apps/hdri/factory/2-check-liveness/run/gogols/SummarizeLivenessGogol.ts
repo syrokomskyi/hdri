@@ -18,6 +18,7 @@
 // @ai-invariant: snapshot integrity is verified by SHA-256; never modify a frozen snapshot
 
 import path from "node:path";
+import Database from "better-sqlite3";
 import { markdownTable } from "markdown-table";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { toFactoryRelativePath } from "../config.js";
@@ -26,14 +27,16 @@ import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { openLivenessSqlite } from "../db/connection.js";
 import { getLivenessDbPath } from "../paths.js";
+import { assertStageComplete } from "@syrokomskyi/factory-core";
 
 export class SummarizeLivenessGogol extends Gogol {
   override readonly id = "summarize-liveness";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { brief } = ctx.state;
-    const { year } = parseSourceToken(brief.sourceToken);
-    const db = openLivenessSqlite(year);
+    const { brief, resolvedRegistryDbPath } = ctx.state;
+    const { year, quarter } = parseSourceToken(brief.sourceToken);
+    const period = `${year}-q${quarter}`;
+    const db = openLivenessSqlite(period);
 
     // Stats from liveness_checks
     const totalChecked = (
@@ -60,8 +63,21 @@ export class SummarizeLivenessGogol extends Gogol {
 
     db.close();
 
+    const registryDb = new Database(resolvedRegistryDbPath, { readonly: true });
+    const targetCount = (
+      registryDb.prepare(`SELECT COUNT(*) AS n FROM sites`).get() as { n: number }
+    ).n;
+    registryDb.close();
+    assertStageComplete({
+      targetCount,
+      succeeded: liveCount,
+      observedFailures: totalChecked - liveCount,
+      approvedExclusions: 0,
+      quarantined: 0,
+    });
+
     // SHA-256 fingerprint of liveness.db
-    const livenessDbPath = getLivenessDbPath(year);
+    const livenessDbPath = getLivenessDbPath(period);
     console.log(`[summarize-liveness] Computing SHA-256 of liveness.db…`);
     const sha256 = await hashDatabaseFile(livenessDbPath);
     console.log(`[summarize-liveness] sha256=${sha256}`);
@@ -85,6 +101,13 @@ export class SummarizeLivenessGogol extends Gogol {
       liveRatePct: liveRate,
       avgLatencyMs: Math.round(avgLatency),
       allTimeChecks: allTimeSites,
+      stageSeal: {
+        targetCount,
+        succeeded: liveCount,
+        observedFailures: totalChecked - liveCount,
+        approvedExclusions: 0,
+        quarantined: 0,
+      },
     };
 
     await ctx.writeTextFile(

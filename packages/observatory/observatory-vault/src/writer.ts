@@ -113,7 +113,7 @@ export class VaultWriter {
     const { shardDir, shardPath } = resolveShardPaths(this.vaultDir, kind, meta.year, meta.runId);
     assertNotOverwriting(shardPath);
     await fsp.mkdir(shardDir, { recursive: true });
-    await writeParquet(rows as object[], shardPath);
+    await writeParquet(rows, shardPath);
     await markReadonly(shardPath);
 
     const entry = await buildShardEntry(this.vaultDir, shardPath, {

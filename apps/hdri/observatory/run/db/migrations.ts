@@ -472,4 +472,40 @@ export const MIGRATIONS: Migration[] = [
       addColumnIfMissing(db, "run_methodology", "frame_sha256", "TEXT");
     },
   },
+  {
+    id: 11,
+    name: "website-availability-events",
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS website_availability_events (
+          event_id       TEXT PRIMARY KEY,
+          asset_id       TEXT NOT NULL,
+          period         TEXT NOT NULL,
+          outcome        TEXT NOT NULL,
+          state          TEXT NOT NULL,
+          event_type     TEXT,
+          observed_at    TEXT NOT NULL,
+          policy_version TEXT NOT NULL,
+          evidence_ref   TEXT,
+          UNIQUE(asset_id, period)
+        );
+        CREATE INDEX IF NOT EXISTS wae_asset_period_idx
+          ON website_availability_events(asset_id, period);
+        CREATE INDEX IF NOT EXISTS wae_outcome_idx
+          ON website_availability_events(period, outcome);
+      `);
+    },
+  },
+  {
+    id: 12,
+    name: "pipeline-runs-codebook-id",
+    up: (db) => {
+      // Separate the codebook *id* (intent, from brief) from the codebook *version*
+      // (fact, from scoring). codebook_version is NOT NULL from migration 1 and stays
+      // as a placeholder (the codebook id) until ScoreHdriGogol updates it to the real
+      // scoring version. Old rows get codebook_id = NULL; backfill from scores or
+      // run_methodology if needed.
+      addColumnIfMissing(db, "pipeline_runs", "codebook_id", "TEXT");
+    },
+  },
 ];

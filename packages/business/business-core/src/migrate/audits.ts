@@ -32,6 +32,7 @@ export const migrateLighthouse = (db: Database.Database): void => {
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       tool            TEXT NOT NULL,
       site_id         INTEGER NOT NULL,
+      provisional_asset_id TEXT NOT NULL,
       url             TEXT NOT NULL,
       fetched_at      INTEGER NOT NULL DEFAULT (unixepoch()),
       duration_ms     INTEGER,
@@ -41,14 +42,15 @@ export const migrateLighthouse = (db: Database.Database): void => {
       report_sha256   TEXT,
       source          TEXT NOT NULL DEFAULT 'live'
     );
-    CREATE UNIQUE INDEX IF NOT EXISTS ar_tool_site
-      ON audit_runs(tool, site_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS ar_tool_asset
+      ON audit_runs(tool, provisional_asset_id);
     CREATE INDEX IF NOT EXISTS ar_tool_idx  ON audit_runs(tool);
     CREATE INDEX IF NOT EXISTS ar_site_idx  ON audit_runs(site_id);
 
     -- Lighthouse metrics
     CREATE TABLE IF NOT EXISTS lighthouse_runs (
       site_id            INTEGER NOT NULL PRIMARY KEY,
+      provisional_asset_id TEXT NOT NULL UNIQUE,
       performance        REAL,
       accessibility      REAL,
       best_practices     REAL,
@@ -81,6 +83,7 @@ export const migrateAxe = (db: Database.Database): void => {
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       tool            TEXT NOT NULL,
       site_id         INTEGER NOT NULL,
+      provisional_asset_id TEXT NOT NULL,
       url             TEXT NOT NULL,
       fetched_at      INTEGER NOT NULL DEFAULT (unixepoch()),
       duration_ms     INTEGER,
@@ -90,14 +93,15 @@ export const migrateAxe = (db: Database.Database): void => {
       report_sha256   TEXT,
       source          TEXT NOT NULL DEFAULT 'live'
     );
-    CREATE UNIQUE INDEX IF NOT EXISTS ar_tool_site
-      ON audit_runs(tool, site_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS ar_tool_asset
+      ON audit_runs(tool, provisional_asset_id);
     CREATE INDEX IF NOT EXISTS ar_tool_idx  ON audit_runs(tool);
     CREATE INDEX IF NOT EXISTS ar_site_idx  ON audit_runs(site_id);
 
     -- Axe metrics
     CREATE TABLE IF NOT EXISTS axe_runs (
       site_id           INTEGER NOT NULL PRIMARY KEY,
+      provisional_asset_id TEXT NOT NULL UNIQUE,
       violations_total  INTEGER NOT NULL DEFAULT 0,
       critical_count    INTEGER NOT NULL DEFAULT 0,
       serious_count     INTEGER NOT NULL DEFAULT 0,

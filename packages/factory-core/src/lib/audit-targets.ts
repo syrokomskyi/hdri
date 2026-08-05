@@ -16,6 +16,7 @@ import type Database from "better-sqlite3";
 /** A single site target for audit runs. */
 export type AuditTarget = {
   siteId: number;
+  provisionalAssetId: string;
   domain: string;
   url: string;
   bundesland: string | null;
@@ -25,6 +26,7 @@ export type AuditTarget = {
 export type AuditRunRow = {
   tool: string;
   siteId: number;
+  provisionalAssetId: string;
   url: string;
   durationMs: number;
   ok: boolean;
@@ -50,22 +52,24 @@ export function loadLiveAuditTargets(
   const rows = registryDb
     .prepare(
       `
-    SELECT s.id AS siteId, s.domain, s.bundesland
+    SELECT s.id AS siteId, br.da_id AS provisionalAssetId, s.domain, s.bundesland
     FROM sites s
+    JOIN business_registry br ON br.domain = s.domain
     ORDER BY s.id
   `,
     )
-    .all() as Array<Pick<AuditTarget, "siteId" | "domain" | "bundesland">>;
+    .all() as Array<Pick<AuditTarget, "siteId" | "provisionalAssetId" | "domain" | "bundesland">>;
 
   const liveRows = livenessDb
-    .prepare(`SELECT site_id FROM liveness_checks WHERE is_live = 1`)
-    .all() as { site_id: number }[];
-  const liveSiteIds = new Set(liveRows.map((r) => r.site_id));
+    .prepare(`SELECT provisional_asset_id FROM liveness_checks WHERE is_live = 1`)
+    .all() as { provisional_asset_id: string }[];
+  const liveAssetIds = new Set(liveRows.map((r) => r.provisional_asset_id));
 
   const allTargets: AuditTarget[] = rows
-    .filter((r) => liveSiteIds.has(r.siteId))
+    .filter((r) => liveAssetIds.has(r.provisionalAssetId))
     .map((r) => ({
       siteId: r.siteId,
+      provisionalAssetId: r.provisionalAssetId,
       domain: r.domain,
       url: `https://${r.domain}`,
       bundesland: r.bundesland,
@@ -87,10 +91,11 @@ export function upsertAuditRun(db: Database.Database, row: AuditRunRow): void {
   db.prepare(
     `
     INSERT INTO audit_runs (
-      tool, site_id, url, duration_ms,
+      tool, site_id, provisional_asset_id, url, duration_ms,
       ok, error_class, error_message, report_sha256, source
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(tool, site_id) DO UPDATE SET
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(tool, provisional_asset_id) DO UPDATE SET
+      site_id       = excluded.site_id,
       url           = excluded.url,
       duration_ms   = excluded.duration_ms,
       ok            = excluded.ok,
@@ -103,6 +108,7 @@ export function upsertAuditRun(db: Database.Database, row: AuditRunRow): void {
   ).run(
     row.tool,
     row.siteId,
+    row.provisionalAssetId,
     row.url,
     row.durationMs,
     row.ok ? 1 : 0,

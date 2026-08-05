@@ -15,6 +15,7 @@
   <item>Merge root brief.md with app-local brief.md: app-local values override root values.</item>
   <item>Return parsed rootBrief so gogols can read factory-level configuration directly.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
+  <item>RFC-0043: add capsuleId to brief template.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -34,7 +35,13 @@ export type BootstrappedBrief = {
   rootBrief: Brief;
 };
 
-const briefTemplate = ["---", 'sourceToken: "2026-q2-de"', "---", ""].join("\n");
+const briefTemplate = [
+  "---",
+  'sourceToken: "2026-q2-de"',
+  'capsuleId: "0198f000-0000-7000-8000-000000000000" # UUID v7',
+  "---",
+  "",
+].join("\n");
 
 export const bootstrapBrief = async (): Promise<BootstrappedBrief> => {
   // 1. Read root (factory-level) brief if it exists

@@ -56,8 +56,8 @@ const createEmitBundle = (
   fs.mkdirSync(bundleDir, { recursive: true });
 
   const manifest = {
-    schema_version: "1" as const,
-    format: "ndjson-v1" as const,
+    schema_version: "3" as const,
+    format: "ndjson-partitioned-v1" as const,
     app_id: "a-contract-ontology",
     collector_version: "a-contract-ontology@0.1.0",
     ruleset_version: "1.0.0",
@@ -66,8 +66,15 @@ const createEmitBundle = (
     period: "2026-q2",
     emitted_at: new Date().toISOString(),
     observation_count: observations.length,
+    partition_rows: 100_000,
+    observation_partitions: [] as Array<{ uri: string; row_count: number; sha256: string }>,
     evidence_count: 0,
+    evidence_partitions: [],
+    evidence_hash: null,
     bundle_hash: null as string | null,
+    asset_state_count: 0,
+    asset_state_partitions: [],
+    asset_states_hash: null,
     ...overrides,
   };
 
@@ -76,11 +83,21 @@ const createEmitBundle = (
   // Reader hashes each line as `line + '\n'`, so ndjson must end with '\n'.
   const ndjson = observations.map((o) => JSON.stringify(o)).join("\n") + "\n";
 
-  fs.writeFileSync(path.join(bundleDir, "observations.ndjson"), ndjson);
+  fs.mkdirSync(path.join(bundleDir, "observations"), { recursive: true });
+  fs.mkdirSync(path.join(bundleDir, "asset-states"), { recursive: true });
+  fs.writeFileSync(path.join(bundleDir, "observations", "part-000000.ndjson"), ndjson);
 
   // Compute hash over the same content the reader will hash.
   if (observations.length > 0) {
-    manifest.bundle_hash = crypto.createHash("sha256").update(ndjson).digest("hex");
+    const partitionSha256 = crypto.createHash("sha256").update(ndjson).digest("hex");
+    manifest.observation_partitions = [{
+      uri: "observations/part-000000.ndjson",
+      row_count: observations.length,
+      sha256: partitionSha256,
+    }];
+    manifest.bundle_hash = crypto.createHash("sha256")
+      .update(`observations/part-000000.ndjson\0${observations.length}\0${partitionSha256}`)
+      .digest("hex");
     fs.writeFileSync(path.join(bundleDir, "manifest.json"), JSON.stringify(manifest, null, 2));
   }
   return bundleDir;

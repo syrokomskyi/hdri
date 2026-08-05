@@ -12,10 +12,10 @@
 */
 
 import Database from "better-sqlite3";
-import { getAuditsDbPath } from "../paths.js";
 
 export const openAuditsDb = (dbPath?: string): Database.Database => {
-  const resolvedPath = dbPath ?? getAuditsDbPath(new Date().getFullYear());
+  if (!dbPath) throw new Error("Quarter-scoped Lighthouse database path is required");
+  const resolvedPath = dbPath;
   const db = new Database(resolvedPath);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");

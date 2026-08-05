@@ -13,11 +13,11 @@ details: >-
   has no entry in EXT_SIGNAL_MAP, so this data is structurally excluded from the
   observation pipeline (locked by a regression test in @syrokomskyi/observatory-core).
 inputs:
-  - ext_impressum (pages_YYYY.db) — provides detected_page_sha256 for fetched Impressum pages.
-  - page_contents (pages_YYYY.db) — storage_path for the fetched Impressum HTML.
+  - ext_impressum (pages-YYYY-qN.db) — provides detected_page_sha256 for fetched Impressum pages.
+  - page_contents (pages-YYYY-qN.db) — storage_path for the fetched Impressum HTML.
   - HTML files from CAS storage.
 outputs:
-  - ext_impressum_contacts rows in pages_YYYY.db (factory-local PII).
+  - ext_impressum_contacts rows in pages-YYYY-qN.db (factory-local PII).
   - extract-report.json — counts of total, parsed, skipped.
 definitionOfDone:
   - extract-report.json exists in the gogol output directory.

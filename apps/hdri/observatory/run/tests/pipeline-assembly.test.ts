@@ -34,6 +34,10 @@ describe("Pipeline assembly", () => {
     // publish phase
     expect(ids).toContain("write-vault");
     expect(ids).toContain("export-mart");
+    expect(ids).toContain("prepare-quarter-release");
+    expect(ids).toContain("seal-capsule");
+    expect(ids).toContain("validate-quarter");
+    expect(ids).toContain("release-quarter");
 
     // Order: harvest → observe → interpret → publish
     expect(ids.indexOf("setup-observatory-run")).toBeLessThan(ids.indexOf("sync-from-factory"));
@@ -42,11 +46,15 @@ describe("Pipeline assembly", () => {
     expect(ids.indexOf("score-hdri")).toBeLessThan(ids.indexOf("build-cohorts"));
     expect(ids.indexOf("build-cohorts")).toBeLessThan(ids.indexOf("write-vault"));
     expect(ids.indexOf("write-vault")).toBeLessThan(ids.indexOf("export-mart"));
+    expect(ids.indexOf("export-mart")).toBeLessThan(ids.indexOf("prepare-quarter-release"));
+    expect(ids.indexOf("prepare-quarter-release")).toBeLessThan(ids.indexOf("seal-capsule"));
+    expect(ids.indexOf("seal-capsule")).toBeLessThan(ids.indexOf("validate-quarter"));
+    expect(ids.indexOf("validate-quarter")).toBeLessThan(ids.indexOf("release-quarter"));
   });
 
-  it("has exactly 8 gogols", () => {
+  it("has exactly 12 gogols", () => {
     const pipeline = createPipeline();
-    expect(pipeline.steps.length).toBe(8);
+    expect(pipeline.steps.length).toBe(12);
   });
 });
 
@@ -55,9 +63,10 @@ describe("Brief parsing", () => {
     const brief = parseBriefMarkdown(`---
 outputLanguage: de
 period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
 ontologyVersion: "1.0.0"
-codebookVersion: "observatory-v1.0.0"
-sourceDbDir: "../factory/0-harvest-source/.output"
+codebookId: "observatory-v1"
+factoryContractRootDir: "../factory/a-contract-ontology"
 publicMode: false
 skipGogols: []
 ---
@@ -68,7 +77,7 @@ Digital Observatory run brief.
     expect(brief.outputLanguage).toBe("de");
     expect(brief.period).toBe("2025-q2");
     expect(brief.ontologyVersion).toBe("1.0.0");
-    expect(brief.codebookVersion).toBe("observatory-v1.0.0");
+    expect(brief.codebookId).toBe("observatory-v1");
     expect(brief.publicMode).toBe(false);
     expect(brief.skipGogols).toEqual([]);
   });
@@ -77,6 +86,8 @@ Digital Observatory run brief.
     expect(() =>
       parseBriefMarkdown(`---
 period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+factoryContractRootDir: "../factory/a-contract-ontology"
 ---
 `),
     ).toThrow("outputLanguage");
@@ -86,20 +97,50 @@ period: "2025-Q2"
     expect(() =>
       parseBriefMarkdown(`---
 outputLanguage: de
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+factoryContractRootDir: "../factory/a-contract-ontology"
 ---
 `),
     ).toThrow("period");
+  });
+
+  it("throws on missing codebookId", () => {
+    expect(() =>
+      parseBriefMarkdown(`---
+outputLanguage: de
+period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+factoryContractRootDir: "../factory/a-contract-ontology"
+---
+`),
+    ).toThrow("codebookId");
+  });
+
+  it("throws on deprecated codebookVersion field", () => {
+    expect(() =>
+      parseBriefMarkdown(`---
+outputLanguage: de
+period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+codebookVersion: "observatory-v1"
+factoryContractRootDir: "../factory/a-contract-ontology"
+---
+`),
+    ).toThrow("deprecated");
   });
 
   it("uses defaults for optional fields", () => {
     const brief = parseBriefMarkdown(`---
 outputLanguage: de
 period: "2025-Q2"
+capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
+codebookId: "observatory-v1"
+factoryContractRootDir: "../factory/a-contract-ontology"
 ---
 `);
     expect(brief.ontologyVersion).toBe("1.0.0");
-    expect(brief.codebookVersion).toBe("hdri-v1.0.0");
-    expect(brief.sourceDbDir).toBe("");
+    expect(brief.codebookId).toBe("observatory-v1");
+    expect(brief.capsuleId).toMatch(/-7/);
     expect(brief.publicMode).toBe(false);
   });
 });

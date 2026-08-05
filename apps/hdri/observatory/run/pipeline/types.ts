@@ -26,6 +26,10 @@ export type PipelineState = {
   assetCount?: number;
   scoreCount?: number;
   cohortId?: string;
+  capsuleDir?: string;
+  vaultShardPaths?: string[];
+  martPaths?: string[];
+  candidateManifestPath?: string;
 };
 
 export type PipelineAiServices = Record<string, never>;
