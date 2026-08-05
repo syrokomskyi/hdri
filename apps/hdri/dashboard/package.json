@@ -38,7 +38,7 @@
     "@types/node": "^26.1.2",
     "@wgogol/changelog-live": "workspace:*",
     "terser": "^5.49.1",
-    "tsx": "^4.23.5",
+    "tsx": "^4.23.7",
     "typescript": "6.0.3",
     "wrangler": "^4.118.0"
   }

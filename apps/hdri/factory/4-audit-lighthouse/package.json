@@ -22,14 +22,14 @@
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.2",
-    "better-sqlite3": "^13.0.2",
+    "better-sqlite3": "^13.0.3",
     "chrome-launcher": "^1.2.1",
-    "csv-stringify": "^6.8.2",
+    "csv-stringify": "^6.8.3",
     "dotenv": "^17.4.2",
     "gray-matter": "^4.0.3",
     "lighthouse": "^13.4.1",
     "markdown-table": "^3.0.4",
     "systeminformation": "^5.33.1",
-    "tsx": "^4.23.5"
+    "tsx": "^4.23.7"
   }
 }

@@ -21,10 +21,10 @@
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.2",
-    "better-sqlite3": "^13.0.2",
+    "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "gray-matter": "^4.0.3",
     "markdown-table": "^3.0.4",
-    "tsx": "^4.23.5"
+    "tsx": "^4.23.7"
   }
 }
