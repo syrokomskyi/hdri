@@ -63,3 +63,4 @@ git:
 copyDirs:
   - .agents
   - .github
+  - eslint-rules
