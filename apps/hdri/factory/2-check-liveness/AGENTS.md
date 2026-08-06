@@ -24,6 +24,8 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `typecheck` | `pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/2-check-liveness/tsconfig.json --pretty false` |
 | `dev` | `tsx -C @syrokomskyi/source watch run/run.ts` |
 | `start` | `tsx -C @syrokomskyi/source run/run.ts` |
+| `changelog` | `changelog-live` |
+| `changelog:init` | `changelog-live init` |
 
 ## Dependencies
 
@@ -39,6 +41,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `@syrokomskyi/pipeline-node`
 - `@syrokomskyi/pipeline-steps`
 - `@syrokomskyi/utils`
+- `@warpgogol/changelog-live`
 
 **External:**
 
