@@ -98,6 +98,7 @@ ci:
   provider: github-actions
   publish: false
   workspaceFilter: "@syrokomskyi/dashboard"
+  skipBuild: true
   deploy:
     provider: cloudflare-pages
     projectName: hdri
