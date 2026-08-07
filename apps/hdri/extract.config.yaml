@@ -92,6 +92,19 @@ git:
   remote: git@github.com:syrokomskyi/hdri.git
   autoPush: true
 
+skipSecretScan: true
+
+ci:
+  provider: github-actions
+  publish: false
+  deploy:
+    provider: cloudflare-pages
+    projectName: hdri
+    buildCommand: pnpm --filter @syrokomskyi/dashboard run build
+    outputDir: apps/hdri/dashboard/dist
+    apiTokenSecret: CLOUDFLARE_API_TOKEN
+    accountIdSecret: CLOUDFLARE_ACCOUNT_ID
+
 copyDirs:
   - .agents
   - .github
