@@ -2,10 +2,10 @@
   "name": "@syrokomskyi/clients-hdri",
   "private": true,
   "scripts": {
-    "build": "pnpm -r run --if-present build",
-    "typecheck": "pnpm -r run --if-present typecheck",
-    "lint": "pnpm -r run --if-present lint",
-    "test": "pnpm -r run --if-present test"
+    "build": "pnpm --filter @syrokomskyi/dashboard... run --if-present build",
+    "typecheck": "pnpm --filter @syrokomskyi/dashboard... run --if-present typecheck",
+    "lint": "pnpm --filter @syrokomskyi/dashboard... run --if-present lint",
+    "test": "pnpm --filter @syrokomskyi/dashboard... run --if-present test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
