@@ -34,3 +34,7 @@ All tests use `TestClock` from `tests/test-clock.ts` — a deterministic clock w
 ```bash
 pnpm --filter @syrokomskyi/rate-limit test
 ```
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

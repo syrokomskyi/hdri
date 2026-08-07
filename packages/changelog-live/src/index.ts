@@ -8,6 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation of changelog generation and translation.</item>
+  <item>ADR-0006: pass config.filter (merged with CLI --no-merges) to collectCommits</item>
 </CHANGE_SUMMARY>
 */
 
@@ -23,9 +24,10 @@ import {
 } from "./config.js";
 import {
   collectCommits,
-  groupCommitsByWeek,
-  takeLastWeeks,
-  isWeekInProgress,
+  groupCommits,
+  takeLastPeriods,
+  isPeriodInProgress,
+  resolveTagToDate,
 } from "./git-collect.js";
 import { generateChangelogSection, generatePublicChangelogSection } from "./ai-generate.js";
 import { translateChangelogSection } from "./ai-translate.js";
@@ -46,7 +48,14 @@ import {
   parseTranslatedPublicSection,
 } from "./markdown.js";
 
-import type { ChangelogConfig, ChangelogSection, PublicChangelogSection } from "./types.js";
+import type {
+  ChangelogConfig,
+  ChangelogSection,
+  PublicChangelogSection,
+  PeriodOptions,
+  GenerateOptions,
+} from "./types.js";
+import { createLogger, type Logger } from "./logger.js";
 
 // ---------------------------------------------------------------------------
 // Re-exports
@@ -59,21 +68,33 @@ export {
   getApiKey,
   getPrimaryFilePath,
   getTranslationFilePath,
+  applyCliOverrides,
+  type CliOverrides,
 } from "./config.js";
+export { createLogger, silentLogger, type Logger, type LogLevel } from "./logger.js";
 export {
   collectCommits,
   getFirstCommitDate,
   getLastCommitDate,
-  groupCommitsByWeek,
-  takeLastWeeks,
+  groupCommits,
+  takeLastPeriods,
   getWeekStart,
   getWeekEnd,
+  getPeriodStart,
+  getPeriodEnd,
   formatDate,
   parseDate,
-  getCurrentWeekStart,
-  isWeekInProgress,
+  getCurrentPeriodStart,
+  isPeriodInProgress,
+  resolveTagToDate,
+  isChangelogOnlyCommit,
 } from "./git-collect.js";
-export { generateChangelogSection } from "./ai-generate.js";
+export {
+  generateChangelogSection,
+  chunkCommits,
+  mergeChangelogSections,
+  mergePublicChangelogSections,
+} from "./ai-generate.js";
 export { translateChangelogSection } from "./ai-translate.js";
 export {
   parseChangelog,
@@ -100,22 +121,48 @@ export interface GenerateChangelogResult {
   commitMessage: string;
   filesWritten: string[];
   skipped: boolean;
+  dryRunOutput?: string;
 }
 
 /**
  * Generate or update a CHANGELOG.md (and translations) from git history.
  *
- * @param configPath Path to a YAML config file, or a config object.
+ * @param configOrPath Path to a YAML config file, or a config object.
+ * @param options Period options and/or generation options (dryRun, logger).
  * @returns Result with info about what was generated.
  */
 export async function generateChangelog(
   configOrPath: string | ChangelogConfig,
+  options?: PeriodOptions | GenerateOptions,
 ): Promise<GenerateChangelogResult> {
   const config: ChangelogConfig =
     typeof configOrPath === "string" ? await loadConfig(configOrPath) : configOrPath;
 
+  const dryRun = (options as GenerateOptions)?.dryRun ?? false;
+  const logger: Logger = (options as GenerateOptions)?.logger ?? createLogger("normal");
+  const period = options;
+
   const paths = config.git.paths ?? (config.git.subPath ? [config.git.subPath] : []);
   const primaryFilePath = getPrimaryFilePath(config);
+
+  // Resolve period options (ADR-0004)
+  const resolvedSince = period?.sinceTag
+    ? (resolveTagToDate(config.git.repoRoot, period.sinceTag) ?? period.since)
+    : period?.since;
+  const resolvedUntil = period?.untilTag
+    ? (resolveTagToDate(config.git.repoRoot, period.untilTag) ?? period.until)
+    : period?.until;
+  const force = period?.force ?? false;
+
+  // Build effective commit filter: config filter merged with CLI --no-merges override (ADR-0006)
+  const effectiveFilter = {
+    excludeMerges:
+      config.filter.excludeMerges ||
+      ((options as GenerateOptions & { noMerges?: boolean })?.noMerges ?? false),
+    excludeAuthors: config.filter.excludeAuthors,
+    excludePatterns: config.filter.excludePatterns,
+    excludeChangelogOnlyCommits: config.filter.excludeChangelogOnlyCommits,
+  };
 
   // 1. Read existing CHANGELOG to find last entry date
   let existingContent: string | null = null;
@@ -128,20 +175,29 @@ export async function generateChangelog(
   let sinceDate: string | undefined;
   let existingParsed = null;
 
-  if (existingContent) {
+  if (resolvedSince) {
+    // CLI --since takes priority over auto-detected sinceDate
+    sinceDate = resolvedSince;
+  } else if (existingContent) {
     existingParsed = parseChangelog(existingContent);
     const lastSection = getLastSection(existingParsed);
     if (lastSection) {
-      // Collect commits since the start of the last known week
-      sinceDate = lastSection.weekStart;
+      // Collect commits since the start of the last known period
+      sinceDate = lastSection.periodStart;
     }
   }
 
   // 2. Collect commits
-  const commits = collectCommits(config.git.repoRoot, paths, sinceDate);
+  const commits = collectCommits(
+    config.git.repoRoot,
+    paths,
+    sinceDate,
+    resolvedUntil,
+    effectiveFilter,
+  );
 
   if (commits.length === 0 && !config.publicChangelog) {
-    console.log("changelog-live: no new commits since last entry, skipping.");
+    logger.info("changelog-live: no new commits since last entry, skipping.");
     return {
       sectionsGenerated: 0,
       commitMessage: "no changes",
@@ -150,33 +206,33 @@ export async function generateChangelog(
     };
   }
 
-  // 3. Group by week
-  let weeks = groupCommitsByWeek(commits, config.grouping.startDay);
+  // 3. Group by period
+  let groups = groupCommits(commits, config.grouping.period, config.grouping.startDay);
 
-  // 4. First run: apply maxHistoryWeeks if set
-  if (!existingContent && config.maxHistoryWeeks) {
-    weeks = takeLastWeeks(weeks, config.maxHistoryWeeks);
+  // 4. First run: apply maxHistoryPeriods if set
+  if (!existingContent && config.maxHistoryPeriods) {
+    groups = takeLastPeriods(groups, config.maxHistoryPeriods);
   }
 
-  // 5. Filter out weeks that are already in the changelog or still in progress.
-  //    Only fully completed weeks not yet in the changelog are generated.
+  // 5. Filter out periods that are already in the changelog or still in progress.
+  //    Only fully completed periods not yet in the changelog are generated.
   if (existingParsed) {
-    const existingWeeks = new Set(existingParsed.sections.map((s) => s.weekStart));
+    const existingPeriods = new Set(existingParsed.sections.map((s) => s.periodStart));
 
-    weeks = weeks.filter((w) => {
-      // Skip weeks that are still in progress (not yet fully completed)
-      if (isWeekInProgress(w.weekEnd)) return false;
-      // Skip weeks that are already in the changelog
-      if (existingWeeks.has(w.weekStart)) return false;
+    groups = groups.filter((g) => {
+      // Skip periods that are still in progress (not yet fully completed)
+      if (isPeriodInProgress(g.periodEnd)) return false;
+      // Skip periods that are already in the changelog unless --force is set
+      if (!force && existingPeriods.has(g.periodStart)) return false;
       return true;
     });
   } else {
-    // First run: still skip in-progress weeks
-    weeks = weeks.filter((w) => !isWeekInProgress(w.weekEnd));
+    // First run: still skip in-progress periods
+    groups = groups.filter((g) => !isPeriodInProgress(g.periodEnd));
   }
 
-  if (weeks.length === 0 && !config.publicChangelog) {
-    console.log("changelog-live: all weeks already covered, skipping.");
+  if (groups.length === 0 && !config.publicChangelog) {
+    logger.info("changelog-live: all periods already covered, skipping.");
     return {
       sectionsGenerated: 0,
       commitMessage: "no changes",
@@ -185,23 +241,30 @@ export async function generateChangelog(
     };
   }
 
-  const internalSkipped = weeks.length === 0;
+  const internalSkipped = groups.length === 0;
 
-  // 6. Generate AI sections for each week
+  // 6. Generate AI sections for each period
   const newSections: ChangelogSection[] = [];
   let lastCommitMessage = "no changes";
   const filesWritten: string[] = [];
 
   if (!internalSkipped) {
-    for (const week of weeks) {
-      console.log(
-        `changelog-live: generating section for week ${week.weekStart} — ${week.weekEnd} (${week.commits.length} commits)`,
+    for (const group of groups) {
+      logger.info(
+        `changelog-live: generating section for period ${group.periodStart} — ${group.periodEnd} (${group.commits.length} commits)`,
       );
+      logger.verbose(`changelog-live: ${group.commits.length} commits for this period:`);
+      for (const c of group.commits) {
+        logger.verbose(`  ${c.hash.slice(0, 7)} ${c.date} ${c.message.split("\n")[0]}`);
+      }
       const section = await generateChangelogSection({
         provider: config.ai.generation.provider,
         model: config.ai.generation.model!,
         language: config.languages.primary,
-        week,
+        group,
+        systemPrompt: config.ai.generation.systemPrompt,
+        logger,
+        chunkSize: config.commitChunkSize,
       });
       newSections.push(section);
       lastCommitMessage = section.commitMessage;
@@ -224,8 +287,13 @@ export async function generateChangelog(
     }
 
     const primaryMarkdown = renderFullChangelog(allSections, config.sortOrder, header);
-    await fs.writeFile(primaryFilePath, primaryMarkdown, "utf-8");
-    filesWritten.push(primaryFilePath);
+    if (dryRun) {
+      logger.info("changelog-live: [dry-run] primary changelog:");
+      logger.verbose(primaryMarkdown);
+    } else {
+      await fs.writeFile(primaryFilePath, primaryMarkdown, "utf-8");
+      filesWritten.push(primaryFilePath);
+    }
 
     // 8. Translate new sections and update translation files
     for (const lang of config.languages.translations) {
@@ -248,6 +316,8 @@ export async function generateChangelog(
           sourceLanguage: config.languages.primary,
           targetLanguage: lang,
           markdown: sectionMd,
+          systemPrompt: config.ai.translation.systemPrompt,
+          logger,
         });
 
         // Parse the translated markdown back into a section
@@ -271,6 +341,8 @@ export async function generateChangelog(
           sourceLanguage: config.languages.primary,
           targetLanguage: lang,
           markdown: header,
+          systemPrompt: config.ai.translation.systemPrompt,
+          logger,
         });
         allTranslatedSections = translatedSections;
         translatedHeader = translatedHeaderMd;
@@ -281,11 +353,16 @@ export async function generateChangelog(
         config.sortOrder,
         translatedHeader,
       );
-      await fs.writeFile(translationPath, translationMarkdown, "utf-8");
-      filesWritten.push(translationPath);
+      if (dryRun) {
+        logger.info(`changelog-live: [dry-run] translation (${lang}):`);
+        logger.verbose(translationMarkdown);
+      } else {
+        await fs.writeFile(translationPath, translationMarkdown, "utf-8");
+        filesWritten.push(translationPath);
+      }
     }
   } else {
-    console.log(
+    logger.info(
       "changelog-live: internal changelog already up to date, checking public changelog...",
     );
   }
@@ -305,53 +382,74 @@ export async function generateChangelog(
     // Determine sinceDate for public changelog
     let publicSinceDate: string | undefined;
     let existingPublicParsed = null;
-    if (existingPublicContent) {
+    if (resolvedSince) {
+      publicSinceDate = resolvedSince;
+    } else if (existingPublicContent) {
       existingPublicParsed = parsePublicChangelog(existingPublicContent);
       const lastPublicSection = getLastPublicSection(existingPublicParsed);
       if (lastPublicSection) {
-        publicSinceDate = lastPublicSection.weekStart;
+        publicSinceDate = lastPublicSection.periodStart;
       }
     }
 
     // Collect commits for public changelog independently
-    const publicCommits = collectCommits(config.git.repoRoot, paths, publicSinceDate);
+    const publicCommits = collectCommits(
+      config.git.repoRoot,
+      paths,
+      publicSinceDate,
+      resolvedUntil,
+      effectiveFilter,
+    );
     if (publicCommits.length === 0) {
-      console.log("changelog-live: public changelog already up to date, no new commits.");
+      logger.info("changelog-live: public changelog already up to date, no new commits.");
     } else {
-      // Group by week
-      let publicWeeks = groupCommitsByWeek(publicCommits, config.grouping.startDay);
+      // Group by period
+      let publicGroups = groupCommits(
+        publicCommits,
+        config.grouping.period,
+        config.grouping.startDay,
+      );
 
-      // First run: apply maxHistoryWeeks if set
-      if (!existingPublicContent && config.maxHistoryWeeks) {
-        publicWeeks = takeLastWeeks(publicWeeks, config.maxHistoryWeeks);
+      // First run: apply maxHistoryPeriods if set
+      if (!existingPublicContent && config.maxHistoryPeriods) {
+        publicGroups = takeLastPeriods(publicGroups, config.maxHistoryPeriods);
       }
 
-      // Filter out in-progress and already-covered weeks
+      // Filter out in-progress and already-covered periods
       if (existingPublicParsed) {
-        const existingPublicWeeks = new Set(existingPublicParsed.sections.map((s) => s.weekStart));
-        publicWeeks = publicWeeks.filter((w) => {
-          if (isWeekInProgress(w.weekEnd)) return false;
-          if (existingPublicWeeks.has(w.weekStart)) return false;
+        const existingPublicPeriods = new Set(
+          existingPublicParsed.sections.map((s) => s.periodStart),
+        );
+        publicGroups = publicGroups.filter((g) => {
+          if (isPeriodInProgress(g.periodEnd)) return false;
+          if (!force && existingPublicPeriods.has(g.periodStart)) return false;
           return true;
         });
       } else {
-        publicWeeks = publicWeeks.filter((w) => !isWeekInProgress(w.weekEnd));
+        publicGroups = publicGroups.filter((g) => !isPeriodInProgress(g.periodEnd));
       }
 
-      if (publicWeeks.length === 0) {
-        console.log("changelog-live: public changelog already up to date.");
+      if (publicGroups.length === 0) {
+        logger.info("changelog-live: public changelog already up to date.");
       } else {
-        // Generate public sections for each new week
+        // Generate public sections for each new period
         const newPublicSections: PublicChangelogSection[] = [];
-        for (const week of publicWeeks) {
-          console.log(
-            `changelog-live: generating public section for week ${week.weekStart} — ${week.weekEnd}`,
+        for (const group of publicGroups) {
+          logger.info(
+            `changelog-live: generating public section for period ${group.periodStart} — ${group.periodEnd}`,
           );
+          logger.verbose(`changelog-live: ${group.commits.length} public commits for this period:`);
+          for (const c of group.commits) {
+            logger.verbose(`  ${c.hash.slice(0, 7)} ${c.date} ${c.message.split("\n")[0]}`);
+          }
           const publicSection = await generatePublicChangelogSection({
             provider: config.ai.generation.provider,
             model: config.ai.generation.model!,
             language: config.languages.primary,
-            week,
+            group,
+            systemPrompt: config.ai.generation.systemPrompt,
+            logger,
+            chunkSize: config.commitChunkSize,
           });
           newPublicSections.push(publicSection);
         }
@@ -376,8 +474,13 @@ export async function generateChangelog(
           config.sortOrder,
           publicHeader,
         );
-        await fs.writeFile(publicFilePath, publicMarkdown, "utf-8");
-        filesWritten.push(publicFilePath);
+        if (dryRun) {
+          logger.info("changelog-live: [dry-run] public changelog:");
+          logger.verbose(publicMarkdown);
+        } else {
+          await fs.writeFile(publicFilePath, publicMarkdown, "utf-8");
+          filesWritten.push(publicFilePath);
+        }
 
         // Translate public sections and write translation files
         for (const lang of config.languages.translations) {
@@ -399,6 +502,8 @@ export async function generateChangelog(
               sourceLanguage: config.languages.primary,
               targetLanguage: lang,
               markdown: sectionMd,
+              systemPrompt: config.ai.translation.systemPrompt,
+              logger,
             });
 
             const translated = parseTranslatedPublicSection(translatedMd, section);
@@ -422,6 +527,7 @@ export async function generateChangelog(
               sourceLanguage: config.languages.primary,
               targetLanguage: lang,
               markdown: publicHeader,
+              systemPrompt: config.ai.translation.systemPrompt,
             });
             allTranslatedPublicSections = translatedPublicSections;
             translatedPublicHeader = translatedHeaderMd;
@@ -432,16 +538,27 @@ export async function generateChangelog(
             config.sortOrder,
             translatedPublicHeader,
           );
-          await fs.writeFile(publicTranslationPath, publicTranslationMarkdown, "utf-8");
-          filesWritten.push(publicTranslationPath);
+          if (dryRun) {
+            logger.info(`changelog-live: [dry-run] public translation (${lang}):`);
+            logger.verbose(publicTranslationMarkdown);
+          } else {
+            await fs.writeFile(publicTranslationPath, publicTranslationMarkdown, "utf-8");
+            filesWritten.push(publicTranslationPath);
+          }
         }
       }
     }
   }
 
-  console.log(
-    `changelog-live: generated ${newSections.length} section(s), wrote ${filesWritten.length} file(s).`,
-  );
+  if (dryRun) {
+    logger.info(
+      `changelog-live: [dry-run] generated ${newSections.length} section(s), 0 file(s) written (dry-run mode).`,
+    );
+  } else {
+    logger.info(
+      `changelog-live: generated ${newSections.length} section(s), wrote ${filesWritten.length} file(s).`,
+    );
+  }
 
   return {
     sectionsGenerated: newSections.length,

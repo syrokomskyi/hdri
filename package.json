@@ -4,7 +4,8 @@
   "scripts": {
     "build": "pnpm --recursive --filter \"./apps/**\" exec pnpm run build",
     "typecheck": "pnpm --recursive --filter \"./apps/**\" exec pnpm run typecheck",
-    "lint": "pnpm --recursive --filter \"./apps/**\" exec pnpm run lint"
+    "lint": "pnpm --recursive --filter \"./apps/**\" exec pnpm run lint",
+    "test": "pnpm --recursive --filter \"./apps/**\" exec pnpm run --if-present test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -14,5 +15,5 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.64.0"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@11.20.0"
 }

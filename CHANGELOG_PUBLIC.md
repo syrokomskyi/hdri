@@ -1,6 +1,26 @@
 # Changelog
 
 All notable client-facing changes to the `hdri` project are documented here.
+## Plattform-Updates für die Woche 2026-07-30 — 2026-08-05
+
+Diese Woche lag der Schwerpunkt auf der Verbesserung der Wartbarkeit und der Nachvollziehbarkeit durch ausführliche Änderungsprotokolle und Dokumentations-Updates. Zusätzlich wurden mehrere Stabilitäts- und Sicherheitsanpassungen vorgenommen, um die Einhaltung von Compliance-Anforderungen zu gewährleisten. Für Nutzer in Europa stehen somit mehr Transparenz und ein sichereres Nutzungserlebnis zur Verfügung.
+
+### Added
+- Automatisch generierte und verlinkte Änderungsprotokolle (Changelogs) für alle Anwendungen und Pakete sorgen für mehr Transparenz bei Systemänderungen (EU-weite Relevanz).
+
+### Improved
+- Mehrere Software-Abhängigkeiten wurden aktualisiert, um Sicherheitslücken zu schließen und die Kompatibilität mit aktuellen Entwicklungsstandards sicherzustellen (EU-weite Relevanz).
+
+### Fixed
+- Beseitigung von Risiken durch versehentlich enthaltene Zugangsdaten in Testdateien; diese wurden entfernt, um Datensicherheit und Compliance zu gewährleisten (EU-weit).
+- Fehlerbehebung bei der Projektkonfiguration, sodass Testdateien nun korrekt ausgeschlossen werden; dies trägt zu einer zuverlässigeren Build- und Testumgebung bei.
+
+### Security & Compliance
+- Entfernung versehentlich enthaltener Zugangsdaten (AWS STS Credentials) aus dem Quellcode, um Datenschutz und die Einhaltung gesetzlicher Vorgaben (z. B. DSGVO) zu stärken (EU-weite Relevanz).
+
+### Integrations
+- Umbenennung und Aktualisierung von Paket-Integrationen bei Drittanbietern, sodass der aktuelle europäische Anbieter '@warpgogol/changelog-live' verwendet wird, was den Support verbessert und rechtliche Sicherheit herstellt (EU-weit).
+
 ## Plattform-Updates für die Woche 2026-07-23 — 2026-07-29
 
 In dieser Woche wurden vor allem technische Wartungsarbeiten durchgeführt, darunter ein Upgrade der Abhängigkeiten, das Entfernen von veralteten Entwicklungstools und das Beheben von Installationswarnungen. Diese Maßnahmen erhöhen die Sicherheit und Kompatibilität der Plattform und sorgen für einen reibungsloseren Betrieb. Für Kunden zeigen sich diese Verbesserungen insbesondere durch eine erhöhte Zuverlässigkeit und bessere Langzeitwartbarkeit.

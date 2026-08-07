@@ -29,10 +29,6 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@syrokomskyi/business-core": "workspace:*",
-    "@syrokomskyi/observatory-crypto": "workspace:*",
-    "@syrokomskyi/pipeline-core": "workspace:*",
-    "@syrokomskyi/rate-limit": "workspace:*",
     "markdown-table": "^3.0.4",
     "systeminformation": "^5.33.1",
     "tslib": "^2.8.1"

@@ -76,3 +76,7 @@ As the shared foundation of the monorepo:
 - It is not intended for npm publishing
 - Changes to this package may affect all other packages in the monorepo
 - Keep utilities generic and well-tested as they form the foundation
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

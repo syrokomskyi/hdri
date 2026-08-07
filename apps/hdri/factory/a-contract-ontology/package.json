@@ -7,17 +7,11 @@
     "typecheck": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/a-contract-ontology/tsconfig.json --pretty false",
     "test": "pnpm exec vitest run",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
-    "start": "tsx -C @syrokomskyi/source run/run.ts"
+    "start": "tsx -C @syrokomskyi/source run/run.ts",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
   },
   "dependencies": {
-    "@syrokomskyi/business-core": "workspace:*",
-    "@syrokomskyi/factory-core": "workspace:*",
-    "@syrokomskyi/observatory-core": "workspace:*",
-    "@syrokomskyi/observatory-crypto": "workspace:*",
-    "@syrokomskyi/observatory-emit": "workspace:*",
-    "@syrokomskyi/pipeline-core": "workspace:*",
-    "@syrokomskyi/pipeline-node": "workspace:*",
-    "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.1.2",
     "better-sqlite3": "^13.0.3",

@@ -38,3 +38,7 @@ createMainEntry({ runApp });
 `createMainEntry` handles `dotenv.config()`, CLI argument parsing (`--dry-run`, `--from`, `--to`, `--only`, `--force`), `PipelinePauseError` (exit code 2), and general error formatting (exit code 1).
 
 `parseRunOptions` is also exported separately for apps that need it without the full entry-point wrapper (e.g. `observatory` which has a custom entry point).
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

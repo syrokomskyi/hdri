@@ -10,6 +10,10 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation of changelog generation CLI</item>
+  <item>ADR-0004: added --since, --until, --since-tag, --until-tag, --force CLI flags</item>
+  <item>ADR-0010: added --force flag to init, .env loading from CWD</item>
+  <item>ADR-0006: added --no-merges CLI flag for commit filtering</item>
+  <item>ADR-0005: added --dry-run, --verbose, --quiet, --provider, --model, --output CLI flags</item>
 </CHANGE_SUMMARY>
 */
 
@@ -22,6 +26,8 @@ import { Command } from "commander";
 
 import { generateChangelog } from "./index.js";
 import { traceHistoricalPaths } from "./git-trace.js";
+import { loadConfig, applyCliOverrides } from "./config.js";
+import { createLogger, type LogLevel } from "./logger.js";
 
 /**
  * Auto-load .env from the git repo root so API keys are available
@@ -37,6 +43,16 @@ function loadRepoEnv(): void {
     }
   } catch {
     // Not in a git repo or no .env — rely on existing process.env
+  }
+
+  // CWD .env takes priority over repo root .env (loaded second, overwrites values)
+  const cwdEnvPath = path.join(process.cwd(), ".env");
+  if (existsSync(cwdEnvPath)) {
+    try {
+      process.loadEnvFile(cwdEnvPath);
+    } catch {
+      // .env exists but failed to load — ignore
+    }
   }
 }
 
@@ -65,7 +81,7 @@ Minimal example:
       provider: openai
 
 Requires OPENAI_API_KEY (or ANTHROPIC_API_KEY / GEMINI_API_KEY) in environment.
-Docs: https://github.com/wgogol/changelog-live
+Docs: https://github.com/syrokomskyi/changelog-live
 `;
 
 // ---------------------------------------------------------------------------
@@ -131,14 +147,20 @@ function buildConfigYaml(repoRoot: string, gitPaths: string[], defaultsYaml: str
   return lines.join("\n") + "\n";
 }
 
-async function initCommand(): Promise<void> {
+async function initCommand(options: { force?: boolean }): Promise<void> {
   const cwd = process.cwd();
 
   const configPath = path.join(cwd, "changelog.config.yaml");
-  if (existsSync(configPath)) {
+  if (existsSync(configPath) && !options.force) {
     console.log("changelog-live init: changelog.config.yaml already exists in this directory.");
-    console.log("  Delete it first if you want to re-initialize git history paths.");
+    console.log(
+      "  Use --force to overwrite, or delete it first if you want to re-initialize git history paths.",
+    );
     process.exit(0);
+  }
+
+  if (existsSync(configPath) && options.force) {
+    console.log("changelog-live init: WARNING — overwriting existing changelog.config.yaml");
   }
 
   const defaultConfigPath = findDefaultConfig(cwd);
@@ -183,40 +205,115 @@ program
   .description("AI-powered CHANGELOG.md generator from git history")
   .version(pkg.version)
   .option("-c, --config <path>", "Path to changelog.config.yaml", "changelog.config.yaml")
-  .action(async (opts: { config: string }) => {
-    const configPath = path.resolve(opts.config);
+  .option("--since <date>", "Collect commits since this date (YYYY-MM-DD)")
+  .option("--until <date>", "Collect commits until this date (YYYY-MM-DD)")
+  .option("--since-tag <tag>", "Resolve tag to date and use as --since")
+  .option("--until-tag <tag>", "Resolve tag to date and use as --until")
+  .option("--force", "Regenerate existing periods (in-progress periods still skipped)")
+  .option("--no-merges", "Exclude merge commits (shorthand for filter.excludeMerges)")
+  .option("--dry-run", "Run pipeline without writing files (output to stdout)")
+  .option("--verbose", "Show detailed output (commits, AI prompts, timing)")
+  .option("--quiet", "Suppress all output except errors")
+  .option("--provider <name>", "Override AI provider (openai, anthropic, gemini)")
+  .option("--model <name>", "Override AI model for generation and translation")
+  .option("--output <path>", "Override output directory or file path")
+  .action(
+    async (opts: {
+      config: string;
+      since?: string;
+      until?: string;
+      sinceTag?: string;
+      untilTag?: string;
+      force?: boolean;
+      noMerges?: boolean;
+      dryRun?: boolean;
+      verbose?: boolean;
+      quiet?: boolean;
+      provider?: string;
+      model?: string;
+      output?: string;
+    }) => {
+      const configPath = path.resolve(opts.config);
 
-    if (!existsSync(configPath)) {
-      console.log(NO_CONFIG_MESSAGE);
-      process.exit(0);
-    }
-
-    try {
-      const result = await generateChangelog(configPath);
-
-      if (result.skipped) {
-        console.log("changelog-live: no new commits, CHANGELOG unchanged.");
+      if (!existsSync(configPath)) {
+        console.log(NO_CONFIG_MESSAGE);
         process.exit(0);
       }
 
-      console.log(`changelog-live: ${result.sectionsGenerated} section(s) generated.`);
-      console.log(`  commit message: ${result.commitMessage}`);
-      console.log("  files written:");
-      for (const f of result.filesWritten) {
-        console.log(`    ${f}`);
+      // Determine log level: --quiet takes priority over --verbose
+      let logLevel: LogLevel = "normal";
+      if (opts.quiet) logLevel = "quiet";
+      else if (opts.verbose) logLevel = "verbose";
+      const logger = createLogger(logLevel);
+
+      const period = {
+        since: opts.since,
+        until: opts.until,
+        sinceTag: opts.sinceTag,
+        untilTag: opts.untilTag,
+        force: opts.force ?? false,
+        noMerges: opts.noMerges ?? false,
+        dryRun: opts.dryRun ?? false,
+        logger,
+      };
+      const hasPeriodOpts =
+        period.since ||
+        period.until ||
+        period.sinceTag ||
+        period.untilTag ||
+        period.force ||
+        period.noMerges ||
+        opts.dryRun;
+
+      try {
+        // Load config and apply CLI overrides (ADR-0005)
+        let config = await loadConfig(configPath);
+        const hasOverrides = opts.provider || opts.model || opts.output;
+        if (hasOverrides) {
+          config = applyCliOverrides(config, {
+            provider: opts.provider,
+            model: opts.model,
+            output: opts.output,
+          });
+          logger.verbose(
+            `changelog-live: applied CLI overrides — provider: ${opts.provider ?? "(none)"}, model: ${opts.model ?? "(none)"}, output: ${opts.output ?? "(none)"}`,
+          );
+        }
+
+        const result = await generateChangelog(config, hasPeriodOpts ? period : undefined);
+
+        if (result.skipped) {
+          logger.info("changelog-live: no new commits, CHANGELOG unchanged.");
+          process.exit(0);
+        }
+
+        logger.info(`changelog-live: ${result.sectionsGenerated} section(s) generated.`);
+        if (!opts.quiet) {
+          logger.info(`  commit message: ${result.commitMessage}`);
+          if (result.filesWritten.length > 0) {
+            logger.info("  files written:");
+            for (const f of result.filesWritten) {
+              logger.info(`    ${f}`);
+            }
+          }
+          if (opts.dryRun) {
+            logger.info("  (dry-run mode — no files written)");
+          }
+        }
+      } catch (err) {
+        logger.error(`changelog-live failed: ${err instanceof Error ? err.message : err}`);
+        process.exit(1);
       }
-    } catch (err) {
-      console.error("changelog-live failed:", err instanceof Error ? err.message : err);
-      process.exit(1);
-    }
-  });
+    },
+  );
 
 program
   .command("init")
   .description("Discover all git history paths and create changelog.config.yaml")
-  .action(async () => {
+  .option("-f, --force", "Overwrite existing changelog.config.yaml")
+  .action(async (opts: { force?: boolean }) => {
     try {
-      await initCommand();
+      await initCommand(opts);
     } catch (err) {
       console.error("changelog-live init failed:", err instanceof Error ? err.message : err);
       process.exit(1);

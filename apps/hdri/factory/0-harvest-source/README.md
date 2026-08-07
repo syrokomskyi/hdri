@@ -34,3 +34,7 @@ The pipeline does not connect to these systems live; it ingests static files (CS
    pnpm turbo run start --filter=@syrokomskyi/catalog-harvest
    ```
 4. Monitor execution in `.output/_guide/`.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

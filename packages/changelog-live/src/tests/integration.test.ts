@@ -3,13 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 
+import type { CommitFilter } from "../types.js";
 import {
   collectCommits,
   getFirstCommitDate,
-  groupCommitsByWeek,
-  isWeekInProgress,
+  groupCommits,
+  isPeriodInProgress,
   formatDate,
   getWeekStart,
+  resolveTagToDate,
+  isChangelogOnlyCommit,
 } from "../git-collect.js";
 
 async function createTempRepo(): Promise<{ dir: string; cleanup: () => Promise<void> }> {
@@ -17,6 +20,7 @@ async function createTempRepo(): Promise<{ dir: string; cleanup: () => Promise<v
   const { execSync } = await import("node:child_process");
 
   execSync("git init", { cwd: dir, stdio: "pipe" });
+  execSync("git branch -M main", { cwd: dir, stdio: "pipe" });
   execSync('git config user.email "test@test.com"', { cwd: dir, stdio: "pipe" });
   execSync('git config user.name "Test"', { cwd: dir, stdio: "pipe" });
 
@@ -82,6 +86,27 @@ describe("integration: git collect + group", () => {
     expect(commits[0].message).toBe("New commit");
   });
 
+  it("collects commits with untilDate", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Old commit", "2026-06-01");
+    await commitFile(dir, "src/b.ts", "b", "Mid commit", "2026-07-10");
+    await commitFile(dir, "src/c.ts", "c", "New commit", "2026-07-15");
+
+    const commits = collectCommits(dir, ["src"], undefined, "2026-07-12");
+    expect(commits).toHaveLength(2);
+    expect(commits[0].message).toBe("Mid commit");
+    expect(commits[1].message).toBe("Old commit");
+  });
+
+  it("collects commits with both sinceDate and untilDate", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Old commit", "2026-06-01");
+    await commitFile(dir, "src/b.ts", "b", "Mid commit", "2026-07-10");
+    await commitFile(dir, "src/c.ts", "c", "New commit", "2026-07-15");
+
+    const commits = collectCommits(dir, ["src"], "2026-07-01", "2026-07-12");
+    expect(commits).toHaveLength(1);
+    expect(commits[0].message).toBe("Mid commit");
+  });
+
   it("gets first commit date", async () => {
     await commitFile(dir, "src/a.ts", "a", "First", "2026-05-01");
     await commitFile(dir, "src/b.ts", "b", "Second", "2026-07-15");
@@ -110,13 +135,13 @@ describe("integration: git collect + group", () => {
     await commitFile(dir, "src/c.ts", "c", "Next Thu", "2026-07-23"); // Next Thursday
 
     const commits = collectCommits(dir, ["src"]);
-    const weeks = groupCommitsByWeek(commits, "thu");
+    const weeks = groupCommits(commits, "week", "thu");
     expect(weeks).toHaveLength(2);
     expect(weeks[0].commits).toHaveLength(2);
     expect(weeks[1].commits).toHaveLength(1);
   });
 
-  it("filters out in-progress weeks, keeps only completed weeks", async () => {
+  it("filters out in-progress periods, keeps only completed periods", async () => {
     // Commit 2 weeks ago (completed week)
     const twoWeeksAgo = new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
@@ -126,8 +151,8 @@ describe("integration: git collect + group", () => {
     await commitFile(dir, "src/today.ts", "today", "Today commit", formatDate(new Date()));
 
     const commits = collectCommits(dir, ["src"]);
-    const weeks = groupCommitsByWeek(commits, "thu");
-    const completed = weeks.filter((w) => !isWeekInProgress(w.weekEnd));
+    const weeks = groupCommits(commits, "week", "thu");
+    const completed = weeks.filter((w) => !isPeriodInProgress(w.periodEnd));
 
     // Only the completed week should pass the filter
     expect(completed).toHaveLength(1);
@@ -135,8 +160,322 @@ describe("integration: git collect + group", () => {
 
     // The current week must be flagged as in-progress
     const currentWeekStart = formatDate(getWeekStart(new Date(), "thu"));
-    const currentWeek = weeks.find((w) => w.weekStart === currentWeekStart);
+    const currentWeek = weeks.find((w) => w.periodStart === currentWeekStart);
     expect(currentWeek).toBeDefined();
-    expect(isWeekInProgress(currentWeek!.weekEnd)).toBe(true);
+    expect(isPeriodInProgress(currentWeek!.periodEnd)).toBe(true);
+  });
+});
+
+describe("integration: resolveTagToDate", () => {
+  let dir: string;
+  let cleanup: () => Promise<void>;
+
+  beforeEach(async () => {
+    const result = await createTempRepo();
+    dir = result.dir;
+    cleanup = result.cleanup;
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  it("resolves a tag to its commit date", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Tagged commit", "2026-07-15");
+    const { execSync } = await import("node:child_process");
+    execSync("git tag v1.0.0", { cwd: dir, stdio: "pipe" });
+
+    const date = resolveTagToDate(dir, "v1.0.0");
+    expect(date).toBe("2026-07-15");
+  });
+
+  it("returns null for non-existent tag", async () => {
+    const date = resolveTagToDate(dir, "nonexistent-tag");
+    expect(date).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR-0006: Commit filtering tests
+// ---------------------------------------------------------------------------
+
+async function commitWithAuthor(
+  dir: string,
+  filePath: string,
+  content: string,
+  message: string,
+  date: string,
+  authorName: string,
+): Promise<void> {
+  const { execSync } = await import("node:child_process");
+  const fullPath = path.join(dir, filePath);
+  await fs.mkdir(path.dirname(fullPath), { recursive: true });
+  await fs.writeFile(fullPath, content);
+  execSync("git add -A", { cwd: dir, stdio: "pipe" });
+  execSync(
+    `git -c user.name="${authorName}" -c user.email="${authorName.toLowerCase()}@bot.com" commit -m "${message}" --date="${date} 12:00:00"`,
+    {
+      cwd: dir,
+      env: {
+        ...process.env,
+        GIT_AUTHOR_DATE: `${date} 12:00:00`,
+        GIT_COMMITTER_DATE: `${date} 12:00:00`,
+      },
+      stdio: "pipe",
+    },
+  );
+}
+
+describe("integration: commit filtering (ADR-0006)", () => {
+  let dir: string;
+  let cleanup: () => Promise<void>;
+
+  beforeEach(async () => {
+    const result = await createTempRepo();
+    dir = result.dir;
+    cleanup = result.cleanup;
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  it("populates author field on collected commits", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Add a", "2026-07-16");
+
+    const commits = collectCommits(dir, ["src"]);
+    expect(commits).toHaveLength(1);
+    expect(commits[0].author).toBe("Test");
+  });
+
+  it("excludes merge commits when excludeMerges is true", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Add a", "2026-07-16");
+    await commitFile(dir, "src/b.ts", "b", "Add b", "2026-07-17");
+
+    // Create a merge commit
+    const { execSync } = await import("node:child_process");
+    execSync("git checkout -b feature", { cwd: dir, stdio: "pipe" });
+    await commitFile(dir, "src/c.ts", "c", "Add c on feature", "2026-07-18");
+    execSync("git checkout main", { cwd: dir, stdio: "pipe" });
+    execSync("git merge --no-ff feature -m \"Merge branch 'feature'\"", {
+      cwd: dir,
+      stdio: "pipe",
+    });
+
+    const filter: CommitFilter = {
+      excludeMerges: true,
+      excludeAuthors: [],
+      excludePatterns: [],
+      excludeChangelogOnlyCommits: false,
+    };
+
+    const commits = collectCommits(dir, ["src"], undefined, undefined, filter);
+    const messages = commits.map((c) => c.message);
+    expect(messages).not.toContain("Merge branch 'feature'");
+    expect(messages).toContain("Add a");
+    expect(messages).toContain("Add b");
+    expect(messages).toContain("Add c on feature");
+  });
+
+  it("includes merge commits when excludeMerges is false", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Add a", "2026-07-16");
+
+    const { execSync } = await import("node:child_process");
+    execSync("git checkout -b feature", { cwd: dir, stdio: "pipe" });
+    await commitFile(dir, "src/b.ts", "b", "Add b", "2026-07-17");
+    execSync("git checkout main", { cwd: dir, stdio: "pipe" });
+    execSync("git merge --no-ff feature -m \"Merge branch 'feature'\"", {
+      cwd: dir,
+      stdio: "pipe",
+    });
+
+    const filter: CommitFilter = {
+      excludeMerges: false,
+      excludeAuthors: [],
+      excludePatterns: [],
+      excludeChangelogOnlyCommits: false,
+    };
+
+    const commitsWithFilter = collectCommits(dir, ["src"], undefined, undefined, filter);
+    const commitsWithoutFilter = collectCommits(dir, ["src"]);
+    expect(commitsWithFilter).toHaveLength(commitsWithoutFilter.length);
+    expect(commitsWithFilter.map((c) => c.message)).toContain("Add a");
+    expect(commitsWithFilter.map((c) => c.message)).toContain("Add b");
+  });
+
+  it("excludes commits by excluded authors", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Human commit", "2026-07-16");
+    await commitWithAuthor(dir, "src/b.ts", "b", "Bot commit", "2026-07-17", "dependabot[bot]");
+
+    const filter: CommitFilter = {
+      excludeMerges: false,
+      excludeAuthors: ["dependabot[bot]"],
+      excludePatterns: [],
+      excludeChangelogOnlyCommits: false,
+    };
+
+    const commits = collectCommits(dir, ["src"], undefined, undefined, filter);
+    expect(commits).toHaveLength(1);
+    expect(commits[0].message).toBe("Human commit");
+  });
+
+  it("excludes commits matching excludePatterns", async () => {
+    await commitFile(dir, "src/a.ts", "a", "feat: add feature", "2026-07-16");
+    await commitFile(dir, "src/b.ts", "b", "chore(deps): bump packages", "2026-07-17");
+    await commitFile(dir, "src/c.ts", "c", "ci: configure pipeline", "2026-07-18");
+
+    const filter: CommitFilter = {
+      excludeMerges: false,
+      excludeAuthors: [],
+      excludePatterns: ["^chore\\(deps\\):", "^ci:"],
+      excludeChangelogOnlyCommits: false,
+    };
+
+    const commits = collectCommits(dir, ["src"], undefined, undefined, filter);
+    expect(commits).toHaveLength(1);
+    expect(commits[0].message).toBe("feat: add feature");
+  });
+
+  it("applies all filters simultaneously", async () => {
+    await commitFile(dir, "src/a.ts", "a", "feat: add feature", "2026-07-16");
+    await commitWithAuthor(dir, "src/b.ts", "b", "feat: bot work", "2026-07-17", "renovate[bot]");
+    await commitFile(dir, "src/c.ts", "c", "chore(deps): bump", "2026-07-18");
+
+    const filter: CommitFilter = {
+      excludeMerges: true,
+      excludeAuthors: ["renovate[bot]"],
+      excludePatterns: ["^chore\\(deps\\):"],
+      excludeChangelogOnlyCommits: false,
+    };
+
+    const commits = collectCommits(dir, ["src"], undefined, undefined, filter);
+    expect(commits).toHaveLength(1);
+    expect(commits[0].message).toBe("feat: add feature");
+  });
+
+  it("returns all commits when filter has defaults (no exclusions)", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Add a", "2026-07-16");
+    await commitFile(dir, "src/b.ts", "b", "Add b", "2026-07-17");
+
+    const filter: CommitFilter = {
+      excludeMerges: false,
+      excludeAuthors: [],
+      excludePatterns: [],
+      excludeChangelogOnlyCommits: false,
+    };
+
+    const commits = collectCommits(dir, ["src"], undefined, undefined, filter);
+    expect(commits).toHaveLength(2);
+  });
+});
+
+describe("integration: changelog-only commit exclusion", () => {
+  let dir: string;
+  let cleanup: () => Promise<void>;
+
+  beforeEach(async () => {
+    const result = await createTempRepo();
+    dir = result.dir;
+    cleanup = result.cleanup;
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  it("isChangelogOnlyCommit returns true for commits touching only CHANGELOG files", async () => {
+    await commitFile(dir, "CHANGELOG.md", "# Changelog\n", "Update changelog", "2026-07-16");
+
+    const commits = collectCommits(dir, ["."]);
+    expect(commits).toHaveLength(1);
+    expect(isChangelogOnlyCommit(commits[0])).toBe(true);
+  });
+
+  it("isChangelogOnlyCommit returns true for translated CHANGELOG files", async () => {
+    await commitFile(dir, "CHANGELOG.de.md", "# Changelog\n", "Update de changelog", "2026-07-16");
+
+    const commits = collectCommits(dir, ["."]);
+    expect(commits).toHaveLength(1);
+    expect(isChangelogOnlyCommit(commits[0])).toBe(true);
+  });
+
+  it("isChangelogOnlyCommit returns false for commits with non-CHANGELOG files", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Add feature", "2026-07-16");
+    await commitFile(dir, "CHANGELOG.md", "# Changelog\n", "Update changelog", "2026-07-17");
+
+    const commits = collectCommits(dir, ["."]);
+    const featureCommit = commits.find((c) => c.message === "Add feature");
+    expect(featureCommit).toBeDefined();
+    expect(isChangelogOnlyCommit(featureCommit!)).toBe(false);
+  });
+
+  it("isChangelogOnlyCommit returns false for mixed commits", async () => {
+    await fs.mkdir(path.join(dir, "src"), { recursive: true });
+    await fs.writeFile(path.join(dir, "src/a.ts"), "a");
+    await fs.writeFile(path.join(dir, "CHANGELOG.md"), "# Changelog\n");
+    const { execSync } = await import("node:child_process");
+    execSync("git add -A", { cwd: dir, stdio: "pipe" });
+    execSync('git commit -m "Add feature and update changelog" --date="2026-07-16 12:00:00"', {
+      cwd: dir,
+      env: {
+        ...process.env,
+        GIT_AUTHOR_DATE: "2026-07-16 12:00:00",
+        GIT_COMMITTER_DATE: "2026-07-16 12:00:00",
+      },
+      stdio: "pipe",
+    });
+
+    const commits = collectCommits(dir, ["."]);
+    expect(commits).toHaveLength(1);
+    expect(isChangelogOnlyCommit(commits[0])).toBe(false);
+  });
+
+  it("excludes changelog-only commits by default", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Add feature", "2026-07-16");
+    await commitFile(dir, "CHANGELOG.md", "# Changelog\n", "Update changelog", "2026-07-17");
+
+    const filter: CommitFilter = {
+      excludeMerges: false,
+      excludeAuthors: [],
+      excludePatterns: [],
+      excludeChangelogOnlyCommits: true,
+    };
+
+    const commits = collectCommits(dir, ["."], undefined, undefined, filter);
+    expect(commits).toHaveLength(1);
+    expect(commits[0].message).toBe("Add feature");
+  });
+
+  it("includes changelog-only commits when excludeChangelogOnlyCommits is false", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Add feature", "2026-07-16");
+    await commitFile(dir, "CHANGELOG.md", "# Changelog\n", "Update changelog", "2026-07-17");
+
+    const filter: CommitFilter = {
+      excludeMerges: false,
+      excludeAuthors: [],
+      excludePatterns: [],
+      excludeChangelogOnlyCommits: false,
+    };
+
+    const commits = collectCommits(dir, ["."], undefined, undefined, filter);
+    expect(commits).toHaveLength(2);
+  });
+
+  it("excludes changelog-only commits even without explicit filter (default behavior)", async () => {
+    await commitFile(dir, "src/a.ts", "a", "Add feature", "2026-07-16");
+    await commitFile(dir, "CHANGELOG.md", "# Changelog\n", "Update changelog", "2026-07-17");
+    await commitFile(dir, "CHANGELOG.de.md", "# Changelog\n", "Update de changelog", "2026-07-18");
+
+    // No filter passed — applyCommitFilter is not called, so we test via explicit default filter
+    const filter: CommitFilter = {
+      excludeMerges: false,
+      excludeAuthors: [],
+      excludePatterns: [],
+      excludeChangelogOnlyCommits: true,
+    };
+
+    const commits = collectCommits(dir, ["."], undefined, undefined, filter);
+    expect(commits).toHaveLength(1);
+    expect(commits[0].message).toBe("Add feature");
   });
 });

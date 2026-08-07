@@ -15,3 +15,7 @@ Contains YAML rule parser ("codebook") and deterministic score calculation logic
 - **`aggregate.ts`** — Cohort aggregation and statistical summaries.
 - **`governance.ts`** — Signatory validation for MAJOR codebook releases (`validateSignatories`, `isMajorBump`, `parseGovernance`).
 - **`version.ts`** — Semantic versioning helpers.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "export:data": "pnpm --filter @syrokomskyi/observatory run export:dashboard",
-    "build": "astro build",
+    "build": "pnpm run export:data && if [ -f src/assets/data/public/archive.json ]; then pnpm --dir ../../.. exec astro build --root apps/hdri/dashboard; else echo 'ℹ No dashboard data, skipping astro build'; fi",
     "start": "astro dev",
-    "dev": "astro dev",
+    "dev": "pnpm run export:data && pnpm --dir ../../.. exec astro dev --root apps/hdri/dashboard",
     "preview": "pnpm --dir ../../.. exec astro preview --root apps/hdri/dashboard",
     "typecheck": "pnpm --dir ../../.. exec astro sync --root apps/hdri/dashboard && pnpm --dir ../../.. exec tsc -p apps/hdri/dashboard/tsconfig.json --noEmit",
-    "upgrade-packages": "pnpm up --latest"
+    "upgrade-packages": "pnpm up --latest",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

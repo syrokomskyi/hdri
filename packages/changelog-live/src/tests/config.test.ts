@@ -67,12 +67,12 @@ describe("validateConfig", () => {
     ).toThrow();
   });
 
-  it("accepts maxHistoryWeeks", () => {
+  it("accepts maxHistoryPeriods", () => {
     const config = validateConfig({
       git: { subPath: "src" },
-      maxHistoryWeeks: 4,
+      maxHistoryPeriods: 4,
     });
-    expect(config.maxHistoryWeeks).toBe(4);
+    expect(config.maxHistoryPeriods).toBe(4);
   });
 
   it("accepts sortOrder asc", () => {
@@ -94,5 +94,33 @@ describe("validateConfig", () => {
       publicChangelog: true,
     });
     expect(config.publicChangelog).toBe(true);
+  });
+
+  it("accepts systemPrompt for generation", () => {
+    const config = validateConfig({
+      git: { subPath: "src" },
+      ai: {
+        generation: { provider: "openai", systemPrompt: "You are a technical writer..." },
+        translation: { provider: "openai" },
+      },
+    });
+    expect(config.ai.generation.systemPrompt).toBe("You are a technical writer...");
+  });
+
+  it("accepts systemPrompt for translation", () => {
+    const config = validateConfig({
+      git: { subPath: "src" },
+      ai: {
+        generation: { provider: "openai" },
+        translation: { provider: "openai", systemPrompt: "You are a fintech translator..." },
+      },
+    });
+    expect(config.ai.translation.systemPrompt).toBe("You are a fintech translator...");
+  });
+
+  it("defaults systemPrompt to undefined", () => {
+    const config = validateConfig({ git: { subPath: "src" } });
+    expect(config.ai.generation.systemPrompt).toBeUndefined();
+    expect(config.ai.translation.systemPrompt).toBeUndefined();
   });
 });

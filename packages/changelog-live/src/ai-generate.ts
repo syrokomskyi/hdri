@@ -8,6 +8,8 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation of changelog generation module</item>
+  <item>ADR-0007: Added optional systemPrompt to GenerateOptions and PublicGenerateOptions for custom AI prompts via config</item>
+  <item>ADR-0009: Added retry (up to 3 attempts) to generateChangelogSection() for invalid JSON responses</item>
 </CHANGE_SUMMARY>
 */
 
@@ -18,7 +20,7 @@ import type {
   Provider,
   PublicChangelogCategory,
   PublicChangelogSection,
-  WeekGroup,
+  PeriodGroup,
 } from "./types.js";
 import {
   CHANGELOG_CATEGORIES,
@@ -29,6 +31,7 @@ import {
 import { getApiKey } from "./config.js";
 import { callAiProvider } from "./ai-provider.js";
 import { getLanguageName } from "./languages.js";
+import type { Logger } from "./logger.js";
 
 export function formatCommitsForPrompt(commits: GitCommit[]): string {
   return commits
@@ -39,6 +42,63 @@ export function formatCommitsForPrompt(commits: GitCommit[]): string {
       return `commit ${c.hash}\nDate: ${c.date}\nMessage: ${c.message}\nFiles:\n${fileStats}`;
     })
     .join("\n\n");
+}
+
+// ---------------------------------------------------------------------------
+// Commit chunking (large period groups)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_CHUNK_SIZE = 200;
+
+/**
+ * Split a large commit array into chunks of at most `chunkSize` commits.
+ * Returns a single-element array containing the original array if no chunking is needed.
+ */
+export function chunkCommits(commits: GitCommit[], chunkSize: number): GitCommit[][] {
+  if (commits.length <= chunkSize) return [commits];
+  const chunks: GitCommit[][] = [];
+  for (let i = 0; i < commits.length; i += chunkSize) {
+    chunks.push(commits.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+/**
+ * Merge multiple ChangelogSections (from different chunks) into one by
+ * concatenating entries within each category.
+ */
+export function mergeChangelogSections(sections: ChangelogSection[]): ChangelogSection {
+  const categories = {} as Record<ChangelogCategory, string[]>;
+  for (const cat of CHANGELOG_CATEGORIES) {
+    categories[cat] = sections.flatMap((s) => s.categories[cat] ?? []);
+  }
+  return {
+    periodStart: sections[0].periodStart,
+    periodEnd: sections[0].periodEnd,
+    categories,
+    commitMessage: sections[sections.length - 1].commitMessage,
+  };
+}
+
+/**
+ * Merge multiple PublicChangelogSections (from different chunks) into one by
+ * concatenating entries within each category. Title and summary are taken
+ * from the first section.
+ */
+export function mergePublicChangelogSections(
+  sections: PublicChangelogSection[],
+): PublicChangelogSection {
+  const categories = {} as Record<PublicChangelogCategory, string[]>;
+  for (const cat of PUBLIC_CHANGELOG_CATEGORIES) {
+    categories[cat] = sections.flatMap((s) => s.categories[cat] ?? []);
+  }
+  return {
+    periodStart: sections[0].periodStart,
+    periodEnd: sections[0].periodEnd,
+    title: sections[0].title,
+    summary: sections[0].summary,
+    categories,
+  };
 }
 
 function buildSystemPrompt(language: string): string {
@@ -52,6 +112,8 @@ Rules:
 5. Use imperative mood (e.g., "Add Matomo analytics" not "Added Matomo analytics").
 6. Omit empty categories — only include categories that have at least one entry.
 7. Also provide a concise commit message (max 72 chars) summarizing all changes.
+8. Base each entry ONLY on the files shown in the commit statistics. The commit message may describe repo-wide changes, but this changelog covers only the files listed — describe what changed for those files, not the entire repository.
+9. Do not mention "changelog", "CHANGELOG.md", or changes to changelog files themselves.
 
 Return a JSON object with this exact structure:
 {
@@ -94,38 +156,127 @@ const RESPONSE_SCHEMA = {
 // AI generation
 // ---------------------------------------------------------------------------
 
+const MAX_RETRIES = 3;
+
 export interface GenerateOptions {
   provider: Provider;
   model: string;
   language: string;
-  week: WeekGroup;
+  group: PeriodGroup;
+  logger?: Logger;
+  systemPrompt?: string;
+  chunkSize?: number;
 }
 
 /**
- * Generate a changelog section for a week's worth of commits using AI.
- * Throws if the API key is missing or the API call fails.
+ * Generate a changelog section for a single chunk of commits using AI.
+ * Uses retry (up to 3 attempts) if the AI returns invalid JSON.
+ * Throws if the API key is missing or all attempts fail.
+ */
+async function generateSingleChunkSection(
+  opts: GenerateOptions,
+  apiKey: string,
+  systemPrompt: string,
+): Promise<ChangelogSection> {
+  const baseUserPrompt = formatCommitsForPrompt(opts.group.commits);
+  const logger = opts.logger;
+
+  let lastError: Error | null = null;
+  let lastRaw = "";
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    let userPrompt = baseUserPrompt;
+
+    if (attempt === 2) {
+      userPrompt =
+        baseUserPrompt +
+        "\n\n---\nYour previous response was not valid JSON. Please return valid JSON with the exact structure requested.";
+    } else if (attempt === 3) {
+      userPrompt =
+        baseUserPrompt +
+        "\n\n---\nFINAL ATTEMPT: return valid JSON with the exact structure requested.";
+    }
+
+    logger?.verbose(`changelog-live: [AI] generation prompt (${attempt}/${MAX_RETRIES}):
+${userPrompt.slice(0, 500)}...`);
+    const startTime = Date.now();
+    const raw = await callAiProvider({
+      provider: opts.provider,
+      model: opts.model,
+      apiKey,
+      systemPrompt,
+      userPrompt,
+      schema: RESPONSE_SCHEMA,
+    });
+    const elapsed = Date.now() - startTime;
+    logger?.verbose(`changelog-live: [AI] generation response (${elapsed}ms):
+${raw.slice(0, 500)}...`);
+    lastRaw = raw;
+
+    try {
+      return parseGenerationResponse(raw, opts.group);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      logger?.info(
+        `changelog-live: internal section parse error (attempt ${attempt}/${MAX_RETRIES}), retrying...`,
+      );
+    }
+  }
+
+  throw new Error(
+    `AI failed to produce valid changelog JSON after ${MAX_RETRIES} attempts. ` +
+      `Last error: ${lastError?.message ?? "unknown"}. Last response: ${lastRaw.slice(0, 300)}`,
+  );
+}
+
+/**
+ * Generate a changelog section for a period's worth of commits using AI.
+ * If the period has more commits than `chunkSize` (default 200), the commits
+ * are split into chunks, each chunk is processed independently, and the
+ * resulting sections are merged by concatenating entries within each category.
+ * Uses retry (up to 3 attempts) per chunk if the AI returns invalid JSON.
+ * Throws if the API key is missing or all attempts fail for any chunk.
  */
 export async function generateChangelogSection(opts: GenerateOptions): Promise<ChangelogSection> {
   const apiKey = getApiKey(opts.provider);
-  const systemPrompt = buildSystemPrompt(opts.language);
-  const userPrompt = formatCommitsForPrompt(opts.week.commits);
+  const systemPrompt = opts.systemPrompt ?? buildSystemPrompt(opts.language);
+  const chunkSize = opts.chunkSize ?? DEFAULT_CHUNK_SIZE;
+  const chunks = chunkCommits(opts.group.commits, chunkSize);
+  const logger = opts.logger;
 
-  const raw = await callAiProvider({
-    provider: opts.provider,
-    model: opts.model,
-    apiKey,
-    systemPrompt,
-    userPrompt,
-    schema: RESPONSE_SCHEMA,
-  });
-  return parseGenerationResponse(raw, opts.week);
+  if (chunks.length <= 1) {
+    return generateSingleChunkSection(opts, apiKey, systemPrompt);
+  }
+
+  logger?.info(
+    `changelog-live: [AI] splitting ${opts.group.commits.length} commits into ${chunks.length} chunks of ~${chunkSize}`,
+  );
+
+  const sections: ChangelogSection[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    logger?.info(
+      `changelog-live: [AI] processing chunk ${i + 1}/${chunks.length} (${chunks[i].length} commits)`,
+    );
+    const chunkGroup: PeriodGroup = {
+      ...opts.group,
+      commits: chunks[i],
+    };
+    const section = await generateSingleChunkSection(
+      { ...opts, group: chunkGroup },
+      apiKey,
+      systemPrompt,
+    );
+    sections.push(section);
+  }
+
+  return mergeChangelogSections(sections);
 }
 
 // ---------------------------------------------------------------------------
 // Response parsing
 // ---------------------------------------------------------------------------
 
-export function parseGenerationResponse(raw: string, week: WeekGroup): ChangelogSection {
+export function parseGenerationResponse(raw: string, group: PeriodGroup): ChangelogSection {
   let parsed: {
     categories?: Partial<Record<ChangelogCategory, string[]>>;
     commitMessage?: string;
@@ -142,11 +293,11 @@ export function parseGenerationResponse(raw: string, week: WeekGroup): Changelog
     categories[cat] = parsed.categories?.[cat] ?? [];
   }
 
-  const commitMessage = parsed.commitMessage ?? `export ${week.weekStart}`;
+  const commitMessage = parsed.commitMessage ?? `export ${group.periodStart}`;
 
   return {
-    weekStart: week.weekStart,
-    weekEnd: week.weekEnd,
+    periodStart: group.periodStart,
+    periodEnd: group.periodEnd,
     categories,
     commitMessage,
   };
@@ -180,6 +331,8 @@ Rules:
 15. The title MUST contain the date range in format YYYY-MM-DD — YYYY-MM-DD (using an em-dash —).
 16. The title should be a brief release/period heading, e.g. "Plattform-Updates für die Woche 2026-07-10 — 2026-07-17".
 17. The summary should be 2-3 sentences explaining what changed overall and why it matters to the client.
+18. Base each entry ONLY on the files shown in the commit statistics. The commit message may describe repo-wide changes, but this changelog covers only the files listed.
+19. Do not mention "changelog", "CHANGELOG.md", or changes to changelog files themselves.
 
 Return a JSON object with this exact structure:
 {
@@ -223,20 +376,24 @@ export interface PublicGenerateOptions {
   provider: Provider;
   model: string;
   language: string;
-  week: WeekGroup;
+  group: PeriodGroup;
+  logger?: Logger;
+  systemPrompt?: string;
+  chunkSize?: number;
 }
 
 /**
- * Generate a public changelog section for a week's worth of commits using AI.
+ * Generate a public changelog section for a single chunk of commits using AI.
  * Uses an escalating retry (up to 3 attempts) if the AI-generated title
  * does not contain the required date range.
  */
-export async function generatePublicChangelogSection(
+async function generateSinglePublicChunkSection(
   opts: PublicGenerateOptions,
+  apiKey: string,
+  systemPrompt: string,
 ): Promise<PublicChangelogSection> {
-  const apiKey = getApiKey(opts.provider);
-  const systemPrompt = buildPublicSystemPrompt(opts.language);
-  const baseUserPrompt = formatCommitsForPrompt(opts.week.commits);
+  const baseUserPrompt = formatCommitsForPrompt(opts.group.commits);
+  const logger = opts.logger;
 
   let lastRaw = "";
 
@@ -248,15 +405,18 @@ export async function generatePublicChangelogSection(
         baseUserPrompt +
         "\n\n---\nYour previous response did not include the required date range " +
         "YYYY-MM-DD — YYYY-MM-DD in the title. Please regenerate with the date range " +
-        `${opts.week.weekStart} — ${opts.week.weekEnd} in the title.`;
+        `${opts.group.periodStart} — ${opts.group.periodEnd} in the title.`;
     } else if (attempt === 3) {
       userPrompt =
         baseUserPrompt +
         "\n\n---\nFINAL ATTEMPT: The title MUST contain the exact date range " +
-        `${opts.week.weekStart} — ${opts.week.weekEnd}. ` +
-        `Example title: "Plattform-Updates für die Woche ${opts.week.weekStart} — ${opts.week.weekEnd}".`;
+        `${opts.group.periodStart} — ${opts.group.periodEnd}. ` +
+        `Example title: "Plattform-Updates für die Woche ${opts.group.periodStart} — ${opts.group.periodEnd}".`;
     }
 
+    logger?.verbose(`changelog-live: [AI] public generation prompt (${attempt}/${MAX_PUBLIC_RETRIES}):
+${userPrompt.slice(0, 500)}...`);
+    const startTime = Date.now();
     const raw = await callAiProvider({
       provider: opts.provider,
       model: opts.model,
@@ -266,12 +426,15 @@ export async function generatePublicChangelogSection(
       schema: PUBLIC_RESPONSE_SCHEMA,
       schemaName: "public_changelog_section",
     });
+    const elapsed = Date.now() - startTime;
+    logger?.verbose(`changelog-live: [AI] public generation response (${elapsed}ms):
+${raw.slice(0, 500)}...`);
     lastRaw = raw;
 
-    const section = parsePublicGenerationResponse(raw, opts.week);
+    const section = parsePublicGenerationResponse(raw, opts.group);
     if (section) return section;
 
-    console.log(
+    logger?.info(
       `changelog-live: public section title missing date range (attempt ${attempt}/${MAX_PUBLIC_RETRIES}), retrying...`,
     );
   }
@@ -283,12 +446,58 @@ export async function generatePublicChangelogSection(
 }
 
 /**
+ * Generate a public changelog section for a period's worth of commits using AI.
+ * If the period has more commits than `chunkSize` (default 200), the commits
+ * are split into chunks, each chunk is processed independently, and the
+ * resulting sections are merged by concatenating entries within each category.
+ * Title and summary are taken from the first chunk's result.
+ * Uses an escalating retry (up to 3 attempts) per chunk if the AI-generated title
+ * does not contain the required date range.
+ */
+export async function generatePublicChangelogSection(
+  opts: PublicGenerateOptions,
+): Promise<PublicChangelogSection> {
+  const apiKey = getApiKey(opts.provider);
+  const systemPrompt = opts.systemPrompt ?? buildPublicSystemPrompt(opts.language);
+  const chunkSize = opts.chunkSize ?? DEFAULT_CHUNK_SIZE;
+  const chunks = chunkCommits(opts.group.commits, chunkSize);
+  const logger = opts.logger;
+
+  if (chunks.length <= 1) {
+    return generateSinglePublicChunkSection(opts, apiKey, systemPrompt);
+  }
+
+  logger?.info(
+    `changelog-live: [AI] splitting ${opts.group.commits.length} public commits into ${chunks.length} chunks of ~${chunkSize}`,
+  );
+
+  const sections: PublicChangelogSection[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    logger?.info(
+      `changelog-live: [AI] processing public chunk ${i + 1}/${chunks.length} (${chunks[i].length} commits)`,
+    );
+    const chunkGroup: PeriodGroup = {
+      ...opts.group,
+      commits: chunks[i],
+    };
+    const section = await generateSinglePublicChunkSection(
+      { ...opts, group: chunkGroup },
+      apiKey,
+      systemPrompt,
+    );
+    sections.push(section);
+  }
+
+  return mergePublicChangelogSections(sections);
+}
+
+/**
  * Parse a public generation response into a PublicChangelogSection.
  * Returns null if the title does not contain the required date range.
  */
 export function parsePublicGenerationResponse(
   raw: string,
-  week: WeekGroup,
+  group: PeriodGroup,
 ): PublicChangelogSection | null {
   let parsed: {
     title?: string;
@@ -306,10 +515,13 @@ export function parsePublicGenerationResponse(
   const dateMatch = title.match(TITLE_DATE_REGEX);
   if (!dateMatch) return null;
 
-  // Always use the config-driven week boundaries (from groupCommitsByWeek),
+  // Always use the config-driven period boundaries (from groupCommits),
   // not the AI-generated dates in the title. This ensures the public changelog
-  // has the same week cadence as the internal changelog.
-  const correctedTitle = title.replace(TITLE_DATE_REGEX, `${week.weekStart} — ${week.weekEnd}`);
+  // has the same period cadence as the internal changelog.
+  const correctedTitle = title.replace(
+    TITLE_DATE_REGEX,
+    `${group.periodStart} — ${group.periodEnd}`,
+  );
 
   const categories = {} as Record<PublicChangelogCategory, string[]>;
   for (const cat of PUBLIC_CHANGELOG_CATEGORIES) {
@@ -317,8 +529,8 @@ export function parsePublicGenerationResponse(
   }
 
   return {
-    weekStart: week.weekStart,
-    weekEnd: week.weekEnd,
+    periodStart: group.periodStart,
+    periodEnd: group.periodEnd,
     title: correctedTitle,
     summary: parsed.summary ?? "",
     categories,

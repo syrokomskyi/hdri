@@ -19,3 +19,7 @@ Canonical types, ontology model, validation, and hashing for the Digital Observa
 - **Value invariant** — `value.ts` owns the `ObservationValueType` union, `countPopulatedValues` checker, and `makeValueFields` builder in one module.
 - **Signal map** — `EXT_SIGNAL_MAP` and `AXE_SIGNAL_MAP` map legacy table names to ontology signal paths. `createSignalMap(ontology)` validates all entries against a loaded ontology at construction time.
 - **Hashing** — deterministic `sha256Json()` and `computationHash()` for provenance and theory reconstruction.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

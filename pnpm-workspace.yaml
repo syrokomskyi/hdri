@@ -9,5 +9,5 @@ packages:
 onlyBuiltDependencies:
   - '@duckdb/node-api'
   - '@swc/core'
-  - better-sqlite3
-  - esbuild
+  - 'better-sqlite3'
+  - 'esbuild'

@@ -8,6 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation of translation module with provider support.</item>
+  <item>ADR-0007: Added optional systemPrompt to TranslateOptions for custom translation prompts via config</item>
 </CHANGE_SUMMARY>
 */
 
@@ -15,6 +16,7 @@ import type { Provider } from "./types.js";
 import { getApiKey } from "./config.js";
 import { callAiProvider } from "./ai-provider.js";
 import { getLanguageName } from "./languages.js";
+import type { Logger } from "./logger.js";
 
 // ---------------------------------------------------------------------------
 // Translation
@@ -26,6 +28,8 @@ export interface TranslateOptions {
   sourceLanguage: string;
   targetLanguage: string;
   markdown: string;
+  systemPrompt?: string;
+  logger?: Logger;
 }
 
 /**
@@ -35,9 +39,14 @@ export interface TranslateOptions {
  */
 export async function translateChangelogSection(opts: TranslateOptions): Promise<string> {
   const apiKey = getApiKey(opts.provider);
-  const systemPrompt = buildTranslationPrompt(opts.sourceLanguage, opts.targetLanguage);
+  const systemPrompt =
+    opts.systemPrompt ?? buildTranslationPrompt(opts.sourceLanguage, opts.targetLanguage);
   const userPrompt = opts.markdown;
+  const logger = opts.logger;
 
+  logger?.verbose(`changelog-live: [AI] translation prompt (${opts.sourceLanguage} → ${opts.targetLanguage}):
+${userPrompt.slice(0, 500)}...`);
+  const startTime = Date.now();
   const raw = await callAiProvider({
     provider: opts.provider,
     model: opts.model,
@@ -45,6 +54,9 @@ export async function translateChangelogSection(opts: TranslateOptions): Promise
     systemPrompt,
     userPrompt,
   });
+  const elapsed = Date.now() - startTime;
+  logger?.verbose(`changelog-live: [AI] translation response (${elapsed}ms):
+${raw.slice(0, 500)}...`);
   return raw;
 }
 

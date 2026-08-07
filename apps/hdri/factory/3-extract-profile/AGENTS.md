@@ -25,6 +25,8 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `test` | `pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/3-extract-profile/vitest.config.ts` |
 | `dev` | `tsx -C @syrokomskyi/source watch run/run.ts` |
 | `start` | `tsx -C @syrokomskyi/source --max-old-space-size=2048 run/run.ts` |
+| `changelog` | `changelog-live` |
+| `changelog:init` | `changelog-live init` |
 
 ## Dependencies
 
@@ -40,6 +42,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `@syrokomskyi/pipeline-node`
 - `@syrokomskyi/pipeline-steps`
 - `@syrokomskyi/utils`
+- `@warpgogol/changelog-live`
 
 **External:**
 

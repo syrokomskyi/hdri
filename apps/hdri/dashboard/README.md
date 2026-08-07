@@ -68,3 +68,8 @@ _index._agents.handwerk-index.org. 3600 IN SVCB 1 handwerk-index.org. alpn="h2" 
 ```
 
 Die Zone sollte mit DNSSEC signiert sein, damit validierende Resolver authentifizierte Daten zurückgeben.
+
+## Changelog
+
+- [CHANGELOG.md](CHANGELOG.md)
+- [CHANGELOG_PUBLIC.md](CHANGELOG_PUBLIC.md)

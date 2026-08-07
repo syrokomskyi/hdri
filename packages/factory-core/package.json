@@ -29,11 +29,6 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@syrokomskyi/business-core": "workspace:*",
-    "@syrokomskyi/observatory-crypto": "workspace:*",
-    "@syrokomskyi/observatory-emit": "workspace:*",
-    "@syrokomskyi/pipeline-core": "workspace:*",
-    "@syrokomskyi/pipeline-node": "workspace:*",
     "tslib": "^2.8.1"
   },
   "devDependencies": {

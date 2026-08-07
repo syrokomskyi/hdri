@@ -14,3 +14,7 @@ Both `createOpenAiText` and `createAnthropicAiText` accept an optional `attachme
 - **Anthropic** (`createAnthropicAiText`): image content blocks are appended to the last user message.
 
 Callers are responsible for checking model vision capabilities before passing attachments — do not send images to models that do not support them.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

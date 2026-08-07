@@ -1,6 +1,31 @@
 # Changelog
 
 All notable changes to the `.` project are documented here.
+## 2026-07-30 .. 2026-08-05
+
+### Added
+- Create CHANGELOG.md, changelog.config.yaml, and extract.config.yaml files for all relevant packages and apps.
+- Add changelog links to all README.md files.
+- Add smart upgrade script with major version pinning.
+
+### Changed
+- Rename @wgogol/changelog-live to @warpgogol/changelog-live, update all references and packages.
+
+### Fixed
+- Downgrade TypeScript from 7.0.2 to 6.0.3 to ensure compatibility with typescript-eslint.
+- Explicitly exclude test files in tsconfig.json of HDRI Factory Apps.
+- Fix error when copying eslint-rules directory in HDRI Export.
+- Remove accidentally published files containing leaked AWS STS credentials.
+
+### Removed
+- Remove accidentally published files containing leaked AWS STS credentials.
+
+### Security
+- Remove accidentally published files containing leaked AWS STS credentials.
+
+### Documentation
+- Create and extend CHANGELOG.md as well as agent documentation (AGENTS.md), update entries, and add links in all READMEs.
+
 ## 2026-07-23 .. 2026-07-29
 
 ### Added

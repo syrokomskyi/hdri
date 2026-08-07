@@ -10,3 +10,7 @@ Pipeline for Lighthouse performance audit of live sites.
    pnpm turbo run start --filter=@syrokomskyi/site-lighthouse-audit
    ```
 3. Aggregated audit results are saved in `audits_YYYY.db`.
+
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md)

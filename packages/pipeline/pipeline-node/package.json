@@ -107,8 +107,6 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@syrokomskyi/pipeline-ai": "workspace:*",
-    "@syrokomskyi/pipeline-core": "workspace:*",
     "dotenv": "^17.4.2",
     "gray-matter": "^4.0.3",
     "handlebars": "^4.7.9",
