@@ -103,7 +103,7 @@ ci:
     provider: cloudflare-pages
     projectName: hdri
     buildCommand: pnpm --filter @syrokomskyi/dashboard exec astro build
-    outputDir: apps/hdri/dashboard/dist
+    outputDir: apps/hdri/dashboard
     apiTokenSecret: CLOUDFLARE_API_TOKEN
     accountIdSecret: CLOUDFLARE_ACCOUNT_ID
 
