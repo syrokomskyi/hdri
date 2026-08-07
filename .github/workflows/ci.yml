@@ -40,7 +40,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile --config.dangerouslyAllowAllBuilds=true
-      - run: pnpm --filter @syrokomskyi/dashboard run build
+      - run: pnpm --dir ../../.. exec astro build --root apps/hdri/dashboard
       - run: npx wrangler pages deploy apps/hdri/dashboard/dist --project-name=hdri
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
