@@ -97,6 +97,7 @@ skipSecretScan: true
 ci:
   provider: github-actions
   publish: false
+  workspaceFilter: "@syrokomskyi/dashboard"
   deploy:
     provider: cloudflare-pages
     projectName: hdri
