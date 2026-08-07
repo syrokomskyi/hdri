@@ -109,5 +109,4 @@ ci:
 
 copyDirs:
   - .agents
-  - .github
   - eslint-rules

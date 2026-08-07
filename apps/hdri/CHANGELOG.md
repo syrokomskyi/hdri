@@ -1,7 +1,27 @@
 # Changelog
 
 All notable changes to the `hdri` project are documented here.
-## 2026-07-30 .. 2026-08-05
+## 2026-08-06 — 2026-08-12
+
+### Added
+- Füge Unterstützung für Cloudflare Pages Deployments und neue Optionen wie 'skipBuild' und 'workspaceFilter' in extract.config.yaml sowie in den CI-spezifischen Typen und Konfigurationen hinzu.
+
+### Changed
+- Passe build-Befehle in extract.config.yaml an, indem 'wrangler deploy' statt 'wrangler pages deploy' verwendet wird und das '--filter' Flag integriert wird.
+- Unterstütze mehrere Paketmanager in repo-extract mit aktualisierten Transformations-, Index- und Package-Manager-Modulen.
+- Erweitere extract.config.yaml Dateien um explizite organisationsspezifische Werte gemäß RFC-0071.
+- Optimiere die Extraktion, indem destruktives Übertragen der Git-Historie entfernt und astro build Aufgaben direkt ausgeführt werden.
+
+### Fixed
+- Behebe Fehler in den Transformationsscripten und Tests rund um CI-Konfigurationen sowie den Deploy-Prozess.
+
+### Removed
+- Entferne destruktive Übertragung der Git-Historie in extract.ts.
+
+### Documentation
+- Aktualisiere AGENTS.md Dateien in mehreren Paketen und Apps für verbesserte Agenten-Information und reflektiere Upgrade auf @warpgogol/forge v0.24.0.
+
+## 2026-07-30 — 2026-08-05
 
 ### Added
 - Erstelle CHANGELOG.md, changelog.config.yaml und extrahiere extract.config.yaml Dateien für alle relevanten Pakete und Apps.
@@ -26,7 +46,7 @@ All notable changes to the `hdri` project are documented here.
 ### Documentation
 - Erstelle und erweitere CHANGELOG.md sowie Agentendokumentation (AGENTS.md), erneuere Einträge und ergänze Verlinkungen in sämtlichen READMEs.
 
-## 2026-07-23 .. 2026-07-29
+## 2026-07-23 — 2026-07-29
 
 ### Added
 - Stelle fehlende package.json-Dateien in allen relevanten Paketen und Apps wieder her.
@@ -50,7 +70,7 @@ All notable changes to the `hdri` project are documented here.
 - Vereine AGENTS.md und ergänze Projektdokumentation und Inventar.
 - Passe Dokumentations- und Konfigurationsdateien an die neue Projektstruktur an.
 
-## 2026-07-09 .. 2026-07-15
+## 2026-07-09 — 2026-07-15
 
 ### Added
 - Füge Matomo-Analytics mit datenschutzfreundlicher Konfiguration zum Dashboard hinzu.
@@ -78,7 +98,7 @@ All notable changes to the `hdri` project are documented here.
 ### Documentation
 - Pflege die README-, AGENTS- und Changelog-Dateien im Dashboard konsequent nach und ergänze fehlende oder veraltete Einträge.
 
-## 2026-07-02 .. 2026-07-08
+## 2026-07-02 — 2026-07-08
 
 ### Added
 - Füge MODULE_CONTRACT und CHANGE_SUMMARY Annotationen zu verschiedenen Konfigurations- und Quellcodedateien hinzu.
@@ -100,7 +120,7 @@ All notable changes to the `hdri` project are documented here.
 ### Documentation
 - Dokumentiere den GRACE-zu-COMPASS-Umbenennungsprozess sowie strukturierte Umstellungen und Änderungen der Pipeline.
 
-## 2026-06-25 .. 2026-07-01
+## 2026-06-25 — 2026-07-01
 
 ### Added
 - Füge neue Validierungsgates für Datenqualitätsdrift, Methodologie-Komparabilität und population-frame Readiness hinzu.
@@ -134,7 +154,7 @@ All notable changes to the `hdri` project are documented here.
 - Ergänze und aktualisiere LONGEVITY.md, RUNBOOK.md und das Desaster Recovery Runbook für bessere Nachvollziehbarkeit.
 - Pflege METHODOLOGY.md mit neuen statistischen Methoden für Cross-Quarter Analysen.
 
-## 2026-06-18 .. 2026-06-24
+## 2026-06-18 — 2026-06-24
 
 ### Added
 - Füge das Prettier-Plugin für Astro zur Entwicklungskonfiguration hinzu.
@@ -154,13 +174,13 @@ All notable changes to the `hdri` project are documented here.
 ### Documentation
 - Überarbeite und vereinheitliche zahlreiche README- und Hilfedokumente in Anwendungen und Paketen für bessere Verständlichkeit.
 
-## 2026-06-11 .. 2026-06-17
+## 2026-06-11 — 2026-06-17
 
 ### Changed
 - Entferne Slice-Limits aus den Dashboard-Datenarrays, um alle Bundesländer, Gewerke und Matrix-Einträge samt Trend-Daten vollständig anzuzeigen.
 - Aktualisiere zahlreiche Abhängigkeiten in mehreren Paketen und Anwendungen, darunter bessere-sqlite3, astro, @anthropic-ai/sdk, openai, playwright, @cloudflare/workers-types, wrangler, ai, tldts, csv-stringify, csv-parse, vitest, lighthouse und sharp.
 
-## 2026-06-04 .. 2026-06-10
+## 2026-06-04 — 2026-06-10
 
 ### Added
 - Füge YAML-Frontmatter zu auth.md hinzu, um öffentliche read-only Nutzung ohne Authentifizierungsanforderung zu kennzeichnen.
@@ -174,7 +194,7 @@ All notable changes to the `hdri` project are documented here.
 ### Documentation
 - Ergänze die README mit DNS-AID Konfiguration, SVCB Record Beispiel und DNSSEC Voraussetzung für hdri-dashboard.
 
-## 2026-05-28 .. 2026-06-03
+## 2026-05-28 — 2026-06-03
 
 ### Added
 - Fügen Sie zahlreiche neue Schema.org-Markups (Dataset, FAQPage, TechArticle, BreadcrumbList, StatisticalPopulation, variableMeasured, SoftwareSourceCode, DataDownload, Open Graph und Twitter Card Metadaten) auf allen Seiten hinzu, um die Sichtbarkeit und Struktur für Suchmaschinen und soziale Medien zu verbessern.
@@ -208,7 +228,7 @@ All notable changes to the `hdri` project are documented here.
 ### Documentation
 - Hinterlegen Sie vollständige LLM- und Kontextdateien, AI.txt und LLMS.txt/full.txt sowie umfangreiche Nutzerführung und Migrationshinweise in allen zentralen Dokumenten.
 
-## 2026-05-21 .. 2026-05-27
+## 2026-05-21 — 2026-05-27
 
 ### Added
 - Füge AXE-Accessibility-Audit-Indikatoren zur Ontologie und neue Dimension „accessibility_audit“ mit Missing-Policy und countClampInverse-Regel in den Codebook-Daten ein.
@@ -242,7 +262,7 @@ All notable changes to the `hdri` project are documented here.
 ### Documentation
 - Erweitere und überarbeite READMEs in digital-observatory und hdri-dashboard mit Erläuterungen zu HDRI, zur Datenmart-Terminologie, zu Export- und Regenerations-Workflows für das Dashboard, sowie zu statistischer Methodik und Datenquellenbeschreibung.
 
-## 2026-05-14 .. 2026-05-20
+## 2026-05-14 — 2026-05-20
 
 ### Added
 - Füge in a-contract-ontology Brief Unterstützung für sechs neue upstream database Pfadfelder hinzu und ermögliche geräteabhängige Platzhalter-Substitution für device-spezifische Pfadauflösung.
@@ -260,7 +280,7 @@ All notable changes to the `hdri` project are documented here.
 ### Removed
 - Entferne veraltete TranslateProfileObservationsGogol- und IngestAssetStatesGogol-Skripte sowie zugehörige Tests, um die Datenaufnahme und Beobachtungsableitung auf den aktuellen, kanonischen Synchronisationspfad via emit-bundle zu konsolidieren.
 
-## 2026-05-07 .. 2026-05-13
+## 2026-05-07 — 2026-05-13
 
 ### Added
 - Füge getTransparencyKeysDir() als zentrale Methode zur Auflösung des transparency keys-Pfads hinzu und verwende sie in VerifyUpstreamGogol, um Redundanzen zwischen Apps zu vermeiden.
@@ -282,7 +302,7 @@ All notable changes to the `hdri` project are documented here.
 ### Documentation
 - Erweitere RUNBOOK.md um Anleitungen zur Geräteschlüssel-Generierung und Konfiguration, sowie um Pipeline-Beschreibungen und Hinweise zur gemeinsamen Konfiguration.
 
-## 2026-04-30 .. 2026-05-06
+## 2026-04-30 — 2026-05-06
 
 ### Added
 - Führe neue ext\_\* Signal-Tabellen (Schema.org, Legal, Content, Externe Links, Social) ein und erweitere SummarizeProfileGogol zur Aggregation aller Signalgruppen mit neuem Markdown-Report und erweiterten Profil-Snapshots.
@@ -298,7 +318,7 @@ All notable changes to the `hdri` project are documented here.
 ### Removed
 - Entferne die split-input Batches aus dem Eingabeverzeichnis von industry-index.
 
-## 2026-04-23 .. 2026-04-29
+## 2026-04-23 — 2026-04-29
 
 ### Added
 - Ergänze Ausgabe v2 des Branchenindex mit diversen neuen Berichten, Datensätzen und Zusammenfassungen für verschiedene Verarbeitungsschritte.
@@ -310,7 +330,7 @@ All notable changes to the `hdri` project are documented here.
 ### Removed
 - Entferne eine Testquelle aus dem Input-Branchenindex und bereinige die zugehörigen Quelldateien.
 
-## 2026-04-16 .. 2026-04-22
+## 2026-04-16 — 2026-04-22
 
 ### Added
 - Führe eine interaktive Smoke-Test-Suite für die App catalog-harvest hinzu, inklusive Testszenarien und neuer Datenquellen.
