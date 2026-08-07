@@ -1,7 +1,27 @@
 # Changelog
 
 All notable changes to the `.` project are documented here.
-## 2026-07-30 .. 2026-08-05
+## 2026-08-06 — 2026-08-12
+
+### Added
+- Added support for Cloudflare Pages deployments and new options such as 'skipBuild' and 'workspaceFilter' in extract.config.yaml as well as in the CI-specific types and configurations.
+
+### Changed
+- Adjusted build commands in extract.config.yaml by using 'wrangler deploy' instead of 'wrangler pages deploy' and integrating the '--filter' flag.
+- Added support for multiple package managers in repo-extract with updated transformation, index, and package manager modules.
+- Extended extract.config.yaml files with explicit organization-specific values according to RFC-0071.
+- Optimized extraction by removing destructive transfer of Git history and executing astro build tasks directly.
+
+### Fixed
+- Fixed errors in transformation scripts and tests around CI configurations and the deploy process.
+
+### Removed
+- Removed destructive transfer of Git history in extract.ts.
+
+### Documentation
+- Updated AGENTS.md files in multiple packages and apps for improved agent information and to reflect the upgrade to @warpgogol/forge v0.24.0.
+
+## 2026-07-30 — 2026-08-05
 
 ### Added
 - Create CHANGELOG.md, changelog.config.yaml, and extract.config.yaml files for all relevant packages and apps.
@@ -26,7 +46,7 @@ All notable changes to the `.` project are documented here.
 ### Documentation
 - Create and extend CHANGELOG.md as well as agent documentation (AGENTS.md), update entries, and add links in all READMEs.
 
-## 2026-07-23 .. 2026-07-29
+## 2026-07-23 — 2026-07-29
 
 ### Added
 - Restore missing package.json files in all relevant packages and apps.
@@ -50,7 +70,7 @@ All notable changes to the `.` project are documented here.
 - Consolidate AGENTS.md and expand project documentation and inventory.
 - Adapt documentation and configuration files to the new project structure.
 
-## 2026-07-09 .. 2026-07-15
+## 2026-07-09 — 2026-07-15
 
 ### Added
 - Add Matomo analytics with a privacy-friendly configuration to the dashboard.
@@ -78,7 +98,7 @@ All notable changes to the `.` project are documented here.
 ### Documentation
 - Consistently maintain the README, AGENTS, and changelog files in the dashboard and add missing or outdated entries.
 
-## 2026-07-02 .. 2026-07-08
+## 2026-07-02 — 2026-07-08
 
 ### Added
 - Add MODULE_CONTRACT and CHANGE_SUMMARY annotations to various configuration and source code files.
@@ -100,7 +120,7 @@ All notable changes to the `.` project are documented here.
 ### Documentation
 - Document the GRACE-to-COMPASS renaming process as well as structured restructurings and pipeline changes.
 
-## 2026-06-25 .. 2026-07-01
+## 2026-06-25 — 2026-07-01
 
 ### Added
 - Add new validation gates for data quality drift, methodology comparability, and population-frame readiness.
@@ -134,7 +154,7 @@ All notable changes to the `.` project are documented here.
 - Supplement and update LONGEVITY.md, RUNBOOK.md, and the disaster recovery runbook for better traceability.
 - Update METHODOLOGY.md with new statistical methods for cross-quarter analyses.
 
-## 2026-06-18 .. 2026-06-24
+## 2026-06-18 — 2026-06-24
 
 ### Added
 - Add the Prettier plugin for Astro to the development configuration.
@@ -154,13 +174,13 @@ All notable changes to the `.` project are documented here.
 ### Documentation
 - Revise and standardize numerous README and help documents in applications and packages for better clarity.
 
-## 2026-06-11 .. 2026-06-17
+## 2026-06-11 — 2026-06-17
 
 ### Changed
 - Remove slice limits from dashboard data arrays to fully display all federal states, trades, and matrix entries including trend data.
 - Update numerous dependencies across multiple packages and applications, including bessere-sqlite3, astro, @anthropic-ai/sdk, openai, playwright, @cloudflare/workers-types, wrangler, ai, tldts, csv-stringify, csv-parse, vitest, lighthouse, and sharp.
 
-## 2026-06-04 .. 2026-06-10
+## 2026-06-04 — 2026-06-10
 
 ### Added
 - Add YAML frontmatter to auth.md to indicate public read-only usage without authentication requirement.
@@ -174,7 +194,7 @@ All notable changes to the `.` project are documented here.
 ### Documentation
 - Extend the README with DNS-AID configuration, SVCB record example, and DNSSEC requirement for hdri-dashboard.
 
-## 2026-05-28 .. 2026-06-03
+## 2026-05-28 — 2026-06-03
 
 ### Added
 - Added numerous new Schema.org markups (Dataset, FAQPage, TechArticle, BreadcrumbList, StatisticalPopulation, variableMeasured, SoftwareSourceCode, DataDownload, Open Graph, and Twitter Card metadata) to all pages to improve visibility and structure for search engines and social media.
@@ -208,7 +228,7 @@ All notable changes to the `.` project are documented here.
 ### Documentation
 - Provided complete LLM and context files, AI.txt and LLMS.txt/full.txt as well as extensive user guidance and migration notes in all central documents.
 
-## 2026-05-21 .. 2026-05-27
+## 2026-05-21 — 2026-05-27
 
 ### Added
 - Add AXE accessibility audit indicators to the ontology and introduce the new dimension "accessibility_audit" with Missing-Policy and countClampInverse rule in the codebook data.
@@ -242,7 +262,7 @@ All notable changes to the `.` project are documented here.
 ### Documentation
 - Expand and revise READMEs in digital-observatory and hdri-dashboard with explanations on HDRI, data mart terminology, export and regeneration workflows for the dashboard, as well as statistical methodology and data source descriptions.
 
-## 2026-05-14 .. 2026-05-20
+## 2026-05-14 — 2026-05-20
 
 ### Added
 - Add brief support for six new upstream database path fields in a-contract-ontology, and enable device-dependent placeholder substitution for device-specific path resolution.
@@ -260,7 +280,7 @@ All notable changes to the `.` project are documented here.
 ### Removed
 - Remove outdated TranslateProfileObservationsGogol and IngestAssetStatesGogol scripts as well as related tests, to consolidate data ingestion and observation derivation to the current, canonical synchronization path via emit-bundle.
 
-## 2026-05-07 .. 2026-05-13
+## 2026-05-07 — 2026-05-13
 
 ### Added
 - Add getTransparencyKeysDir() as a central method for resolving the transparency keys path and use it in VerifyUpstreamGogol to avoid redundancy between apps.
@@ -282,7 +302,7 @@ All notable changes to the `.` project are documented here.
 ### Documentation
 - Expand RUNBOOK.md with instructions for device key generation and configuration, as well as pipeline descriptions and notes on shared configuration.
 
-## 2026-04-30 .. 2026-05-06
+## 2026-04-30 — 2026-05-06
 
 ### Added
 - Introduce new ext\_\* signal tables (Schema.org, Legal, Content, External Links, Social) and extend SummarizeProfileGogol to aggregate all signal groups with a new markdown report and enhanced profile snapshots.
@@ -298,7 +318,7 @@ All notable changes to the `.` project are documented here.
 ### Removed
 - Remove the split-input batches from the industry-index input directory.
 
-## 2026-04-23 .. 2026-04-29
+## 2026-04-23 — 2026-04-29
 
 ### Added
 - Add output v2 of the industry index with various new reports, datasets, and summaries for different processing steps.
@@ -310,7 +330,7 @@ All notable changes to the `.` project are documented here.
 ### Removed
 - Remove a test source from the input industry index and clean up the associated source files.
 
-## 2026-04-16 .. 2026-04-22
+## 2026-04-16 — 2026-04-22
 
 ### Added
 - Introduce an interactive smoke test suite for the app catalog-harvest, including test scenarios and new data sources.

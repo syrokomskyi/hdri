@@ -1,6 +1,29 @@
 # Changelog
 
 All notable client-facing changes to the `hdri` project are documented here.
+## Plattform-Updates 2026-08-06 — 2026-08-12
+
+In dieser Woche wurden mehrere Verbesserungen und neue Funktionen zur flexibleren Steuerung von CI-Builds sowie zur Unterstützung weiterer Bereitstellungsoptionen eingeführt. Zudem wurde die Konfiguration für Multi-Package-Projekte und Workspace-spezifische CI-Prozesse erweitert, was eine bessere Anpassung an verschiedene Organisationsstrukturen ermöglicht. Diese Änderungen steigern die Effizienz technischer Abläufe und bieten mehr Kontrolle für komplexe Anwendungsszenarien.
+
+### Added
+- Unterstützung für das Überspringen des Build-Schrittes in bestimmten CI-Jobs. Damit wird eine flexiblere Arbeitsweise in kontinuierlichen Integrationsprozessen ermöglicht, was Zeit spart und Ressourcen schont.
+- Neues Feature zur gezielten Auswahl von Workspaces für CI-Builds ("Workspace-Filter"). Dies erlaubt es, nur relevante Komponenten zu testen oder bereitzustellen und optimiert so insbesondere große Projekte für schnellere Abläufe.
+- Cloudflare Pages-Bereitstellung wird jetzt unterstützt. Dies bietet neue Möglichkeiten für das Hosting und die Bereitstellung von Webprojekten, insbesondere mit Hinblick auf europäische Datenschutzbestimmungen (EU-weite Hosting-Optionen).
+- Mehrpaketmanager-Unterstützung hinzugefügt (EU-weit). Das erleichtert die Integration von Projekten, die unterschiedliche Paketverwaltungssysteme verwenden.
+
+### Improved
+- Alle Konfigurationsdateien wurden aktualisiert und enthalten jetzt organisationsspezifische Werte für eine klarere, anpassbare Projektstruktur.
+- Prozesse zum Bauen und Deployen wurden optimiert: Der Build-Befehl verwendet jetzt gezielt Workspace-Filter und kann optional den Export von Daten überspringen. Dies sorgt für eine schlankere und schnellere Bereitstellung besonders im Zusammenspiel mit Astro und modernen Toolchains.
+
+### Fixed
+- Diverse Korrekturen und Vereinfachungen am CI- und Bereitstellungsprozess, einschließlich der Anpassung eingesetzter Befehle für stabileres und zuverlässigeres Deployment.
+
+### Security & Compliance
+- Destruktive Übertragungen von Git-Historien beim Deployment wurden entfernt, um Transparenz und Protokollintegrität zu gewährleisten (EU-weite Compliance).
+
+### Integrations
+- Cloudflare Pages-Integration für eine weitere Hosting-Plattform, die sowohl europäische Anforderungen an Datenschutz als auch internationale Skalierbarkeit unterstützt.
+
 ## Plattform-Updates für die Woche 2026-07-30 — 2026-08-05
 
 Diese Woche lag der Schwerpunkt auf der Verbesserung der Wartbarkeit und der Nachvollziehbarkeit durch ausführliche Änderungsprotokolle und Dokumentations-Updates. Zusätzlich wurden mehrere Stabilitäts- und Sicherheitsanpassungen vorgenommen, um die Einhaltung von Compliance-Anforderungen zu gewährleisten. Für Nutzer in Europa stehen somit mehr Transparenz und ein sichereres Nutzungserlebnis zur Verfügung.

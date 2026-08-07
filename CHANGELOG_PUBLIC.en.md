@@ -1,6 +1,29 @@
 # Changelog
 
 All notable client-facing changes to the `hdri` project are documented here.
+## Platform Updates 2026-08-06 — 2026-08-12
+
+This week introduced several improvements and new features for more flexible control of CI builds and support for additional deployment options. The configuration for multi-package projects and workspace-specific CI processes has also been expanded, enabling better adaptation to various organizational structures. These changes enhance the efficiency of technical workflows and provide more control for complex application scenarios.
+
+### Added
+- Support for skipping the build step in specific CI jobs. This enables more flexible workflows in continuous integration processes, saving time and conserving resources.
+- New feature for targeted selection of workspaces for CI builds ("Workspace Filter"). This allows testing or deploying only relevant components, optimizing large projects in particular for faster turnaround.
+- Cloudflare Pages deployment is now supported. This offers new possibilities for hosting and deploying web projects, especially with regard to European data protection regulations (EU-wide hosting options).
+- Added multi-package manager support (EU-wide). This facilitates the integration of projects that use different package management systems.
+
+### Improved
+- All configuration files have been updated and now include organization-specific values for a clearer, more customizable project structure.
+- Build and deployment processes have been optimized: The build command now specifically uses workspace filters and can optionally skip exporting data. This results in a leaner and faster deployment, especially in conjunction with Astro and modern toolchains.
+
+### Fixed
+- Various corrections and simplifications to the CI and deployment process, including adjustment of the commands used for a more stable and reliable deployment.
+
+### Security & Compliance
+- Destructive transfers of Git histories during deployment have been removed to ensure transparency and log integrity (EU-wide compliance).
+
+### Integrations
+- Cloudflare Pages integration for an additional hosting platform that supports both European data protection requirements and international scalability.
+
 ## Platform Updates for the Week 2026-07-30 — 2026-08-05
 
 This week focused on improving maintainability and traceability through comprehensive changelogs and documentation updates. In addition, several stability and security adjustments were made to ensure compliance requirements are met. As a result, users in Europe benefit from increased transparency and a more secure user experience.
