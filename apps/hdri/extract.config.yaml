@@ -1,8 +1,40 @@
 # extract.config.yaml — HDRI multi-app project export
 # RFC-0070: @warpgogol/repo-extract
+# RFC-0071: Explicit org-specific values (no hardcoded defaults)
 
 projectDir: apps/hdri
 destName: hdri
+
+workspacePrefixes:
+  - "@syrokomskyi/"
+  - "@warpgogol/"
+stripScopes:
+  - "@syrokomskyi/"
+  - "@warpgogol/"
+  - "@wgogol/"
+preservePackages:
+  - "@warpgogol/repo-extract"
+rootPackageName: "@syrokomskyi/clients-hdri"
+customConditions:
+  - "@syrokomskyi/source"
+aiEcosystemFiles:
+  - AGENTS.md
+  - apps/AGENTS.md
+  - packages/AGENTS.md
+onlyBuiltDependencies:
+  - "@duckdb/node-api"
+  - "@swc/core"
+  - better-sqlite3
+  - esbuild
+destBase: "clients"
+packageManager: "pnpm@10.33.0"
+ignoreDirs:
+  - .output
+  - .debug
+  - .debug-public
+  - .astro
+  - spec
+  - .agents
 
 appDirs:
   - apps/hdri/factory
