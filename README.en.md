@@ -195,3 +195,8 @@ Contributions are welcome at every level — from correcting a codebook weight t
 - **Just start a conversation** — open a [GitHub Issue](https://github.com/syrokomskyi/hdri/issues)
 
 > This project is maintained by an independent developer based in Backnang, Baden-Württemberg, Germany. Contact: [`CONTACT.en.md`](CONTACT.en.md) · [github.com/syrokomskyi](https://github.com/syrokomskyi)
+
+## Changelog
+
+- [CHANGELOG.md](CHANGELOG.md)
+- [CHANGELOG_PUBLIC.md](CHANGELOG_PUBLIC.md)
