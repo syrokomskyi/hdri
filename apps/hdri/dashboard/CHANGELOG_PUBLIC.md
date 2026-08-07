@@ -1,6 +1,27 @@
 # Changelog
 
 All notable client-facing changes to the `dashboard` project are documented here.
+## Plattform-Updates für die Woche 2026-07-30 — 2026-08-05
+
+This week brings improved transparency through changelog links in documentation, important dependency updates, and a technical fix that prevents compatibility issues in several workspaces. Users will benefit from easier access to release notes and improved platform reliability.
+
+### Added
+- All documentation pages now include direct links to relevant changelogs, making it easier for users to track updates and changes.
+
+### Improved
+- Generated and updated changelog files for all packages and applications, providing a clear and central history of changes.
+- Upgraded various dependencies (including security, testing, parsing, and cloud SDKs), helping ensure the platform stays up to date with current software standards.
+
+### Fixed
+- Downgraded TypeScript and @tanstack/table-core versions to resolve compatibility issues, avoiding possible errors or instability in web and dashboard applications.
+- Migrated the integrated Matomo tag manager in the Dashboard for improved analytics stability. (EU-wide)
+
+### Security & Compliance
+- Multiple dependency upgrades across the platform include updates for security-relevant libraries (such as 'jose' for JWT, 'undici' HTTP client, and 'verdaccio' registry proxy), contributing to a more secure and compliant environment, particularly for EU clients.
+
+### Integrations
+- Maintained and improved compatibility with analytics (Matomo), cloud SDKs (AWS S3, Cloudflare), and major development toolchains, supporting current integration and deployment needs.
+
 ## Plattform-Updates für die Woche 2026-07-23 — 2026-07-29
 
 This update brings minor maintenance improvements across the platform, including dependency upgrades for enhanced stability and the restoration of missing configuration files. The project structure has been streamlined for easier management and future growth. No user-facing features or design changes were introduced.

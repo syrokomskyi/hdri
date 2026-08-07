@@ -1,6 +1,21 @@
 # Changelog
 
 All notable changes to the `5-audit-axe` project are documented here.
+## 2026-07-30 .. 2026-08-05
+
+### Added
+- Generate CHANGELOG.md files for all applications and packages.
+- Add changelog.config.yaml configuration and changelog-live devDependency to remaining packages and apps.
+- Include changelog links in all README.md files across the workspace.
+
+### Changed
+- Regenerate all AGENTS.md files per RFC-0070 step 16.
+
+### Fixed
+- Exclude test files from HDRI factory app tsconfigs for improved build consistency.
+
+### Documentation
+- Document test scripts in AGENTS.md for 4 HDRI factory apps.
 
 ## 2026-07-23 .. 2026-07-29
 

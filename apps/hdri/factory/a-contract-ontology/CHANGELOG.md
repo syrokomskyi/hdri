@@ -1,6 +1,19 @@
 # Changelog
 
 All notable changes to the `a-contract-ontology` project are documented here.
+## 2026-07-30 .. 2026-08-05
+
+### Added
+- Add changelog configuration files and changelog-live as a development dependency to all missing packages and apps.
+
+### Changed
+- Update package.json files to include changelog-live and reference changelog.config.yaml where necessary.
+
+### Fixed
+- Correct pnpm-lock.yaml to synchronize new dependencies.
+
+### Removed
+- Remove redundant or outdated changelog configuration in package.json where replaced by changelog-live setup.
 
 ## 2026-07-23 .. 2026-07-29
 

@@ -1,6 +1,26 @@
 # Changelog
 
 All notable client-facing changes to the `hdri` project are documented here.
+## Platform Updates for the Week 2026-07-30 — 2026-08-05
+
+This week focused on improving maintainability and traceability through comprehensive changelogs and documentation updates. In addition, several stability and security adjustments were made to ensure compliance requirements are met. As a result, users in Europe benefit from increased transparency and a more secure user experience.
+
+### Added
+- Automatically generated and linked changelogs for all applications and packages provide greater transparency regarding system changes (EU-wide relevance).
+
+### Improved
+- Multiple software dependencies were updated to close security gaps and ensure compatibility with current development standards (EU-wide relevance).
+
+### Fixed
+- Mitigation of risks from accidentally included access credentials in test files; these have been removed to ensure data security and compliance (EU-wide).
+- Fixed an issue in project configuration so that test files are now correctly excluded; this leads to a more reliable build and test environment.
+
+### Security & Compliance
+- Removal of accidentally included credentials (AWS STS Credentials) from the source code to strengthen data protection and ensure compliance with legal requirements (e.g. GDPR) (EU-wide relevance).
+
+### Integrations
+- Renaming and updating of package integrations with third-party providers so that the current European provider '@warpgogol/changelog-live' is used, improving support and ensuring legal compliance (EU-wide).
+
 ## Platform Updates for the Week 2026-07-23 — 2026-07-29
 
 This week focused primarily on technical maintenance, including dependency upgrades, removal of outdated development tools, and resolving installation warnings. These measures enhance the platform's security and compatibility, ensuring smoother operations. For customers, these improvements are particularly noticeable through increased reliability and improved long-term maintainability.

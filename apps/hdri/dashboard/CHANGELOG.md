@@ -1,6 +1,26 @@
 # Changelog
 
 All notable changes to the `dashboard` project are documented here.
+## 2026-07-30 .. 2026-08-05
+
+### Added
+- Add CHANGELOG.md files for all packages and apps to provide package-specific changelogs.
+- Add links to changelogs in all README.md files for improved documentation navigation.
+
+### Changed
+- Rename package @wgogol/changelog-live to @warpgogol/changelog-live throughout the repository to comply with RFC-0070.
+- Update dependency versions across the workspace, including TypeScript, ESLint, Playwright, Commander, OpenAI, Anthropic AI SDK, jsdom, write-file-atomic, @types/better-sqlite3, @tanstack/table-core, @swc/core, @swc/helpers, @swc-node/register, @warpgogol/forge, cross-env, jiti, turbo, tsx, better-sqlite3, csv-stringify, jsonc-eslint-parser, @types/pg, @cloudflare/workers-types, terser, @aws-sdk/client-s3, yaml, jose, typescript-eslint, csv-parse, undici, verdaccio, wrangler, vite, tldts, @google/genai, and others for improved stability and features.
+- Implement a smart upgrade-packages script that pins major versions when upgrading package dependencies.
+- Rebuild dashboard static assets to reflect the latest datasets and manifest changes.
+
+### Fixed
+- Downgrade TypeScript from 7.0.2 to 6.0.3 to restore compatibility with typescript-eslint.
+- Downgrade @tanstack/table-core from 9.0.0 to 8.21.3 to resolve compatibility issues.
+- Migrate Matomo tag manager integration on the dashboard to address analytics tracking.
+
+### Documentation
+- Update all README.md files to reference appropriate changelog files, improving documentation consistency.
+
 ## 2026-07-23 .. 2026-07-29
 
 ### Added

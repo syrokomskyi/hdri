@@ -1,6 +1,18 @@
 # Changelog
 
 All notable changes to the `3-extract-profile` project are documented here.
+## 2026-07-30 .. 2026-08-05
+
+### Added
+- Add changelog links to all README.md files across apps and packages.
+- Generate CHANGELOG.md files for all packages and apps to provide clear version history.
+- Add changelog.config.yaml and changelog-live as a development dependency to all missing packages and apps for standardized changelog management.
+
+### Changed
+- Regenerate AGENTS.md files for all apps and packages in alignment with RFC-0070 step 16.
+
+### Fixed
+- Exclude test files from HDRI factory app TypeScript configs to prevent build interference.
 
 ## 2026-07-23 .. 2026-07-29
 

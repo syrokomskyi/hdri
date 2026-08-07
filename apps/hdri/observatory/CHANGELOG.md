@@ -1,6 +1,19 @@
 # Changelog
 
 All notable changes to the `observatory` project are documented here.
+## 2026-07-30 .. 2026-08-05
+
+### Added
+- Add generated CHANGELOG.md files for all packages and apps.
+- Add changelog links to all README.md files to improve discoverability.
+
+### Changed
+- Regenerate all AGENTS.md files per RFC-0070 step 16.
+- Rename @wgogol/changelog-live to @warpgogol/changelog-live and update related references across the repository.
+
+### Fixed
+- Update stale sourceToken references in documentation and align ontology version in HDRI observatory briefs.
+
 ## 2026-07-23 .. 2026-07-29
 
 ### Added

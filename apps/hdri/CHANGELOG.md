@@ -1,6 +1,31 @@
 # Changelog
 
 All notable changes to the `hdri` project are documented here.
+## 2026-07-30 .. 2026-08-05
+
+### Added
+- Erstelle CHANGELOG.md, changelog.config.yaml und extrahiere extract.config.yaml Dateien für alle relevanten Pakete und Apps.
+- Füge Changelog-Links zu allen README.md Dateien hinzu.
+- Füge Smart-Upgrade-Skript mit Major-Version-Pinning hinzu.
+
+### Changed
+- Benenne @wgogol/changelog-live nach @warpgogol/changelog-live um, aktualisiere alle Verweise und Pakete.
+
+### Fixed
+- Downgrade von TypeScript 7.0.2 auf 6.0.3 zur Sicherstellung der Kompatibilität mit typescript-eslint.
+- Schließe Testdateien in tsconfig.json von HDRI Factory Apps explizit aus.
+- Behebe Fehler beim Kopieren des eslint-rules Verzeichnisses im HDRI Export.
+- Entferne versehentlich veröffentlichte Dateien mit geleakten AWS STS Zugangsdaten.
+
+### Removed
+- Entferne versehentlich veröffentlichte Dateien mit geleakten AWS STS Zugangsdaten.
+
+### Security
+- Entferne versehentlich veröffentlichte Dateien mit geleakten AWS STS Zugangsdaten.
+
+### Documentation
+- Erstelle und erweitere CHANGELOG.md sowie Agentendokumentation (AGENTS.md), erneuere Einträge und ergänze Verlinkungen in sämtlichen READMEs.
+
 ## 2026-07-23 .. 2026-07-29
 
 ### Added

@@ -1,6 +1,18 @@
 # Changelog
 
 All notable changes to the `4-audit-lighthouse` project are documented here.
+## 2026-07-30 .. 2026-08-05
+
+### Added
+- Add changelog links to all README.md files for packages and apps.
+- Generate CHANGELOG.md files for all packages and apps.
+- Add changelog.config.yaml and changelog-live devDependency to all previously missing packages and apps.
+
+### Changed
+- Regenerate AGENTS.md files as required by RFC-0070 step 16.
+
+### Fixed
+- Exclude test files from HDRI factory app TypeScript configurations.
 
 ## 2026-07-23 .. 2026-07-29
 
