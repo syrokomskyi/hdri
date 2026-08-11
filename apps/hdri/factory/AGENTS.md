@@ -14,6 +14,12 @@ Examples: `core_2026.db`, `registry_2026.db`, `liveness-2026-q3.db`, `pages-2026
 
 When updating `brief.md` for a new year, also update any downstream `brief.md` files that reference the path.
 
+## Upstream evidence and target identity guards (hard rule)
+
+Before opening an upstream observation database, derive its canonical path from the current period, upstream app, and device, then require the configured brief path to match it exactly. Verification and consumption must never use independent path authorities.
+
+Before network or browser work, require a one-to-one mapping between `domain` and `provisionalAssetId`. Duplicate or conflicting targets must pause the pipeline; never silently deduplicate or choose one row.
+
 ## Quarterly evidence closure (hard rule)
 
 Frozen source projections are period-scoped and immutable. Commit the signed frame guard before publishing `frame-YYYY-qN.json` and `source-occurrences-YYYY-qN.ndjson`; a conflicting retry must leave both prior files unchanged. The ontology bridge must verify every source signature, ledger head, included batch set and occurrence hash before retaining any source bytes.
