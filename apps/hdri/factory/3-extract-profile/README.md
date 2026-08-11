@@ -5,7 +5,7 @@ Pipeline for automated crawling and analysis of site homepages (T2 — Homepage 
 ## Getting Started
 
 1. Ensure `site-liveness` is complete.
-2. Prepare `.input/brief.md` with paths to `registry.db` and `liveness.db`.
+2. Prepare `.input/brief.md` with paths to `registry_YYYY.db` and the matching `liveness-YYYY-qN.db` for the quarter from `sourceToken`.
 3. Run from the monorepo root:
    ```bash
    pnpm turbo run start --filter=@syrokomskyi/site-profile

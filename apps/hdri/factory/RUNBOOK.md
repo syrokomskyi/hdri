@@ -259,7 +259,7 @@ pnpm turbo run start --filter=@syrokomskyi/site-liveness
 ### Prerequisites
 
 - `core.db` from Phase 0
-- `liveness.db` from Phase 2
+- `liveness-YYYY-qN.db` from Phase 2 for the same quarter and device
 
 ### Configuration Notes
 
