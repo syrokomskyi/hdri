@@ -20,6 +20,7 @@ execution by skipping already-checked sites for the current batch.</purpose>
   <item>Update error message to reference 1-register-businesses as the upstream source.</item>
   <item>Use single-line progress output via logProgress singleLine flag.</item>
   <item>Add domains-checked-live.csv (live domains, single column) and domains-checked-maybe-dead.csv (dead domains: domain, http_status, error_code) filtered CSV outputs.</item>
+  <item>Reject duplicate or conflicting domain/provisional-asset targets before starting network checks.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -30,6 +31,7 @@ import { markdownTable } from "markdown-table";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { mintAssetId } from "@syrokomskyi/observatory-core";
 import {
+  assertUniqueAssetTargets,
   QuarterExecutionJournal,
   capsuleConfigSha256,
   quarterCapsuleDir,
@@ -89,6 +91,7 @@ export class CheckLivenessGogol extends Gogol {
 
     let sites = coreDb.prepare(query).all() as SiteRow[];
     coreDb.close();
+    assertUniqueAssetTargets(sites, "liveness");
 
     const stageTargetSites = sites;
     if (brief.maxDomains >= 0) {

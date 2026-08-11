@@ -14,6 +14,7 @@
   <item>Use shared mergeBriefFrontmatter from @syrokomskyi/pipeline-node for merging root + local brief frontmatter.</item>
   <item>Use inputDir/briefInputDir from config instead of inline path resolution.</item>
   <item>Add ${DEVICE_ID} substitution before parsing frontmatter (matches 3-extract-profile pattern).</item>
+  <item>Include the required quarter-scoped liveness path in the operator template.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -31,7 +32,8 @@ export type BootstrappedBrief = { brief: Brief; briefMd: string };
 
 const localBriefTemplate = [
   "---",
-  'registryDbPath: "../1-register-businesses/.output/<DEVICE>/data/db/registry_2026.db"',
+  'registryDbPath: "../1-register-businesses/.output/${DEVICE_ID}/data/db/registry_2026.db"',
+  'livenessDbPath: "../2-check-liveness/.output/${DEVICE_ID}/data/db/liveness-YYYY-qN.db"',
   "concurrency: 1",
   "timeoutMs: 120000",
   "retries: 2",

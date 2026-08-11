@@ -24,6 +24,7 @@
   <item>Use single-line progress output via logProgress singleLine flag.</item>
   <item>Fix idempotency: restrict resume filter to homepage source only (sp.source = 'homepage') so detected pages do not incorrectly mask failed homepages.</item>
   <item>Extract shared page-DB helpers (normalisePageUrl, sha256Hex, upsertPageContent, upsertSitePage, getOrCreateSitePage, upsertPageObservation) to db/page-helpers.ts.</item>
+  <item>Reject duplicate or conflicting domain/provisional-asset targets before crawling.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -35,6 +36,7 @@ import { fetchPageContent } from "@syrokomskyi/business-crawler/fetch-page";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { mintAssetId } from "@syrokomskyi/observatory-core";
 import {
+  assertUniqueAssetTargets,
   QuarterExecutionJournal,
   capsuleConfigSha256,
   quarterCapsuleDir,
@@ -128,6 +130,7 @@ export class CrawlGogol extends Gogol {
       .all() as SiteRow[];
 
     livenessDb.close();
+    assertUniqueAssetTargets(sites, "profile");
 
     const stageTargetSites = sites;
     if (brief.maxDomains >= 0) sites = sites.slice(0, brief.maxDomains);

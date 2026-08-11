@@ -12,6 +12,7 @@
   <item>Use inputDir/briefInputDir from config instead of inline path resolution.</item>
   <item>Update localBriefTemplate registryDbPath to point to 1-register-businesses instead of 0-harvest-source.</item>
   <item>Update localBriefTemplate zipcodesTablePath to point to shared factory .input instead of 0-harvest-source.</item>
+  <item>Use the forward-only quarter-scoped liveness filename in the operator template.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -30,7 +31,7 @@ export type BootstrappedBrief = { brief: Brief; briefMd: string };
 const localBriefTemplate = [
   "---",
   'registryDbPath: "../1-register-businesses/.output/${DEVICE_ID}/data/db/registry_2026.db"',
-  'livenessDbPath: "../2-check-liveness/.output/${DEVICE_ID}/data/db/liveness.db"',
+  'livenessDbPath: "../2-check-liveness/.output/${DEVICE_ID}/data/db/liveness-YYYY-qN.db"',
   'zipcodesTablePath: "../.input/zipcodes.de.json"',
   "concurrency: 3",
   "timeoutMs: 20000",

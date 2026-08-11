@@ -3,7 +3,7 @@
 <purpose>Entry point for the site-profile pipeline application — this module handles run-app operations within the pipeline application.</purpose>
 <non-goals>
   <item>Does not perform HTTP crawling or extraction directly — that is handled by gogols.</item>
-  <item>Does not validate brief contents beyond parsing — brief validation is the parser's responsibility.</item>
+  <item>Does not inspect upstream database contents; gogols validate and consume the databases after path fencing.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
@@ -11,6 +11,7 @@
   <item>Add COMPASS scaffolding.</item>
   <item>Fix appRootDir resolution: use briefInputDir instead of inputDir so relative registryDbPath resolves from 3-extract-profile/.</item>
   <item>Add ${DEVICE_ID} substitution via getDeviceId in bootstrap-brief.ts.</item>
+  <item>Fence the configured liveness input to the verified period/device database path.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -23,7 +24,8 @@ import {
 } from "@syrokomskyi/pipeline-core";
 import { ensureOutputDir } from "@syrokomskyi/pipeline-node/context";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
-import { inputDir, briefInputDir, outputRootDir } from "../config.js";
+import { resolveQuarterScopedUpstreamDbPath } from "@syrokomskyi/factory-core";
+import { inputDir, briefInputDir, outputRootDir, factoryRootDir } from "../config.js";
 import { getPagesDbName } from "../paths.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
@@ -45,12 +47,21 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   const { brief } = await bootstrapBrief();
 
   const { year, quarter } = parseSourceToken(brief.sourceToken);
-  const pagesDbName = getPagesDbName(`${year}-q${quarter}`);
+  const period = `${year}-q${quarter}`;
+  const pagesDbName = getPagesDbName(period);
 
   // Resolve both DB paths relative to the app root (parent of app-local .input/)
   const appRootDir = path.resolve(briefInputDir, "..");
   const resolvedRegistryDbPath = resolveDbPath(brief.registryDbPath, appRootDir);
-  const resolvedLivenessDbPath = resolveDbPath(brief.livenessDbPath, appRootDir);
+  const resolvedLivenessDbPath = resolveQuarterScopedUpstreamDbPath({
+    configuredPath: brief.livenessDbPath,
+    appRootDir,
+    factoryRootDir,
+    upstreamAppId: "2-check-liveness",
+    deviceId: brief.deviceId,
+    dbPrefix: "liveness",
+    period,
+  });
 
   console.log(`\n[site-profile] Pages DB:     ${pagesDbName}.db`);
   console.log(`[site-profile] registry.db:  ${resolvedRegistryDbPath}`);

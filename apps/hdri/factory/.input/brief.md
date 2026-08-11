@@ -5,7 +5,7 @@ sourceToken: "2026-q3-de-01"
 
 # UUID v7 minted once for this quarterly capsule.
 # Must be identical across all Factory and Observatory briefs.
-capsuleId: "0198f000-0000-7000-8000-000000000000"
+capsuleId: "019ff219-69fe-7025-943c-dae2a8c37801"
 
 # Path to zipcodes JSON table for geographic enrichment (shared factory-level index)
 zipcodesTablePath: zipcodes.de.json

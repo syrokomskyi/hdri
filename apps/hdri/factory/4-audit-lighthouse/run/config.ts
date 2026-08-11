@@ -11,6 +11,7 @@
   <item>Add factoryRootDir and toFactoryRelativePath so pipeline artifacts show paths relative to apps/hdri/factory.</item>
   <item>Refactor to use shared factory utilities from @syrokomskyi/observatory-core.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
+  <item>Expose the factory root so the app can fence upstream quarter-scoped database paths.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -42,6 +43,7 @@ export const briefInputDir = paths.briefInputDir;
 export const outputRootDir = paths.outputRootDir;
 export const evidenceDir = paths.evidenceDir;
 export const promptsDir = paths.promptsDir;
+export const factoryRootDir = paths.factoryRootDir;
 
 /**
  * Root of the upstream 3-extract-profile pipeline output.

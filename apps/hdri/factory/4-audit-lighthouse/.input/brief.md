@@ -2,7 +2,7 @@
 # Upstream registry.db (read-only) from 1-register-businesses
 registryDbPath: "../1-register-businesses/.output/${DEVICE_ID}/data/db/registry_2026.db"
 # Upstream liveness.db (read-only) from 2-check-liveness
-livenessDbPath: "../2-check-liveness/.output/${DEVICE_ID}/data/db/liveness_2026.db"
+livenessDbPath: "../2-check-liveness/.output/${DEVICE_ID}/data/db/liveness-2026-q3.db"
 
 auditSampleSize: 3
 
