@@ -18,6 +18,8 @@ outputs:
   - check-report.json — live/dead counts, avg latency, error breakdown.
   - check-report.md — human-readable summary.
   - domains-checked.csv — per-domain result (domain, is_live, status, final_url, latency).
+  - domains-checked-live.csv — live domains only (single column: domain).
+  - domains-checked-maybe-dead.csv — dead domains only (domain, http_status, error_code).
 definitionOfDone:
   - check-report.json exists in the gogol output directory.
 ---
