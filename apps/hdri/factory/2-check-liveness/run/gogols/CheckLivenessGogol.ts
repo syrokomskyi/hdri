@@ -19,7 +19,7 @@ execution by skipping already-checked sites for the current batch.</purpose>
   <item>Fail fast with a clear error when upstream registry.db is missing, using inline fs.existsSync check in run() (same pattern as 1-register-businesses).</item>
   <item>Update error message to reference 1-register-businesses as the upstream source.</item>
   <item>Use single-line progress output via logProgress singleLine flag.</item>
-  <item>Add domains-checked-live.csv (live domains, single column) and domains-checked-maybe-dead.csv (dead domains: domain, http_status, error_code) filtered CSV outputs.</item>
+  <item>Add domains-checked-live.csv (live domains, single column, deduplicated, sorted) and domains-checked-maybe-dead.csv (dead domains: domain, http_status, error_code, deduplicated, sorted) filtered CSV outputs.</item>
   <item>Reject duplicate or conflicting domain/provisional-asset targets before starting network checks.</item>
 </CHANGE_SUMMARY>
 */
@@ -395,20 +395,28 @@ export class CheckLivenessGogol extends Gogol {
       ]),
     );
 
-    // Live domains only (single column: domain)
-    const liveDomains = allDomains.filter((s) => s.is_live);
+    // Live domains only (single column: domain, deduplicated, sorted)
+    const liveDomains = [
+      ...new Set(allDomains.filter((s) => s.is_live).map((s) => s.domain)),
+    ].sort();
     await ctx.writeTextFile(
       path.join(outDir, "domains-checked-live.csv"),
-      csvStringify(liveDomains.map((s) => [s.domain])),
+      csvStringify(liveDomains.map((d) => [d])),
     );
 
-    // Maybe-dead domains only (domain, http_status, error_code)
-    const deadDomains = allDomains.filter((s) => !s.is_live);
+    // Maybe-dead domains only (domain, http_status, error_code, deduplicated, sorted)
+    const deadMap = new Map<string, { http_status: number | null; error_code: string | null }>();
+    for (const s of allDomains) {
+      if (!s.is_live && !deadMap.has(s.domain)) {
+        deadMap.set(s.domain, { http_status: s.http_status, error_code: s.error_code });
+      }
+    }
+    const deadDomains = [...deadMap.entries()].sort(([a], [b]) => a.localeCompare(b));
     await ctx.writeTextFile(
       path.join(outDir, "domains-checked-maybe-dead.csv"),
       csvStringify([
         ["domain", "http_status", "error_code"],
-        ...deadDomains.map((s) => [s.domain, s.http_status, s.error_code]),
+        ...deadDomains.map(([domain, v]) => [domain, v.http_status, v.error_code]),
       ]),
     );
 
