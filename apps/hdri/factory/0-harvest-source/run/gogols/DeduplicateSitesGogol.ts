@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding to enhance navigability and maintainability of the DeduplicateSitesGogol class.</item>
   <item>Update terminology from 'catalog' to 'sources'.</item>
   <item>Replace hand-rolled markdown table strings with markdownTable() from the markdown-table package.</item>
   <item>Phase B cleanup: derive year from sourceToken instead of removed harvestYear field.</item>

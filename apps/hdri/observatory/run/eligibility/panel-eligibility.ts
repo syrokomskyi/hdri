@@ -6,6 +6,9 @@
   <item>Does not infer business closure from website availability.</item>
 </non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing panel-eligibility module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import type { Observation } from "@syrokomskyi/observatory-core";
@@ -17,7 +20,11 @@ export const isCurrentReachabilityEvidence = (observation: Observation): boolean
 export const collectPanelEligibleAssetIds = async (
   source: AsyncIterable<Observation>,
   previouslyAccepted: Iterable<string>,
-): Promise<{ eligibleAssetIds: Set<string>; currentReachableAssets: number; observationsScanned: number }> => {
+): Promise<{
+  eligibleAssetIds: Set<string>;
+  currentReachableAssets: number;
+  observationsScanned: number;
+}> => {
   const eligibleAssetIds = new Set(previouslyAccepted);
   const currentReachable = new Set<string>();
   let observationsScanned = 0;

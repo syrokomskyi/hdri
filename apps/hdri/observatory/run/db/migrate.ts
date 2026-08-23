@@ -8,7 +8,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for observatory.</item>
   <item>Add scores, score_dimensions, score_indicator_traces, cohorts, cohort_members tables.</item>
   <item>P0.4: add period (observations, scores, asset_states), factory_run_id (observations), crawl_hash (observations).</item>
   <item>Add gewerk_group to asset_states and cohort_members for industry grouping.</item>

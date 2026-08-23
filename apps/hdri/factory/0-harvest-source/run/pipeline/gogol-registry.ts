@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding to enhance navigability and maintainability of the Gogol registry logic.</item>
   <item>Register EnrichBundeslandGogol factory for the enrich-bundesland gogol.</item>
   <item>Register SignSourceGogol factory for the sign-source gogol.</item>
 </CHANGE_SUMMARY>

@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for contract-ontology pipeline conversion.</item>
   <item>Replace createNodePipelineContext boilerplate with shared createHdriFactoryContext from @syrokomskyi/factory-core.</item>
 </CHANGE_SUMMARY>
 */

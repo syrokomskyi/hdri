@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for observatory.</item>
   <item>P0.4: use factory_run_id instead of run_id for matching synced bundles.</item>
   <item>Replace raw console.log/console.warn with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
   <item>Add single-line progress reporting while scoring large asset batches.</item>

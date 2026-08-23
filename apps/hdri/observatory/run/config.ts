@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation of config for observatory app.</item>
   <item>Replace hand-rolled path boilerplate with createAppPaths from @syrokomskyi/pipeline-node/paths.</item>
 </CHANGE_SUMMARY>
 */

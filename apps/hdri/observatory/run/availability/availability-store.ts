@@ -1,9 +1,11 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Materialises website availability transitions separately from business lifecycle events.</purpose>
+<purpose>Materialises website availability transitions separately from business lifecycle events. for reliable use by its direct callers and maintainers.</purpose>
 <non-goals><item>Never infers that a business closed or reopened.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>RFC-0028 persists previously-live-only website transitions.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY>
+  <item>RFC-0028 persists previously-live-only website transitions.</item>
+</CHANGE_SUMMARY>
 */
 
 import type Database from "better-sqlite3";
@@ -28,14 +30,18 @@ export const materializeAvailabilityTransitions = (
   runId: string,
   period: string,
 ): number => {
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT o.asset_id AS provisional_id, m.canonical_id, o.value_str, o.observed_at, o.evidence_ref
     FROM observations o
     JOIN asset_id_map m ON m.provisional_id = o.asset_id
     WHERE o.run_id = ?
       AND o.signal_path = 'availability.website.outcome'
     ORDER BY m.canonical_id
-  `).all(runId) as OutcomeRow[];
+  `,
+    )
+    .all(runId) as OutcomeRow[];
   const previous = db.prepare(`
     SELECT state FROM website_availability_events
     WHERE asset_id = ? AND period < ?
@@ -49,8 +55,12 @@ export const materializeAvailabilityTransitions = (
   return db.transaction(() => {
     let inserted = 0;
     for (const row of rows) {
-      const prior = previous.get(row.canonical_id, period) as { state: WebsitePanelState } | undefined;
-      const transition = deriveAvailabilityTransition(prior?.state ?? "candidate_never_live", row.value_str);
+      const prior = previous.get(row.canonical_id, period) as
+        { state: WebsitePanelState } | undefined;
+      const transition = deriveAvailabilityTransition(
+        prior?.state ?? "candidate_never_live",
+        row.value_str,
+      );
       const eventId = sha256(
         ["hdri:website-availability-event:v1", row.canonical_id, period, row.value_str].join("\0"),
       );

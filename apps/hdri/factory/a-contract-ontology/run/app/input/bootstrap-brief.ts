@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for contract-ontology pipeline conversion.</item>
   <item>Fix brief template to use canonical lowercase period format (2026-q2).</item>
   <item>Remove spurious parseBriefMarkdown call on root brief — root brief has no period and is not a full Brief.</item>
   <item>Fix ontology fallback path: add missing apps/ segment so it correctly resolves to apps/hdri/observatory/.input/ontology.yaml.</item>

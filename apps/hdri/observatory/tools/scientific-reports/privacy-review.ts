@@ -3,6 +3,9 @@
 <purpose>Reviews privacy k-anonymity thresholds and disclosure risk across all published products.</purpose>
 <non-goals><item>Does not apply suppression — reviews and reports status only.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing privacy-review module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import fs from "node:fs/promises";

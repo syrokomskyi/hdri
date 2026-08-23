@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding.</item>
   <item>inputDir now points to the shared factory-level .input directory.</item>
   <item>Add briefInputDir for app-local brief.md so each phase reads its own configuration.</item>
   <item>Add factoryRootDir and toFactoryRelativePath so pipeline artifacts show paths relative to apps/hdri/factory.</item>

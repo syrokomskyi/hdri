@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Created as part of the CrawlAndExtractGogol split into focused single-responsibility gogols.</item>
   <item>Fix CAS file path: replace path.dirname(getContentDir()) with getContentRootDir() so storage_path resolves correctly against outputRootDir.</item>
   <item>Rename 'extracted' counter to 'parsed' in log output and extract-report.json.</item>
   <item>Added progress counter logging every 1000 sites.</item>

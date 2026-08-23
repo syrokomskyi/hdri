@@ -3,6 +3,9 @@
 <purpose>Reconciles source ledger, observation, and score counts to detect any count violations.</purpose>
 <non-goals><item>Does not fix counts — reports violations only.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing reconcile-counts module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";

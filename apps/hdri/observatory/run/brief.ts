@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation of brief parser for observatory.</item>
   <item>Normalize period to lowercase — lowercase yyyy-qn is canonical across factory and observatory.</item>
   <item>Use one capsule-addressed Factory discovery path and remove all legacy fallbacks.</item>
   <item>Rename codebookVersion → codebookId; reject deprecated codebookVersion field instead of silently accepting it.</item>

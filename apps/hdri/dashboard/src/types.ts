@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Defines data structures for statistical summaries and comparisons</purpose>
+<purpose>Defines data structures for statistical summaries and comparisons for reliable use by its direct callers and maintainers.</purpose>
 <non-goals>
   <item>Does not implement data processing algorithms</item>
 </non-goals>

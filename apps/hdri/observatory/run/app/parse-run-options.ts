@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Re-exports shared CLI option parsing for the observatory pipeline.</purpose>
+<purpose>Re-exports shared CLI option parsing for the observatory pipeline. for reliable use by its direct callers and maintainers.</purpose>
 <non-goals>
   <item>Do not implement business logic.</item>
 </non-goals>

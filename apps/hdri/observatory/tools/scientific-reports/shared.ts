@@ -3,6 +3,9 @@
 <purpose>Shared arg parsing and report writing helpers for scientific QC report tools.</purpose>
 <non-goals><item>Does not implement domain-specific validation logic — each tool provides its own.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing shared module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import fs from "node:fs/promises";

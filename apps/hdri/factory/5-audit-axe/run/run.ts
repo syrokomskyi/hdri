@@ -6,7 +6,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for 5-audit-axe.</item>
+  <item>Tidied by compass.summary.trim; see git history for prior entries.</item>
 </CHANGE_SUMMARY>
 */
 

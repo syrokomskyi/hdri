@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding to enhance navigability and maintainability.</item>
   <item>Remove 'Sites with GewerkGroup' metric; all sites now classified.</item>
   <item>Add 'unclassified' entry at end of GewerkGroup distribution list.</item>
   <item>Add geographic distribution reports by state from zipcodes data.</item>

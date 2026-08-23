@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation.</item>
   <item>Add COMPASS scaffolding.</item>
   <item>Replace raw console.log/console.error with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
 </CHANGE_SUMMARY>

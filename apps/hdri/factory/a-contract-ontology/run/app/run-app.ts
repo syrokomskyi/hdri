@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for contract-ontology pipeline conversion.</item>
   <item>Add coreDbs: [] to initial pipeline state.</item>
   <item>Add axeDbs: [] to initial pipeline state.</item>
 </CHANGE_SUMMARY>

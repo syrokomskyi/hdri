@@ -1,13 +1,13 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Define constants and a function for site metadata</purpose>
+<purpose>Define constants and a function for site metadata for reliable use by its direct callers and maintainers.</purpose>
 <non-goals>
   <item>Does not handle dynamic content fetching</item>
   <item>Does not perform any network requests</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation of site metadata constants and publisher function</item>
+  <item>Tidied by compass.summary.trim; see git history for prior entries.</item>
 </CHANGE_SUMMARY>
 */
 

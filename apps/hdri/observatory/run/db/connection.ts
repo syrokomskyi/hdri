@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for observatory.</item>
   <item>WP8: target-aware DB dir — OBSERVATORY_DB_TARGET=staging routes the whole run to .output/db/staging so publication is gated behind a separate promotion step.</item>
 </CHANGE_SUMMARY>
 */

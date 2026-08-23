@@ -8,7 +8,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill type definitions for the catalog harvest pipeline to enhance type safety and clarity.</item>
+  <item>Tidied by compass.summary.trim; see git history for prior entries.</item>
 </CHANGE_SUMMARY>
 */
 

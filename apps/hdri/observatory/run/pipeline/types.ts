@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for observatory pipeline.</item>
   <item>Add scoreCount, cohortId fields to PipelineState for interpret phase.</item>
 </CHANGE_SUMMARY>
 */

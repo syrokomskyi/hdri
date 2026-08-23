@@ -3,6 +3,9 @@
 <purpose>Validates source ledger QC: coverage, unresolved items, and inter-source conflicts.</purpose>
 <non-goals><item>Does not score sites or resolve conflicts — reports status only.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing source-qc module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import path from "node:path";

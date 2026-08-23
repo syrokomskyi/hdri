@@ -7,7 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding to enhance navigability and maintainability of the declaration module.</item>
+  <item>Tidied by compass.summary.trim; see git history for prior entries.</item>
 </CHANGE_SUMMARY>
 */
 

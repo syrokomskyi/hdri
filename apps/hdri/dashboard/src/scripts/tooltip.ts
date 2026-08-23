@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Initializes interactive tooltips for specified elements</purpose>
+<purpose>Initializes interactive tooltips for specified elements for reliable use by its direct callers and maintainers.</purpose>
 <non-goals>
   <item>Does not handle tooltip content fetching from external sources</item>
   <item>Does not manage tooltip styling beyond basic positioning</item>

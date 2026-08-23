@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Enhances HTML tables with sortable column functionality</purpose>
+<purpose>Enhances HTML tables with sortable column functionality for reliable use by its direct callers and maintainers.</purpose>
 <non-goals>
   <item>Does not handle server-side sorting</item>
   <item>Does not support non-tabular data structures</item>

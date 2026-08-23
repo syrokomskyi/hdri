@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for dashboard static asset export.</item>
   <item>Replace raw console.log/console.error with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
   <item>Add secondary sort keys (id for bundeslaender, bundesland for matrix) to stabilize output order when p75 ties.</item>
   <item>Replace hardcoded K_ANONYMITY_MIN=5 with policy-driven value loaded from policies/k-anon-policy-v{N}.yaml; add effective_k_min and hard_floor to Manifest.</item>

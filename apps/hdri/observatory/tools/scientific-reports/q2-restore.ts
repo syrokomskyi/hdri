@@ -3,6 +3,9 @@
 <purpose>Verifies Q2 archive restore drill: checks that the Q2 archive exists and its artifacts can be restored.</purpose>
 <non-goals><item>Does not perform a full data restore — verifies archive integrity and drill marker.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing q2-restore module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import { createHash } from "node:crypto";

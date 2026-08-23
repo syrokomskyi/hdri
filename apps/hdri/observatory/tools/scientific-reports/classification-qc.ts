@@ -1,8 +1,11 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Validates classification QC: confusion matrix, precision, and policy thresholds.</purpose>
+<purpose>Validates classification QC: confusion matrix, precision, and policy thresholds. for reliable use by its direct callers and maintainers.</purpose>
 <non-goals><item>Does not re-classify sites — validates existing predictions against a frozen sample.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing classification-qc module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import path from "node:path";

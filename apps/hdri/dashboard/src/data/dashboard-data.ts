@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Load and parse period-specific and codebook data files</purpose>
+<purpose>Load and parse period-specific and codebook data files for reliable use by its direct callers and maintainers.</purpose>
 <non-goals>
   <item>Does not handle data persistence or storage</item>
   <item>Does not modify or transform the data content</item>

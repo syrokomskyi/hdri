@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding.</item>
   <item>inputDir now points to shared factory-level .input; briefInputDir added for app-local brief.md.</item>
   <item>Add factoryRootDir and toFactoryRelativePath so pipeline artifacts show paths relative to apps/hdri/factory.</item>
   <item>Refactor to use shared factory utilities from @syrokomskyi/observatory-core.</item>

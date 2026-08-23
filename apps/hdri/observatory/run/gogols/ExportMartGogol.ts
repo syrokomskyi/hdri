@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for observatory.</item>
   <item>Update to use HWO Destatis groups (strata_code) instead of gewerk_group.</item>
   <item>Join with asset_hwo_mappings for Destatis group classification.</item>
   <item>Replace raw console.log/console.warn with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>

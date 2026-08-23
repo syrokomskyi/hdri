@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation (WP0): baseline + reusable integrity/comparability gate before Q3.</item>
   <item>WP8: check logic extracted to validate-core.ts; added --db-dir for staging validation.</item>
   <item>Finding 8: --allow-drift downgrades data-quality drift ERRORs to WARN (confirmed real change).</item>
 </CHANGE_SUMMARY>

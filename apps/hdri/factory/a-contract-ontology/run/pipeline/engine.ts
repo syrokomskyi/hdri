@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for contract-ontology pipeline conversion.</item>
   <item>Replace inline runNodePipelineEngine boilerplate with createHdriFactoryEngine from @syrokomskyi/factory-core.</item>
   <item>Replace createHdriFactoryEngine with direct runHdriFactoryEngine call — wrapper chain collapsed.</item>
 </CHANGE_SUMMARY>

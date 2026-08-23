@@ -7,8 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-<item>Backfill COMPASS scaffolding to enhance navigability and maintainability of path management functions.</item>
-<item>Paths now resolve against the shared factory-level .input directory (via config.js).</item>
+  <item>Paths now resolve against the shared factory-level .input directory (via config.js).</item>
 </CHANGE_SUMMARY>
 */
 

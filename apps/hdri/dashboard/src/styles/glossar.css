@@ -1,3 +1,10 @@
+/**
+ * <MODULE_CONTRACT><purpose>Provide glossar behavior for the apps hdri dashboard src styles subsystem and its direct callers.</purpose><non-goals><item>Do not define unrelated cross-workspace policy or orchestration behavior.</item></non-goals></MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing glossar module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
+ */
+
 /* Toolbar now lives in the SiteHeader slot → no separate sticky/background needed */
 .glossar-toolbar {
   display: flex;

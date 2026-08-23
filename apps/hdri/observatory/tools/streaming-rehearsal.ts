@@ -3,6 +3,9 @@
 <purpose>Exercises disk-backed conflict resolution, production signing, partition backpressure, interruption recovery and verified reading at quarterly scale.</purpose>
 <non-goals><item>Does not retain rehearsal data or claim to test browser capture.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing streaming-rehearsal module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import Database from "better-sqlite3";
@@ -10,12 +13,17 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { generateSigningKey, signObservation } from "@syrokomskyi/observatory-crypto";
-import { EmitBundleWriter, readEmitBundle, streamObservations } from "@syrokomskyi/observatory-emit";
+import {
+  EmitBundleWriter,
+  readEmitBundle,
+  streamObservations,
+} from "@syrokomskyi/observatory-emit";
 import type { Observation } from "@syrokomskyi/observatory-core";
 
 const inputRows = Number(process.argv[2] ?? 5_000_000);
 const artifactPath = process.argv[3];
-if (!Number.isInteger(inputRows) || inputRows <= 0) throw new Error("rows must be a positive integer");
+if (!Number.isInteger(inputRows) || inputRows <= 0)
+  throw new Error("rows must be a positive integer");
 if (!artifactPath) throw new Error("artifact path is required");
 
 const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "hdri-streaming-production-"));
@@ -43,7 +51,8 @@ try {
       payload_json TEXT NOT NULL
     );
   `);
-  db.prepare(`
+  db.prepare(
+    `
     WITH RECURSIVE generated(n) AS (
       SELECT 1 UNION ALL SELECT n + 1 FROM generated WHERE n < ?
     )
@@ -75,7 +84,8 @@ try {
         'deprecated_reason', NULL
       )
     FROM generated
-  `).run(inputRows);
+  `,
+  ).run(inputRows);
 
   db.exec(`
     CREATE INDEX observations_conflict_order ON observations(conflict_key, recorded_at DESC, seq DESC);
@@ -88,9 +98,15 @@ try {
     ) WHERE rank = 1;
     CREATE UNIQUE INDEX resolved_output_seq ON resolved_observations(output_seq);
   `);
-  const resolvedRows = (db.prepare("SELECT COUNT(*) AS n FROM resolved_observations").get() as { n: number }).n;
+  const resolvedRows = (
+    db.prepare("SELECT COUNT(*) AS n FROM resolved_observations").get() as { n: number }
+  ).n;
   const signing = generateSigningKey();
-  const key = { ...signing, signingKeyId: "streaming-rehearsal", collectorId: "streaming-rehearsal" };
+  const key = {
+    ...signing,
+    signingKeyId: "streaming-rehearsal",
+    collectorId: "streaming-rehearsal",
+  };
   const init = {
     app_id: "a-contract-ontology",
     collector_version: "a-contract-ontology@rehearsal",
@@ -103,8 +119,14 @@ try {
   let writer = new EmitBundleWriter(emitDir, init, { partitionRows: 100_000 });
   await writer.open();
   const interruptionAfter = Math.min(resolvedRows, 250_000);
-  for (const row of db.prepare("SELECT output_seq, payload_json FROM resolved_observations WHERE output_seq <= ? ORDER BY output_seq").iterate(interruptionAfter) as IterableIterator<{ output_seq: number; payload_json: string }>) {
-    await writer.writeObservation(signObservation(JSON.parse(row.payload_json) as Observation, key));
+  for (const row of db
+    .prepare(
+      "SELECT output_seq, payload_json FROM resolved_observations WHERE output_seq <= ? ORDER BY output_seq",
+    )
+    .iterate(interruptionAfter) as IterableIterator<{ output_seq: number; payload_json: string }>) {
+    await writer.writeObservation(
+      signObservation(JSON.parse(row.payload_json) as Observation, key),
+    );
   }
   const firstDrainWaits = writer.backpressureWaits;
   await writer.abort();
@@ -112,8 +134,14 @@ try {
   writer = new EmitBundleWriter(emitDir, init, { partitionRows: 100_000 });
   await writer.open();
   const resumedRows = writer.committedObservationCount;
-  for (const row of db.prepare("SELECT output_seq, payload_json FROM resolved_observations WHERE output_seq > ? ORDER BY output_seq").iterate(resumedRows) as IterableIterator<{ output_seq: number; payload_json: string }>) {
-    await writer.writeObservation(signObservation(JSON.parse(row.payload_json) as Observation, key));
+  for (const row of db
+    .prepare(
+      "SELECT output_seq, payload_json FROM resolved_observations WHERE output_seq > ? ORDER BY output_seq",
+    )
+    .iterate(resumedRows) as IterableIterator<{ output_seq: number; payload_json: string }>) {
+    await writer.writeObservation(
+      signObservation(JSON.parse(row.payload_json) as Observation, key),
+    );
   }
   const manifest = await writer.commit();
   let verifiedRows = 0;
@@ -125,7 +153,12 @@ try {
   const heapLimitBytes = 2_147_483_648;
   const evidence = {
     schemaVersion: "2",
-    productionPath: ["sqlite-disk-conflict-resolver", "signObservation", "EmitBundleWriter", "streamObservations"],
+    productionPath: [
+      "sqlite-disk-conflict-resolver",
+      "signObservation",
+      "EmitBundleWriter",
+      "streamObservations",
+    ],
     startedAt,
     finishedAt: new Date().toISOString(),
     inputRows,

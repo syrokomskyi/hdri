@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for observatory.</item>
   <item>P0.4: cross-period consistency check — warns if previous period missing or unfinished.</item>
   <item>Replace raw console.log/console.warn with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
   <item>Initialise new runs as candidate publication records for the quarterly archive lifecycle.</item>

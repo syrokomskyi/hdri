@@ -3,6 +3,9 @@
 <purpose>Resolves observation conflicts in SQLite without retaining the quarter in memory.</purpose>
 <non-goals><item>Does not sign or emit observations.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing ResolveConflictsGogol module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import crypto from "node:crypto";
@@ -26,12 +29,12 @@ export class ResolveConflictsGogol extends Gogol {
 export const resolveObservationConflicts = (
   dbPath: string,
 ): { total: number; resolved: number; conflicts: number; resolutionHash: string } => {
-    const db = new Database(dbPath);
-    try {
-      db.pragma("temp_store = FILE");
-      const total = (db.prepare(`SELECT COUNT(*) AS n FROM observations`).get() as { n: number }).n;
-      if (total === 0) throw new Error("No observations to resolve");
-      db.exec(`
+  const db = new Database(dbPath);
+  try {
+    db.pragma("temp_store = FILE");
+    const total = (db.prepare(`SELECT COUNT(*) AS n FROM observations`).get() as { n: number }).n;
+    if (total === 0) throw new Error("No observations to resolve");
+    db.exec(`
         DROP TABLE IF EXISTS resolved_observations_next;
         DROP TABLE IF EXISTS resolved_conflicts_next;
         DROP TABLE IF EXISTS resolution_ranked;
@@ -70,60 +73,75 @@ export const resolveObservationConflicts = (
         WHERE rank > 1
         ORDER BY observation_id;
       `);
-      const resolutionHash = hashResolution(db);
-      const storedHash = db
-        .prepare("SELECT value FROM translation_meta WHERE key = 'resolution_sha256'")
-        .get() as { value: string } | undefined;
-      const signedTableExists = Boolean(
-        db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'signed_observations'").get(),
+    const resolutionHash = hashResolution(db);
+    const storedHash = db
+      .prepare("SELECT value FROM translation_meta WHERE key = 'resolution_sha256'")
+      .get() as { value: string } | undefined;
+    const signedTableExists = Boolean(
+      db
+        .prepare(
+          "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'signed_observations'",
+        )
+        .get(),
+    );
+    const signedCount = signedTableExists
+      ? (db.prepare("SELECT COUNT(*) AS n FROM signed_observations").get() as { n: number }).n
+      : 0;
+    if (storedHash && storedHash.value !== resolutionHash && signedCount > 0) {
+      throw new Error(
+        "Resolved observations changed after signing began; create a new correction capsule",
       );
-      const signedCount = signedTableExists
-        ? (db.prepare("SELECT COUNT(*) AS n FROM signed_observations").get() as { n: number }).n
-        : 0;
-      if (storedHash && storedHash.value !== resolutionHash && signedCount > 0) {
-        throw new Error(
-          "Resolved observations changed after signing began; create a new correction capsule",
-        );
-      }
-      db.exec("BEGIN IMMEDIATE");
-      try {
-        db.exec("DROP TABLE IF EXISTS resolved_observations");
-        db.exec("DROP TABLE IF EXISTS resolved_conflicts");
-        db.exec("ALTER TABLE resolved_observations_next RENAME TO resolved_observations");
-        db.exec("ALTER TABLE resolved_conflicts_next RENAME TO resolved_conflicts");
-        db.prepare(
-          `INSERT INTO translation_meta(key, value) VALUES ('resolution_sha256', ?)
-           ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-        ).run(resolutionHash);
-        db.exec("COMMIT");
-      } catch (error) {
-        db.exec("ROLLBACK");
-        throw error;
-      }
-      const resolved = (
-        db.prepare(`SELECT COUNT(*) AS n FROM resolved_observations`).get() as { n: number }
-      ).n;
-      const conflicts = (
-        db.prepare(`SELECT COUNT(*) AS n FROM resolved_conflicts`).get() as { n: number }
-      ).n;
-      return { total, resolved, conflicts, resolutionHash };
-    } finally {
-      db.close();
     }
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      db.exec("DROP TABLE IF EXISTS resolved_observations");
+      db.exec("DROP TABLE IF EXISTS resolved_conflicts");
+      db.exec("ALTER TABLE resolved_observations_next RENAME TO resolved_observations");
+      db.exec("ALTER TABLE resolved_conflicts_next RENAME TO resolved_conflicts");
+      db.prepare(
+        `INSERT INTO translation_meta(key, value) VALUES ('resolution_sha256', ?)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      ).run(resolutionHash);
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+    const resolved = (
+      db.prepare(`SELECT COUNT(*) AS n FROM resolved_observations`).get() as { n: number }
+    ).n;
+    const conflicts = (
+      db.prepare(`SELECT COUNT(*) AS n FROM resolved_conflicts`).get() as { n: number }
+    ).n;
+    return { total, resolved, conflicts, resolutionHash };
+  } finally {
+    db.close();
+  }
 };
 
 const hashResolution = (db: Database.Database): string => {
   const hash = crypto.createHash("sha256");
   const rows = db
-    .prepare(`SELECT observation_id, payload_json FROM resolved_observations_next ORDER BY observation_id`)
+    .prepare(
+      `SELECT observation_id, payload_json FROM resolved_observations_next ORDER BY observation_id`,
+    )
     .iterate() as IterableIterator<{ observation_id: string; payload_json: string }>;
   for (const row of rows) {
-    hash.update("winner\0").update(row.observation_id).update("\0").update(row.payload_json).update("\n");
+    hash
+      .update("winner\0")
+      .update(row.observation_id)
+      .update("\0")
+      .update(row.payload_json)
+      .update("\n");
   }
-  const conflicts = db.prepare(`
+  const conflicts = db
+    .prepare(
+      `
     SELECT conflict_key, winner_observation_id, loser_observation_id, loser_payload_json
     FROM resolved_conflicts_next ORDER BY loser_observation_id
-  `).iterate() as IterableIterator<{
+  `,
+    )
+    .iterate() as IterableIterator<{
     conflict_key: string;
     winner_observation_id: string;
     loser_observation_id: string;

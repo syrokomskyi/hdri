@@ -3,6 +3,9 @@
 <purpose>Freezes methodology snapshot: codebook, ontology, and policy versions with a canonical hash.</purpose>
 <non-goals><item>Does not modify methodology files — reads and hashes only.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing methodology-snapshot module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import { createHash } from "node:crypto";

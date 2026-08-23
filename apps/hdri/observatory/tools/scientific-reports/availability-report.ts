@@ -3,6 +3,9 @@
 <purpose>Generates availability and attrition report from liveness data and frame.</purpose>
 <non-goals><item>Does not collect liveness data — reads existing liveness DB.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing availability-report module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import path from "node:path";

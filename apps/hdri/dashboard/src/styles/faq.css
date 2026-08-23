@@ -1,3 +1,10 @@
+/**
+ * <MODULE_CONTRACT><purpose>Provide faq behavior for the apps hdri dashboard src styles subsystem and its direct callers.</purpose><non-goals><item>Do not define unrelated cross-workspace policy or orchestration behavior.</item></non-goals></MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing faq module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
+ */
+
 .faq-section-title {
   margin: 2.5rem 0 1rem;
   font-family: "IBM Plex Serif", serif;

@@ -10,10 +10,8 @@
   <item>Rewrite getParserForSource with deepest-match routing for nested directory structures (RFC-0069).</item>
   <item>Register HandwerkernetParser for handwerkernet.de.</item>
   <item>Register Work5Parser for work5.de.</item>
-  <item>
-    Split StadtbranchenbuchParser into WwwStadtbranchenbuchComParser
-    and BacknangStadtbranchenbuchComParser (handling stadtbranchenbuch.com subdomains).
-  </item>
+  <item>Split StadtbranchenbuchParser into WwwStadtbranchenbuchComParser
+    and BacknangStadtbranchenbuchComParser (handling stadtbranchenbuch.com subdomains).</item>
   <item>Register BranchenverzeichnisParser for branchenverzeichnis.org.</item>
 </CHANGE_SUMMARY>
 */

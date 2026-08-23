@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Creates interactive ripple effect on canvas</purpose>
+<purpose>Creates interactive ripple effect on canvas for reliable use by its direct callers and maintainers.</purpose>
 <non-goals>
   <item>Does not handle non-canvas elements</item>
   <item>Does not provide custom color schemes</item>

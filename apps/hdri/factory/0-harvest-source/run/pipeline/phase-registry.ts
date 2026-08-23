@@ -1,17 +1,17 @@
 /*
-<MODULE_CONTRACT> 
-<purpose>Facilitates the creation and management of pipeline phases specific to catalog harvesting within the pipeline architecture.</purpose> 
- 
- 
-<non-goals> 
-  <item>Do not handle data parsing or transformation logic for pipeline steps.</item> 
-  <item>Do not manage the orchestration of pipeline execution or configuration.</item> 
-</non-goals> 
-</MODULE_CONTRACT> 
- 
-<CHANGE_SUMMARY> 
-  <item>Backfill COMPASS scaffolding to enhance navigability and maintainability of phase registry logic.</item> 
-</CHANGE_SUMMARY> 
+<MODULE_CONTRACT>
+<purpose>Facilitates the creation and management of pipeline phases specific to catalog harvesting within the pipeline architecture.</purpose>
+
+
+<non-goals>
+  <item>Do not handle data parsing or transformation logic for pipeline steps.</item>
+  <item>Do not manage the orchestration of pipeline execution or configuration.</item>
+</non-goals>
+</MODULE_CONTRACT>
+
+<CHANGE_SUMMARY>
+  <item>Tidied by compass.summary.trim; see git history for prior entries.</item>
+</CHANGE_SUMMARY>
 *****/
 
 import type { PipelinePhase } from "@syrokomskyi/pipeline-core/phase";

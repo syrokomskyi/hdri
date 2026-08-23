@@ -8,7 +8,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding to enhance code navigation and maintainability.</item>
   <item>Replace hand-rolled markdown table strings with markdownTable() from the markdown-table package.</item>
   <item>Phase B cleanup: derive year from sourceToken instead of removed harvestYear field.</item>
   <item>Normalise coreDbPath to relative in db-setup.json and db-summary.md artifacts using toRelativePath from @syrokomskyi/pipeline-core.</item>

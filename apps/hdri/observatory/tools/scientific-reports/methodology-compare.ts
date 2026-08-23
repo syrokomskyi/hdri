@@ -3,6 +3,9 @@
 <purpose>Compares Q2 and Q3 methodology snapshots to determine comparability and identify hard suppressions.</purpose>
 <non-goals><item>Does not perform backcast — only flags incompatibilities.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing methodology-compare module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
@@ -41,7 +44,8 @@ if (!q2SnapshotPath || !q3SnapshotPath) {
       sourceFrameId: string;
     }>(q3SnapshotPath);
 
-    scoreComparable = q2.codebookVersion === q3.codebookVersion && q2.ontologyVersion === q3.ontologyVersion;
+    scoreComparable =
+      q2.codebookVersion === q3.codebookVersion && q2.ontologyVersion === q3.ontologyVersion;
     panelComparable = scoreComparable;
     postStratComparable = scoreComparable;
 

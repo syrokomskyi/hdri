@@ -3,7 +3,9 @@
 <purpose>Validates an official Destatis 53111-0011 company-count extract and builds HDRI frame weights.</purpose>
 <non-goals><item>Does not accept employment, revenue, mixed units, or fabricate missing cells.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>RFC-0029 adds provenance-locked population-frame import.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY>
+  <item>RFC-0029 adds provenance-locked population-frame import.</item>
+</CHANGE_SUMMARY>
 */
 
 import {

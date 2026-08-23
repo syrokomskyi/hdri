@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for observatory.</item>
   <item>Fix brief template to use canonical lowercase period format (2025-q2).</item>
 </CHANGE_SUMMARY>
 */

@@ -1,19 +1,19 @@
 /*
-<MODULE_CONTRACT> 
-<purpose>Facilitates type definitions for pipeline state and context in the T0 catalog harvest.</purpose> 
- 
- 
-<non-goals> 
-  <item>Do not include AI processing capabilities within this module.</item> 
-  <item>Do not handle transport or configuration orchestration for the pipeline.</item> 
-</non-goals> 
-</MODULE_CONTRACT> 
- 
-<CHANGE_SUMMARY> 
+<MODULE_CONTRACT>
+<purpose>Facilitates type definitions for pipeline state and context in the T0 catalog harvest.</purpose>
+
+
+<non-goals>
+  <item>Do not include AI processing capabilities within this module.</item>
+  <item>Do not handle transport or configuration orchestration for the pipeline.</item>
+</non-goals>
+</MODULE_CONTRACT>
+
+<CHANGE_SUMMARY>
   <item>Refine type definitions for clarity in pipeline state and context management.</item>
   <item>Add rootBrief to PipelineState so gogols can read factory-level configuration directly.</item>
   <item>Replace local PipelineContextExtras with HdriFactoryContextExtras from @syrokomskyi/factory-core.</item>
-</CHANGE_SUMMARY> 
+</CHANGE_SUMMARY>
 *****/
 
 import type {

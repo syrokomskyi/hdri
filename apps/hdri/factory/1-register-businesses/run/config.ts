@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding.</item>
   <item>inputDir now points to shared factory-level .input; briefInputDir added for app-local brief.md.</item>
   <item>Add transparencyDir for multi-device upstream signature verification.</item>
   <item>Compute transparencyDir from explicit repoRoot so it stays correct regardless of app nesting depth.</item>

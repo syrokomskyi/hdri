@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding to enhance navigability and maintainability of the pipeline module.</item>
   <item>Update terminology from 'catalog' to 'sources' to better represent the variety of input data.</item>
 </CHANGE_SUMMARY>
 */

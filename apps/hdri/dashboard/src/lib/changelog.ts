@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Counts changelog entries from multiple candidate file paths</purpose>
+<purpose>Counts changelog entries from multiple candidate file paths for reliable use by its direct callers and maintainers.</purpose>
 <non-goals>
   <item>Does not modify or create changelog files</item>
   <item>Does not validate the content of changelog entries</item>

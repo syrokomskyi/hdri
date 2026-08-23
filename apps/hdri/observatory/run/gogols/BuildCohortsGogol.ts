@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for observatory.</item>
   <item>Update to use HWO mappings: read from asset_hwo_mappings for Destatis groups.</item>
   <item>Use strata_system/strata_code instead of gewerk_group.</item>
   <item>Update stratum keys for aggregation.</item>

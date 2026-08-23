@@ -1,3 +1,10 @@
+/**
+ * <MODULE_CONTRACT><purpose>Provide codebook behavior for the apps hdri dashboard src styles subsystem and its direct callers.</purpose><non-goals><item>Do not define unrelated cross-workspace policy or orchestration behavior.</item></non-goals></MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing codebook module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
+ */
+
 .changelog-body {
   font-size: 0.95rem;
   line-height: 1.7;

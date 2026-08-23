@@ -3,6 +3,9 @@
 <purpose>Defines fail-closed scientific, rebuild and replica evidence required before an HDRI quarter can be sealed.</purpose>
 <non-goals><item>Does not collect sites, calculate scores or waive a failed gate.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing release-contract module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import { createHash } from "node:crypto";

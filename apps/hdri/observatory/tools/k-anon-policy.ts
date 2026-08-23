@@ -7,7 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation: replace hardcoded K_ANONYMITY_MIN=5 across all export tools with policy-driven value.</item>
+  <item>Tidied by compass.summary.trim; see git history for prior entries.</item>
 </CHANGE_SUMMARY>
 // @ai-invariant: effective_k_min must never fall below hard_floor unless high_risk_release is explicitly true in the policy file
 */

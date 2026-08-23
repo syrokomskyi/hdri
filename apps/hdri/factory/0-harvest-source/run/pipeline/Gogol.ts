@@ -7,7 +7,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Backfill COMPASS scaffolding to clarify architectural intent and responsibilities of the Gogol class.</item>
   <item>Replace local boilerplate with shared HdriFactoryGogol from @syrokomskyi/factory-core.</item>
 </CHANGE_SUMMARY>
 */

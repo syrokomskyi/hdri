@@ -3,6 +3,9 @@
 <purpose>Proves that an independently rebuilt public archive in a pre-declared empty scratch directory is byte-identical to the release candidate.</purpose>
 <non-goals><item>Does not rebuild data itself or accept a non-empty scratch origin.</item></non-goals>
 </MODULE_CONTRACT>
+ * <CHANGE_SUMMARY>
+  <item>Document the existing quarter-rebuild-verify module contract for Compass-aware maintenance.</item>
+</CHANGE_SUMMARY>
 */
 
 import fs from "node:fs/promises";

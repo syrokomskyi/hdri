@@ -6,7 +6,6 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial creation for contract-ontology pipeline conversion.</item>
   <item>Add DiscoveredCoreDb type and coreDbs field to PipelineState.</item>
   <item>Add discovered AXE DB tracking for audit observation translation.</item>
   <item>Replace local PipelineContextExtras with HdriFactoryContextExtras from @syrokomskyi/factory-core.</item>
