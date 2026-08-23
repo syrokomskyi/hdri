@@ -42,7 +42,10 @@ export const createGogolById = (
     language: context.declarationLanguage,
   });
   const withGuide = <TStep extends CatalogHarvestPipelineStep>(step: TStep): TStep =>
-    step.withExplanation(toGogolGuideSeed(declaration));
+    step.withExplanation(toGogolGuideSeed(declaration), {
+      factory: declaration.factory,
+      config: declaration.config,
+    });
 
   const factory = simpleFactories[declaration.factory];
   if (!factory) {

@@ -38,5 +38,8 @@ export const createGogolById = (
   const declaration = loadGogolDeclaration({ id, language: context.declarationLanguage });
   const factory = simpleFactories[declaration.factory];
   if (!factory) throw new Error(`Unknown gogol factory: ${declaration.factory} (id: ${id})`);
-  return factory().withExplanation(toGogolGuideSeed(declaration));
+  return factory().withExplanation(toGogolGuideSeed(declaration), {
+    factory: declaration.factory,
+    config: declaration.config,
+  });
 };

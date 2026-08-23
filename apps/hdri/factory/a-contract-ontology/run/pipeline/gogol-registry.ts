@@ -47,5 +47,8 @@ export const createGogolById = (
   }
 
   const gogol = factory();
-  return gogol.withExplanation(toGogolGuideSeed(declaration)) as ContractOntologyPipelineStep;
+  return gogol.withExplanation(toGogolGuideSeed(declaration), {
+    factory: declaration.factory,
+    config: declaration.config,
+  }) as ContractOntologyPipelineStep;
 };
