@@ -12,13 +12,21 @@
 */
 
 import {
-  createTable,
-  getCoreRowModel,
-  getSortedRowModel,
+  constructTable,
+  createCoreRowModel,
+  createSortedRowModel,
+  rowSortingFeature,
+  tableFeatures,
   type ColumnDef,
   type SortingState,
   type Table,
 } from "@tanstack/table-core";
+
+const features = tableFeatures({
+  rowSortingFeature,
+  coreRowModel: createCoreRowModel(),
+  sortedRowModel: createSortedRowModel(),
+});
 
 type SortType = "number" | "text" | "none";
 
@@ -40,7 +48,9 @@ function detectNumeric(value: string): number | string {
   return Number.isNaN(parsed) ? value : parsed;
 }
 
-function createColumnDefs(headerCells: HTMLTableCellElement[]): ColumnDef<RowData>[] {
+function createColumnDefs(
+  headerCells: HTMLTableCellElement[],
+): ColumnDef<typeof features, RowData>[] {
   return headerCells.map((th, index) => {
     const sortType = (th.dataset.sortType ?? "text") as SortType;
     const colId = th.dataset.colId ?? `col-${index}`;
@@ -56,7 +66,7 @@ function createColumnDefs(headerCells: HTMLTableCellElement[]): ColumnDef<RowDat
 
     return {
       id: colId,
-      accessorFn: (row) => {
+      accessorFn: (row: RowData) => {
         const value = row[colId] ?? "";
         if (sortType === "number") {
           const num = typeof value === "number" ? value : detectNumeric(String(value));
@@ -64,7 +74,10 @@ function createColumnDefs(headerCells: HTMLTableCellElement[]): ColumnDef<RowDat
         }
         return String(value);
       },
-      sortingFn: (a, b) => {
+      sortingFn: (
+        a: { getValue: (id: string) => unknown },
+        b: { getValue: (id: string) => unknown },
+      ) => {
         const va = a.getValue(colId);
         const vb = b.getValue(colId);
         if (typeof va === "number" && typeof vb === "number") {
@@ -99,7 +112,7 @@ function extractRowData(tr: HTMLTableRowElement, headerCells: HTMLTableCellEleme
 function updateSortIndicators(
   table: HTMLTableElement,
   sorting: SortingState,
-  columns: ColumnDef<RowData>[],
+  columns: ColumnDef<typeof features, RowData>[],
 ): void {
   const headerCells = Array.from(
     table.querySelectorAll("thead th[data-sort-type]"),
@@ -152,11 +165,11 @@ function enhanceTable(table: HTMLTableElement): void {
 
   let sorting: SortingState = [];
 
-  const tableInstance: Table<RowData> = createTable({
+  const tableInstance: Table<typeof features, RowData> = constructTable({
+    features,
     data: rowData,
     columns,
     state: { sorting },
-    onStateChange: () => {},
     renderFallbackValue: null,
     onSortingChange: (updater) => {
       sorting = typeof updater === "function" ? updater(sorting) : (updater as SortingState);
@@ -166,8 +179,6 @@ function enhanceTable(table: HTMLTableElement): void {
       }));
       render();
     },
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
   });
 
   function render(): void {
