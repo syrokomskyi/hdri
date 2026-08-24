@@ -12,7 +12,7 @@
     "changelog:init": "changelog-live init"
   },
   "dependencies": {
-    "@axe-core/playwright": "^4.12.1",
+    "@axe-core/playwright": "^4.13.0",
     "@syrokomskyi/business-core": "workspace:*",
     "@syrokomskyi/factory-core": "workspace:*",
     "@syrokomskyi/observatory-core": "workspace:*",
@@ -24,7 +24,7 @@
     "@syrokomskyi/rate-limit": "workspace:*",
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@warpgogol/changelog-live": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "csv-stringify": "^6.8.3",

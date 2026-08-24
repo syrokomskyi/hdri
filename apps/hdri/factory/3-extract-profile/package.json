@@ -23,7 +23,7 @@
     "@syrokomskyi/pipeline-steps": "workspace:*",
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@warpgogol/changelog-live": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "cheerio": "1.2.0",
