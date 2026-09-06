@@ -8,9 +8,6 @@
       "path": "../../../../packages/business/business-core"
     },
     {
-      "path": "../../../../packages/rate-limit"
-    },
-    {
       "path": "../../../../packages/pipeline/pipeline-node"
     },
     {

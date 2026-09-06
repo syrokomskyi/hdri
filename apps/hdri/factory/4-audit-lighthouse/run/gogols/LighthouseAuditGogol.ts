@@ -29,7 +29,7 @@ import { loadLiveAuditTargets, upsertAuditRun } from "@syrokomskyi/factory-core"
 import path from "node:path";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import { markdownTable } from "markdown-table";
-import { RateLimiter } from "@syrokomskyi/rate-limit";
+import pLimit from "p-limit";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { AuditTarget, PipelineContext } from "../pipeline/types.js";
@@ -250,21 +250,7 @@ export class LighthouseAuditGogol extends Gogol {
           `targets=${targets.length} concurrency=${brief.concurrency}`,
       );
 
-      const limiter = new RateLimiter({
-        concurrency: brief.concurrency,
-        retry: {
-          retries: brief.retries,
-          baseDelayMs: 500,
-          maxDelayMs: 5_000,
-          jitter: true,
-        },
-        breaker: {
-          // If Chrome is broken on this machine, don't punish every site.
-          threshold: Math.max(3, Math.floor(targets.length * 0.2)),
-          cooldownMs: 30_000,
-          windowMs: 120_000,
-        },
-      });
+      const limit = pLimit(brief.concurrency);
 
       type Outcome = {
         siteId: number;
@@ -306,7 +292,7 @@ export class LighthouseAuditGogol extends Gogol {
       try {
         await Promise.all(
           pendingTargets.map((target) =>
-            limiter.schedule(async () => {
+            limit(async () => {
               const startedAt = Date.now();
               try {
                 const report = await runLighthouseLive(target, brief.timeoutMs, brief.formFactor);

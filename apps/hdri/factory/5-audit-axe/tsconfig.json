@@ -5,7 +5,6 @@
   "exclude": ["node_modules", "**/dist/**", "**/build/**", ".input", ".output", "**/*.test.ts"],
   "references": [
     { "path": "../../../../packages/business/business-core" },
-    { "path": "../../../../packages/rate-limit" },
     { "path": "../../../../packages/pipeline/pipeline-node" },
     { "path": "../../../../packages/pipeline/pipeline-core" },
     { "path": "../../../../packages/observatory/observatory-crypto" },

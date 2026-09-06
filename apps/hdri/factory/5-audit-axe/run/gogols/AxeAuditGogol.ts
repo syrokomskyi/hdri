@@ -42,7 +42,7 @@ import {
 } from "@syrokomskyi/factory-core";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import { markdownTable } from "markdown-table";
-import { RateLimiter } from "@syrokomskyi/rate-limit";
+import pLimit from "p-limit";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { AuditTarget, PipelineContext } from "../pipeline/types.js";
@@ -292,20 +292,7 @@ export class AxeAuditGogol extends Gogol {
         `targets=${pendingTargets.length} concurrency=${brief.concurrency}`,
     );
 
-    const limiter = new RateLimiter({
-      concurrency: brief.concurrency,
-      retry: {
-        retries: 0,
-        baseDelayMs: 500,
-        maxDelayMs: 5_000,
-        jitter: true,
-      },
-      breaker: {
-        threshold: Math.max(3, Math.floor(targets.length * 0.2)),
-        cooldownMs: 30_000,
-        windowMs: 120_000,
-      },
-    });
+    const limit = pLimit(brief.concurrency);
 
     type Outcome = {
       siteId: number;
@@ -321,7 +308,7 @@ export class AxeAuditGogol extends Gogol {
 
     await Promise.all(
       pendingTargets.map((target) =>
-        limiter.schedule(async () => {
+        limit(async () => {
           const startedAt = Date.now();
           for (let retryOrdinal = 0; retryOrdinal <= brief.retries; retryOrdinal++) {
             const leaseAt = new Date();

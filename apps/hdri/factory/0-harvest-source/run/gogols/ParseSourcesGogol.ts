@@ -44,7 +44,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
 import { normaliseDomain, isStopDomain } from "@syrokomskyi/business-core/ids";
-import { ConcurrencyGate } from "@syrokomskyi/rate-limit";
+import pLimit from "p-limit";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
@@ -130,7 +130,7 @@ export class ParseSourcesGogol extends Gogol {
     const allBatchReports: BatchReport[] = [];
     let pagesProcessed = 0;
 
-    const gate = new ConcurrencyGate(concurrency);
+    const limit = pLimit(concurrency);
 
     for (const batchName of batchNames) {
       console.log(`[parse-sources] Processing batch: ${batchName} (concurrency: ${concurrency})`);
@@ -188,7 +188,7 @@ export class ParseSourcesGogol extends Gogol {
       const totalFiles = sourceFiles.length;
 
       const filePromises = sourceFiles.map((sf) =>
-        gate.run(async (): Promise<FileResult | null> => {
+        limit(async (): Promise<FileResult | null> => {
           const ext = sf.extension;
           const sourceId = sf.relativeDir === "." ? "__batch_root__" : sf.relativeDir;
 
