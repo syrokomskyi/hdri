@@ -8,7 +8,7 @@
 <CHANGE_SUMMARY>
   <item>Update to use HWO Destatis groups (strata_code) instead of gewerk_group.</item>
   <item>Join with asset_hwo_mappings for Destatis group classification.</item>
-  <item>Replace raw console.log/console.warn with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log/console.warn with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Join mart exports against asset states and mappings from the same run for quarter-correct archive output.</item>
   <item>Replace hardcoded K_ANONYMITY_MIN=5 with policy-driven value loaded from policies/k-anon-policy-v{N}.yaml via loadKAnonPolicy.</item>
 </CHANGE_SUMMARY>
@@ -18,7 +18,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { stringify } from "csv-stringify/sync";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { loadKAnonPolicy } from "../../tools/k-anon-policy";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";

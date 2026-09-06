@@ -11,7 +11,7 @@ producing tamper-evident records for vault export and public transparency.</purp
 <CHANGE_SUMMARY>
   <item>Initial implementation (P0.2.9): sign unsigned observations before vault export.</item>
   <item>Replace per-batch console.log with single-line logProgress from @syrokomskyi/utils.</item>
-  <item>Replace raw console.log with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log with structured NDJSON logger from @warpgogol/pipeline-core.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -21,7 +21,7 @@ import { loadSigningKeyFromEnv, signObservation } from "@syrokomskyi/observatory
 import type { Observation } from "@syrokomskyi/observatory-core";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { logProgress } from "@syrokomskyi/utils";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";

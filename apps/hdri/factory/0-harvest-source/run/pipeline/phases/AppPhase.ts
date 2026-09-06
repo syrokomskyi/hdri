@@ -11,8 +11,8 @@
 </CHANGE_SUMMARY>
 */
 
-import { PipelinePhase } from "@syrokomskyi/pipeline-core/phase";
-import { createDeclaredPhaseOptions } from "@syrokomskyi/pipeline-node/declarations";
+import { PipelinePhase } from "@warpgogol/pipeline-core/phase";
+import { createDeclaredPhaseOptions } from "@warpgogol/pipeline-node/declarations";
 import { loadPhaseDeclaration, resolveEnabledMemberIds } from "../declaration.js";
 import type {
   CatalogHarvestPipelineStep,

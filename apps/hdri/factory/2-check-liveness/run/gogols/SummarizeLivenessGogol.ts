@@ -10,7 +10,7 @@
   <item>Add COMPASS scaffolding to define module responsibilities.</item>
   <item>Replace hand-rolled markdown table strings with markdownTable() from the markdown-table package.</item>
   <item>Phase B cleanup: derive year from sourceToken instead of removed scanYear field.</item>
-  <item>Normalise dbPath to relative in liveness-snapshot.json artifact using toRelativePath from @syrokomskyi/pipeline-core.</item>
+  <item>Normalise dbPath to relative in liveness-snapshot.json artifact using toRelativePath from @warpgogol/pipeline-core.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
 </CHANGE_SUMMARY>

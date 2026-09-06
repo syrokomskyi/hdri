@@ -12,7 +12,7 @@
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
+import { PipelinePauseError } from "@warpgogol/pipeline-core";
 import { inputDir } from "../../config";
 import { parseBriefMarkdown, type Brief } from "../../brief";
 

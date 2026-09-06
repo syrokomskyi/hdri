@@ -12,7 +12,7 @@
   <item>Load verification keys from repo-root transparency/keys/ via getTransparencyKeysDir() from @syrokomskyi/observatory-crypto.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Repair malformed COMPASS CHANGE_SUMMARY scaffolding.</item>
-  <item>Migrate to VerifyUpstreamStep base class from @syrokomskyi/pipeline-steps — eliminates duplicated verification workflow.</item>
+  <item>Migrate to VerifyUpstreamStep base class from @warpgogol/pipeline-steps — eliminates duplicated verification workflow.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
 </CHANGE_SUMMARY>
 */

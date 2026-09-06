@@ -7,11 +7,11 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Replace hand-rolled path boilerplate with createAppPaths from @syrokomskyi/pipeline-node/paths.</item>
+  <item>Replace hand-rolled path boilerplate with createAppPaths from @warpgogol/pipeline-node/paths.</item>
 </CHANGE_SUMMARY>
 */
 
-import { createAppPaths } from "@syrokomskyi/pipeline-node/paths";
+import { createAppPaths } from "@warpgogol/pipeline-node/paths";
 
 export const { inputDir, outputRootDir, promptsDir } = createAppPaths({
   moduleUrl: import.meta.url,

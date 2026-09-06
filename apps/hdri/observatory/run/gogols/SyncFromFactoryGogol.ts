@@ -12,7 +12,7 @@
   <item>Add asset state ingestion from bundle asset-states.ndjson.</item>
   <item>Resolve exactly one period-and-capsule-addressed Factory emit bundle.</item>
   <item>Store gewerk_group from emitted asset states for downstream industry cohorting.</item>
-  <item>Replace raw console.log/console.warn with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log/console.warn with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Persist source bundle metadata on synced runs and show single-line progress while inserting large bundles.</item>
   <item>Fix checkBundle to include observatory_run_id, so re-running the observatory pipeline after a codebook change correctly syncs the bundle for the new run.</item>
   <item>WP1: stream observations in bounded chunks instead of buffering whole bundles (avoids OOM at ~100k-site Q3 scale); dedup asset states across all bundles of a run (last-wins) to prevent the (asset_id, valid_from) PK collision on multi-bundle/multi-device syncs; write synced_bundles idempotency markers last for crash-safe partial syncs.</item>
@@ -31,7 +31,7 @@ import type { AssetStateRecord } from "@syrokomskyi/observatory-core";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { getDeviceId } from "@syrokomskyi/observatory-crypto";
 import { VaultReader } from "@syrokomskyi/observatory-vault";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";

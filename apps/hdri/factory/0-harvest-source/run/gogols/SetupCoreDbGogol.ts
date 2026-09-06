@@ -10,7 +10,7 @@
 <CHANGE_SUMMARY>
   <item>Replace hand-rolled markdown table strings with markdownTable() from the markdown-table package.</item>
   <item>Phase B cleanup: derive year from sourceToken instead of removed harvestYear field.</item>
-  <item>Normalise coreDbPath to relative in db-setup.json and db-summary.md artifacts using toRelativePath from @syrokomskyi/pipeline-core.</item>
+  <item>Normalise coreDbPath to relative in db-setup.json and db-summary.md artifacts using toRelativePath from @warpgogol/pipeline-core.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Replace setupDatabase + writeDbSetupArtifacts two-call pattern with single setupFactoryDb call.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>

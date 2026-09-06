@@ -24,7 +24,7 @@ import {
   type PipelinePhaseDeclaration as SharedPhaseDeclaration,
   type PipelineRouteDeclaration as SharedPipelineDeclaration,
   type PipelineStepDeclaration as SharedGogolDeclaration,
-} from "@syrokomskyi/pipeline-node/declarations";
+} from "@warpgogol/pipeline-node/declarations";
 
 export const PIPELINE_DECLARATION_LANGUAGE = "en";
 export type { DeclarationMemberReference };

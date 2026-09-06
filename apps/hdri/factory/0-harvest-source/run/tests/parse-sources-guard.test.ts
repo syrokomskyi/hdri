@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import Database from "better-sqlite3";
 import { migrateCore } from "@syrokomskyi/business-core/migrate";
-import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
+import { PipelinePauseError } from "@warpgogol/pipeline-core";
 import { checkMinSitesGuard } from "../gogols/check-min-sites-guard.js";
 
 function makeDb(siteCount = 0): Database.Database {

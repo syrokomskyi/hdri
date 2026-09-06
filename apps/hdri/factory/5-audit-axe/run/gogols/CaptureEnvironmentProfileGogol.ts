@@ -12,12 +12,12 @@
   <item>Phase B cleanup: remove deprecated auditYear, auditToken, cohortId, auditSampleSize, randomSeed, fixtureDir from brief snapshot.</item>
   <item>Skip re-run when environment-profile.json already exists in output directory.</item>
   <item>Fix formatMarkdown: replace stale lighthouse/cohort fields with actual brief fields (sourceToken, auditYear, concurrency, timeoutMs, retries).</item>
-  <item>Migrate to CaptureEnvironmentProfileStep base class from @syrokomskyi/pipeline-steps — eliminates duplicated system info, tool version, and formatting logic.</item>
+  <item>Migrate to CaptureEnvironmentProfileStep base class from @warpgogol/pipeline-steps — eliminates duplicated system info, tool version, and formatting logic.</item>
   <item>Add getSkipGogols override to replace as-cast in base class shouldSkip.</item>
 </CHANGE_SUMMARY>
 */
 
-import { CaptureEnvironmentProfileStep } from "@syrokomskyi/pipeline-steps";
+import { CaptureEnvironmentProfileStep } from "@warpgogol/pipeline-steps";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import type { PipelineContext } from "../pipeline/types.js";
 

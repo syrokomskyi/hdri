@@ -21,8 +21,8 @@ import {
   formatPipelineFinished,
   formatPipelineOverview,
   formatPipelineStart,
-} from "@syrokomskyi/pipeline-core";
-import { ensureOutputDir } from "@syrokomskyi/pipeline-node/context";
+} from "@warpgogol/pipeline-core";
+import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { resolveQuarterScopedUpstreamDbPath } from "@syrokomskyi/factory-core";
 import { inputDir, briefInputDir, outputRootDir, factoryRootDir } from "../config.js";

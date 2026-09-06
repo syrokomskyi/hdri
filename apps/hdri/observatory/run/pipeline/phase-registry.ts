@@ -6,11 +6,11 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Replace hand-rolled phase registry with shared createPhaseRegistry from @syrokomskyi/pipeline-node/declarations.</item>
+  <item>Replace hand-rolled phase registry with shared createPhaseRegistry from @warpgogol/pipeline-node/declarations.</item>
 </CHANGE_SUMMARY>
 */
 
-import { createPhaseRegistry } from "@syrokomskyi/pipeline-node/declarations";
+import { createPhaseRegistry } from "@warpgogol/pipeline-node/declarations";
 
 import type { PipelineBuildContext, ObservatoryPipelineStep } from "./build-types";
 import { createGogolById } from "./gogol-registry";

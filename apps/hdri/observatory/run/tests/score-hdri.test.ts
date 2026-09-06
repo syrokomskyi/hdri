@@ -21,7 +21,7 @@ import {
   type SignalOntology,
 } from "@syrokomskyi/observatory-core";
 import type { SignalCollectionStatus } from "@syrokomskyi/observatory-core";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 

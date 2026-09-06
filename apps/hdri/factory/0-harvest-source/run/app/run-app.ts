@@ -25,9 +25,9 @@ import {
   formatPipelineFinished,
   formatPipelineOverview,
   formatPipelineStart,
-} from "@syrokomskyi/pipeline-core";
-import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
-import { ensureOutputDir, fileExists, readTextFile } from "@syrokomskyi/pipeline-node/context";
+} from "@warpgogol/pipeline-core";
+import { PipelinePauseError } from "@warpgogol/pipeline-core";
+import { ensureOutputDir, fileExists, readTextFile } from "@warpgogol/pipeline-node/context";
 import { validateBriefConsistency, parsePriorCapsulesFile } from "@syrokomskyi/factory-core";
 import { inputDir, outputRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";

@@ -15,7 +15,7 @@
   <item>Phase B cleanup: remove cohortId, auditSampleSize, randomSeed, fixtureDir (audit all live businesses).</item>
   <item>Enforce lowercase kebab-case validation on sourceToken.</item>
   <item>parseBriefMarkdown now accepts optional sharedSourceToken parameter for two-file brief pattern.</item>
-  <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @syrokomskyi/pipeline-node.</item>
+  <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @warpgogol/pipeline-node.</item>
 </CHANGE_SUMMARY>
 */
 

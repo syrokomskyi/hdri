@@ -8,7 +8,7 @@
 <CHANGE_SUMMARY>
   <item>Initial implementation.</item>
   <item>Two-file brief pattern: reads sourceToken from shared factory-level brief.md, other settings from local app-level brief.md.</item>
-  <item>Use shared mergeBriefFrontmatter from @syrokomskyi/pipeline-node for merging root + local brief frontmatter.</item>
+  <item>Use shared mergeBriefFrontmatter from @warpgogol/pipeline-node for merging root + local brief frontmatter.</item>
   <item>Use inputDir/briefInputDir from config instead of inline path resolution.</item>
   <item>Update localBriefTemplate registryDbPath to point to 1-register-businesses instead of 0-harvest-source.</item>
   <item>Update localBriefTemplate zipcodesTablePath to point to shared factory .input instead of 0-harvest-source.</item>
@@ -18,9 +18,9 @@
 
 import path from "node:path";
 import matter from "gray-matter";
-import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
-import { fileExists, readTextFile } from "@syrokomskyi/pipeline-node/context";
-import { mergeBriefFrontmatter } from "@syrokomskyi/pipeline-node/frontmatter";
+import { PipelinePauseError } from "@warpgogol/pipeline-core";
+import { fileExists, readTextFile } from "@warpgogol/pipeline-node/context";
+import { mergeBriefFrontmatter } from "@warpgogol/pipeline-node/frontmatter";
 import { getDeviceId } from "@syrokomskyi/observatory-crypto";
 import { parseBriefMarkdown } from "../../brief.js";
 import { inputDir, briefInputDir } from "../../config.js";

@@ -10,7 +10,7 @@
 </CHANGE_SUMMARY>
 */
 
-import { definePipeline, type PipelineDefinition } from "@syrokomskyi/pipeline-core";
+import { definePipeline, type PipelineDefinition } from "@warpgogol/pipeline-core";
 import {
   type DeclarationMemberReference,
   PIPELINE_DECLARATION_LANGUAGE,

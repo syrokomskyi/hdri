@@ -14,8 +14,8 @@
 import type {
   PipelineArtifact as SharedPipelineArtifact,
   PipelineArtifacts as SharedPipelineArtifacts,
-} from "@syrokomskyi/pipeline-core";
-import type { NodePipelineContext } from "@syrokomskyi/pipeline-node/types";
+} from "@warpgogol/pipeline-core";
+import type { NodePipelineContext } from "@warpgogol/pipeline-node/types";
 import type { HdriFactoryContextExtras } from "@syrokomskyi/factory-core";
 import type { DomCache } from "../services/dom-cache.js";
 import type { Brief } from "../brief.js";

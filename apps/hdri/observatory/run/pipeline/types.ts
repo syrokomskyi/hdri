@@ -14,8 +14,8 @@ import type { Buffer } from "node:buffer";
 import type {
   PipelineArtifact as SharedPipelineArtifact,
   PipelineArtifacts as SharedPipelineArtifacts,
-} from "@syrokomskyi/pipeline-core";
-import type { NodePipelineContext } from "@syrokomskyi/pipeline-node/types";
+} from "@warpgogol/pipeline-core";
+import type { NodePipelineContext } from "@warpgogol/pipeline-node/types";
 import type { Brief } from "../brief";
 
 export type PipelineState = {

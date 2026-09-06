@@ -29,7 +29,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import type { ComparisonPoint } from "./comparison-core";
 import { buildPanelTrends } from "./panel-core";
 import { loadKAnonPolicy } from "./k-anon-policy";

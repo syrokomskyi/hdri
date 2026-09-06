@@ -14,7 +14,7 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
-import { mergeBriefFrontmatter } from "@syrokomskyi/pipeline-node/frontmatter";
+import { mergeBriefFrontmatter } from "@warpgogol/pipeline-node/frontmatter";
 import { parseBriefMarkdown } from "../../brief.js";
 import { inputDir, briefInputDir, localDeviceId } from "../../config.js";
 

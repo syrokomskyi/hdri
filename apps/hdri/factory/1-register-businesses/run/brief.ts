@@ -9,7 +9,7 @@
   <item>Initial implementation.</item>
   <item>Enforce lowercase kebab-case validation on sourceToken.</item>
   <item>parseBriefMarkdown now accepts optional sharedSourceToken parameter for two-file brief pattern.</item>
-  <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @syrokomskyi/pipeline-node.</item>
+  <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @warpgogol/pipeline-node.</item>
   <item>Add coreDbPath to Brief type and parser so upstream core.db path is configurable in brief.md instead of hardcoded.</item>
 </CHANGE_SUMMARY>
 */

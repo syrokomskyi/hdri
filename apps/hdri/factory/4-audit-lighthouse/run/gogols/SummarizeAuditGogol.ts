@@ -12,7 +12,7 @@
   <item>Add guard requiring cohortId to be resolved before this gogol runs.</item>
   <item>Phase B cleanup: derive year from sourceToken and remove cohort references.</item>
   <item>Remove auditBatchId from SQL queries, JSON output, and markdown report.</item>
-  <item>Migrate to SummarizeAuditStep base class from @syrokomskyi/pipeline-steps — eliminates duplicated snapshot, hashing, and formatting logic. Fixes use-after-close bug by ensuring all queries run before db.close().</item>
+  <item>Migrate to SummarizeAuditStep base class from @warpgogol/pipeline-steps — eliminates duplicated snapshot, hashing, and formatting logic. Fixes use-after-close bug by ensuring all queries run before db.close().</item>
   <item>Use generic TStats type parameter to eliminate as-unknown-as double-cast.</item>
 </CHANGE_SUMMARY>
 */

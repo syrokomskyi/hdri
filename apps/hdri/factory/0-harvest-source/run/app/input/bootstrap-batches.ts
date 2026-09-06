@@ -17,7 +17,7 @@
 */
 
 import fs from "node:fs/promises";
-import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
+import { PipelinePauseError } from "@warpgogol/pipeline-core";
 import {
   parsePriorCapsulesFile,
   type LedgerDiscoveryResult,

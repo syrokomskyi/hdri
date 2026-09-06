@@ -14,7 +14,7 @@
 </CHANGE_SUMMARY>
 *****/
 
-import type { PipelinePhase } from "@syrokomskyi/pipeline-core/phase";
+import type { PipelinePhase } from "@warpgogol/pipeline-core/phase";
 import type {
   CatalogHarvestPipelineStep,
   PipelineBuildContext,

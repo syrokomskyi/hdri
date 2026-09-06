@@ -21,9 +21,9 @@
 
 import path from "node:path";
 import matter from "gray-matter";
-import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
-import { fileExists, readTextFile } from "@syrokomskyi/pipeline-node/context";
-import { mergeBriefFrontmatter } from "@syrokomskyi/pipeline-node/frontmatter";
+import { PipelinePauseError } from "@warpgogol/pipeline-core";
+import { fileExists, readTextFile } from "@warpgogol/pipeline-node/context";
+import { mergeBriefFrontmatter } from "@warpgogol/pipeline-node/frontmatter";
 import type { Brief } from "../../brief.js";
 import { parseBriefMarkdown } from "../../brief.js";
 import { inputDir, briefInputDir } from "../../config.js";

@@ -8,7 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Add COMPASS scaffolding.</item>
-  <item>Replace raw console.log/console.error with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log/console.error with structured NDJSON logger from @warpgogol/pipeline-core.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import { parseTrustedKeysManifest } from "@syrokomskyi/observatory-crypto";
 import type { VerificationKey, TrustedKeysManifest } from "@syrokomskyi/observatory-crypto";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { getObservatoryDbPath } from "./db/connection.js";
 import { verifySignedRows, type SignedRow } from "./verify/verify-core.js";
 

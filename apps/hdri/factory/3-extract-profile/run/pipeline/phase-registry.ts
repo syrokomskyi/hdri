@@ -9,7 +9,7 @@
   <item>Tidied by compass.summary.trim; see git history for prior entries.</item>
 </CHANGE_SUMMARY>
 */
-import type { PipelinePhase } from "@syrokomskyi/pipeline-core/phase";
+import type { PipelinePhase } from "@warpgogol/pipeline-core/phase";
 import type {
   SiteProfilePipelineStep,
   PipelineBuildContext,

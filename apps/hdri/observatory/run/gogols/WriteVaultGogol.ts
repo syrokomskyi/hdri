@@ -12,7 +12,7 @@ by downstream analytics and public transparency tooling.</purpose>
 <CHANGE_SUMMARY>
   <item>Initial implementation (P0.3): observatory DB → vault Parquet export.</item>
   <item>P0.4: use factory_run_id instead of run_id for observation lookup.</item>
-  <item>Replace raw console.log with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log with structured NDJSON logger from @warpgogol/pipeline-core.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -23,7 +23,7 @@ import { VaultWriter, resolveShardPaths } from "@syrokomskyi/observatory-vault";
 import type { SignedObservation } from "@syrokomskyi/observatory-crypto";
 import type { Observation } from "@syrokomskyi/observatory-core";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";

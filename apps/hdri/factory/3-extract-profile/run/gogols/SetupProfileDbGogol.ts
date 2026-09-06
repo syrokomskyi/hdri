@@ -10,7 +10,7 @@
   <item>Initial implementation: database setup and migration for profile extraction pipeline.</item>
   <item>Add COMPASS scaffolding.</item>
   <item>Phase B cleanup: derive year/half from sourceToken instead of removed profileYear/profileHalf fields.</item>
-  <item>Normalise dbPath to relative in db-setup.json artifact using toRelativePath from @syrokomskyi/pipeline-core.</item>
+  <item>Normalise dbPath to relative in db-setup.json artifact using toRelativePath from @warpgogol/pipeline-core.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Replace setupDatabase + writeDbSetupArtifacts two-call pattern with single setupFactoryDb call.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>

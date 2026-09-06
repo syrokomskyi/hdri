@@ -20,8 +20,8 @@ import {
   formatPipelineFinished,
   formatPipelineOverview,
   formatPipelineStart,
-} from "@syrokomskyi/pipeline-core";
-import { ensureOutputDir } from "@syrokomskyi/pipeline-node/context";
+} from "@warpgogol/pipeline-core";
+import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
 import { inputDir, briefInputDir, outputRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";

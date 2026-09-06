@@ -11,7 +11,7 @@
   <item>Use strata_system/strata_code instead of gewerk_group.</item>
   <item>Update stratum keys for aggregation.</item>
   <item>Add gewerk_group-based cohort grouping while retaining Destatis strata membership.</item>
-  <item>Replace raw console.log with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Read asset states from the current run so historical quarter rebuilds do not depend on valid_to IS NULL.</item>
   <item>WP2: clear prior cohorts/members/aggregates for the run before writing (idempotent rebuild).</item>
 </CHANGE_SUMMARY>
@@ -21,7 +21,7 @@
 import path from "node:path";
 import { aggregateCohort, type ScoredSite } from "@syrokomskyi/hdri-codebook";
 import { newId, parsePeriod } from "@syrokomskyi/observatory-core";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";

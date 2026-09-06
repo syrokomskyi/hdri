@@ -6,11 +6,11 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Replace hand-rolled registry with shared createGogolRegistry from @syrokomskyi/pipeline-node/declarations.</item>
+  <item>Replace hand-rolled registry with shared createGogolRegistry from @warpgogol/pipeline-node/declarations.</item>
 </CHANGE_SUMMARY>
 */
 
-import { createGogolRegistry } from "@syrokomskyi/pipeline-node/declarations";
+import { createGogolRegistry } from "@warpgogol/pipeline-node/declarations";
 
 import { loadGogolDeclaration, toGogolGuideSeed } from "./declaration";
 import type { Gogol } from "./Gogol";

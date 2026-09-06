@@ -8,7 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation extracted from monolithic main.ts.</item>
-  <item>Normalise registryDbPath, localDbPath, and per-device dbPath to relative in merge-registry.json and merge-registry.md artifacts using toRelativePath from @syrokomskyi/pipeline-core.</item>
+  <item>Normalise registryDbPath, localDbPath, and per-device dbPath to relative in merge-registry.json and merge-registry.md artifacts using toRelativePath from @warpgogol/pipeline-core.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Write bundesland/gemeinde into business_registry so downstream pipelines can read geographic data from registry_YYYY.db.</item>
   <item>Create sites and site_pages tables inside registry_YYYY.db (via migrateCore) and populate sites from business_registry so downstream pipelines can use registry_YYYY.db as their core.db input.</item>
@@ -21,7 +21,7 @@ import Database from "better-sqlite3";
 import { markdownTable } from "markdown-table";
 import { deriveAssetId } from "@syrokomskyi/observatory-core";
 import { toFactoryRelativePath } from "../config.js";
-import { ensureOutputDir, writeJsonFile, writeTextFile } from "@syrokomskyi/pipeline-node/context";
+import { ensureOutputDir, writeJsonFile, writeTextFile } from "@warpgogol/pipeline-node/context";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { DomainAggregate, PipelineContext, RegistryRow } from "../pipeline/types.js";
 import { migrateRegistry, stampRegistryMeta } from "../db/schema.js";

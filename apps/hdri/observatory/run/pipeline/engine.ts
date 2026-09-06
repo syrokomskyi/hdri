@@ -6,16 +6,16 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Replace hand-rolled engine wrapper with shared createPipelineEngine from @syrokomskyi/pipeline-node/engine.</item>
+  <item>Replace hand-rolled engine wrapper with shared createPipelineEngine from @warpgogol/pipeline-node/engine.</item>
 </CHANGE_SUMMARY>
 */
 
-import { createPipelineEngine } from "@syrokomskyi/pipeline-node/engine";
+import { createPipelineEngine } from "@warpgogol/pipeline-node/engine";
 import { createPipelineContext } from "./context/create-context";
 import type { ObservatoryPipelineStep } from "./build-types";
 import type { PipelineContext, PipelineState } from "./types";
 
-export type { PipelineRunOptions } from "@syrokomskyi/pipeline-core";
+export type { PipelineRunOptions } from "@warpgogol/pipeline-core";
 
 export type PipelineEngineClients = Record<string, never>;
 

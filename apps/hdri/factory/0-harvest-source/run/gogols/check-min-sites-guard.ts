@@ -12,7 +12,7 @@
 */
 
 import type Database from "better-sqlite3";
-import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
+import { PipelinePauseError } from "@warpgogol/pipeline-core";
 
 /**
  * Checks the cumulative site count in the `sites` table against `threshold`.

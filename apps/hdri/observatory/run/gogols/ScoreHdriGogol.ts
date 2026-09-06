@@ -8,7 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>P0.4: use factory_run_id instead of run_id for matching synced bundles.</item>
-  <item>Replace raw console.log/console.warn with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log/console.warn with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Add single-line progress reporting while scoring large asset batches.</item>
   <item>WP2: clear prior scores/dimensions/traces for the run before inserting (idempotent rebuild, no duplicate accumulation on re-runs).</item>
   <item>WP7: delegate read+build+score+write to the shared score-core so rebuild-from-vault re-scores through the identical path (same overall_score + computation_hash).</item>
@@ -23,7 +23,7 @@ import { parseCodebookOrThrow } from "@syrokomskyi/hdri-codebook";
 import type { Codebook } from "@syrokomskyi/hdri-codebook";
 import { parseOntology, parsePeriod, sha256 } from "@syrokomskyi/observatory-core";
 import type { SignalOntology } from "@syrokomskyi/observatory-core";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
@@ -168,7 +168,7 @@ async function loadCodebook(): Promise<{ codebook: Codebook; source: string }> {
  */
 async function loadOntologyForCodebook(
   codebook: Codebook,
-  log: import("@syrokomskyi/pipeline-core").JsonLogger,
+  log: import("@warpgogol/pipeline-core").JsonLogger,
 ): Promise<{ ontology: SignalOntology; source: string } | null> {
   if (!codebook.ontologyRef) return null;
   const ontologyPath = path.isAbsolute(codebook.ontologyRef)
@@ -226,7 +226,7 @@ function readScorerVersion(): string {
 function crossValidateCodebookAgainstOntology(
   codebook: Codebook,
   ontology: SignalOntology,
-  log: import("@syrokomskyi/pipeline-core").JsonLogger,
+  log: import("@warpgogol/pipeline-core").JsonLogger,
 ): void {
   const unknown: string[] = [];
   const deprecated: string[] = [];

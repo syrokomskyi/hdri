@@ -23,7 +23,7 @@ import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { openLivenessSqlite, openReadOnlySqlite } from "../db/connection.js";
-import { ensureOutputDir } from "@syrokomskyi/pipeline-node/context";
+import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
 
 export class LivenessByBundeslandGogol extends Gogol {
   override readonly id = "liveness-by-bundesland";

@@ -11,7 +11,7 @@
   <item>Add COMPASS scaffolding.</item>
   <item>Two-file brief pattern: reads sourceToken from shared factory-level brief.md, other settings from local app-level brief.md.</item>
   <item>Parse merged frontmatter into a typed Brief object.</item>
-  <item>Use shared mergeBriefFrontmatter from @syrokomskyi/pipeline-node for merging root + local brief frontmatter.</item>
+  <item>Use shared mergeBriefFrontmatter from @warpgogol/pipeline-node for merging root + local brief frontmatter.</item>
   <item>Use inputDir/briefInputDir from config instead of inline path resolution.</item>
   <item>Add ${DEVICE_ID} substitution before parsing frontmatter (matches 3-extract-profile pattern).</item>
   <item>Include the required quarter-scoped liveness path in the operator template.</item>
@@ -20,9 +20,9 @@
 
 import path from "node:path";
 import matter from "gray-matter";
-import { PipelinePauseError } from "@syrokomskyi/pipeline-core";
-import { fileExists, readTextFile } from "@syrokomskyi/pipeline-node/context";
-import { mergeBriefFrontmatter } from "@syrokomskyi/pipeline-node/frontmatter";
+import { PipelinePauseError } from "@warpgogol/pipeline-core";
+import { fileExists, readTextFile } from "@warpgogol/pipeline-node/context";
+import { mergeBriefFrontmatter } from "@warpgogol/pipeline-node/frontmatter";
 import { getDeviceId } from "@syrokomskyi/observatory-crypto";
 import { parseBriefMarkdown } from "../../brief.js";
 import { inputDir, briefInputDir } from "../../config.js";

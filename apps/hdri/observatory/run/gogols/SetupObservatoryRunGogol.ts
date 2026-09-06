@@ -7,7 +7,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>P0.4: cross-period consistency check — warns if previous period missing or unfinished.</item>
-  <item>Replace raw console.log/console.warn with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log/console.warn with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Initialise new runs as candidate publication records for the quarterly archive lifecycle.</item>
   <item>WP9: log applied schema migrations and any protective pre-migration backup.</item>
 </CHANGE_SUMMARY>
@@ -16,7 +16,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { newId, parsePeriod } from "@syrokomskyi/observatory-core";
-import { createJsonLogger } from "@syrokomskyi/pipeline-core";
+import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { getDbDir, getObservatoryDbPath, openObservatoryDb } from "../db/connection";
@@ -116,7 +116,7 @@ export class SetupObservatoryRunGogol extends Gogol {
  */
 async function checkPreviousPeriod(
   period: string,
-  log: import("@syrokomskyi/pipeline-core").JsonLogger,
+  log: import("@warpgogol/pipeline-core").JsonLogger,
 ): Promise<void> {
   const prev = previousPeriod(period);
   if (!prev) return;

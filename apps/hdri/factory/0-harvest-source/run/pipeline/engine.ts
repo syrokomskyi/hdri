@@ -14,12 +14,12 @@
 */
 
 import { runHdriFactoryEngine } from "@syrokomskyi/factory-core";
-import type { PipelineExecutionGuide, PipelineRunOptions } from "@syrokomskyi/pipeline-core";
+import type { PipelineExecutionGuide, PipelineRunOptions } from "@warpgogol/pipeline-core";
 import { createPipelineContext } from "./context/create-context.js";
 import type { CatalogHarvestPipelineStep } from "./build-types.js";
 import type { PipelineAiServices, PipelineContext, PipelineState } from "./types.js";
 
-export type { PipelineRunOptions } from "@syrokomskyi/pipeline-core";
+export type { PipelineRunOptions } from "@warpgogol/pipeline-core";
 export type PipelineEngineClients = PipelineAiServices;
 
 export const runPipelineEngine = (options: {

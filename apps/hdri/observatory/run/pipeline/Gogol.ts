@@ -6,13 +6,13 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Replace hand-rolled Gogol base with shared createGogolBase from @syrokomskyi/pipeline-node.</item>
+  <item>Replace hand-rolled Gogol base with shared createGogolBase from @warpgogol/pipeline-node.</item>
   <item>Remove redundant getArtifactPath override — base PipelineStep already calls ctx.getStepArtifactPath.</item>
   <item>Remove redundant getPromptFileNames override — was just calling super.</item>
 </CHANGE_SUMMARY>
 */
 
-import { createGogolBase, skipFromBrief } from "@syrokomskyi/pipeline-node";
+import { createGogolBase, skipFromBrief } from "@warpgogol/pipeline-node";
 import type { PipelineContext } from "./types";
 
 const Base = createGogolBase<PipelineContext>({

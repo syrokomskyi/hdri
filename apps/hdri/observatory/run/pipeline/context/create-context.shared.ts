@@ -10,8 +10,8 @@
 </CHANGE_SUMMARY>
 */
 
-import { createNodePipelineContext } from "@syrokomskyi/pipeline-node/context";
-import type { NodePipelineContext } from "@syrokomskyi/pipeline-node/types";
+import { createNodePipelineContext } from "@warpgogol/pipeline-node/context";
+import type { NodePipelineContext } from "@warpgogol/pipeline-node/types";
 import { inputDir, outputRootDir, promptsDir } from "../../config";
 import type {
   GogolArtifacts,

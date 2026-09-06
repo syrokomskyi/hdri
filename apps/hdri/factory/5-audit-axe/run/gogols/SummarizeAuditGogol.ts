@@ -13,7 +13,7 @@
   <item>Phase B cleanup: remove cohort references; derive year from sourceToken.</item>
   <item>Remove auditBatchId from SQL queries, JSON output, and markdown report.</item>
   <item>Fix use-after-close bug: move totalSites query before db.close().</item>
-  <item>Migrate to SummarizeAuditStep base class from @syrokomskyi/pipeline-steps — eliminates duplicated snapshot, hashing, and formatting logic.</item>
+  <item>Migrate to SummarizeAuditStep base class from @warpgogol/pipeline-steps — eliminates duplicated snapshot, hashing, and formatting logic.</item>
   <item>Use generic TStats type parameter to eliminate as-unknown-as double-cast.</item>
 </CHANGE_SUMMARY>
 */

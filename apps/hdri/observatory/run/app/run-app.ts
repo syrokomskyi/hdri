@@ -6,7 +6,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Replace raw console.log with structured NDJSON logger from @syrokomskyi/pipeline-core.</item>
+  <item>Replace raw console.log with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Mark successful runs as canonical published, supersede prior published runs for the period, and stamp failed runs.</item>
   <item>WP8: run into a staging DB seeded from canonical; finalizeRun only marks the run finished (candidate) — publication is gated behind a separate validate + promote step.</item>
 </CHANGE_SUMMARY>
@@ -22,8 +22,8 @@ import {
   formatPipelineOverview,
   formatPipelineStart,
   stripAnsi,
-} from "@syrokomskyi/pipeline-core";
-import { ensureOutputDir } from "@syrokomskyi/pipeline-node/context";
+} from "@warpgogol/pipeline-core";
+import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
 import { inputDir, outputRootDir } from "../config";
 import {
   DB_TARGET_ENV,

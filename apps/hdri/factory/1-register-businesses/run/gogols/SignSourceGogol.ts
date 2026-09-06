@@ -8,10 +8,10 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation extracted from monolithic main.ts.</item>
-  <item>Normalise registryDbPath and signature manifest path to relative in sign-source-summary.json and sign-source-summary.md artifacts using toRelativePath from @syrokomskyi/pipeline-core.</item>
+  <item>Normalise registryDbPath and signature manifest path to relative in sign-source-summary.json and sign-source-summary.md artifacts using toRelativePath from @warpgogol/pipeline-core.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Refactor to use SignSourceReporter from @syrokomskyi/observatory-emit for artifact emission.</item>
-  <item>Migrate to SignSourceStep base class from @syrokomskyi/pipeline-steps — eliminates duplicated signing workflow.</item>
+  <item>Migrate to SignSourceStep base class from @warpgogol/pipeline-steps — eliminates duplicated signing workflow.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
 </CHANGE_SUMMARY>
 */

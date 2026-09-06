@@ -8,7 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation extracted from monolithic main.ts.</item>
-  <item>Normalise upstreamHarvestOutputRoot and per-device dbPath to relative in discovered-cores.json and discovered-cores.md artifacts using toRelativePath from @syrokomskyi/pipeline-core.</item>
+  <item>Normalise upstreamHarvestOutputRoot and per-device dbPath to relative in discovered-cores.json and discovered-cores.md artifacts using toRelativePath from @warpgogol/pipeline-core.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Read upstreamHarvestOutputRoot from pipeline state instead of importing from config.ts, so the upstream phase is driven by brief.coreDbPath rather than a hardcoded string.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
@@ -19,7 +19,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { markdownTable } from "markdown-table";
 import { listDeviceFolders } from "@syrokomskyi/observatory-crypto";
-import { ensureOutputDir, writeJsonFile, writeTextFile } from "@syrokomskyi/pipeline-node/context";
+import { ensureOutputDir, writeJsonFile, writeTextFile } from "@warpgogol/pipeline-node/context";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { toFactoryRelativePath } from "../config.js";

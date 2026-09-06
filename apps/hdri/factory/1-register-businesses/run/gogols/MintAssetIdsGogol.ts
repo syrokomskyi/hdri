@@ -8,7 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation extracted from monolithic main.ts.</item>
-  <item>Normalise localDbPath to relative in asset-id-summary.md artifact using toRelativePath from @syrokomskyi/pipeline-core.</item>
+  <item>Normalise localDbPath to relative in asset-id-summary.md artifact using toRelativePath from @warpgogol/pipeline-core.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Add inline note explaining Sites count metric in generated asset-id-summary.md.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
@@ -18,7 +18,7 @@
 import path from "node:path";
 import { markdownTable } from "markdown-table";
 import { toFactoryRelativePath } from "../config.js";
-import { ensureOutputDir, writeJsonFile, writeTextFile } from "@syrokomskyi/pipeline-node/context";
+import { ensureOutputDir, writeJsonFile, writeTextFile } from "@warpgogol/pipeline-node/context";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 

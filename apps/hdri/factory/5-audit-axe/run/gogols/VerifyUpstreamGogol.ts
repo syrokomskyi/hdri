@@ -9,7 +9,7 @@
 <CHANGE_SUMMARY>
   <item>Initial implementation.</item>
   <item>Fix COMPASS header: correct file references from generic lighthouse.db to lighthouse_YYYY.db.</item>
-  <item>Migrate to VerifyUpstreamStep base class from @syrokomskyi/pipeline-steps — eliminates duplicated verification workflow.</item>
+  <item>Migrate to VerifyUpstreamStep base class from @warpgogol/pipeline-steps — eliminates duplicated verification workflow.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key

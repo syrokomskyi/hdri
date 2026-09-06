@@ -14,7 +14,7 @@
   <item>Remove livenessBatchId; no longer needed with new architecture.</item>
   <item>Enforce lowercase kebab-case validation on sourceToken.</item>
   <item>parseBriefMarkdown now accepts optional sharedSourceToken parameter for two-file brief pattern.</item>
-  <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @syrokomskyi/pipeline-node.</item>
+  <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @warpgogol/pipeline-node.</item>
   <item>Update registryDbPath comment to reference 1-register-businesses instead of catalog-harvest.</item>
   <item>Bound domCacheSize to 1..64 for production quarter runs.</item>
   <item>Revise domCacheSize comment to document realistic per-DOM RAM cost (~1–3 MB) and warn that 100k pages ≈ 100–300 GB.</item>

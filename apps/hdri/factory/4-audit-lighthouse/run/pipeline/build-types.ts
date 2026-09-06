@@ -11,8 +11,8 @@
 </CHANGE_SUMMARY>
 */
 
-import type { PipelinePhase } from "@syrokomskyi/pipeline-core/phase";
-import type { PipelineStep } from "@syrokomskyi/pipeline-core/step";
+import type { PipelinePhase } from "@warpgogol/pipeline-core/phase";
+import type { PipelineStep } from "@warpgogol/pipeline-core/step";
 import type { PipelineContext } from "./types.js";
 
 export type PipelineBuildContext = {

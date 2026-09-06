@@ -6,18 +6,18 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Replace hand-rolled declaration re-exports with shared createAppDeclarationModule from @syrokomskyi/pipeline-node/declarations.</item>
+  <item>Replace hand-rolled declaration re-exports with shared createAppDeclarationModule from @warpgogol/pipeline-node/declarations.</item>
 </CHANGE_SUMMARY>
 */
 
-import { createAppDeclarationModule } from "@syrokomskyi/pipeline-node/declarations";
+import { createAppDeclarationModule } from "@warpgogol/pipeline-node/declarations";
 
 import type {
   DeclarationMemberReference as SharedDeclarationMemberReference,
   PipelinePhaseDeclaration,
   PipelineRouteDeclaration,
   PipelineStepDeclaration,
-} from "@syrokomskyi/pipeline-node/declarations";
+} from "@warpgogol/pipeline-node/declarations";
 
 export type DeclarationMemberReference = SharedDeclarationMemberReference<string>;
 export type PipelineDeclaration = PipelineRouteDeclaration<string>;

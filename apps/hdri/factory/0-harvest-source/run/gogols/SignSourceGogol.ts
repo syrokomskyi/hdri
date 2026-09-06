@@ -10,7 +10,7 @@
   <item>Initial implementation.</item>
   <item>Switch path normalization to toFactoryRelativePath so artifacts show paths relative to apps/hdri/factory.</item>
   <item>Refactor to use SignSourceReporter from @syrokomskyi/observatory-emit for artifact emission.</item>
-  <item>Migrate to SignSourceStep base class from @syrokomskyi/pipeline-steps — eliminates duplicated signing workflow.</item>
+  <item>Migrate to SignSourceStep base class from @warpgogol/pipeline-steps — eliminates duplicated signing workflow.</item>
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
 </CHANGE_SUMMARY>
 */
