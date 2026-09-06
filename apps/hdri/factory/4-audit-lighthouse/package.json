@@ -20,6 +20,7 @@
     "@syrokomskyi/pipeline-core": "workspace:*",
     "@syrokomskyi/pipeline-node": "workspace:*",
     "@syrokomskyi/pipeline-steps": "workspace:*",
+    "@syrokomskyi/pipeline-steps-hdri": "workspace:*",
     "@syrokomskyi/rate-limit": "workspace:*",
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",

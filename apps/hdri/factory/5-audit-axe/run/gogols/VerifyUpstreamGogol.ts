@@ -14,7 +14,7 @@
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
 
-import { VerifyUpstreamStep } from "@syrokomskyi/pipeline-steps";
+import { VerifyUpstreamStep } from "@syrokomskyi/pipeline-steps-hdri";
 import { toFactoryRelativePath, upstreamLighthouseOutputRoot } from "../config.js";
 import type { PipelineContext } from "../pipeline/types.js";
 

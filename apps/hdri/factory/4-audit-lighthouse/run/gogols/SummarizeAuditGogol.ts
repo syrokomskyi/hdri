@@ -21,7 +21,7 @@
 import type Database from "better-sqlite3";
 import { markdownTable } from "markdown-table";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
-import { SummarizeAuditStep } from "@syrokomskyi/pipeline-steps";
+import { SummarizeAuditStep } from "@syrokomskyi/pipeline-steps-hdri";
 import type { PipelineContext } from "../pipeline/types.js";
 import { openAuditsDb } from "../db/connection.js";
 import { getAuditsDbPath, getAuditsDbName } from "../paths.js";
