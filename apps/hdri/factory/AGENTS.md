@@ -208,3 +208,14 @@ When adding a new audit or crawl gogol, extend the relevant base class or import
 
 - Apps that import gogol files (e.g. `LighthouseAuditGogol.ts`, `AxeAuditGogol.ts`) in tests must load `apps/hdri/.env` via `dotenv` in their `vitest.config.ts` — gogol imports trigger `getDeviceId()` at module load time, which throws without `DEVICE_ID`.
 - Pattern: `import { config } from "dotenv"; config({ path: "apps/hdri/.env" });` at the top of `vitest.config.ts`.
+
+## Program Gate (RFC-0099)
+
+Every factory app's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomskyi/factory-core` after `bootstrapBrief()` and before `runPipelineEngine()`. The gate uses operation `"collect"` for factory apps.
+
+### Fail-closed contract
+
+- Without preservation and collection readiness evidence, the gate blocks the run with stable blocker codes (`NO_PRESERVATION_RECEIPT`, `NO_COLLECTION_READINESS`).
+- Diagnostic mode (`HDRI_OPERATION=diagnostic`) bypasses the gate — always allowed.
+- Bootstrap state (all refs `null`) correctly blocks — this is the intended initial behavior per AC-5.
+- Subsequent RFCs will populate evidence refs as they produce real proof.

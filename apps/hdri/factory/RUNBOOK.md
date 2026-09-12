@@ -31,6 +31,26 @@ Before starting any pipeline:
 
 ---
 
+## Program Gate (RFC-0099)
+
+Every factory and observatory entry point calls `evaluateProgramGate()` from `@syrokomskyi/factory-core` before starting the pipeline engine. The gate is **fail-closed**: if prerequisite evidence is missing, the run is blocked with a diagnostic error listing the missing evidence refs.
+
+### Operations
+
+- **collect** (factory apps): Requires preservation receipt and collection readiness evidence. Without them, live data-mutating runs are blocked.
+- **publish** (observatory): Requires preservation, collection, and publication readiness evidence. A collection receipt alone does not authorize publication.
+- **diagnostic**: Always allowed, even when no evidence exists. Use `HDRI_OPERATION=diagnostic` to run pipelines in read-only/diagnostic mode.
+
+### Bootstrap state
+
+In the initial implementation, all evidence refs are `null` — the gate blocks all live collection and publication. This is the correct bootstrap behavior. Subsequent RFCs (RFC-0100, RFC-0102, etc.) will populate the evidence refs as they produce real preservation and readiness proof.
+
+### Blocker codes
+
+When blocked, the gate reports stable codes: `NO_PRESERVATION_RECEIPT`, `NO_COLLECTION_READINESS`, `NO_PUBLICATION_READINESS`, `MISSING_PERIOD`. Each code names the specific missing evidence, allowing targeted remediation rather than blanket suppression.
+
+---
+
 ## Chain of Trust (Signature Verification)
 
 Every pipeline in the factory chain cryptographically seals its primary output before the next pipeline is allowed to consume it.
