@@ -9,6 +9,7 @@
   <item>Add DiscoveredCoreDb type and coreDbs field to PipelineState.</item>
   <item>Add discovered AXE DB tracking for audit observation translation.</item>
   <item>Replace local PipelineContextExtras with HdriFactoryContextExtras from @syrokomskyi/factory-core.</item>
+  <item>RFC-0106: Add VerifiedStageSnapshot and TranslationClosure contracts for verified source admission.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -48,6 +49,26 @@ export type DiscoveredLivenessDb = {
   livenessDbPath: string;
 };
 
+export type VerifiedStageSnapshot = {
+  schema: "hdri-stage-snapshot@1";
+  period: string;
+  capsuleId: string;
+  deviceId: string;
+  stageId: string;
+  stageSealSha256: string;
+  targetSetSha256: string;
+  selectedResultSetSha256: string;
+  projectionSha256: string;
+  artifactRefs: string[];
+};
+
+export type TranslationClosure = {
+  expectedKeysSha256: string;
+  emittedKeysSha256: string;
+  sourceSnapshots: string[];
+  unresolvedReferences: number;
+};
+
 export type PipelineState = {
   brief: Brief;
   ontology: SignalOntology | null;
@@ -58,6 +79,8 @@ export type PipelineState = {
   observationDbPath: string | null;
   signedObservationDbPath: string | null;
   manifest: EmitManifest | null;
+  verifiedSnapshots: VerifiedStageSnapshot[];
+  translationClosure: TranslationClosure | null;
 };
 
 // ---------------------------------------------------------------------------

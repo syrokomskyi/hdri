@@ -67,6 +67,8 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
       observationDbPath: null,
       signedObservationDbPath: null,
       manifest: null,
+      verifiedSnapshots: [],
+      translationClosure: null,
     },
     guide,
     options,
