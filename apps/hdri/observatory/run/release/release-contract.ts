@@ -260,7 +260,6 @@ export const readScientificReports = async (
 
 export interface ReleaseInput {
   schema: "hdri-release-input@1";
-  capsuleDir: string;
   capsuleManifestPath: string;
   evidenceDir: string;
   publicManifestPath: string;
