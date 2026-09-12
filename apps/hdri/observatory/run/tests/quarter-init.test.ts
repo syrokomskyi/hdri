@@ -293,10 +293,12 @@ describe("quarter:init", () => {
 
       const result = runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -346,10 +348,12 @@ describe("quarter:init", () => {
 
       runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -386,10 +390,12 @@ describe("quarter:init", () => {
 
       const result = runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -434,10 +440,12 @@ describe("quarter:init", () => {
 
       runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -487,10 +495,12 @@ describe("quarter:init", () => {
 
       runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -529,10 +539,12 @@ describe("quarter:init", () => {
 
       const result = runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -576,10 +588,12 @@ describe("quarter:init", () => {
 
       const result = runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -608,10 +622,12 @@ describe("quarter:init", () => {
 
       const result = runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -641,10 +657,12 @@ describe("quarter:init", () => {
 
       const result = runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           manifestPath,
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",
@@ -673,10 +691,12 @@ describe("quarter:init", () => {
 
       const result = runQuarterInit(
         [
-          "--prior-capsule",
+          "--predecessor",
           path.join(tmpDir, "nonexistent.json"),
-          "--current-period",
+          "--period",
           "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
           "--output",
           outputPath,
           "--keys-dir",

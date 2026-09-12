@@ -50,6 +50,7 @@ const OUTPUT_DEFAULT = path.resolve(
 const main = async (): Promise<void> => {
   const priorCapsulePath = arg("--predecessor");
   const currentPeriod = arg("--period");
+  const capsuleIdArg = arg("--capsule-id");
   const outputArg = arg("--output");
   const keysDirArg = arg("--keys-dir");
   const force = hasFlag("--force");
@@ -57,13 +58,19 @@ const main = async (): Promise<void> => {
 
   if (!priorCapsulePath) {
     console.error(
-      "Usage: quarter:init --predecessor <path> --period <yyyy-qn> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
+      "Usage: quarter:init --predecessor <path> --period <yyyy-qn> --capsule-id <uuid-v7> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
     );
     process.exit(1);
   }
   if (!currentPeriod) {
     console.error(
-      "Usage: quarter:init --predecessor <path> --period <yyyy-qn> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
+      "Usage: quarter:init --predecessor <path> --period <yyyy-qn> --capsule-id <uuid-v7> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
+    );
+    process.exit(1);
+  }
+  if (!capsuleIdArg) {
+    console.error(
+      "Usage: quarter:init --predecessor <path> --period <yyyy-qn> --capsule-id <uuid-v7> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
     );
     process.exit(1);
   }
@@ -237,17 +244,25 @@ const main = async (): Promise<void> => {
         quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
         quarterRecord = {
           ...quarterRecord,
-          capsuleId: existingRecord.capsuleId,
+          capsuleId: capsuleIdArg,
         };
       }
     } catch {
       // Malformed existing record — create fresh
       const priorCapsulesFile = parsePriorCapsulesFile(serialized);
       quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
+      quarterRecord = {
+        ...quarterRecord,
+        capsuleId: capsuleIdArg,
+      };
     }
   } else {
     const priorCapsulesFile = parsePriorCapsulesFile(serialized);
     quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
+    quarterRecord = {
+      ...quarterRecord,
+      capsuleId: capsuleIdArg,
+    };
   }
 
   validateQuarterRecord(quarterRecord);
