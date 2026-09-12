@@ -22,6 +22,7 @@
     "@warpgogol/pipeline-node": "workspace:*",
     "@warpgogol/pipeline-steps": "workspace:*",
     "@syrokomskyi/pipeline-steps-hdri": "workspace:*",
+    "playwright": "^1.49.0",
     "p-limit": "^6.2.0",
     "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
