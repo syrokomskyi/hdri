@@ -3,6 +3,7 @@
 > [English Version](README.en.md)
 
 <!-- RFC-0109: Publish immutable release envelopes with resumable replication -->
+<!-- RFC-0110: Rebuild HDRI releases independently from preserved evidence -->
 
 Asset-zentriertes longitudinales Observatorium für die Analyse der digitalen Präsenz.
 

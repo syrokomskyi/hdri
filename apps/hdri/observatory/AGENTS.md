@@ -216,3 +216,37 @@ Publish immutable release envelopes with resumable replication, read-back verifi
 
 - `forge rfc.implement.stamp --id RFC-XXXX --implementation-commit <sha>` requires `forge rfc.verification.emit --id RFC-XXXX` to run first. Without the generated evidence file, stamping fails with `RFC-IMP-06: evidence file is missing`.
 - Acceptance criteria must use inline `(evidence: ...)` text annotations, not HTML comments `<!-- evidence: ... -->`. The stamp tool does not recognize HTML comments.
+
+## Independent rebuild contract (RFC-0110)
+
+Rebuild HDRI releases independently from preserved evidence using sandbox isolation, replacing the old copy-as-rebuild verification.
+
+### Key contracts
+
+- `RebuildReceipt` — schema `hdri-independent-rebuild@1` with capsule manifest, methodology, runtime closure, public manifest digests, input closure, comparison report, and isolation proof hashes.
+- `RebuildInput` — schema `hdri-rebuild-input@1` manifest with paths to capsule manifest, vault dir, codebook, ontology, signal map, methodology, runtime closure, expected public digest, and public manifest.
+- `RebuildSandbox` — fs.promises interception with path allowlist, access logging, and isolation proof hashing.
+
+### Changed interfaces
+
+- `quarter:rebuild-verify` now accepts `--release-input <manifest> --scratch <empty-dedicated-root> --expected-public-digest <sha256> --json` instead of `--candidate/--primary-public`.
+- Two-phase `--prepare` protocol removed. Single-step: check scratch empty, create marker, acquire PID lock.
+- `quarter:validate` validates new `RebuildReceipt` schema via `verifyRebuildReceipt` instead of manual field checks.
+
+### Sandbox isolation
+
+- `RebuildSandbox` wraps `fs.promises` methods at the module level, intercepting all file access.
+- Declared paths (evidence, vault, codebook, scratch root) are allowlisted; undeclared paths trigger `IsolationBoundaryViolation`.
+- Access log records all accessed paths; `computeIsolationProof()` returns SHA-256 of the sorted access log.
+
+### Supported host definition
+
+Two hosts are considered "supported" (producing identical canonical bytes) when they share: same OS, same Node.js version, and same lockfile hash.
+
+### Key loss policy
+
+Signing key loss is handled by preserving public keys for historical verification. New keys are used for new evidence. Historical receipts remain verifiable against preserved public keys.
+
+### Performance estimate
+
+Typical Q3 capsule (~117k sites): vault rehydration ~5–10 min, rescoring ~15–30 min, canonical serialization ~5 min. Two-host verification doubles wall-clock time. Tests use small fixtures completing in seconds.
