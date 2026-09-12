@@ -14,6 +14,7 @@
   <item>Fix formatMarkdown: replace stale lighthouse/cohort fields with actual brief fields (sourceToken, auditYear, concurrency, timeoutMs, retries).</item>
   <item>Migrate to CaptureEnvironmentProfileStep base class from @warpgogol/pipeline-steps — eliminates duplicated system info, tool version, and formatting logic.</item>
   <item>Add getSkipGogols override to replace as-cast in base class shouldSkip.</item>
+  <item>RFC-0105: add poolSize, recycleAfterTargets, deadlineMs, terminationGraceMs to brief snapshot for reproducibility.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -33,6 +34,10 @@ export class CaptureEnvironmentProfileGogol extends CaptureEnvironmentProfileSte
       concurrency: brief.concurrency,
       timeoutMs: brief.timeoutMs,
       retries: brief.retries,
+      poolSize: brief.poolSize,
+      recycleAfterTargets: brief.recycleAfterTargets,
+      deadlineMs: brief.deadlineMs,
+      terminationGraceMs: brief.terminationGraceMs,
     };
   }
 
