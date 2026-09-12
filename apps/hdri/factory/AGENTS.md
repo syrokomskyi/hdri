@@ -255,3 +255,32 @@ HDRI execution uses SQLite transactional sequence authority for crash-safe publi
 - Collector health state machine pauses acquisition after 2 consecutive sentinel failures or when collector-owned failures exceed 50% of recent attempts (window: 100). Resume requires 2 consecutive successes.
 - Preflight (`capture:preflight` npm script) checks sentinels, runtime dependencies, clock sanity, egress enforcement, and storage budget (minimum 1 GiB free disk). Exits 0 on pass, non-zero on blocked. JSON diagnostic output includes `violations` with stable codes for each blocker.
 - `HttpEvidence` is persisted through the existing `writeExecutionCasObject` mechanism from `@syrokomskyi/factory-core`. No changes to `pipeline-core` or `pipeline-node` are required.
+
+## Profile closure (RFC-0104)
+
+The `3-extract-profile` app follows a frozen internal stage graph:
+
+```
+homepage-capture → link-discovery → detected-page-capture → signal-extraction → profile-closure
+```
+
+### Stage graph
+
+- Each stage has a distinct `stageId` in the execution journal (`homepage-capture`, `detected-page-capture` added to `WorkKey` union type).
+- `CrawlGogol` declares `homepage-capture` stage targets and seals the stage without closing the profile instrument.
+- Profile closure requires all four child seals: homepage-capture, link-discovery, detected-page-capture, signal-extraction.
+
+### Context-keyed extraction
+
+- All `ext_*` tables use composite primary key `(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash)`.
+- Identical HTML at two origins retains separate owners — no content-hash-only deduplication.
+- Detected-page ownership uses explicit context key from ext_* rows, not `LIMIT 1` guessing.
+
+### Pagination and checkpointing
+
+- Extraction runner processes at most 256 pending rows per batch with keyset pagination.
+- Immediate per-result checkpointing replaces full-table accumulation.
+
+### Coverage diagnostic
+
+- `pnpm --filter @syrokomskyi/site-profile profile:coverage -- --capsule <path> [--json]` reports extraction coverage per `ext_*` table.

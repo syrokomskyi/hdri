@@ -12,6 +12,14 @@ Pipeline for automated crawling and analysis of site homepages (T2 — Homepage 
    ```
 4. HTML page content is saved in CAS, and metadata in `pages-YYYY-qN.db`.
 
+## Profile closure (RFC-0104)
+
+This pipeline implements origin-aware profile evidence with a frozen internal stage graph: `homepage-capture → link-discovery → detected-page-capture → signal-extraction → profile-closure`.
+
+All `ext_*` tables use a composite context key `(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash)` to ensure identical HTML at different origins retains separate owners. Detected-page ownership uses explicit context keys instead of `LIMIT 1` guessing. The extraction runner paginates at ≤256 pending rows per batch.
+
+Run `pnpm --filter @syrokomskyi/site-profile profile:coverage -- --capsule <path> [--json]` for coverage diagnostics.
+
 ## Changelog
 
 [CHANGELOG.md](CHANGELOG.md)
