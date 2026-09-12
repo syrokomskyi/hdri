@@ -144,3 +144,8 @@ Output format: `{ schema, operation, status, inputFingerprint, evidenceRefs, vio
 - `MeasurementEvidence.contentRefs` are CAS SHA-256 digests of evidence artifacts stored via `writeExecutionCasObject`.
 - Sealed journal segments carry ordered events and predecessor digests. The reconstructed selected-result set from a sealed segment is identical to in-memory replay.
 - Dependency fingerprints from RFC-0094 are included in every measurement. A changed dependency invalidates declared consumers.
+
+## Test corpus conventions (ADR-0024)
+
+- Non-trivial source files under `run/testing/` (not just `run/tests/`) must carry full Compass scaffolding (`MODULE_CONTRACT` + `CHANGE_SUMMARY`), same as production code.
+- Test-only modules in `run/testing/` are imported by test files in `run/tests/` — they are test infrastructure, not production code, but they follow the same Compass contract.
