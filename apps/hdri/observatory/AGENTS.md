@@ -31,7 +31,6 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `quarter:rebuild-verify` | `tsx -C @syrokomskyi/source tools/quarter-rebuild-verify.ts` |
 | `quarter:validate` | `tsx -C @syrokomskyi/source tools/quarter-validate.ts` |
 | `quarter:release` | `tsx -C @syrokomskyi/source tools/quarter-release.ts` |
-| `quarter:seal-legacy` | `tsx -C @syrokomskyi/source tools/quarter-seal-legacy.ts` |
 | `quarter:init` | `tsx -C @syrokomskyi/source tools/quarter-init.ts` |
 | `promote` | `tsx -C @syrokomskyi/source tools/promote-to-canonical.ts` |
 | `gc:superseded` | `tsx -C @syrokomskyi/source tools/gc-superseded.ts` |
@@ -63,6 +62,9 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `preserve:q2` | `tsx -C @syrokomskyi/source tools/preservation/cli.ts preserve:q2` |
 | `preserve:verify` | `tsx -C @syrokomskyi/source tools/preservation/cli.ts preserve:verify` |
 | `baseline:import` | `tsx -C @syrokomskyi/source tools/preservation/cli.ts baseline:import` |
+| `quarter:status` | `tsx -C @syrokomskyi/source tools/quarter-status.ts` |
+| `quarter:readiness` | `tsx -C @syrokomskyi/source tools/quarter-readiness.ts` |
+| `preservation:check` | `tsx -C @syrokomskyi/source tools/preservation-check.ts` |
 
 ## Dependencies
 
