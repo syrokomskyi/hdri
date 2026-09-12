@@ -246,3 +246,12 @@ HDRI execution uses SQLite transactional sequence authority for crash-safe publi
 - `MeasurementEvidence.contentRefs` are CAS SHA-256 digests of evidence artifacts stored via `writeExecutionCasObject`.
 - Dependency fingerprints from RFC-0094 are included in every measurement. A changed output-affecting dependency invalidates declared consumers.
 - Crash recovery: if execution stops at any publication failpoint, restart exposes either complete verified evidence or an explicit incomplete state — never partial or corrupt state.
+
+## Egress boundary and preflight (RFC-0103)
+
+- All HTTP acquisition in `2-check-liveness` and `3-extract-profile` is bounded by wire byte limits (default 2 MiB) and decoded byte limits (default 4 MiB). Responses exceeding limits are truncated and marked `complete: false`.
+- Egress policy denies private addresses, loopback, link-local, multicast, and reserved IP ranges by default. IPv6 denials are enabled when `includeIpv6` is true.
+- `robots.txt` handling is fail-closed: 404/410 means absent (allowed); network error or 5xx means unavailable (deferred, NOT allowed). The retrieved robots policy bytes, status, timestamp, and user-agent are preserved in `RobotsDecision`.
+- Collector health state machine pauses acquisition after 2 consecutive sentinel failures or when collector-owned failures exceed 50% of recent attempts (window: 100). Resume requires 2 consecutive successes.
+- Preflight (`capture:preflight` npm script) checks sentinels, runtime dependencies, clock sanity, egress enforcement, and storage budget (minimum 1 GiB free disk). Exits 0 on pass, non-zero on blocked. JSON diagnostic output includes `violations` with stable codes for each blocker.
+- `HttpEvidence` is persisted through the existing `writeExecutionCasObject` mechanism from `@syrokomskyi/factory-core`. No changes to `pipeline-core` or `pipeline-node` are required.

@@ -8,7 +8,8 @@
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
     "start": "tsx -C @syrokomskyi/source run/run.ts",
     "changelog": "changelog-live",
-    "changelog:init": "changelog-live init"
+    "changelog:init": "changelog-live init",
+    "capture:preflight": "tsx -C @syrokomskyi/source run/preflight.ts"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",
