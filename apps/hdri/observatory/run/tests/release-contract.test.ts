@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createHash } from "node:crypto";
 import type { QuarterCapsule } from "@syrokomskyi/factory-core";
 import {
-  SCIENTIFIC_REPORTS,
-  validateReleaseEvidence,
-  type RebuildReceipt,
+  computeClosureDigest,
+  createReleaseEnvelope,
+  validateReplicaIndependence,
+  verifyReleaseEnvelope,
   type ReplicaReceipt,
-  type ScientificGateReport,
 } from "../release/release-contract";
 
 const capsule: QuarterCapsule = {
@@ -16,126 +15,111 @@ const capsule: QuarterCapsule = {
   instrumentPlan: [],
   artifacts: [],
 };
-const candidateHash = "a".repeat(64);
-const reports = Object.values(SCIENTIFIC_REPORTS).map((entry) => ({
-  schemaVersion: "1",
-  reportType: entry.reportType,
-  period: capsule.period,
-  capsuleId: capsule.capsuleId,
-  status: "pass",
-  checkedAt: "2026-08-03T00:00:00.000Z",
-  violations: [],
-  warnings: [],
-  hardSuppressions: [],
-})) satisfies ScientificGateReport[];
-const rebuild: RebuildReceipt = {
-  schemaVersion: "1",
-  period: capsule.period,
-  capsuleId: capsule.capsuleId,
-  candidateManifestSha256: candidateHash,
-  primaryPublicArchiveHash: "b".repeat(64),
-  rebuiltPublicArchiveHash: "b".repeat(64),
-  preparedEmptyAt: "2026-08-03T00:00:00.000Z",
-  verifiedAt: "2026-08-03T01:00:00.000Z",
-  matched: true,
-};
-const replica = (replicaId: string, mediaId: string): ReplicaReceipt => ({
-  schemaVersion: "1",
-  period: capsule.period,
-  capsuleId: capsule.capsuleId,
+
+const makeReceipt = (
+  replicaId: string,
+  failureDomain: string,
+  credentialBoundary: string,
+): ReplicaReceipt => ({
+  schema: "hdri-replica-receipt@1",
   replicaId,
-  mediaId,
-  offsite: true,
-  destinationId: createHash("sha256").update(replicaId).digest("hex"),
-  candidateManifestSha256: candidateHash,
-  artifactCount: Object.keys(SCIENTIFIC_REPORTS).length + 3,
+  failureDomain,
+  mediaId: `${replicaId}-media`,
+  credentialBoundary,
+  envelopeSha256: "e".repeat(64),
+  closureDigest: "f".repeat(64),
+  verifiedBytes: 1024,
+  verifiedObjects: 8,
   verifiedAt: "2026-08-03T02:00:00.000Z",
-  status: "pass",
 });
 
-describe("quarter scientific release boundary", () => {
-  it("passes only with complete scientific reports, matching rebuild and two media", () => {
-    const result = validateReleaseEvidence(
-      capsule,
-      reports,
-      rebuild,
-      [replica("offsite-a", "disk-a"), replica("offsite-b", "object-store-b")],
-      candidateHash,
-    );
-    expect(result.status).toBe("pass");
-    expect(result.replicasVerified).toBe(2);
-    expect(result.mediaVerified).toBe(2);
+const inventory = [
+  { uri: "capsule-manifest.json", sha256: "a".repeat(64), bytes: 100, access: "internal" as const },
+  {
+    uri: "capsule-candidate.json",
+    sha256: "b".repeat(64),
+    bytes: 200,
+    access: "internal" as const,
+  },
+  {
+    uri: "artifacts/publication/data.csv",
+    sha256: "c".repeat(64),
+    bytes: 300,
+    access: "public" as const,
+  },
+];
+
+const makeEnvelope = () =>
+  createReleaseEnvelope(
+    capsule.capsuleId,
+    capsule.period,
+    "a".repeat(64),
+    "b".repeat(64),
+    inventory,
+    "c".repeat(64),
+    "d".repeat(64),
+    "e".repeat(64),
+  );
+
+describe("RFC-0109 release envelope contracts", () => {
+  it("computeClosureDigest produces stable hash for same inventory regardless of input order", () => {
+    const digestA = computeClosureDigest(inventory);
+    const digestB = computeClosureDigest([...inventory].reverse());
+    expect(digestA).toBe(digestB);
+    expect(digestA).toHaveLength(64);
   });
 
-  it("blocks a release when both copies are on one medium", () => {
-    const result = validateReleaseEvidence(
-      capsule,
-      reports,
-      rebuild,
-      [replica("offsite-a", "same-disk"), replica("offsite-b", "same-disk")],
-      candidateHash,
-    );
-    expect(result.status).toBe("fail");
-    expect(result.violations).toContain("three_two_one_replication_incomplete");
+  it("computeClosureDigest changes when inventory content changes", () => {
+    const modified = [...inventory];
+    modified[0] = { ...modified[0]!, bytes: 999 };
+    expect(computeClosureDigest(modified)).not.toBe(computeClosureDigest(inventory));
   });
 
-  it("blocks a release when rebuild hash does not match", () => {
-    const badRebuild: RebuildReceipt = {
-      ...rebuild,
-      rebuiltPublicArchiveHash: "c".repeat(64),
-    };
-    const result = validateReleaseEvidence(
-      capsule,
-      reports,
-      badRebuild,
-      [replica("offsite-a", "disk-a"), replica("offsite-b", "object-store-b")],
-      candidateHash,
-    );
-    expect(result.status).toBe("fail");
-    expect(result.violations).toContain("empty_scratch_rebuild_mismatch");
-    expect(result.rebuildMatch).toBe(false);
+  it("verifyReleaseEnvelope passes for a valid envelope", () => {
+    const envelope = makeEnvelope();
+    const violations = verifyReleaseEnvelope(envelope);
+    expect(violations).toHaveLength(0);
   });
 
-  it("blocks a release with only one replica", () => {
-    const result = validateReleaseEvidence(
-      capsule,
-      reports,
-      rebuild,
-      [replica("offsite-a", "disk-a")],
-      candidateHash,
-    );
-    expect(result.status).toBe("fail");
-    expect(result.violations).toContain("three_two_one_replication_incomplete");
+  it("verifyReleaseEnvelope rejects an envelope with wrong schema", () => {
+    const envelope = { ...makeEnvelope(), schema: "wrong" as never };
+    const violations = verifyReleaseEnvelope(envelope);
+    expect(violations).toContain("envelope_schema_mismatch");
   });
 
-  it("blocks a release with incomplete scientific reports", () => {
-    const partialReports = reports.slice(0, -1);
-    const result = validateReleaseEvidence(
-      capsule,
-      partialReports,
-      rebuild,
-      [replica("offsite-a", "disk-a"), replica("offsite-b", "object-store-b")],
-      candidateHash,
-    );
-    expect(result.status).toBe("fail");
-    expect(result.violations).toContain("scientific_report_set_incomplete");
+  it("verifyReleaseEnvelope rejects invalid sha256 hashes", () => {
+    const envelope = makeEnvelope();
+    envelope.measurementCapsuleSha256 = "short";
+    const violations = verifyReleaseEnvelope(envelope);
+    expect(violations).toContain("envelope_measurement_capsule_hash_invalid");
   });
 
-  it("blocks a release when a scientific report has status fail", () => {
-    const failedReports = reports.map((report) =>
-      report.reportType === "source-qc"
-        ? { ...report, status: "fail" as const, warnings: ["source_coverage_below_threshold"] }
-        : report,
-    );
-    const result = validateReleaseEvidence(
-      capsule,
-      failedReports,
-      rebuild,
-      [replica("offsite-a", "disk-a"), replica("offsite-b", "object-store-b")],
-      candidateHash,
-    );
-    expect(result.status).toBe("fail");
-    expect(result.violations).toContain("scientific_report_failed:source-qc");
-    expect(result.warnings).toContain("source_coverage_below_threshold");
+  it("validateReplicaIndependence passes with distinct failure domains and credential boundaries", () => {
+    const violations = validateReplicaIndependence([
+      makeReceipt("rep-a", "dc-a", "cred-a"),
+      makeReceipt("rep-b", "dc-b", "cred-b"),
+    ]);
+    expect(violations).toHaveLength(0);
+  });
+
+  it("validateReplicaIndependence fails when two receipts share a failure domain", () => {
+    const violations = validateReplicaIndependence([
+      makeReceipt("rep-a", "dc-a", "cred-a"),
+      makeReceipt("rep-b", "dc-a", "cred-b"),
+    ]);
+    expect(violations).toContain("shared_failure_domain");
+  });
+
+  it("validateReplicaIndependence fails when two receipts share a credential boundary", () => {
+    const violations = validateReplicaIndependence([
+      makeReceipt("rep-a", "dc-a", "cred-a"),
+      makeReceipt("rep-b", "dc-b", "cred-a"),
+    ]);
+    expect(violations).toContain("shared_credential_boundary");
+  });
+
+  it("validateReplicaIndependence fails with fewer than 2 replicas", () => {
+    const violations = validateReplicaIndependence([makeReceipt("rep-a", "dc-a", "cred-a")]);
+    expect(violations).toContain("insufficient_replicas");
   });
 });
