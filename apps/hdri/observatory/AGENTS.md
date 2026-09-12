@@ -123,4 +123,4 @@ All failure conditions are blocking — exit code 1, no partial result. Exit cod
 
 ### Concurrency
 
-A PID-checked file lock (`.preserve-lock.json` in archive root) prevents concurrent preservation runs. Two runs targeting the same root fail fast with `LOCK_VIOLATION`. Pattern follows RFC-0089 `batch-lock.ts`.
+A PID-checked file lock (`.preserve-lock.json` in archive root) prevents concurrent preservation runs. Two runs targeting the same root fail fast with `LOCK_VIOLATION`. Uses shared `acquirePidLock` from `@syrokomskyi/utils` (extracted from RFC-0089 `batch-lock.ts` per DNA-3).
