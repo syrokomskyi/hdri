@@ -37,7 +37,7 @@ describe("ADR-0024 AC-2: manifest validates against hdri-fixture-corpus@1", () =
 
   it("rejects a manifest with wrong schema version", () => {
     const manifest = generateCorpus(SEED, SOURCE_REVISION);
-    const bad = { ...manifest, schema: "hdri-fixture-corpus@0" as const };
+    const bad = { ...manifest, schema: "hdri-fixture-corpus@0" } as unknown as typeof manifest;
     const result = validateManifest(bad);
     expect(result.valid).toBe(false);
     expect(result.errors.some((e) => e.includes("Schema mismatch"))).toBe(true);
@@ -65,9 +65,7 @@ describe("ADR-0024 AC-3: protected path references fail validation", () => {
     };
     const result = validateManifest(bad);
     expect(result.valid).toBe(false);
-    expect(
-      result.errors.some((e) => e.includes("protected path")),
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes("protected path"))).toBe(true);
   });
 
   it("rejects a fixture referencing production output database", () => {
@@ -82,9 +80,7 @@ describe("ADR-0024 AC-3: protected path references fail validation", () => {
     };
     const result = validateManifest(bad);
     expect(result.valid).toBe(false);
-    expect(
-      result.errors.some((e) => e.includes("protected path")),
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes("protected path"))).toBe(true);
   });
 
   it("rejects a fixture referencing .env", () => {
@@ -99,9 +95,7 @@ describe("ADR-0024 AC-3: protected path references fail validation", () => {
     };
     const result = validateManifest(bad);
     expect(result.valid).toBe(false);
-    expect(
-      result.errors.some((e) => e.includes("protected path")),
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes("protected path"))).toBe(true);
   });
 });
 
@@ -109,7 +103,9 @@ describe("ADR-0024 AC-4: case-coverage report includes every case group", () => 
   it("covers all 10 case groups from the ADR decision table", () => {
     const manifest = generateCorpus(SEED, SOURCE_REVISION);
     const report = generateCoverageReport(manifest);
-    expect(report.allGroupsPresent, `Missing groups: ${report.missingGroups.join(", ")}`).toBe(true);
+    expect(report.allGroupsPresent, `Missing groups: ${report.missingGroups.join(", ")}`).toBe(
+      true,
+    );
     expect(report.missingGroups).toHaveLength(0);
   });
 
@@ -137,25 +133,13 @@ describe("ADR-0024 AC-4: case-coverage report includes every case group", () => 
 
 describe("ADR-0024 AC-5: test-corpus guide documents limits under ADR-0024 marker", () => {
   it("README contains ADR-0024 marker", () => {
-    const readmePath = join(
-      __dirname,
-      "..",
-      "testing",
-      "reliability",
-      "README.md",
-    );
+    const readmePath = join(__dirname, "..", "testing", "reliability", "README.md");
     const content = readFileSync(readmePath, "utf-8");
     expect(content).toContain("ADR-0024");
   });
 
   it("README documents corpus limits", () => {
-    const readmePath = join(
-      __dirname,
-      "..",
-      "testing",
-      "reliability",
-      "README.md",
-    );
+    const readmePath = join(__dirname, "..", "testing", "reliability", "README.md");
     const content = readFileSync(readmePath, "utf-8");
     expect(content).toContain("cannot");
     expect(content).toContain("Limits");
