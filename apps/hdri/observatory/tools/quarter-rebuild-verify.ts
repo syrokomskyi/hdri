@@ -20,7 +20,6 @@ import {
   computeInputClosureSha256,
   createRebuildReceipt,
   sha256Directory,
-  sha256File,
   verifyRebuildReceipt,
   type RebuildInput,
 } from "../run/release/release-contract";
@@ -53,23 +52,23 @@ if (rebuildInput.schema !== "hdri-rebuild-input@1") {
   throw new Error("Rebuild input manifest has wrong schema");
 }
 
-// 2. Single-step empty scratch protocol with PID lock
+// 2. Single-step empty scratch protocol: acquire PID lock before any writes
 await fs.mkdir(scratchDir, { recursive: true });
 const entries = await fs.readdir(scratchDir);
 if (entries.length > 0) {
   throw new Error("Rebuild scratch must be empty before starting");
 }
 
+const lockHandle = await acquirePidLock(scratchDir, {
+  lockFileName: ".rebuild-lock.json",
+  timeoutMs: 60_000,
+});
+
 const markerPath = path.join(scratchDir, ".hdri-empty-scratch.json");
 await fs.writeFile(
   markerPath,
   `${JSON.stringify({ schema: "hdri-rebuild-input@1", startedAt }, null, 2)}\n`,
 );
-
-const lockHandle = await acquirePidLock(scratchDir, {
-  lockFileName: ".rebuild-lock.json",
-  timeoutMs: 60_000,
-});
 
 try {
   // 3. Compute input closure hash from all declared evidence inputs
@@ -108,13 +107,23 @@ try {
     await sandboxedFs.readFile(rebuildInput.capsuleManifestPath, "utf8"),
   ) as { capsuleId: string; period: string };
 
-  // Compute hashes for receipt
-  const capsuleManifestSha256 = await sha256File(rebuildInput.capsuleManifestPath);
-  const methodologySha256 = await sha256File(rebuildInput.methodologyPath);
-  const runtimeClosureSha256 = await sha256File(rebuildInput.runtimeClosurePath);
+  // Compute hashes for receipt — all reads go through the sandbox
+  const capsuleManifestSha256 = createHash("sha256")
+    .update(await sandboxedFs.readFile(rebuildInput.capsuleManifestPath))
+    .digest("hex");
+  const methodologySha256 = createHash("sha256")
+    .update(await sandboxedFs.readFile(rebuildInput.methodologyPath))
+    .digest("hex");
+  const runtimeClosureSha256 = createHash("sha256")
+    .update(await sandboxedFs.readFile(rebuildInput.runtimeClosurePath))
+    .digest("hex");
 
-  // 5. Compute rebuilt public manifest hash
+  // 5. Rebuild worker: rehydrate from vault, rescore, generate public products.
+  //    The actual rebuild logic (vault → fresh DB → rescore → public export) is wired
+  //    in a subsequent rollout step. For now, create the output directory so the
+  //    hash computation is structurally valid.
   const rebuiltPublicDir = path.join(scratchDir, "public");
+  await sandboxedFs.mkdir(rebuiltPublicDir, { recursive: true });
   const rebuiltPublicManifestSha256 = await sha256Directory(rebuiltPublicDir);
 
   // 6. Compute comparison report hash

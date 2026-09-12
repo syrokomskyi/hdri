@@ -51,9 +51,13 @@ export class RebuildSandbox {
         if (typeof original !== "function") return original;
 
         const wrapped = (...args: unknown[]) => {
-          const firstArg = args[0];
-          if (typeof firstArg === "string") {
-            self.checkAccess(firstArg);
+          for (const a of args) {
+            if (
+              typeof a === "string" &&
+              (a.includes("/") || a.includes(path.sep) || a.startsWith(".") || a.startsWith("~"))
+            ) {
+              self.checkAccess(a);
+            }
           }
           return (original as (...a: unknown[]) => unknown)(...args);
         };
