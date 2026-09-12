@@ -59,6 +59,9 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `stream:rehearse` | `tsx -C @syrokomskyi/source tools/streaming-rehearsal.ts` |
 | `changelog` | `changelog-live` |
 | `changelog:init` | `changelog-live init` |
+| `preserve:q2` | `tsx -C @syrokomskyi/source tools/preservation/cli.ts preserve:q2` |
+| `preserve:verify` | `tsx -C @syrokomskyi/source tools/preservation/cli.ts preserve:verify` |
+| `baseline:import` | `tsx -C @syrokomskyi/source tools/preservation/cli.ts baseline:import` |
 
 ## Dependencies
 
@@ -103,3 +106,21 @@ The observatory's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomskyi/
 - Diagnostic mode (`HDRI_OPERATION=diagnostic`) bypasses the gate — always allowed.
 - Bootstrap state (all refs `null`) correctly blocks — this is the intended initial behavior per AC-5.
 - Subsequent RFCs will populate evidence refs as they produce real proof.
+
+## Preservation and Baseline Import (RFC-0100)
+
+Offline preservation of Q2 evidence and one-time conversion to current-format baseline.
+
+### Scripts
+
+- `preserve:q2` — Inventory, replicate (3 independent copies), and sign Q2 evidence. `--dry-run` for diagnostics only.
+- `preserve:verify` — Verify replica integrity and signatures. `--full` for complete independence check.
+- `baseline:import` — Convert archived Q2 evidence to current-format baseline with `BaselineImportReceipt`.
+
+### Failure modes
+
+All failure conditions are blocking — exit code 1, no partial result. Exit code 0 means pass. No warn-and-continue: changed source bytes, active writers, identity ambiguity, missing evidence, invalid signatures, insufficient capacity, or unverified replica independence block admission.
+
+### Concurrency
+
+A PID-checked file lock (`.preserve-lock.json` in archive root) prevents concurrent preservation runs. Two runs targeting the same root fail fast with `LOCK_VIOLATION`. Pattern follows RFC-0089 `batch-lock.ts`.

@@ -177,3 +177,19 @@ Alle Export-Tools (`export-dashboard-data`, `export-dashboard-archive`, `ExportM
 ## Changelog
 
 [CHANGELOG.md](CHANGELOG.md)
+
+## Preservation und Baseline-Import (RFC-0100)
+
+Die Q2-Evidenz wird vor der Umstellung der Konsumenten bewahrt. Danach wird ein Current-Format-Baseline durch eine einzelne Offline-Konversion mit auditierbarer Identitätskarte erstellt.
+
+### Befehle
+
+| Befehl | Zweck |
+| --- | --- |
+| `preserve:q2` | Q2-Evidenz inventarisieren, replizieren und signieren. `--dry-run` für Diagnose. |
+| `preserve:verify` | Replika-Integrität und Signatur verifizieren. `--full` für vollständige Prüfung. |
+| `baseline:import` | Archiv in ein Current-Format-Baseline konvertieren. Schreibt `BaselineImportReceipt`. |
+
+### Fehlermodi
+
+Alle Fehlerbedingungen sind blockierend — Exit-Code 1, kein partielles Ergebnis. Exit-Code 0 bedeutet Pass. Es gibt keinen Warn-und-Weiter-Modus: geänderte Quell-Bytes, aktive Writer, Identitätsmehrdeutigkeit, fehlende Evidenz, ungültige Signaturen, unzureichende Kapazität oder unüberprüfte Replika-Unabhängigkeit blockieren die Zulassung.
