@@ -25,6 +25,7 @@
   <item>RFC-0104: add keyset pagination with ≤256 pending rows per batch.</item>
   <item>RFC-0104: add immediate per-result checkpointing instead of accumulating results array.</item>
   <item>RFC-0104: change already-done check to use composite context key.</item>
+  <item>RFC-0111: verified bounded keyset reads and checkpoint writes satisfy qualification harness demands. No changes required.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
