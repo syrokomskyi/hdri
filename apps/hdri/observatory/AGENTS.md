@@ -211,3 +211,8 @@ Publish immutable release envelopes with resumable replication, read-back verifi
 - `writeReport` in `shared.ts` uses `inputFingerprint` for immutable report revisions — same fingerprint reuses `checkedAt`, different fingerprint preserves old report as revision.
 - `validateReleaseEvidence` removed — replaced by `verifyReleaseEnvelope`, `validateReplicaIndependence`, `resumeReplicaCopy`, `createPublicationAttestation`, `verifyAttestationDelivery`.
 - `QuarterValidationReport` updated with `envelopeSha256` field.
+
+### RFC stamping workflow
+
+- `forge rfc.implement.stamp --id RFC-XXXX --implementation-commit <sha>` requires `forge rfc.verification.emit --id RFC-XXXX` to run first. Without the generated evidence file, stamping fails with `RFC-IMP-06: evidence file is missing`.
+- Acceptance criteria must use inline `(evidence: ...)` text annotations, not HTML comments `<!-- evidence: ... -->`. The stamp tool does not recognize HTML comments.
