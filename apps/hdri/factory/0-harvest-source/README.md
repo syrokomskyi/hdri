@@ -35,6 +35,15 @@ The pipeline does not connect to these systems live; it ingests static files (CS
    ```
 4. Monitor execution in `.output/_guide/`.
 
+## Source batch admission (RFC-0102)
+
+Source batches are admitted with verified parsers and measured yield:
+
+- **Per-file receipts**: Each parsed file stores `content_sha256`, `parser_id`, `parser_version`, and `dependency_fingerprint` in `source_file_stats`. Resume logic skips a file only if all four fields match.
+- **Parser routing**: Nested external-host boundaries route to `UnknownSourceParser` instead of inheriting the parent's parser.
+- **Per-source yield gate**: `checkPerSourceYield` blocks sealing if a source folder produces zero accepted seeds unless declared as `"declared-noise"` in `brief.md` frontmatter `sourceDisposition` map.
+- **Estimator modes**: `batch-estimate` supports `--mode json` and `--baseline-manifest <path>` for yield comparison.
+
 ## Changelog
 
 [CHANGELOG.md](CHANGELOG.md)
