@@ -81,7 +81,7 @@ import {
 } from "./parse-sources-db.js";
 import { accumulateFileResult, readSourceFile, renderReportMd } from "./parse-sources-report.js";
 import type { BatchReport, FileResult } from "./parse-sources-types.js";
-import { checkMinSitesGuard } from "./check-min-sites-guard.js";
+import { checkMinSitesGuard, checkPerSourceYield } from "./check-min-sites-guard.js";
 
 // ---------------------------------------------------------------------------
 // Gogol
@@ -145,6 +145,7 @@ export class ParseSourcesGogol extends Gogol {
     const outDir = ctx.getGogolOutputDir(this.id);
     const doneAt = new Date().toISOString();
     const allBatchReports: BatchReport[] = [];
+    const allSourceFolders = new Set<string>();
     let pagesProcessed = 0;
 
     const limit = pLimit(concurrency);
@@ -153,6 +154,9 @@ export class ParseSourcesGogol extends Gogol {
       console.log(`[parse-sources] Processing batch: ${batchName} (concurrency: ${concurrency})`);
 
       const allSourceFiles = await listBatchSourceFiles(batchName, brief);
+      for (const sf of allSourceFiles) {
+        allSourceFolders.add(sf.sourceFolder);
+      }
       const sourceManifest = await buildSourceBatchManifest(
         batchName,
         allSourceFiles,
@@ -473,6 +477,7 @@ export class ParseSourcesGogol extends Gogol {
 
     if (maxPages < 0) {
       checkMinSitesGuard(db, brief.minSitesThreshold, maxPages);
+      checkPerSourceYield(db, [...allSourceFolders], brief.sourceDisposition, maxPages);
       await materializeLedgerProjection(
         db,
         path.join(outputRootDir, "data", "source-ledger"),

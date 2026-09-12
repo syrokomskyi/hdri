@@ -14,6 +14,7 @@
   <item>Enforce lowercase kebab-case validation on sourceToken.</item>
   <item>Replace maxSites with maxPages: maxPages limits total source files parsed across all batches (-1 = unlimited).</item>
   <item>Add minSitesThreshold field for empty-quarter fail-fast guard (RFC-0068).</item>
+  <item>RFC-0102: add sourceDisposition map for per-source yield gating.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -44,6 +45,8 @@ export type Brief = {
   parserConcurrency: number;
   /** Minimum total registered sites required before sealing (default: 1). Set to 0 to disable. */
   minSitesThreshold: number;
+  /** Per-source disposition map (RFC-0102). Sources not listed default to "parsed". */
+  sourceDisposition: Readonly<Record<string, "parsed" | "declared-noise">>;
 };
 
 // ---------------------------------------------------------------------------
@@ -107,6 +110,18 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
 
   const maxPages = getFiniteNumber(data.maxPages, "maxPages") ?? -1;
 
+  const sourceDisposition: Record<string, "parsed" | "declared-noise"> = {};
+  if (data.sourceDisposition && typeof data.sourceDisposition === "object") {
+    for (const [key, value] of Object.entries(data.sourceDisposition as Record<string, unknown>)) {
+      if (value !== "parsed" && value !== "declared-noise") {
+        throw new Error(
+          `brief.md: sourceDisposition["${key}"] must be "parsed" or "declared-noise"`,
+        );
+      }
+      sourceDisposition[key] = value;
+    }
+  }
+
   return {
     sourceToken: parsedToken.raw,
     capsuleId,
@@ -116,5 +131,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     skipGogols: getStringArray(data.skipGogols),
     parserConcurrency: getFiniteNumber(data.parserConcurrency, "parserConcurrency") ?? 20,
     minSitesThreshold: getFiniteNumber(data.minSitesThreshold, "minSitesThreshold") ?? 1,
+    sourceDisposition,
   };
 };
