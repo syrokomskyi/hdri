@@ -16,6 +16,7 @@
   <item>parseBriefMarkdown now accepts optional sharedSourceToken parameter for two-file brief pattern.</item>
   <item>Remove sharedSourceToken parameter; merge now handled centrally by mergeBriefFrontmatter from @warpgogol/pipeline-node.</item>
   <item>RFC-0046: add instrumentPlan field parsed from brief frontmatter.</item>
+  <item>RFC-0105/ADR-0023: add poolSize, recycleAfterTargets, deadlineMs, terminationGraceMs fields for worker pool configuration.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -55,6 +56,14 @@ export type Brief = {
   livenessDbPath: string;
   /** Instrument plan for this quarter. Defaults to Lighthouse disabled. */
   instrumentPlan: InstrumentPlanEntry[];
+  /** Worker pool size (ADR-0023 default: 4). */
+  poolSize: number;
+  /** Recycle worker after N completed targets (ADR-0023 default: 20). */
+  recycleAfterTargets: number;
+  /** Total deadline per target in ms (RFC-0105 default: 120000). */
+  deadlineMs: number;
+  /** Termination grace period in ms (RFC-0105 default: 5000). */
+  terminationGraceMs: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -125,5 +134,9 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     auditSampleSize: getFiniteNumber(data.auditSampleSize, "auditSampleSize") ?? -1,
     livenessDbPath: getRequiredString(data.livenessDbPath, "livenessDbPath"),
     instrumentPlan: parseInstrumentPlanFromFrontmatter(data.instrumentPlan),
+    poolSize: getFiniteNumber(data.poolSize, "poolSize") ?? 4,
+    recycleAfterTargets: getFiniteNumber(data.recycleAfterTargets, "recycleAfterTargets") ?? 20,
+    deadlineMs: getFiniteNumber(data.deadlineMs, "deadlineMs") ?? 120_000,
+    terminationGraceMs: getFiniteNumber(data.terminationGraceMs, "terminationGraceMs") ?? 5_000,
   };
 };
