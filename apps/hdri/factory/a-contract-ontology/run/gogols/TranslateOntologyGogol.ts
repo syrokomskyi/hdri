@@ -10,6 +10,7 @@
   <item>Extracted from monolithic main.ts as part of pipeline conversion.</item>
   <item>Fixed join to use local site_pages table in pages DB instead of empty registry.site_pages, restoring content→domain mapping.</item>
   <item>Add AXE audit translation from axe_YYYY.db into ontology-backed observations.</item>
+  <item>RFC-0106: add coverage reconciliation and TranslationClosure computation.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -29,7 +30,7 @@ import {
   type Observation,
 } from "@syrokomskyi/observatory-core";
 import { Gogol } from "../pipeline/Gogol.js";
-import type { PipelineContext, IngestedObs } from "../pipeline/types.js";
+import type { PipelineContext, IngestedObs, TranslationClosure } from "../pipeline/types.js";
 import { outputRootDir } from "../config.js";
 
 const APP_VERSION = "0.1.0";
@@ -177,13 +178,15 @@ export class TranslateOntologyGogol extends Gogol {
           if (!tableExists) continue;
 
           const rows = pagesDb
-            .prepare(`
+            .prepare(
+              `
               SELECT ext.*, sp.url_norm
               FROM "${mapping.table}" ext
               JOIN page_observations po ON po.content_sha256 = ext.content_sha256
               JOIN site_pages sp ON sp.id = po.site_page_id
               ORDER BY ext.content_sha256, sp.url_norm
-            `)
+            `,
+            )
             .iterate() as IterableIterator<ContentRow & { url_norm: string }>;
           for (const row of rows) {
             let domain: string;
@@ -211,17 +214,20 @@ export class TranslateOntologyGogol extends Gogol {
       }
     }
 
-
     for (const src of livenessDbs) {
       const livenessDb = new Database(src.livenessDbPath, { readonly: true });
       const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "liveness"]);
       const recordedAt = periodStart(brief.period);
       try {
-        const rows = livenessDb.prepare(`
+        const rows = livenessDb
+          .prepare(
+            `
           SELECT provisional_asset_id, domain, checked_at, http_status, latency_ms, is_live, error_code
           FROM liveness_checks
           ORDER BY provisional_asset_id
-        `).iterate() as IterableIterator<LivenessRow>;
+        `,
+          )
+          .iterate() as IterableIterator<LivenessRow>;
         for (const row of rows) {
           const observedAt = new Date(row.checked_at * 1000).toISOString();
           const outcome = classifyLivenessOutcome({
@@ -237,8 +243,16 @@ export class TranslateOntologyGogol extends Gogol {
             { signalPath: "transport.http.status_code", value: row.http_status, valueType: "num" },
             { signalPath: "transport.http.latency_ms", value: row.latency_ms, valueType: "num" },
             { signalPath: "availability.website.outcome", value: outcome, valueType: "str" },
-            { signalPath: "availability.website.is_reachable", value: row.is_live === 1, valueType: "bool" },
-            { signalPath: "availability.website.error_code", value: row.error_code, valueType: "str" },
+            {
+              signalPath: "availability.website.is_reachable",
+              value: row.is_live === 1,
+              valueType: "bool",
+            },
+            {
+              signalPath: "availability.website.error_code",
+              value: row.error_code,
+              valueType: "str",
+            },
           ];
           for (const { signalPath, value, valueType } of signals) {
             if (value == null) continue;
@@ -367,6 +381,62 @@ export class TranslateOntologyGogol extends Gogol {
 
     observationDb.close();
     ctx.state.observationDbPath = observationDbPath;
+
+    // ── RFC-0106: Coverage reconciliation ────────────────────────────────────
+    const expectedKeys = new Set<string>();
+    for (const mapping of EXT_SIGNAL_MAP) {
+      expectedKeys.add(mapping.signalPath);
+    }
+    for (const mapping of AXE_SIGNAL_MAP) {
+      expectedKeys.add(mapping.signalPath);
+    }
+    expectedKeys.add("liveness.outcome");
+
+    const emittedKeys = new Set<string>();
+    const reconDb = new Database(observationDbPath, { readonly: true, fileMustExist: true });
+    try {
+      const signalPaths = reconDb
+        .prepare("SELECT DISTINCT signal_path FROM observations")
+        .all() as Array<{ signal_path: string }>;
+      for (const row of signalPaths) {
+        emittedKeys.add(row.signal_path);
+      }
+    } finally {
+      reconDb.close();
+    }
+
+    const expectedSorted = [...expectedKeys].sort();
+    const emittedSorted = [...emittedKeys].sort();
+    const expectedKeysSha256 = crypto
+      .createHash("sha256")
+      .update(expectedSorted.join("\n"))
+      .digest("hex");
+    const emittedKeysSha256 = crypto
+      .createHash("sha256")
+      .update(emittedSorted.join("\n"))
+      .digest("hex");
+
+    const missing = expectedSorted.filter((k) => !emittedKeys.has(k));
+    const extra = emittedSorted.filter((k) => !expectedKeys.has(k));
+    const unresolvedReferences = missing.length + extra.length;
+
+    const sourceSnapshots = (ctx.state.verifiedSnapshots ?? []).map((s) => s.stageSealSha256);
+
+    const closure: TranslationClosure = {
+      expectedKeysSha256,
+      emittedKeysSha256,
+      sourceSnapshots,
+      unresolvedReferences,
+    };
+    ctx.state.translationClosure = closure;
+
+    if (unresolvedReferences > 0) {
+      console.log(
+        `[translate-ontology] Coverage mismatch: ${missing.length} missing, ${extra.length} extra signal(s)`,
+      );
+    } else {
+      console.log(`[translate-ontology] Coverage complete: ${emittedKeys.size} signal(s) matched.`);
+    }
   }
 }
 
@@ -379,7 +449,9 @@ const assertTranslationIdentity = (
   for (const [key, value] of Object.entries(expected)) {
     const existing = select.get(key) as { value: string } | undefined;
     if (existing && existing.value !== value) {
-      throw new Error(`Translation store ${key} mismatch: expected ${value}, found ${existing.value}`);
+      throw new Error(
+        `Translation store ${key} mismatch: expected ${value}, found ${existing.value}`,
+      );
     }
     if (!existing) insert.run(key, value);
   }
