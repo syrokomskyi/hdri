@@ -12,7 +12,14 @@
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import fs from "node:fs/promises";
-import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
+import {
+  arg,
+  computeInputFingerprint,
+  fileExists,
+  readJsonFile,
+  requireCommonArgs,
+  writeReport,
+} from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
 const predictionsPath = arg("--predictions");
@@ -86,6 +93,13 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
+  computeInputFingerprint(
+    period,
+    capsuleId,
+    predictionsPath ?? "",
+    samplePath ?? "",
+    policyPath ?? "",
+  ),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,

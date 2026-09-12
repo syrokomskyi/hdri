@@ -12,7 +12,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { arg, fileExists, requireCommonArgs, writeReport } from "./shared";
+import { arg, computeInputFingerprint, fileExists, requireCommonArgs, writeReport } from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
 const codebookPath = arg("--codebook");
@@ -79,6 +79,13 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
+  computeInputFingerprint(
+    period,
+    capsuleId,
+    codebookPath ?? "",
+    ontologyPath ?? "",
+    policiesDir ?? "",
+  ),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,

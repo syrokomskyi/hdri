@@ -10,7 +10,14 @@
 */
 
 import path from "node:path";
-import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
+import {
+  arg,
+  computeInputFingerprint,
+  fileExists,
+  readJsonFile,
+  requireCommonArgs,
+  writeReport,
+} from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
 const sourceLedgerDir = arg("--source-ledger-dir");
@@ -58,6 +65,7 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
+  computeInputFingerprint(period, capsuleId, sourceLedgerDir ?? ""),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,

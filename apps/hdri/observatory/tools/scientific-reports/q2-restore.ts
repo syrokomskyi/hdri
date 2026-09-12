@@ -12,7 +12,7 @@ import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { arg, fileExists, requireCommonArgs, writeReport } from "./shared";
+import { arg, computeInputFingerprint, fileExists, requireCommonArgs, writeReport } from "./shared";
 
 const hashFile = async (filePath: string): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -66,6 +66,7 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
+  computeInputFingerprint(period, capsuleId, q2ArchiveDir ?? "", drillMarker ?? ""),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,

@@ -9,7 +9,14 @@
 </CHANGE_SUMMARY>
 */
 
-import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
+import {
+  arg,
+  computeInputFingerprint,
+  fileExists,
+  readJsonFile,
+  requireCommonArgs,
+  writeReport,
+} from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
 const q2SnapshotPath = arg("--q2-snapshot");
@@ -81,6 +88,7 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
+  computeInputFingerprint(period, capsuleId, q2SnapshotPath ?? "", q3SnapshotPath ?? ""),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,

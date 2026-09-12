@@ -143,6 +143,7 @@ export type ScientificGateReport = Readonly<{
   reportType: ScientificReportType;
   period: string;
   capsuleId: string;
+  inputFingerprint: string;
   status: "pass" | "fail";
   checkedAt: string;
   violations: readonly string[];
@@ -237,6 +238,8 @@ export const readScientificReports = async (
       report.reportType !== reportType ||
       report.period !== capsule.period ||
       report.capsuleId !== capsule.capsuleId ||
+      typeof report.inputFingerprint !== "string" ||
+      report.inputFingerprint.length !== 64 ||
       report.status !== "pass" ||
       !Array.isArray(report.violations) ||
       report.violations.length !== 0 ||

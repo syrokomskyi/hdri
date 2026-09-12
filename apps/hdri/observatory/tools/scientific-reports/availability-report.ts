@@ -9,7 +9,14 @@
 */
 
 import path from "node:path";
-import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
+import {
+  arg,
+  computeInputFingerprint,
+  fileExists,
+  readJsonFile,
+  requireCommonArgs,
+  writeReport,
+} from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
 const livenessDbPath = arg("--liveness-db");
@@ -65,6 +72,7 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
+  computeInputFingerprint(period, capsuleId, livenessDbPath ?? "", framePath ?? ""),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,

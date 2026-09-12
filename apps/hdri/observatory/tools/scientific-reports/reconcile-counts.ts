@@ -9,7 +9,14 @@
 </CHANGE_SUMMARY>
 */
 
-import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
+import {
+  arg,
+  computeInputFingerprint,
+  fileExists,
+  readJsonFile,
+  requireCommonArgs,
+  writeReport,
+} from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
 const sourceLedgerPath = arg("--source-ledger");
@@ -94,6 +101,13 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
+  computeInputFingerprint(
+    period,
+    capsuleId,
+    sourceLedgerPath ?? "",
+    observationsPath ?? "",
+    scoresPath ?? "",
+  ),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,

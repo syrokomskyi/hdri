@@ -14,7 +14,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { parse as parseYaml } from "yaml";
-import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
+import {
+  arg,
+  computeInputFingerprint,
+  fileExists,
+  readJsonFile,
+  requireCommonArgs,
+  writeReport,
+} from "./shared";
 import type { DisclosureReport } from "../../run/release/release-contract";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
@@ -219,6 +226,7 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
+  computeInputFingerprint(period, capsuleId, publicManifestPath ?? "", policyPath ?? ""),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,
