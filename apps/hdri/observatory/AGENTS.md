@@ -57,6 +57,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `test` | `pnpm exec vitest run` |
 | `upgrade-packages` | `pnpm up --latest` |
 | `stream:rehearse` | `tsx -C @syrokomskyi/source tools/streaming-rehearsal.ts` |
+| `quarter:rehearse` | `tsx -C @syrokomskyi/source tools/quarter-rehearsal.ts` |
 | `changelog` | `changelog-live` |
 | `changelog:init` | `changelog-live init` |
 | `preserve:q2` | `tsx -C @syrokomskyi/source tools/preservation/cli.ts preserve:q2` |
