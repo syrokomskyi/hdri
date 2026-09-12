@@ -22,25 +22,9 @@ Pipeline:
    - the quarter databases plus every referenced profile HTML and Axe JSON CAS object
    - frozen frame and ontology artifacts
 
-Quarter databases are retained through SQLite's consistent backup mechanism and
-checked before and after the snapshot. Existing staging closure is verified
-before the bridge returns idempotently; no file inside it is rewritten.
-Before the first source artifact is retained, the bridge verifies the full
-signed closure: batch envelopes, collector-bound keys, frame signature, ledger
-head for the frame's exact included batches, derived frame hash and the
-period-specific occurrence projection hash. It retains only bytes matching the
-hashes captured by that verification, even if a source changes after preflight.
-Before any emit output is created it also reconstructs every required stage from
-append-only events, verifies all selected CAS objects and requires the frozen
-target and signed stage seal hashes to agree. Partial `maxDomains` sessions are
-therefore valid resumable diagnostics but cannot produce a staging capsule.
+Quarter databases are retained through SQLite's consistent backup mechanism and checked before and after the snapshot. Existing staging closure is verified before the bridge returns idempotently; no file inside it is rewritten. Before the first source artifact is retained, the bridge verifies the full signed closure: batch envelopes, collector-bound keys, frame signature, ledger head for the frame's exact included batches, derived frame hash and the period-specific occurrence projection hash. It retains only bytes matching the hashes captured by that verification, even if a source changes after preflight. Before any emit output is created it also reconstructs every required stage from append-only events, verifies all selected CAS objects and requires the frozen target and signed stage seal hashes to agree. Partial `maxDomains` sessions are therefore valid resumable diagnostics but cannot produce a staging capsule.
 
-Observatory later adds the canonical UUID v7 identity map, vault shards,
-methodology and publication products. Only then is the capsule closed by
-`capsule-manifest.json` and a detached Ed25519 `capsule-signature.json`.
-Finalization is fail-closed: Observatory repeats required-stage verification and
-an existing manifest is verified before any write, including recovery of a
-missing detached signature.
+Observatory later adds the canonical UUID v7 identity map, vault shards, methodology and publication products. Only then is the capsule closed by `capsule-manifest.json` and a detached Ed25519 `capsule-signature.json`. Finalization is fail-closed: Observatory repeats required-stage verification and an existing manifest is verified before any write, including recovery of a missing detached signature.
 
 ## Why lettered (`a-`) instead of numbered
 
@@ -48,12 +32,7 @@ Numbered apps (0..5) collect data and may grow over time (new probes added). Let
 
 ## Data coverage
 
-Every frame candidate contributes a signed availability observation. Profile and
-Axe remain restricted to candidates reachable in the current observation. A
-never-live catalog address stays in the restricted source/research archive but
-does not enter the profile index. A previously reachable site that becomes
-unavailable keeps its canonical UUID v7 and produces website-availability state;
-this is never described as business closure.
+Every frame candidate contributes a signed availability observation. Profile and Axe remain restricted to candidates reachable in the current observation. A never-live catalog address stays in the restricted source/research archive but does not enter the profile index. A previously reachable site that becomes unavailable keeps its canonical UUID v7 and produces website-availability state; this is never described as business closure.
 
 | Stage | What happens to dead sites |
 | --- | --- |
@@ -77,6 +56,10 @@ skipGogols: []
 `cutoffAt` is **not** specified — lowercase `YYYY-qN` is the immutable boundary.
 
 See the root README for the overall factory pipeline order and prerequisites.
+
+## RFC-0106: Verified source admission
+
+Source admission is manifest-based only. `brief.md` must declare `inputManifestSet` with paths to verified capsule manifests. The `--verify-inputs` CLI flag runs read-only validation and emits diagnostic JSON.
 
 ## Changelog
 
