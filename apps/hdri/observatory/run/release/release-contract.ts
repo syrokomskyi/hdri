@@ -1,12 +1,13 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Defines fail-closed scientific, rebuild and replica evidence required before an HDRI quarter can be sealed.</purpose>
+<purpose>Defines fail-closed scientific, rebuild, replica and release envelope evidence required before an HDRI quarter can be published.</purpose>
 <non-goals><item>Does not collect sites, calculate scores or waive a failed gate.</item></non-goals>
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing release-contract module contract for Compass-aware maintenance.</item>
   <item>RFC-0107: add ScientificInputs, ProductVerdict, ScientificReport typed contracts and product verdict suppression.</item>
   <item>RFC-0108: add PublicProductRef, DisclosureReport, PUBLIC_PRODUCT_SCHEMAS typed contracts for private/public mart separation.</item>
+  <item>RFC-0109: add ReleaseEnvelope, ReleaseInput, PublicationAttestation, new ReplicaReceipt schema. Remove validateReleaseEvidence and N+8+3 arithmetic. Add acyclic closure verification, resumable copy, independence validation, and attestation delivery.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -163,23 +164,23 @@ export type RebuildReceipt = Readonly<{
 }>;
 
 export type ReplicaReceipt = Readonly<{
-  schemaVersion: "1";
-  period: string;
-  capsuleId: string;
+  schema: "hdri-replica-receipt@1";
   replicaId: string;
+  failureDomain: string;
   mediaId: string;
-  offsite: true;
-  destinationId: string;
-  candidateManifestSha256: string;
-  artifactCount: number;
+  credentialBoundary: string;
+  envelopeSha256: string;
+  closureDigest: string;
+  verifiedBytes: number;
+  verifiedObjects: number;
   verifiedAt: string;
-  status: "pass";
 }>;
 
 export type QuarterValidationReport = Readonly<{
   schemaVersion: "1";
   period: string;
   capsuleId: string;
+  envelopeSha256: string;
   status: "pass" | "fail";
   checkedAt: string;
   scientificReports: readonly ScientificReportType[];
@@ -252,78 +253,204 @@ export const readScientificReports = async (
   return reports;
 };
 
-export const validateReleaseEvidence = (
-  capsule: QuarterCapsule,
-  reports: readonly ScientificGateReport[],
-  rebuild: RebuildReceipt,
-  replicas: readonly ReplicaReceipt[],
-  candidateManifestSha256: string,
-): QuarterValidationReport => {
+// --- RFC-0109: Release envelope and acyclic evidence contracts ---
+
+export interface ReleaseInput {
+  schema: "hdri-release-input@1";
+  capsuleDir: string;
+  capsuleManifestPath: string;
+  evidenceDir: string;
+  publicManifestPath: string;
+  rebuildReceiptPath: string;
+  replicaConfigPath: string;
+  vaultDir: string;
+  publicArchiveRoot: string;
+}
+
+export interface ReleaseEnvelope {
+  schema: "hdri-release-envelope@1";
+  releaseId: string;
+  period: string;
+  measurementCapsuleSha256: string;
+  scientificInputSha256: string;
+  inventory: {
+    uri: string;
+    sha256: string;
+    bytes: number;
+    access: "public" | "internal" | "restricted";
+  }[];
+  publicManifestSha256: string;
+  rebuildReceiptSha256: string;
+  keyBundleSha256: string;
+}
+
+export type ReleaseState = "prepared" | "scientifically-verified" | "replicated" | "published";
+
+export interface PublicationAttestation {
+  schema: "hdri-publication-attestation@1";
+  releaseId: string;
+  envelopeSha256: string;
+  replicaReceiptSha256s: string[];
+  attestedAt: string;
+  signingKeyId: string;
+  signature: string;
+}
+
+const SHA256_HEX = /^[a-f0-9]{64}$/;
+
+export const computeClosureDigest = (
+  inventory: readonly ReleaseEnvelope["inventory"][number][],
+): string => {
+  const sorted = [...inventory]
+    .map((entry) => `${entry.uri}\0${entry.sha256}\0${entry.bytes}`)
+    .sort();
+  return createHash("sha256").update(sorted.join("\n")).digest("hex");
+};
+
+export const createReleaseEnvelope = (
+  releaseId: string,
+  period: string,
+  measurementCapsuleSha256: string,
+  scientificInputSha256: string,
+  inventory: ReleaseEnvelope["inventory"],
+  publicManifestSha256: string,
+  rebuildReceiptSha256: string,
+  keyBundleSha256: string,
+): ReleaseEnvelope => ({
+  schema: "hdri-release-envelope@1",
+  releaseId,
+  period,
+  measurementCapsuleSha256,
+  scientificInputSha256,
+  inventory,
+  publicManifestSha256,
+  rebuildReceiptSha256,
+  keyBundleSha256,
+});
+
+export const verifyReleaseEnvelope = (envelope: ReleaseEnvelope): string[] => {
   const violations: string[] = [];
-  if (
-    rebuild.schemaVersion !== "1" ||
-    rebuild.period !== capsule.period ||
-    rebuild.capsuleId !== capsule.capsuleId ||
-    rebuild.candidateManifestSha256 !== candidateManifestSha256 ||
-    !rebuild.matched ||
-    rebuild.primaryPublicArchiveHash !== rebuild.rebuiltPublicArchiveHash
-  ) {
-    violations.push("empty_scratch_rebuild_mismatch");
+  if (envelope.schema !== "hdri-release-envelope@1") {
+    violations.push("envelope_schema_mismatch");
+    return violations;
   }
-  const validReplicas = replicas.filter(
-    (receipt) =>
-      receipt.schemaVersion === "1" &&
-      receipt.period === capsule.period &&
-      receipt.capsuleId === capsule.capsuleId &&
-      receipt.candidateManifestSha256 === candidateManifestSha256 &&
-      receipt.offsite === true &&
-      receipt.status === "pass" &&
-      // capsule is the original candidate (no release artifacts yet).
-      // +8 scientific reports + 3 (rebuild receipt + replica receipts + validation report).
-      // Converges with quarter-release.ts: releaseCandidate.artifacts.length + 2
-      // (releaseCandidate already has reports + rebuild, so only +2 for replica + validation).
-      receipt.artifactCount ===
-        capsule.artifacts.length + Object.keys(SCIENTIFIC_REPORTS).length + 3 &&
-      /^[a-f0-9]{64}$/.test(receipt.destinationId) &&
-      Number.isFinite(Date.parse(receipt.verifiedAt)),
-  );
-  const replicaIds = new Set(validReplicas.map((receipt) => receipt.replicaId));
-  const mediaIds = new Set(validReplicas.map((receipt) => receipt.mediaId));
-  const destinationIds = new Set(validReplicas.map((receipt) => receipt.destinationId));
-  if (
-    validReplicas.length < 2 ||
-    replicaIds.size < 2 ||
-    mediaIds.size < 2 ||
-    destinationIds.size < 2
-  ) {
-    violations.push("three_two_one_replication_incomplete");
+  if (!SHA256_HEX.test(envelope.measurementCapsuleSha256)) {
+    violations.push("envelope_measurement_capsule_hash_invalid");
   }
-  if (reports.length !== Object.keys(SCIENTIFIC_REPORTS).length) {
-    violations.push("scientific_report_set_incomplete");
+  if (!SHA256_HEX.test(envelope.scientificInputSha256)) {
+    violations.push("envelope_scientific_input_hash_invalid");
   }
-  const failedReports = reports.filter((report) => report.status !== "pass");
-  if (failedReports.length > 0) {
-    violations.push(
-      `scientific_report_failed:${failedReports
-        .map((report) => report.reportType)
-        .sort()
-        .join(",")}`,
-    );
+  if (!SHA256_HEX.test(envelope.publicManifestSha256)) {
+    violations.push("envelope_public_manifest_hash_invalid");
+  }
+  if (!SHA256_HEX.test(envelope.rebuildReceiptSha256)) {
+    violations.push("envelope_rebuild_receipt_hash_invalid");
+  }
+  if (!SHA256_HEX.test(envelope.keyBundleSha256)) {
+    violations.push("envelope_key_bundle_hash_invalid");
+  }
+  const envelopeHash = createHash("sha256").update(JSON.stringify(envelope)).digest("hex");
+  for (const entry of envelope.inventory) {
+    if (!SHA256_HEX.test(entry.sha256)) {
+      violations.push(`inventory_entry_hash_invalid:${entry.uri}`);
+    }
+    if (entry.sha256 === envelopeHash) {
+      violations.push(`inventory_self_referential:${entry.uri}`);
+    }
+  }
+  return violations;
+};
+
+export const validateReplicaIndependence = (receipts: readonly ReplicaReceipt[]): string[] => {
+  const violations: string[] = [];
+  if (receipts.length < 2) {
+    violations.push("insufficient_replicas");
+    return violations;
+  }
+  const failureDomains = new Set(receipts.map((r) => r.failureDomain));
+  const credentialBoundaries = new Set(receipts.map((r) => r.credentialBoundary));
+  if (failureDomains.size < receipts.length) {
+    violations.push("shared_failure_domain");
+  }
+  if (credentialBoundaries.size < receipts.length) {
+    violations.push("shared_credential_boundary");
+  }
+  return violations;
+};
+
+export const resumeReplicaCopy = async (
+  sourceDir: string,
+  destinationDir: string,
+  inventory: readonly ReleaseEnvelope["inventory"][number][],
+): Promise<{ verifiedBytes: number; verifiedObjects: number; closureDigest: string }> => {
+  let verifiedBytes = 0;
+  let verifiedObjects = 0;
+  for (const entry of inventory) {
+    const source = path.join(sourceDir, entry.uri);
+    const destination = path.join(destinationDir, entry.uri);
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    // Content-addressed skip: check existing file by sha256
+    let existingHash: string | null = null;
+    try {
+      existingHash = await sha256File(destination);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    if (existingHash !== entry.sha256) {
+      await fs.copyFile(source, destination);
+    }
+    // Read-back verify
+    const actualHash = await sha256File(destination);
+    if (actualHash !== entry.sha256) {
+      throw new Error(`Read-back verification failed for ${entry.uri}`);
+    }
+    verifiedBytes += entry.bytes;
+    verifiedObjects += 1;
   }
   return {
-    schemaVersion: "1",
-    period: capsule.period,
-    capsuleId: capsule.capsuleId,
-    status: violations.length === 0 ? "pass" : "fail",
-    checkedAt: new Date().toISOString(),
-    scientificReports: reports.map((report) => report.reportType).sort(),
-    rebuildMatch: violations.includes("empty_scratch_rebuild_mismatch") === false,
-    replicasVerified: replicaIds.size,
-    mediaVerified: mediaIds.size,
-    violations,
-    warnings: reports.flatMap((report) => report.warnings),
-    hardSuppressions: reports.flatMap((report) => report.hardSuppressions),
+    verifiedBytes,
+    verifiedObjects,
+    closureDigest: computeClosureDigest(inventory),
   };
+};
+
+export const createPublicationAttestation = (
+  envelope: ReleaseEnvelope,
+  replicaReceiptSha256s: string[],
+  signingKeyId: string,
+  signature: string,
+): PublicationAttestation => ({
+  schema: "hdri-publication-attestation@1",
+  releaseId: envelope.releaseId,
+  envelopeSha256: createHash("sha256").update(JSON.stringify(envelope)).digest("hex"),
+  replicaReceiptSha256s,
+  attestedAt: new Date().toISOString(),
+  signingKeyId,
+  signature,
+});
+
+export const verifyAttestationDelivery = async (
+  attestation: PublicationAttestation,
+  destinationDirs: readonly string[],
+): Promise<string[]> => {
+  const violations: string[] = [];
+  for (const dir of destinationDirs) {
+    const attestationPath = path.join(dir, "publication-attestation.json");
+    try {
+      const bytes = await fs.readFile(attestationPath);
+      const expected = Buffer.from(JSON.stringify(attestation, null, 2) + "\n");
+      if (!bytes.equals(expected)) {
+        violations.push(`attestation_bytes_mismatch:${dir}`);
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        violations.push(`attestation_missing:${dir}`);
+      } else {
+        throw error;
+      }
+    }
+  }
+  return violations;
 };
 
 export const artifactForFile = async (
