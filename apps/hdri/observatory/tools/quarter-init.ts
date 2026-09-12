@@ -1,14 +1,14 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Generates or updates prior-capsules.json from a sealed prior capsule manifest for quarter initialization.</purpose>
+<purpose>Generates or updates prior-capsules.json and persists a QuarterRecord for calendar-continuous quarter initialization.</purpose>
 <non-goals>
-  <item>Does not seal legacy quarters — that is quarter:seal-legacy (RFC-0045).</item>
   <item>Does not run factory or observatory pipelines.</item>
   <item>Does not modify sealed capsule artifacts.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0044: create quarter initialization tool that generates prior-capsules.json from a sealed prior capsule.</item>
+  <item>RFC-0112: rename --current-period to --period, --prior-capsule to --predecessor. Persist QuarterRecord. Idempotent re-init returns same record.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -21,10 +21,14 @@ import {
   parsePriorCapsulesFile,
   verifyQuarterCapsuleArtifacts,
   verifyQuarterCapsuleSignature,
+  discoverQuarterRecord,
+  serializeQuarterRecord,
+  validateQuarterRecord,
   type CapsuleSignature,
   type HdriPeriod,
   type PriorCapsuleEntry,
   type QuarterCapsule,
+  type QuarterRecord,
 } from "@syrokomskyi/factory-core";
 import { getTransparencyKeysDir, loadVerificationKeys } from "@syrokomskyi/observatory-crypto";
 
@@ -44,8 +48,8 @@ const OUTPUT_DEFAULT = path.resolve(
 );
 
 const main = async (): Promise<void> => {
-  const priorCapsulePath = arg("--prior-capsule");
-  const currentPeriod = arg("--current-period");
+  const priorCapsulePath = arg("--predecessor");
+  const currentPeriod = arg("--period");
   const outputArg = arg("--output");
   const keysDirArg = arg("--keys-dir");
   const force = hasFlag("--force");
@@ -53,21 +57,19 @@ const main = async (): Promise<void> => {
 
   if (!priorCapsulePath) {
     console.error(
-      "Usage: quarter:init --prior-capsule <path> --current-period <yyyy-qn> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
+      "Usage: quarter:init --predecessor <path> --period <yyyy-qn> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
     );
     process.exit(1);
   }
   if (!currentPeriod) {
     console.error(
-      "Usage: quarter:init --prior-capsule <path> --current-period <yyyy-qn> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
+      "Usage: quarter:init --predecessor <path> --period <yyyy-qn> [--output <path>] [--keys-dir <dir>] [--force] [--json]",
     );
     process.exit(1);
   }
 
   if (!/^\d{4}-q[1-4]$/.test(currentPeriod)) {
-    console.error(
-      `Invalid current period: ${currentPeriod}. Expected format yyyy-qn (e.g. 2026-q3).`,
-    );
+    console.error(`Invalid period: ${currentPeriod}. Expected format yyyy-qn (e.g. 2026-q3).`);
     process.exit(1);
   }
   const currentPeriodTyped = currentPeriod as HdriPeriod;
@@ -205,7 +207,56 @@ const main = async (): Promise<void> => {
   await fs.writeFile(tmpPath, serialized, "utf8");
   await fs.rename(tmpPath, outputPath);
 
-  // 12. Output result
+  // 12. Persist QuarterRecord (RFC-0112)
+  const quarterRecordPath = path.join(outputDir, "quarter-record.json");
+  let quarterRecord: QuarterRecord;
+
+  // Check for existing record (idempotent re-init)
+  let existingRecordRaw: string | null = null;
+  try {
+    existingRecordRaw = await fs.readFile(quarterRecordPath, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      console.error(
+        `Existing quarter-record.json is unreadable: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exit(1);
+    }
+  }
+
+  if (existingRecordRaw) {
+    try {
+      const existingRecord = JSON.parse(existingRecordRaw) as QuarterRecord;
+      validateQuarterRecord(existingRecord);
+      // Idempotent: if period matches, return same record
+      if (existingRecord.period === currentPeriodTyped) {
+        quarterRecord = existingRecord;
+      } else {
+        // New period — create new record using discoverQuarterRecord
+        const priorCapsulesFile = parsePriorCapsulesFile(serialized);
+        quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
+        quarterRecord = {
+          ...quarterRecord,
+          capsuleId: existingRecord.capsuleId,
+        };
+      }
+    } catch {
+      // Malformed existing record — create fresh
+      const priorCapsulesFile = parsePriorCapsulesFile(serialized);
+      quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
+    }
+  } else {
+    const priorCapsulesFile = parsePriorCapsulesFile(serialized);
+    quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
+  }
+
+  validateQuarterRecord(quarterRecord);
+  const recordSerialized = serializeQuarterRecord(quarterRecord);
+  const recordTmpPath = `${quarterRecordPath}.tmp`;
+  await fs.writeFile(recordTmpPath, recordSerialized, "utf8");
+  await fs.rename(recordTmpPath, quarterRecordPath);
+
+  // 13. Output result
   const result = {
     command: "hdri.quarter.init",
     status: "ok",
@@ -216,8 +267,15 @@ const main = async (): Promise<void> => {
       batchIds: [...newEntry.batchIds],
       sourceLedgerHead: newEntry.sourceLedgerHead,
     },
+    quarterRecord: {
+      period: quarterRecord.period,
+      predecessorPeriod: quarterRecord.predecessorPeriod,
+      collection: quarterRecord.collection,
+      publication: quarterRecord.publication,
+    },
     totalEntries: priorCapsules.length,
     outputPath,
+    quarterRecordPath,
   };
 
   if (jsonOutput) {
@@ -227,8 +285,12 @@ const main = async (): Promise<void> => {
     console.log(`  Prior capsule: ${newEntry.period} (${newEntry.capsuleId})`);
     console.log(`  Batch IDs: ${[...newEntry.batchIds].join(", ") || "(none)"}`);
     console.log(`  Source ledger head: ${newEntry.sourceLedgerHead.slice(0, 16)}...`);
+    console.log(
+      `  Quarter record: ${quarterRecord.period} (predecessor: ${quarterRecord.predecessorPeriod ?? "none"})`,
+    );
     console.log(`  Total entries: ${priorCapsules.length}`);
     console.log(`  Output: ${outputPath}`);
+    console.log(`  Quarter record: ${quarterRecordPath}`);
   }
 };
 
