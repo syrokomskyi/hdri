@@ -13,6 +13,7 @@
   <item>Split StadtbranchenbuchParser into WwwStadtbranchenbuchComParser
     and BacknangStadtbranchenbuchComParser (handling stadtbranchenbuch.com subdomains).</item>
   <item>Register BranchenverzeichnisParser for branchenverzeichnis.org.</item>
+  <item>RFC-0102: add classifyOrigin to detect external-host boundaries and prevent root parser fallback for nested external origins.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -41,9 +42,26 @@ const sourceParsers: SourceParser[] = [
   new BranchenverzeichnisParser(),
 ];
 
+const knownSourceIds = new Set(sourceParsers.map((p) => p.sourceId));
+
+/**
+ * Classify a path segment as a known source, external boundary, or unknown.
+ * A segment that contains a dot (looks like a domain) and is not a known
+ * source ID is an external-host boundary.
+ */
+export function classifyOrigin(segment: string): "known-source" | "external-boundary" | "unknown" {
+  if (knownSourceIds.has(segment)) return "known-source";
+  if (segment.includes(".")) return "external-boundary";
+  return "unknown";
+}
+
 /**
  * Get a parser for a specific source ID (folder name).
  * Returns UnknownSourceParser if no specific parser is found.
+ *
+ * RFC-0102: A nested path segment that looks like an external host (contains
+ * a dot, not a known source) must match its own parser or be quarantined.
+ * Do not fall back to the root segment's parser for external boundaries.
  */
 export function getParserForSource(sourceId: string): SourceParser {
   const segments = sourceId.split("/");
@@ -64,16 +82,27 @@ export function getParserForSource(sourceId: string): SourceParser {
     return new UnknownSourceParser(sourceId);
   }
 
-  // Multiple segments: try exact match on joined segments from deepest to shallowest,
-  // but skip the root segment (i=0) so external domains nested under a known source
-  // route to UnknownSourceParser instead of the root's parser
-  for (let i = segments.length - 1; i >= 1; i--) {
+  // Multiple segments: check for external-host boundaries in non-root segments.
+  // If any non-root segment looks like an external host (contains a dot and is
+  // not a known source ID), do not fall back to the root parser.
+  const hasExternalBoundary = segments
+    .slice(1)
+    .some((seg) => classifyOrigin(seg!) === "external-boundary");
+
+  // Try exact match on joined segments from deepest to shallowest.
+  // Skip the root segment (i=0) so external domains nested under a known source
+  // route to UnknownSourceParser instead of the root's parser.
+  // If an external boundary is detected, stop before reaching the root segment.
+  const minDepth = hasExternalBoundary ? 2 : 1;
+  for (let i = segments.length - 1; i >= minDepth; i--) {
     const candidate = segments.slice(0, i + 1).join("/");
     const parser = sourceParsers.find((p) => p.sourceId === candidate);
     if (parser) return parser;
   }
 
-  // Check deeper segments for stadtbranchenbuch subdomain pattern
+  // Check deeper segments for stadtbranchenbuch subdomain pattern.
+  // This is a known source family pattern, not an external boundary —
+  // always check down to i=1 (skip root only).
   for (let i = segments.length - 1; i >= 1; i--) {
     if (
       segments[i]!.endsWith(".stadtbranchenbuch.com") &&
