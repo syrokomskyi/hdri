@@ -457,6 +457,18 @@ apps/hdri/factory/
 
 ---
 
+## Qualification harness (RFC-0111)
+
+The factory chain is qualified end-to-end by the `quarter:rehearse` harness in the observatory. The harness coordinates app launchers through declared executable/path adapters, measures RSS/inodes/disk, injects faults, and produces a `QualificationReceipt`.
+
+- Small full-chain CI gate (100 targets): runs as part of the observatory test suite on every HDRI/shared dependency change.
+- Weekly 10k rehearsal: runs on a provisioned runner, extending the existing weekly CI schedule.
+- Pre-quarter 200k qualification: triggered manually before each quarter's live capture on a separately provisioned runner.
+
+See `apps/hdri/observatory/RUNBOOK.md` § Qualification harness (RFC-0111) for full details.
+
+---
+
 ## Next Steps
 
 After factory completes, proceed to `apps/hdri/observatory` for:
