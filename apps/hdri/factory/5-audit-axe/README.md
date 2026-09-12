@@ -15,6 +15,10 @@ This app implements RFC-0105 — browser instruments execute as resource-bounded
 | `deadlineMs`          | 120000  | Total deadline per target      |
 | `terminationGraceMs`  | 5000    | Grace period before SIGKILL    |
 
+## ADR-0023: Recycle isolated axe workers
+
+Each worker gets one fresh non-persistent browser context per target. After 20 targets, a crash, or cleanup failure, the worker is recycled. No shared cookies, storage, or service-worker state leaks between targets.
+
 ## Getting Started
 
 1. Prepare `.input/brief.md` with `sourceToken` and database paths.
