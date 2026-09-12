@@ -2,6 +2,8 @@
 
 > [English Version](README.en.md)
 
+<!-- RFC-0109: Publish immutable release envelopes with resumable replication -->
+
 Asset-zentriertes longitudinales Observatorium für die Analyse der digitalen Präsenz.
 
 ## Architektur

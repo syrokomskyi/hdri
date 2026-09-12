@@ -187,3 +187,27 @@ Private HDRI marts (asset-level identifiers, domains, remediation) are separated
 - `privacy-review.ts` accepts `--public-manifest <path>` and reads actual file bytes (CSV and JSON), not just JSON cells arrays.
 - `PrepareQuarterReleaseGogol` admits only `PublicProductRef` entries from the public manifest as publication artifacts.
 - Dashboard export (`export-dashboard-archive.ts`) loads the public manifest and verifies only manifest-listed files reach `DASHBOARD_PUBLIC_DIR`.
+
+## Immutable release envelopes (RFC-0109)
+
+Publish immutable release envelopes with resumable replication, read-back verification, and replica independence validation.
+
+### Key contracts
+
+- `ReleaseInput` — manifest with capsule, evidence, public manifest, rebuild receipt, replica config, vault dir, and public archive root paths.
+- `ReleaseEnvelope` — immutable envelope with inventory, hashes, and key bundle sha256.
+- `ReplicaReceipt` — receipt with failure domain, credential boundary, closure digest, verified bytes/objects.
+- `PublicationAttestation` — signed attestation referencing envelope and replica receipts.
+- `ReleaseState` — `"prepared" | "scientifically-verified" | "replicated" | "published"`.
+
+### Changed interfaces
+
+- `quarter:release` now accepts `--release-input <manifest>` instead of `--capsule/--validation/--replica-config/--vault-dir/--public-archive-dir`.
+- `quarter:validate` now accepts `--release-input <manifest>` instead of `--candidate/--evidence-dir`.
+- New `quarter:release-status` — read-only `--release-id <id> --vault-dir <dir>` diagnostic.
+- `PrepareQuarterReleaseGogol` writes `release-input.json` manifest and sets `ctx.state.releaseInputPath`.
+- `ValidateQuarterGogol` invokes `quarter-validate.ts` with `--release-input` instead of calling `validateReleaseEvidence` directly.
+- `ReleaseQuarterGogol` invokes `quarter-release.ts` with `--release-input` instead of individual args.
+- `writeReport` in `shared.ts` uses `inputFingerprint` for immutable report revisions — same fingerprint reuses `checkedAt`, different fingerprint preserves old report as revision.
+- `validateReleaseEvidence` removed — replaced by `verifyReleaseEnvelope`, `validateReplicaIndependence`, `resumeReplicaCopy`, `createPublicationAttestation`, `verifyAttestationDelivery`.
+- `QuarterValidationReport` updated with `envelopeSha256` field.
