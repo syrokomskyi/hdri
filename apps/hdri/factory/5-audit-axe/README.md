@@ -2,6 +2,19 @@
 
 Pipeline for Axe accessibility audit of live sites.
 
+## RFC-0105: Bound browser measurements
+
+This app implements RFC-0105 — browser instruments execute as resource-bounded isolated tasks with typed `BrowserEvidence` contracts. A supervised worker pool (ADR-0023) replaces per-target browser launches. A preflight self-test gates instrument readiness before acquiring target leases.
+
+### Worker pool configuration
+
+| Field                 | Default | Description                    |
+| --------------------- | ------- | ------------------------------ |
+| `poolSize`            | 4       | Number of worker processes     |
+| `recycleAfterTargets` | 20      | Recycle worker after N targets |
+| `deadlineMs`          | 120000  | Total deadline per target      |
+| `terminationGraceMs`  | 5000    | Grace period before SIGKILL    |
+
 ## Getting Started
 
 1. Prepare `.input/brief.md` with `sourceToken` and database paths.
