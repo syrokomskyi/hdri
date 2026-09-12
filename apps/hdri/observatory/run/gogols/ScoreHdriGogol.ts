@@ -96,6 +96,8 @@ export class ScoreHdriGogol extends Gogol {
         scorerVersion: readScorerVersion(),
         codebookSource,
         ontologySource,
+        signalMapSource: null,
+        missingnessPolicySource: null,
       });
       // WP15: also record the population-frame content hash when a frame is present, so the
       // frozen per-period methodology snapshot (codebook + ontology + frame) is complete.

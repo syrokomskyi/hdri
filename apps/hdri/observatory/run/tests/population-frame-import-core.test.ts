@@ -147,12 +147,12 @@ describe("assertCompletePopulationFrame provenance checks (RFC-0033)", () => {
   it("rejects sourceUrl from a non-Destatis domain", () => {
     expect(() =>
       assertCompletePopulationFrame(validFrame({ sourceUrl: "https://example.com/data.csv" })),
-    ).toThrow(/sourceUrl must be from/);
+    ).toThrow(/hostname must be exactly/);
   });
 
   it("rejects an empty sourceUrl", () => {
     expect(() => assertCompletePopulationFrame(validFrame({ sourceUrl: "" }))).toThrow(
-      /sourceUrl must be from/,
+      /not a valid URL/,
     );
   });
 

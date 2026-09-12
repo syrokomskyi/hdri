@@ -137,6 +137,8 @@ async function main(): Promise<void> {
         scorerVersion,
         codebookSource,
         ontologySource,
+        signalMapSource: null,
+        missingnessPolicySource: null,
       });
       const frameSha256 = frameSource ? sha256(frameSource) : null;
 

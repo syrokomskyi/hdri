@@ -18,6 +18,8 @@ const base: MethodologyInput = {
   scorerVersion: "0.0.1",
   codebookSource: "dimensions:\n  - id: legal\n",
   ontologySource: "version: 1.0.0\nsignals: {}\n",
+  signalMapSource: null,
+  missingnessPolicySource: null,
 };
 
 describe("computeMethodologyFingerprint (WP12)", () => {

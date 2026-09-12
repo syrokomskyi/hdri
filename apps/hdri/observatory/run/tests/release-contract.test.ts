@@ -17,9 +17,9 @@ const capsule: QuarterCapsule = {
   artifacts: [],
 };
 const candidateHash = "a".repeat(64);
-const reports = Object.values(SCIENTIFIC_REPORTS).map((reportType) => ({
+const reports = Object.values(SCIENTIFIC_REPORTS).map((entry) => ({
   schemaVersion: "1",
-  reportType,
+  reportType: entry.reportType,
   period: capsule.period,
   capsuleId: capsule.capsuleId,
   status: "pass",
