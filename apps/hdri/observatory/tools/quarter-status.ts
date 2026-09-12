@@ -13,11 +13,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  parseQuarterRecord,
-  validateQuarterRecord,
-  type QuarterRecord,
-} from "@syrokomskyi/factory-core";
+import { parseQuarterRecord, type QuarterRecord } from "@syrokomskyi/factory-core";
 
 const arg = (name: string): string | undefined => {
   const index = process.argv.indexOf(name);
@@ -60,7 +56,6 @@ const main = async (): Promise<void> => {
   try {
     const raw = await fs.readFile(recordPath, "utf8");
     const record = parseQuarterRecord(raw);
-    validateQuarterRecord(record);
     report.records.push(record);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
@@ -98,7 +93,9 @@ const main = async (): Promise<void> => {
       console.log("  No quarter records found.");
     }
     for (const record of report.records) {
-      console.log(`  ${record.period}: collection=${record.collection}, publication=${record.publication}`);
+      console.log(
+        `  ${record.period}: collection=${record.collection}, publication=${record.publication}`,
+      );
       if (record.predecessorPeriod) {
         console.log(`    predecessor: ${record.predecessorPeriod}`);
       }

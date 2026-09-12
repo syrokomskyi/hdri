@@ -12,9 +12,8 @@
 */
 
 import fs from "node:fs/promises";
-import { createReadStream } from "node:fs";
 import path from "node:path";
-import { createHash } from "node:crypto";
+import { sha256File } from "@syrokomskyi/observatory-vault";
 
 const arg = (name: string): string | undefined => {
   const index = process.argv.indexOf(name);
@@ -34,17 +33,9 @@ type IntegrityReport = {
   violations: string[];
 };
 
-const sha256File = (filePath: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const hash = createHash("sha256");
-    const stream = createReadStream(filePath);
-    stream.on("data", (chunk) => hash.update(chunk));
-    stream.once("error", reject);
-    stream.once("end", () => resolve(hash.digest("hex")));
-  });
-
 const scanDirectory = async (
   dir: string,
+  root: string,
   manifest: Map<string, string>,
   violations: string[],
 ): Promise<{ verified: number; corrupted: number; total: number }> => {
@@ -56,25 +47,28 @@ const scanDirectory = async (
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      const sub = await scanDirectory(fullPath, manifest, violations);
+      const sub = await scanDirectory(fullPath, root, manifest, violations);
       verified += sub.verified;
       corrupted += sub.corrupted;
       total += sub.total;
     } else if (entry.isFile()) {
       total++;
-      const expected = manifest.get(entry.name);
+      const relPath = path.relative(root, fullPath);
+      const expected = manifest.get(relPath) ?? manifest.get(entry.name);
       try {
         const actualSha256 = await sha256File(fullPath);
         if (expected && actualSha256 !== expected) {
           corrupted++;
-          violations.push(`HASH_MISMATCH: ${entry.name} (expected ${expected.slice(0, 16)}..., got ${actualSha256.slice(0, 16)}...)`);
+          violations.push(
+            `HASH_MISMATCH: ${relPath} (expected ${expected.slice(0, 16)}..., got ${actualSha256.slice(0, 16)}...)`,
+          );
         } else {
           verified++;
         }
       } catch (error) {
         corrupted++;
         violations.push(
-          `READ_ERROR: ${entry.name} — ${error instanceof Error ? error.message : String(error)}`,
+          `READ_ERROR: ${relPath} — ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
@@ -89,9 +83,7 @@ const main = async (): Promise<void> => {
   const jsonOutput = hasFlag("--json");
 
   if (!archiveRoot) {
-    console.error(
-      "Usage: preservation:check --archive-root <dir> [--policy <file>] [--json]",
-    );
+    console.error("Usage: preservation:check --archive-root <dir> [--policy <file>] [--json]");
     process.exit(1);
   }
 
@@ -124,6 +116,7 @@ const main = async (): Promise<void> => {
 
   const violations: string[] = [];
   const { verified, corrupted, total } = await scanDirectory(
+    resolvedRoot,
     resolvedRoot,
     manifest,
     violations,
