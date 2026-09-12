@@ -274,3 +274,21 @@ Enforce calendar-continuous quarter ledger, retire `quarter:seal-legacy`, and ga
 - New `quarter:status` — read-only projection of quarter ledger state.
 - New `quarter:readiness` — binds evidence digests into `ReadinessReceipt`.
 - New `preservation:check` — full-byte integrity scan of retained closure.
+
+### Evidence digest files for `quarter:readiness`
+
+`quarter:readiness` reads the following flat-file digests from the `--input` directory (default: `apps/hdri/factory/.input/`). Each file contains a single SHA-256 hex digest on one line. An empty or missing file results in a blocker.
+
+| File                            | Blocker if missing                                     |
+| ------------------------------- | ------------------------------------------------------ |
+| `preservation-gate-sha256.txt`  | `MISSING_PRESERVATION_GATE`                            |
+| `qualification-sha256.txt`      | `MISSING_QUALIFICATION`                                |
+| `predecessor-sha256.txt`        | `MISSING_PREDECESSOR`                                  |
+| `capacity-report-sha256.txt`    | `MISSING_CAPACITY_REPORT`                              |
+| `obsolete-runtime-remains.flag` | `OBSOLETE_RUNTIME_REMAINS` (presence triggers blocker) |
+
+Operators produce these files from the corresponding pipeline steps (preservation, qualification, capacity report). The `obsolete-runtime-remains.flag` is a zero-byte sentinel — its presence means an obsolete runtime path was detected and not yet removed.
+
+### `preservation:check` performance estimate
+
+For a Q2 archive of ~50k sites: bounded I/O, estimated <10 min on local SSD, proportional to total archive size. The scan is read-only and never modifies sealed artifacts. For a Q3 capsule (~117k sites): proportionally ~25 min. Cost scales linearly with total object count and file size.
