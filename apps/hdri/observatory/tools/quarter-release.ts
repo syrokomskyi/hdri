@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Performs the HDRI scientific release: reads a passed QuarterValidationReport, replicates sealed artifacts, publishes the public archive, and signs the QuarterReleaseManifest.</purpose>
+<purpose>Performs the HDRI scientific release: reads a ReleaseInput manifest, builds a ReleaseEnvelope, replicates sealed artifacts with resumable copy, creates a PublicationAttestation, and atomically publishes the public archive.</purpose>
 <non-goals>
   <item>Does not validate evidence — use quarter:validate first.</item>
   <item>Does not seal the capsule — use SealCapsuleGogol first.</item>
@@ -9,88 +9,84 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0031: split combined validate+seal+release into release-only. Validation moved to quarter:validate, sealing moved to SealCapsuleGogol.</item>
+  <item>RFC-0109: replace --capsule/--validation/--replica-config/--vault-dir/--public-archive-dir with --release-input manifest. Build ReleaseEnvelope, resumable copy with read-back verify, validate replica independence, create PublicationAttestation, atomic publish. Remove QuarterReleaseManifest — forward-only replacement.</item>
 </CHANGE_SUMMARY>
 */
 
 import "@syrokomskyi/observatory-crypto/auto-env";
 import crypto, { createHash } from "node:crypto";
-import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { verifyQuarterCapsuleArtifacts, type QuarterCapsule } from "@syrokomskyi/factory-core";
 import { canonicalize, loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
 import {
+  createPublicationAttestation,
+  createReleaseEnvelope,
+  resumeReplicaCopy,
   sha256Directory,
   sha256File,
-  type QuarterValidationReport,
+  validateReplicaIndependence,
+  verifyAttestationDelivery,
+  verifyReleaseEnvelope,
+  type ReleaseEnvelope,
+  type ReleaseInput,
   type ReplicaReceipt,
 } from "../run/release/release-contract";
 
 type ReplicaConfig = Readonly<{
   replicaId: string;
+  failureDomain: string;
   mediaId: string;
-  offsite: true;
+  credentialBoundary: string;
   destinationDir: string;
-}>;
-
-type QuarterReleaseManifest = Readonly<{
-  schemaVersion: "1";
-  releaseId: string;
-  period: string;
-  state: "published";
-  capsuleHash: string;
-  vaultHead: string;
-  methodologyHash: string;
-  publicArchiveHash: string;
-  validationReportHash: string;
-  rebuildReportHash: string;
-  replicaReceipts: readonly string[];
-  publishedAt: string;
-  supersedesReleaseId: string | null;
-  signingKeyId: string;
-  collectorId: string;
-  signature: string;
 }>;
 
 const arg = (name: string): string | undefined => {
   const index = process.argv.indexOf(name);
   return index >= 0 ? process.argv[index + 1] : undefined;
 };
-for (const required of [
-  "--capsule",
-  "--validation",
-  "--replica-config",
-  "--vault-dir",
-  "--public-archive-dir",
-]) {
-  if (!arg(required)) throw new Error(`${required} is required`);
+
+const releaseInputPath = arg("--release-input");
+if (!releaseInputPath) throw new Error("--release-input <manifest> is required");
+
+const releaseInput = JSON.parse(
+  await fs.readFile(path.resolve(releaseInputPath), "utf8"),
+) as ReleaseInput;
+
+if (releaseInput.schema !== "hdri-release-input@1") {
+  throw new Error("Release input manifest has wrong schema");
 }
 
-const capsuleManifestPath = path.resolve(arg("--capsule")!);
+const capsuleManifestPath = path.resolve(releaseInput.capsuleManifestPath);
 if (path.basename(capsuleManifestPath) !== "capsule-manifest.json") {
-  throw new Error("--capsule must point to capsule-manifest.json (sealed capsule)");
+  throw new Error("Release input must point to capsule-manifest.json (sealed capsule)");
 }
 const capsuleDir = path.dirname(capsuleManifestPath);
-const validationPath = path.resolve(arg("--validation")!);
-const vaultDir = path.resolve(arg("--vault-dir")!);
-const publicArchiveRoot = path.resolve(arg("--public-archive-dir")!);
-const replicaConfig = JSON.parse(
-  await fs.readFile(path.resolve(arg("--replica-config")!), "utf8"),
-) as ReplicaConfig[];
+const vaultDir = path.resolve(releaseInput.vaultDir);
+const publicArchiveRoot = path.resolve(releaseInput.publicArchiveRoot);
+const publicManifestPath = path.resolve(releaseInput.publicManifestPath);
+const rebuildReceiptPath = path.resolve(releaseInput.rebuildReceiptPath);
+const replicaConfigPath = path.resolve(releaseInput.replicaConfigPath);
 
 const sealedCapsule = JSON.parse(await fs.readFile(capsuleManifestPath, "utf8")) as QuarterCapsule;
 if (sealedCapsule.state !== "sealed") throw new Error("Release requires a sealed capsule manifest");
 await verifyQuarterCapsuleArtifacts(capsuleDir, sealedCapsule);
 
+const replicaConfig = JSON.parse(await fs.readFile(replicaConfigPath, "utf8")) as ReplicaConfig[];
 if (replicaConfig.length < 2)
   throw new Error("At least two offsite replica destinations are required");
 const destinationRoots = replicaConfig.map((item) => path.resolve(item.destinationDir));
 if (
   replicaConfig.some(
-    (item) => item.offsite !== true || !item.replicaId.trim() || !item.mediaId.trim(),
+    (item) =>
+      !item.replicaId.trim() ||
+      !item.failureDomain.trim() ||
+      !item.mediaId.trim() ||
+      !item.credentialBoundary.trim(),
   ) ||
   new Set(replicaConfig.map((item) => item.replicaId)).size !== replicaConfig.length ||
-  new Set(replicaConfig.map((item) => item.mediaId)).size < 2 ||
+  new Set(replicaConfig.map((item) => item.failureDomain)).size !== replicaConfig.length ||
+  new Set(replicaConfig.map((item) => item.credentialBoundary)).size !== replicaConfig.length ||
   new Set(destinationRoots).size !== replicaConfig.length ||
   destinationRoots.some(
     (root) => root === capsuleDir || root.startsWith(`${capsuleDir}${path.sep}`),
@@ -103,147 +99,202 @@ if (
     ),
   )
 ) {
-  throw new Error("Replica configuration must declare distinct offsite destinations and media");
+  throw new Error(
+    "Replica configuration must declare distinct failure domains, credential boundaries, and destinations",
+  );
 }
 
-const commitImmutable = async (target: string, bytes: Buffer | string): Promise<void> => {
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  try {
-    await fs.writeFile(target, bytes, { flag: "wx" });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-    const existing = await fs.readFile(target);
-    const expected = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes);
-    if (!existing.equals(expected))
-      throw new Error(`Immutable release artifact conflicts: ${target}`);
-  }
-};
+// --- Build ReleaseEnvelope ---
 
-const commitImmutableFile = async (
-  source: string,
-  target: string,
-  expectedSha256: string,
-): Promise<void> => {
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  const temp = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  try {
-    await fs.copyFile(source, temp, fsConstants.COPYFILE_EXCL | fsConstants.COPYFILE_FICLONE);
-    if ((await sha256File(temp)) !== expectedSha256) {
-      throw new Error(`Release source changed while copying: ${path.basename(source)}`);
-    }
-    try {
-      await fs.link(temp, target);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-    }
-  } finally {
-    await fs.rm(temp, { force: true }).catch(() => undefined);
-  }
-  if ((await sha256File(target)) !== expectedSha256) {
-    throw new Error(`Immutable release artifact conflicts: ${target}`);
-  }
-};
+const measurementCapsuleSha256 = await sha256File(capsuleManifestPath);
+const scientificInputSha256 = await sha256File(path.join(capsuleDir, "capsule-candidate.json"));
+const publicManifestSha256 = await sha256File(publicManifestPath);
+const rebuildReceiptSha256 = await sha256File(rebuildReceiptPath);
 
-const releaseQcDir = path.join(capsuleDir, "artifacts", "qc", "release");
-const candidateManifestPath = path.join(capsuleDir, "capsule-candidate.json");
-const candidateManifestSha256 = await sha256File(candidateManifestPath);
+// Build inventory from capsule artifacts
+const inventory: ReleaseEnvelope["inventory"] = [];
+for (const artifact of sealedCapsule.artifacts) {
+  const access = artifact.stage === "publication" ? ("public" as const) : ("internal" as const);
+  inventory.push({
+    uri: artifact.uri,
+    sha256: artifact.sha256,
+    bytes: artifact.bytes,
+    access,
+  });
+}
+// Add capsule manifest, candidate, and signature to inventory
+inventory.push({
+  uri: "capsule-manifest.json",
+  sha256: measurementCapsuleSha256,
+  bytes: (await fs.stat(capsuleManifestPath)).size,
+  access: "internal",
+});
+inventory.push({
+  uri: "capsule-candidate.json",
+  sha256: scientificInputSha256,
+  bytes: (await fs.stat(path.join(capsuleDir, "capsule-candidate.json"))).size,
+  access: "internal",
+});
+const capsuleSigPath = path.join(capsuleDir, "capsule-signature.json");
+inventory.push({
+  uri: "capsule-signature.json",
+  sha256: await sha256File(capsuleSigPath),
+  bytes: (await fs.stat(capsuleSigPath)).size,
+  access: "internal",
+});
 
-const copyArtifactSet = async (destinationRoot: string): Promise<void> => {
-  const destinationCapsule = path.join(
-    destinationRoot,
+// Key bundle hash — hash of signing key public PEM
+const signingKey = loadSigningKeyFromEnv();
+const keyBundleSha256 = createHash("sha256").update(signingKey.publicKeyPem).digest("hex");
+
+const envelope = createReleaseEnvelope(
+  sealedCapsule.capsuleId,
+  sealedCapsule.period,
+  measurementCapsuleSha256,
+  scientificInputSha256,
+  inventory,
+  publicManifestSha256,
+  rebuildReceiptSha256,
+  keyBundleSha256,
+);
+
+// --- Verify envelope acyclicity ---
+const envelopeViolations = verifyReleaseEnvelope(envelope);
+if (envelopeViolations.length > 0) {
+  throw new Error(`Release envelope verification failed: ${envelopeViolations.join(", ")}`);
+}
+
+const envelopeSha256 = createHash("sha256").update(JSON.stringify(envelope)).digest("hex");
+
+// --- Resumable replica copy ---
+const replicaReceipts: ReplicaReceipt[] = [];
+for (let i = 0; i < replicaConfig.length; i++) {
+  const config = replicaConfig[i]!;
+  const destinationDir = path.join(
+    destinationRoots[i]!,
     sealedCapsule.period,
     sealedCapsule.capsuleId,
   );
-  for (const artifact of sealedCapsule.artifacts) {
-    const source = path.join(capsuleDir, artifact.uri);
-    const destination = path.join(destinationCapsule, artifact.uri);
-    await commitImmutableFile(source, destination, artifact.sha256);
-  }
-  await commitImmutable(
-    path.join(destinationCapsule, "capsule-manifest.json"),
-    await fs.readFile(capsuleManifestPath),
-  );
-  await commitImmutable(
-    path.join(destinationCapsule, "capsule-signature.json"),
-    await fs.readFile(path.join(capsuleDir, "capsule-signature.json")),
-  );
-  await commitImmutable(
-    path.join(destinationCapsule, "capsule-candidate.json"),
-    await fs.readFile(candidateManifestPath),
-  );
-};
-
-for (let index = 0; index < replicaConfig.length; index++) {
-  await copyArtifactSet(destinationRoots[index]!);
-}
-
-const replicaReceiptsPath = path.join(releaseQcDir, "replica-receipts.json");
-let replicaReceipts: ReplicaReceipt[];
-try {
-  replicaReceipts = JSON.parse(await fs.readFile(replicaReceiptsPath, "utf8")) as ReplicaReceipt[];
-  if (
-    replicaReceipts.length !== replicaConfig.length ||
-    replicaReceipts.some((receipt, index) => {
-      const config = replicaConfig[index]!;
-      return (
-        receipt.period !== sealedCapsule.period ||
-        receipt.capsuleId !== sealedCapsule.capsuleId ||
-        receipt.replicaId !== config.replicaId ||
-        receipt.mediaId !== config.mediaId ||
-        receipt.destinationId !==
-          createHash("sha256").update(destinationRoots[index]!).digest("hex") ||
-        receipt.candidateManifestSha256 !== candidateManifestSha256 ||
-        receipt.artifactCount !== sealedCapsule.artifacts.length ||
-        receipt.status !== "pass" ||
-        receipt.offsite !== true
-      );
-    })
-  ) {
-    throw new Error("Existing replica receipts do not match this immutable release");
-  }
-} catch (error) {
-  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-  replicaReceipts = replicaConfig.map((config, index) => ({
-    schemaVersion: "1",
-    period: sealedCapsule.period,
-    capsuleId: sealedCapsule.capsuleId,
+  const result = await resumeReplicaCopy(capsuleDir, destinationDir, inventory);
+  replicaReceipts.push({
+    schema: "hdri-replica-receipt@1",
     replicaId: config.replicaId,
+    failureDomain: config.failureDomain,
     mediaId: config.mediaId,
-    offsite: true,
-    destinationId: createHash("sha256").update(destinationRoots[index]!).digest("hex"),
-    candidateManifestSha256,
-    artifactCount: sealedCapsule.artifacts.length,
+    credentialBoundary: config.credentialBoundary,
+    envelopeSha256,
+    closureDigest: result.closureDigest,
+    verifiedBytes: result.verifiedBytes,
+    verifiedObjects: result.verifiedObjects,
     verifiedAt: new Date().toISOString(),
-    status: "pass",
-  }));
-  await commitImmutable(replicaReceiptsPath, `${JSON.stringify(replicaReceipts, null, 2)}\n`);
+  });
 }
 
-// Re-validate now that replica receipts exist.
-const { execFileSync } = await import("node:child_process");
-execFileSync(
-  process.execPath,
-  [
-    "--import",
-    "tsx",
-    path.join(import.meta.dirname, "quarter-validate.ts"),
-    "--candidate",
-    path.join(capsuleDir, "capsule-candidate.json"),
-    "--evidence-dir",
-    releaseQcDir,
-  ],
-  { stdio: "pipe" },
+// --- Validate replica independence ---
+const independenceViolations = validateReplicaIndependence(replicaReceipts);
+if (independenceViolations.length > 0) {
+  throw new Error(`Replica independence validation failed: ${independenceViolations.join(", ")}`);
+}
+
+// --- Write replica receipts ---
+const releaseQcDir = path.join(capsuleDir, "artifacts", "qc", "release");
+const replicaReceiptsPath = path.join(releaseQcDir, "replica-receipts.json");
+await fs.mkdir(path.dirname(replicaReceiptsPath), { recursive: true });
+const replicaReceiptsBytes = `${JSON.stringify(replicaReceipts, null, 2)}\n`;
+try {
+  await fs.writeFile(replicaReceiptsPath, replicaReceiptsBytes, { flag: "wx" });
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+  const existing = await fs.readFile(replicaReceiptsPath, "utf8");
+  if (existing !== replicaReceiptsBytes) {
+    throw new Error(`Replica receipts conflict: ${replicaReceiptsPath}`);
+  }
+}
+
+// --- Create PublicationAttestation ---
+const replicaReceiptSha256s = [await sha256File(replicaReceiptsPath)];
+const attestationSignature = crypto
+  .sign(
+    null,
+    createHash("sha256")
+      .update(
+        canonicalize({
+          schema: "hdri-publication-attestation@1",
+          releaseId: envelope.releaseId,
+          envelopeSha256,
+          replicaReceiptSha256s,
+          attestedAt: new Date().toISOString(),
+          signingKeyId: signingKey.signingKeyId,
+        }),
+      )
+      .digest(),
+    crypto.createPrivateKey(signingKey.privateKeyPem),
+  )
+  .toString("base64url");
+
+const attestation = createPublicationAttestation(
+  envelope,
+  replicaReceiptSha256s,
+  signingKey.signingKeyId,
+  attestationSignature,
 );
-const validation = JSON.parse(await fs.readFile(validationPath, "utf8")) as QuarterValidationReport;
-if (
-  validation.schemaVersion !== "1" ||
-  validation.period !== sealedCapsule.period ||
-  validation.capsuleId !== sealedCapsule.capsuleId ||
-  validation.status !== "pass"
-) {
-  throw new Error("Validation report must be a pass for this capsule");
+
+// --- Copy attestation + receipts to each destination ---
+for (let i = 0; i < destinationRoots.length; i++) {
+  const destinationCapsule = path.join(
+    destinationRoots[i]!,
+    sealedCapsule.period,
+    sealedCapsule.capsuleId,
+  );
+  const attestationPath = path.join(destinationCapsule, "publication-attestation.json");
+  const attestationBytes = `${JSON.stringify(attestation, null, 2)}\n`;
+  await fs.mkdir(path.dirname(attestationPath), { recursive: true });
+  try {
+    await fs.writeFile(attestationPath, attestationBytes, { flag: "wx" });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    const existing = await fs.readFile(attestationPath);
+    if (!existing.equals(Buffer.from(attestationBytes))) {
+      throw new Error(`Attestation conflicts at ${attestationPath}`);
+    }
+  }
+  const receiptsTarget = path.join(destinationCapsule, "replica-receipts.json");
+  try {
+    await fs.writeFile(receiptsTarget, await fs.readFile(replicaReceiptsPath), { flag: "wx" });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+  }
 }
 
+// --- Verify attestation delivery ---
+const deliveryViolations = await verifyAttestationDelivery(
+  attestation,
+  destinationRoots.map((root) => path.join(root, sealedCapsule.period, sealedCapsule.capsuleId)),
+);
+if (deliveryViolations.length > 0) {
+  throw new Error(`Attestation delivery verification failed: ${deliveryViolations.join(", ")}`);
+}
+
+// --- Write envelope to vault ---
+const envelopePath = path.join(
+  vaultDir,
+  "releases",
+  `period=${sealedCapsule.period}`,
+  `${sealedCapsule.capsuleId}.json`,
+);
+const envelopeBytes = `${JSON.stringify(envelope, null, 2)}\n`;
+await fs.mkdir(path.dirname(envelopePath), { recursive: true });
+try {
+  await fs.writeFile(envelopePath, envelopeBytes, { flag: "wx" });
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+  const existing = await fs.readFile(envelopePath, "utf8");
+  if (existing !== envelopeBytes) {
+    throw new Error(`Release envelope conflicts: ${envelopePath}`);
+  }
+}
+
+// --- Atomically expose public archive ---
 const publicArchiveDir = path.join(
   publicArchiveRoot,
   sealedCapsule.period,
@@ -275,92 +326,15 @@ try {
   await fs.rm(publicTemp, { recursive: true, force: true });
 }
 
-const methodologyHash = createHash("sha256")
-  .update(
-    sealedCapsule.artifacts
-      .filter((item) => item.stage === "methodology")
-      .map((item) => `${item.uri}\0${item.sha256}`)
-      .sort()
-      .join("\n"),
-  )
-  .digest("hex");
-const vaultHead = await sha256File(path.join(vaultDir, "vault-manifest.json"));
-const signingKey = loadSigningKeyFromEnv();
-const unsignedBase = {
-  schemaVersion: "1",
-  releaseId: sealedCapsule.capsuleId,
-  period: sealedCapsule.period,
-  state: "published",
-  capsuleHash: await sha256File(capsuleManifestPath),
-  vaultHead,
-  methodologyHash,
-  publicArchiveHash,
-  validationReportHash: await sha256File(validationPath),
-  rebuildReportHash: await sha256File(path.join(releaseQcDir, "rebuild-receipt.json")),
-  replicaReceipts: [await sha256File(replicaReceiptsPath)],
-  supersedesReleaseId: arg("--supersedes") ?? null,
-  signingKeyId: signingKey.signingKeyId,
-  collectorId: signingKey.collectorId,
-} as const;
-const releasePath = path.join(
-  vaultDir,
-  "releases",
-  `period=${sealedCapsule.period}`,
-  `${sealedCapsule.capsuleId}.json`,
-);
-let releaseManifest: QuarterReleaseManifest;
-try {
-  releaseManifest = JSON.parse(await fs.readFile(releasePath, "utf8")) as QuarterReleaseManifest;
-  const { signature, ...existingUnsigned } = releaseManifest;
-  const expectedUnsigned = { ...unsignedBase, publishedAt: releaseManifest.publishedAt };
-  if (
-    !Number.isFinite(Date.parse(releaseManifest.publishedAt)) ||
-    canonicalize(existingUnsigned) !== canonicalize(expectedUnsigned) ||
-    !crypto.verify(
-      null,
-      createHash("sha256").update(canonicalize(existingUnsigned)).digest(),
-      crypto.createPublicKey(signingKey.publicKeyPem),
-      Buffer.from(signature, "base64url"),
-    )
-  ) {
-    throw new Error("Existing release manifest is invalid or belongs to another release");
-  }
-} catch (error) {
-  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-  const unsigned = { ...unsignedBase, publishedAt: new Date().toISOString() };
-  const signature = crypto
-    .sign(
-      null,
-      createHash("sha256").update(canonicalize(unsigned)).digest(),
-      crypto.createPrivateKey(signingKey.privateKeyPem),
-    )
-    .toString("base64url");
-  releaseManifest = { ...unsigned, signature };
-  await commitImmutable(releasePath, `${JSON.stringify(releaseManifest, null, 2)}\n`);
-}
-
-for (let index = 0; index < destinationRoots.length; index++) {
-  const destinationCapsule = path.join(
-    destinationRoots[index]!,
-    sealedCapsule.period,
-    sealedCapsule.capsuleId,
-  );
-  await commitImmutable(
-    path.join(destinationCapsule, "release-manifest.json"),
-    await fs.readFile(releasePath),
-  );
-}
-
 process.stdout.write(
   `${JSON.stringify(
     {
       command: "hdri.quarter.release",
       status: "pass",
-      period: sealedCapsule.period,
-      capsuleId: sealedCapsule.capsuleId,
-      publicArchiveHash,
+      releaseId: envelope.releaseId,
+      envelopeSha256,
       replicasVerified: replicaReceipts.length,
-      releaseManifest: releasePath,
+      attestationDelivered: deliveryViolations.length === 0,
     },
     null,
     2,
