@@ -80,9 +80,23 @@ export class EmitBundleGogol extends Gogol {
       livenessDbs,
       axeDbs,
       ontology,
+      translationClosure,
     } = ctx.state;
     if (!signedObservationDbPath) {
       throw new Error("No signed observation store — run sign-bundle first");
+    }
+    if (!translationClosure) {
+      throw new Error("No translation closure — run translate-ontology first");
+    }
+    if (translationClosure.unresolvedReferences > 0) {
+      throw new Error(
+        `Cannot emit bundle with ${translationClosure.unresolvedReferences} unresolved reference(s)`,
+      );
+    }
+    if (translationClosure.expectedKeysSha256 !== translationClosure.emittedKeysSha256) {
+      throw new Error(
+        `Translation coverage mismatch: expected ${translationClosure.expectedKeysSha256}, emitted ${translationClosure.emittedKeysSha256}`,
+      );
     }
 
     const factoryRunId = brief.capsuleId;
@@ -299,7 +313,7 @@ export class EmitBundleGogol extends Gogol {
       try {
         const rows = db
           .prepare(
-            "SELECT content_hash AS contentHash, storage_path AS storagePath FROM page_contents ORDER BY content_hash",
+            "SELECT sha256 AS contentHash, storage_path AS storagePath FROM page_contents ORDER BY sha256",
           )
           .all() as Array<{ contentHash: string; storagePath: string }>;
         const outputRoot = path.dirname(path.dirname(path.dirname(item.pagesDbPath)));
