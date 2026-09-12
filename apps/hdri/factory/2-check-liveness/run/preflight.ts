@@ -1,4 +1,31 @@
-import { runPreflight, DEFAULT_EGRESS_POLICY, computePolicySha256 } from "./capture-policy.js";
+import {
+  runPreflight,
+  DEFAULT_EGRESS_POLICY,
+  computePolicySha256,
+  isAddressBlocked,
+} from "./capture-policy.js";
+import { promises as dns } from "node:dns";
+
+const checkEgress = async () => {
+  const violations: { code: string; message: string }[] = [];
+  try {
+    const addresses = await dns.lookup("example.com", { all: true });
+    for (const addr of addresses) {
+      if (isAddressBlocked(addr.address, DEFAULT_EGRESS_POLICY)) {
+        violations.push({
+          code: "egress-violation",
+          message: `Resolved address ${addr.address} is blocked by egress policy`,
+        });
+      }
+    }
+  } catch {
+    violations.push({
+      code: "egress-dns-failed",
+      message: "Unable to resolve test hostname for egress verification",
+    });
+  }
+  return violations;
+};
 
 const main = async (): Promise<void> => {
   const args = process.argv.slice(2);
@@ -11,6 +38,7 @@ const main = async (): Promise<void> => {
   const result = await runPreflight({
     capsuleDir,
     egressPolicy,
+    checkEgress,
   });
 
   if (jsonFlag) {

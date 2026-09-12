@@ -91,7 +91,7 @@ export const runPreflight = async (options: {
   };
 };
 
-export const computePolicySha256 = (policy: unknown): string => {
-  const canonical = JSON.stringify(policy, Object.keys(policy as object).sort());
+export const computePolicySha256 = (policy: object): string => {
+  const canonical = JSON.stringify(policy, Object.keys(policy).sort());
   return createHash("sha256").update(canonical).digest("hex");
 };
