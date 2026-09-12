@@ -16,7 +16,6 @@ import { fork, type ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { BrowserEvidence } from "@syrokomskyi/factory-core";
 import type { WorkerRequest, WorkerResponse, WorkerError } from "./worker-entry.js";
 
 // ---------------------------------------------------------------------------
@@ -41,11 +40,7 @@ export type PoolTarget = {
 };
 
 export type RecycleReason =
-  | "max-targets"
-  | "crash"
-  | "cleanup-failure"
-  | "rss-limit"
-  | "deadline-exceeded";
+  "max-targets" | "crash" | "cleanup-failure" | "rss-limit" | "deadline-exceeded";
 
 type PoolWorker = {
   process: ChildProcess;
@@ -83,7 +78,7 @@ export class WorkerPool {
   private readonly idleQueue: PoolWorker[] = [];
   private readonly pendingResolvers: Map<
     string,
-    { resolve: (e: BrowserEvidence) => void; reject: (e: Error) => void; timer: NodeJS.Timeout }
+    { resolve: (e: WorkerResponse) => void; reject: (e: Error) => void; timer: NodeJS.Timeout }
   > = new Map();
   private readonly recycleLog: Array<{ reason: RecycleReason; at: string }> = [];
 
@@ -130,7 +125,7 @@ export class WorkerPool {
     return this.config.poolSize;
   }
 
-  async acquire(target: PoolTarget, workKey: string): Promise<BrowserEvidence> {
+  async acquire(target: PoolTarget, workKey: string): Promise<WorkerResponse> {
     const worker = await this.getIdleWorker();
     worker.busy = true;
 
@@ -142,7 +137,7 @@ export class WorkerPool {
       environmentSha256: this.config.environmentSha256,
     };
 
-    return new Promise<BrowserEvidence>((resolve, reject) => {
+    return new Promise<WorkerResponse>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.handleTimeout(worker, workKey);
         reject(new Error(`Worker deadline exceeded: ${this.config.deadlineMs}ms`));
@@ -171,7 +166,7 @@ export class WorkerPool {
             this.idleQueue.push(worker);
           }
 
-          resolve(msg.evidence);
+          resolve(msg);
         }
       };
 
@@ -269,10 +264,7 @@ export class WorkerPool {
 // Helper: compute environment SHA-256 from browser binary digest
 // ---------------------------------------------------------------------------
 
-export const computeEnvironmentSha256 = (
-  browserDigest: string,
-  engineVersion: string,
-): string =>
+export const computeEnvironmentSha256 = (browserDigest: string, engineVersion: string): string =>
   createHash("sha256")
     .update(`hdri-browser-env@1\0${browserDigest}\0${engineVersion}`)
     .digest("hex");

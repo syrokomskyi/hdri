@@ -20,6 +20,7 @@
   <item>Fix COMPASS non-goal: replace wrong LighthouseAuditGogol class reference with pipeline reference.</item>
   <item>Migrate shared rate limiter import from @syrokomskyi/business-rate-limit to @syrokomskyi/rate-limit.</item>
   <item>Replace local loadTargetsFromRegistryDb and upsertEnvelope with shared loadLiveAuditTargets and upsertAuditRun from @syrokomskyi/factory-core.</item>
+  <item>RFC-0105/ADR-0023: replace per-target browser launch with supervised worker pool, preflight self-test, challenge detector, and BrowserEvidence contract.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -39,10 +40,10 @@ import {
   writeExecutionCasObject,
   type HdriPeriod,
   type WorkKey,
+  type BrowserEvidence,
 } from "@syrokomskyi/factory-core";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import { markdownTable } from "markdown-table";
-import pLimit from "p-limit";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { AuditTarget, PipelineContext } from "../pipeline/types.js";
@@ -51,6 +52,13 @@ import { getAuditsDbPath } from "../paths.js";
 import { writeReportToCas } from "../cas/write-report.js";
 import type Database from "better-sqlite3";
 import { factoryRootDir } from "../config.js";
+import {
+  WorkerPool,
+  computeEnvironmentSha256,
+  computePolicySha256,
+  defaultWorkerEntryPath,
+} from "../browser/worker-pool.js";
+import { preflight } from "../browser/preflight.js";
 
 // ---------------------------------------------------------------------------
 // Axe report shape — minimal subset we care about
@@ -80,12 +88,13 @@ export type Extracted = {
 };
 
 type AxeEvidence = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   stage: "axe";
   siteId: number;
   provisionalAssetId: string;
   url: string;
   durationMs: number;
+  browserEvidence: BrowserEvidence;
   result:
     | { ok: true; reportSha256: string; extracted: Extracted }
     | { ok: false; errorClass: string; errorMessage: string };
@@ -111,35 +120,6 @@ const extract = (r: AxeReport): Extracted => {
     nodesScanned: r.nodesScanned ?? null,
     axeVersion: r.testEngine?.version ?? null,
   };
-};
-
-// ---------------------------------------------------------------------------
-// Live axe driver — dynamic import, fails cleanly if Playwright is absent.
-// ---------------------------------------------------------------------------
-
-const runAxeLive = async (target: AuditTarget, timeoutMs: number): Promise<AxeReport> => {
-  let playwright: any;
-  let AxeBuilder: any;
-  try {
-    playwright = await import("playwright" as string);
-    const mod: any = await import("@axe-core/playwright" as string);
-    AxeBuilder = mod.default ?? mod;
-  } catch {
-    throw new Error(
-      "Live axe mode requires `playwright` and `@axe-core/playwright` to be installed.",
-    );
-  }
-
-  const browser = await playwright.chromium.launch({ headless: true });
-  try {
-    const ctx = await browser.newContext();
-    const page = await ctx.newPage();
-    await page.goto(target.url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
-    const results = await new AxeBuilder({ page }).analyze();
-    return results as unknown as AxeReport;
-  } finally {
-    await browser.close();
-  }
 };
 
 // ---------------------------------------------------------------------------
@@ -287,12 +267,48 @@ export class AxeAuditGogol extends Gogol {
       console.log("[axe-audit] All targets already audited.");
     }
 
+    // Preflight self-test (RFC-0105)
+    const preflightResult = await preflight();
+    if (!preflightResult.ok) {
+      console.log("[axe-audit] Preflight FAILED — acquiring zero target leases.");
+      for (const v of preflightResult.violations) {
+        console.log(`[axe-audit] Preflight violation: ${v}`);
+      }
+      auditsDb.close();
+      return;
+    }
     console.log(
-      `[axe-audit] mode=live ` +
-        `targets=${pendingTargets.length} concurrency=${brief.concurrency}`,
+      `[axe-audit] Preflight OK — browser digest=${preflightResult.browserDigest.slice(0, 16)}… ` +
+        `engine=${preflightResult.engineVersion}`,
     );
 
-    const limit = pLimit(brief.concurrency);
+    const environmentSha256 = computeEnvironmentSha256(
+      preflightResult.browserDigest,
+      preflightResult.engineVersion,
+    );
+    const policySha256 = computePolicySha256({
+      poolSize: brief.poolSize,
+      recycleAfterTargets: brief.recycleAfterTargets,
+      deadlineMs: brief.deadlineMs,
+      terminationGraceMs: brief.terminationGraceMs,
+    });
+
+    const pool = new WorkerPool({
+      poolSize: brief.poolSize,
+      recycleAfterTargets: brief.recycleAfterTargets,
+      deadlineMs: brief.deadlineMs,
+      terminationGraceMs: brief.terminationGraceMs,
+      workerEntryPath: defaultWorkerEntryPath(),
+      environmentSha256,
+      policySha256,
+    });
+    await pool.start();
+
+    console.log(
+      `[axe-audit] mode=live pool ` +
+        `targets=${pendingTargets.length} poolSize=${brief.poolSize} ` +
+        `deadline=${brief.deadlineMs}ms grace=${brief.terminationGraceMs}ms`,
+    );
 
     type Outcome = {
       siteId: number;
@@ -306,13 +322,13 @@ export class AxeAuditGogol extends Gogol {
     const totalTargets = pendingTargets.length;
     const progressInterval = Math.max(1, Math.min(10, Math.floor(totalTargets / 5)));
 
-    await Promise.all(
-      pendingTargets.map((target) =>
-        limit(async () => {
+    try {
+      await Promise.all(
+        pendingTargets.map(async (target) => {
           const startedAt = Date.now();
           for (let retryOrdinal = 0; retryOrdinal <= brief.retries; retryOrdinal++) {
             const leaseAt = new Date();
-            const leaseDurationMs = brief.timeoutMs + 60_000;
+            const leaseDurationMs = brief.deadlineMs + 60_000;
             const attempt = await journal.begin({
               key: keyFor(target),
               attemptId: mintAssetId(),
@@ -322,51 +338,101 @@ export class AxeAuditGogol extends Gogol {
             });
             if (!attempt) return;
             try {
-              const report = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, () =>
-                runAxeLive(target, brief.timeoutMs),
+              const response = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, () =>
+                pool.acquire(
+                  {
+                    siteId: target.siteId,
+                    provisionalAssetId: target.provisionalAssetId,
+                    domain: target.domain,
+                    url: target.url,
+                  },
+                  target.provisionalAssetId,
+                ),
               );
 
-              const { sha256 } = await writeReportToCas("axe", JSON.stringify(report));
-              const extracted = extract(report);
+              const browserEvidence = response.evidence;
               const durationMs = Date.now() - startedAt;
 
-              const payload: AxeEvidence = {
-                schemaVersion: 1,
-                stage: "axe",
-                siteId: target.siteId,
-                provisionalAssetId: target.provisionalAssetId,
-                url: target.url,
-                durationMs,
-                result: { ok: true, reportSha256: sha256, extracted },
-              };
-              const evidence = await writeExecutionCasObject(capsuleDir, payload);
-              await journal.finish(attempt, {
-                eventId: mintAssetId(),
-                now: new Date().toISOString(),
-                state: "succeeded",
-                resultSha256: evidence.sha256,
-              });
-              checkpoint(target, payload);
+              if (browserEvidence.outcome === "measured" && response.axeReport) {
+                const report = response.axeReport as AxeReport;
+                const { sha256 } = await writeReportToCas("axe", JSON.stringify(report));
+                const extracted = extract(report);
 
-              results.push({
-                siteId: target.siteId,
-                ok: true,
-                errorClass: null,
-                durationMs,
-                extracted,
-              });
-              completed++;
-              logProgress(this.id, completed, totalTargets, progressInterval, true);
-              console.log(
-                `[axe-audit] site ${target.siteId} (${target.domain}) ok in ${durationMs}ms ` +
-                  `violations=${extracted.violationsTotal} (crit=${extracted.criticalCount} ` +
-                  `ser=${extracted.seriousCount} mod=${extracted.moderateCount} min=${extracted.minorCount})`,
-              );
-              return;
+                const payload: AxeEvidence = {
+                  schemaVersion: 2,
+                  stage: "axe",
+                  siteId: target.siteId,
+                  provisionalAssetId: target.provisionalAssetId,
+                  url: target.url,
+                  durationMs,
+                  browserEvidence,
+                  result: { ok: true, reportSha256: sha256, extracted },
+                };
+                const evidence = await writeExecutionCasObject(capsuleDir, payload);
+                await journal.finish(attempt, {
+                  eventId: mintAssetId(),
+                  now: new Date().toISOString(),
+                  state: "succeeded",
+                  resultSha256: evidence.sha256,
+                });
+                checkpoint(target, payload);
+
+                results.push({
+                  siteId: target.siteId,
+                  ok: true,
+                  errorClass: null,
+                  durationMs,
+                  extracted,
+                });
+                completed++;
+                logProgress(this.id, completed, totalTargets, progressInterval, true);
+                console.log(
+                  `[axe-audit] site ${target.siteId} (${target.domain}) ok in ${durationMs}ms ` +
+                    `violations=${extracted.violationsTotal} (crit=${extracted.criticalCount} ` +
+                    `ser=${extracted.seriousCount} mod=${extracted.moderateCount} min=${extracted.minorCount})`,
+                );
+                return;
+              } else {
+                const errorClass = browserEvidence.outcome;
+                const errorMessage = `Browser evidence outcome: ${browserEvidence.outcome} (status=${browserEvidence.mainStatus})`;
+
+                const payload: AxeEvidence = {
+                  schemaVersion: 2,
+                  stage: "axe",
+                  siteId: target.siteId,
+                  provisionalAssetId: target.provisionalAssetId,
+                  url: target.url,
+                  durationMs,
+                  browserEvidence,
+                  result: { ok: false, errorClass, errorMessage },
+                };
+                const evidence = await writeExecutionCasObject(capsuleDir, payload);
+                await journal.finish(attempt, {
+                  eventId: mintAssetId(),
+                  now: new Date().toISOString(),
+                  state: "observed-failure",
+                  resultSha256: evidence.sha256,
+                  errorClass,
+                });
+                checkpoint(target, payload);
+                results.push({
+                  siteId: target.siteId,
+                  ok: false,
+                  errorClass,
+                  durationMs,
+                  extracted: null,
+                });
+                completed++;
+                logProgress(this.id, completed, totalTargets, progressInterval, true);
+                console.log(
+                  `[axe-audit] site ${target.siteId} (${target.domain}) ${errorClass} in ${durationMs}ms`,
+                );
+                return;
+              }
             } catch (err) {
               const durationMs = Date.now() - startedAt;
               const errorClass =
-                err instanceof Error && /timeout/i.test(err.message) ? "timeout" : "error";
+                err instanceof Error && /timeout|deadline/i.test(err.message) ? "timeout" : "error";
               const errorMessage =
                 err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500);
               if (retryOrdinal < brief.retries) {
@@ -382,12 +448,26 @@ export class AxeAuditGogol extends Gogol {
                 continue;
               }
               const payload: AxeEvidence = {
-                schemaVersion: 1,
+                schemaVersion: 2,
                 stage: "axe",
                 siteId: target.siteId,
                 provisionalAssetId: target.provisionalAssetId,
                 url: target.url,
                 durationMs,
+                browserEvidence: {
+                  schema: "hdri-browser-evidence@1",
+                  workKey: target.provisionalAssetId,
+                  measuredAt: new Date().toISOString(),
+                  endpoint: target.url,
+                  mainStatus: null,
+                  effectiveUrl: target.url,
+                  outcome: "instrument-failed",
+                  environmentSha256,
+                  renderedDomSha256: null,
+                  reportSha256: null,
+                  deadlineMs: brief.deadlineMs,
+                  policySha256,
+                },
                 result: { ok: false, errorClass, errorMessage },
               };
               const evidence = await writeExecutionCasObject(capsuleDir, payload);
@@ -415,8 +495,10 @@ export class AxeAuditGogol extends Gogol {
             }
           }
         }),
-      ),
-    );
+      );
+    } finally {
+      await pool.shutdown();
+    }
 
     await journal.sealStage({
       stageId: "axe",
