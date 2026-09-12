@@ -230,7 +230,7 @@ Rebuild HDRI releases independently from preserved evidence using sandbox isolat
 ### Changed interfaces
 
 - `quarter:rebuild-verify` now accepts `--release-input <manifest> --scratch <empty-dedicated-root> --expected-public-digest <sha256> --json` instead of `--candidate/--primary-public`.
-- Two-phase `--prepare` protocol removed. Single-step: check scratch empty, create marker, acquire PID lock.
+- Two-phase `--prepare` protocol removed. Single-step: check scratch empty, acquire PID lock, then create marker.
 - `quarter:validate` validates new `RebuildReceipt` schema via `verifyRebuildReceipt` instead of manual field checks.
 
 ### Sandbox isolation
@@ -238,6 +238,8 @@ Rebuild HDRI releases independently from preserved evidence using sandbox isolat
 - `RebuildSandbox` wraps `fs.promises` methods at the module level, intercepting all file access.
 - Declared paths (evidence, vault, codebook, scratch root) are allowlisted; undeclared paths trigger `IsolationBoundaryViolation`.
 - Access log records all accessed paths; `computeIsolationProof()` returns SHA-256 of the sorted access log.
+- The Proxy must filter non-path string arguments (e.g. `"utf8"` encoding) — only check strings that look like paths (contain `/`, `\`, start with `.` or `~`).
+- `sha256File` and `sha256Directory` in `release-contract.ts` import `fs` at module level and bypass the sandbox. To compute hashes through the sandbox, use `sandboxedFs.readFile` + `createHash` directly instead of calling `sha256File`.
 
 ### Supported host definition
 
