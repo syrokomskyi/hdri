@@ -81,13 +81,20 @@ export const upsertFileStat = (
   stat: SourceFileStat,
   noUrlWarnings: number,
   ss: SkipSummary,
+  receipt?: {
+    contentSha256: string;
+    parserId: string;
+    parserVersion: string;
+    dependencyFingerprint: string;
+  },
 ): void => {
   db.prepare(
     `
     INSERT INTO source_file_stats (
       source_path, items_parsed, items_registered, items_skipped,
-      no_url_warnings, no_url, bad_url, stop_domain
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      no_url_warnings, no_url, bad_url, stop_domain,
+      content_sha256, parser_id, parser_version, dependency_fingerprint
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(source_path) DO UPDATE SET
       items_parsed = excluded.items_parsed,
       items_registered = excluded.items_registered,
@@ -95,7 +102,11 @@ export const upsertFileStat = (
       no_url_warnings = excluded.no_url_warnings,
       no_url = excluded.no_url,
       bad_url = excluded.bad_url,
-      stop_domain = excluded.stop_domain
+      stop_domain = excluded.stop_domain,
+      content_sha256 = excluded.content_sha256,
+      parser_id = excluded.parser_id,
+      parser_version = excluded.parser_version,
+      dependency_fingerprint = excluded.dependency_fingerprint
   `,
   ).run(
     stat.path,
@@ -106,5 +117,9 @@ export const upsertFileStat = (
     ss.noUrl,
     ss.badUrl,
     ss.stopDomain,
+    receipt?.contentSha256 ?? null,
+    receipt?.parserId ?? null,
+    receipt?.parserVersion ?? null,
+    receipt?.dependencyFingerprint ?? null,
   );
 };

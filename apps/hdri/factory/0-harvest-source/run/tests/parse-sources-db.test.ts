@@ -294,7 +294,11 @@ describe("upsertFileStat", () => {
       no_url_warnings    INTEGER NOT NULL,
       no_url             INTEGER NOT NULL,
       bad_url            INTEGER NOT NULL,
-      stop_domain        INTEGER NOT NULL
+      stop_domain        INTEGER NOT NULL,
+      content_sha256     TEXT DEFAULT NULL,
+      parser_id          TEXT DEFAULT NULL,
+      parser_version     TEXT DEFAULT NULL,
+      dependency_fingerprint TEXT DEFAULT NULL
     );
   `;
 

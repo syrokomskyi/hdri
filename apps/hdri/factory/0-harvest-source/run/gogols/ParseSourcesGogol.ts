@@ -34,6 +34,7 @@
   <item>File-size refactor: extracted domain types, DB helpers, and report/source-file helpers into separate modules; gogol class now focuses on orchestration.</item>
   <item>Seal accepted batches and ledger-bound frame manifests with Ed25519 signatures.</item>
   <item>Add empty-quarter fail-fast guard (RFC-0068): check site count before materializeLedgerProjection.</item>
+  <item>RFC-0102: per-file SourceFileReceipt with content-hash + parser-identity resume logic.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -125,6 +126,22 @@ export class ParseSourcesGogol extends Gogol {
       );
     `);
 
+    // RFC-0102: Add receipt columns for content-hash + parser-identity resume
+    const columns = db.prepare("PRAGMA table_info(source_file_stats)").all() as { name: string }[];
+    const colNames = new Set(columns.map((c) => c.name));
+    if (!colNames.has("content_sha256")) {
+      db.exec("ALTER TABLE source_file_stats ADD COLUMN content_sha256 TEXT DEFAULT NULL");
+    }
+    if (!colNames.has("parser_id")) {
+      db.exec("ALTER TABLE source_file_stats ADD COLUMN parser_id TEXT DEFAULT NULL");
+    }
+    if (!colNames.has("parser_version")) {
+      db.exec("ALTER TABLE source_file_stats ADD COLUMN parser_version TEXT DEFAULT NULL");
+    }
+    if (!colNames.has("dependency_fingerprint")) {
+      db.exec("ALTER TABLE source_file_stats ADD COLUMN dependency_fingerprint TEXT DEFAULT NULL");
+    }
+
     const outDir = ctx.getGogolOutputDir(this.id);
     const doneAt = new Date().toISOString();
     const allBatchReports: BatchReport[] = [];
@@ -144,19 +161,74 @@ export class ParseSourcesGogol extends Gogol {
       const ledgerDir = path.join(outputRootDir, "data", "source-ledger");
       await checkSourceBatch(ledgerDir, sourceManifest, verificationKeys);
 
-      // Pre-filter: exclude files already processed in previous runs
-      // This avoids I/O overhead from reading and checking already-processed files
-      const processedPaths = new Set(
-        db
-          .prepare(
-            `
-          SELECT source_path FROM source_file_stats
-        `,
-          )
-          .pluck()
-          .all() as string[],
-      );
-      let sourceFiles = allSourceFiles.filter((sf) => !processedPaths.has(sf.batchScopedPath));
+      // Pre-filter: exclude files already processed with matching content-hash + parser-identity.
+      // RFC-0102: Skip a file only if content_sha256 IS NOT NULL AND parser_id AND parser_version
+      // AND dependency_fingerprint all match the existing source_file_stats row.
+      // Pre-migration rows (NULL content_sha256) are always re-parsed.
+      const receiptRows = db
+        .prepare(
+          `
+        SELECT source_path, content_sha256, parser_id, parser_version, dependency_fingerprint
+        FROM source_file_stats
+      `,
+        )
+        .all() as {
+        source_path: string;
+        content_sha256: string | null;
+        parser_id: string | null;
+        parser_version: string | null;
+        dependency_fingerprint: string | null;
+      }[];
+
+      const processedReceipts = new Map<
+        string,
+        {
+          content_sha256: string;
+          parser_id: string;
+          parser_version: string;
+          dependency_fingerprint: string;
+        }
+      >();
+      const processedPaths = new Set<string>();
+      for (const row of receiptRows) {
+        processedPaths.add(row.source_path);
+        if (
+          row.content_sha256 !== null &&
+          row.parser_id !== null &&
+          row.parser_version !== null &&
+          row.dependency_fingerprint !== null
+        ) {
+          processedReceipts.set(row.source_path, {
+            content_sha256: row.content_sha256,
+            parser_id: row.parser_id,
+            parser_version: row.parser_version,
+            dependency_fingerprint: row.dependency_fingerprint,
+          });
+        }
+      }
+
+      // Compute file hashes for all source files to check against receipts
+      const fileHashes = new Map<string, string>();
+      for (const sf of allSourceFiles) {
+        const digest = await hashFile(sf.absolutePath);
+        fileHashes.set(sf.batchScopedPath, digest.sha256);
+      }
+
+      const DEPENDENCY_FINGERPRINT = "harvest-v1";
+
+      let sourceFiles = allSourceFiles.filter((sf) => {
+        const existing = processedReceipts.get(sf.batchScopedPath);
+        if (!existing) return true; // No receipt or NULL content_sha256 → re-parse
+        const currentHash = fileHashes.get(sf.batchScopedPath)!;
+        const sourceId = sf.relativeDir === "." ? "__batch_root__" : sf.relativeDir;
+        const parser = getParserForSource(sourceId);
+        return (
+          existing.content_sha256 !== currentHash ||
+          existing.parser_id !== parser.sourceId ||
+          existing.parser_version !== DEPENDENCY_FINGERPRINT ||
+          existing.dependency_fingerprint !== DEPENDENCY_FINGERPRINT
+        );
+      });
 
       // Apply maxPages slice across all batches (cumulative)
       if (maxPages >= 0) {
@@ -257,7 +329,12 @@ export class ParseSourcesGogol extends Gogol {
               stopDomain: fileSkipSummary.stopDomain,
             };
 
-            upsertFileStat(db, stat, noUrlInFile, fileSkipSummary);
+            upsertFileStat(db, stat, noUrlInFile, fileSkipSummary, {
+              contentSha256: fileHashes.get(sf.batchScopedPath)!,
+              parserId: parser.sourceId,
+              parserVersion: DEPENDENCY_FINGERPRINT,
+              dependencyFingerprint: DEPENDENCY_FINGERPRINT,
+            });
           })();
 
           const result = {
