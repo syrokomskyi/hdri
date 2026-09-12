@@ -24,6 +24,7 @@ import {
   stripAnsi,
 } from "@warpgogol/pipeline-core";
 import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
+import { evaluateProgramGate } from "@syrokomskyi/factory-core";
 import { inputDir, outputRootDir } from "../config";
 import {
   DB_TARGET_ENV,
@@ -51,6 +52,18 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   await ensureOutputDir(outputRootDir);
 
   const { brief } = await bootstrapBrief();
+
+  // RFC-0099: ProgramGate fail-closed check
+  const gate = evaluateProgramGate({
+    operation: (process.env.HDRI_OPERATION as "diagnostic" | "publish") ?? "publish",
+    period: brief.period,
+    preservationRef: null,
+    collectionReadinessRef: null,
+    publicationReadinessRef: null,
+  });
+  if (gate.status === "blocked") {
+    throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
+  }
 
   if (process.env[DB_TARGET_ENV] === "staging") {
     await seedStagingFromCanonical(parsePeriod(brief.period).year);

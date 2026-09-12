@@ -24,7 +24,7 @@ import {
 } from "@warpgogol/pipeline-core";
 import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
-import { resolveQuarterScopedUpstreamDbPath } from "@syrokomskyi/factory-core";
+import { resolveQuarterScopedUpstreamDbPath, evaluateProgramGate } from "@syrokomskyi/factory-core";
 import { inputDir, briefInputDir, outputRootDir, factoryRootDir } from "../config.js";
 import { getPagesDbName } from "../paths.js";
 import { createPipeline } from "../pipeline.js";
@@ -45,6 +45,18 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   await ensureOutputDir(outputRootDir);
 
   const { brief } = await bootstrapBrief();
+
+  // RFC-0099: ProgramGate fail-closed check
+  const gate = evaluateProgramGate({
+    operation: (process.env.HDRI_OPERATION as "diagnostic" | "collect") ?? "collect",
+    period: brief.sourceToken,
+    preservationRef: null,
+    collectionReadinessRef: null,
+    publicationReadinessRef: null,
+  });
+  if (gate.status === "blocked") {
+    throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
+  }
 
   const { year, quarter } = parseSourceToken(brief.sourceToken);
   const period = `${year}-q${quarter}`;

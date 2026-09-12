@@ -28,7 +28,11 @@ import {
 } from "@warpgogol/pipeline-core";
 import { PipelinePauseError } from "@warpgogol/pipeline-core";
 import { ensureOutputDir, fileExists, readTextFile } from "@warpgogol/pipeline-node/context";
-import { validateBriefConsistency, parsePriorCapsulesFile } from "@syrokomskyi/factory-core";
+import {
+  validateBriefConsistency,
+  parsePriorCapsulesFile,
+  evaluateProgramGate,
+} from "@syrokomskyi/factory-core";
 import { inputDir, outputRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
@@ -110,6 +114,18 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
     isFirstQuarter,
     priorCapsuleIds,
   });
+
+  // RFC-0099: ProgramGate fail-closed check
+  const gate = evaluateProgramGate({
+    operation: (process.env.HDRI_OPERATION as "diagnostic" | "collect") ?? "collect",
+    period: brief.sourceToken,
+    preservationRef: null,
+    collectionReadinessRef: null,
+    publicationReadinessRef: null,
+  });
+  if (gate.status === "blocked") {
+    throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
+  }
 
   const { batchNames, discovery } = await bootstrapBatches(brief, isFirstQuarter);
 

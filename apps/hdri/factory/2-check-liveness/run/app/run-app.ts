@@ -22,6 +22,7 @@ import {
   formatPipelineStart,
 } from "@warpgogol/pipeline-core";
 import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
+import { evaluateProgramGate } from "@syrokomskyi/factory-core";
 import { inputDir, briefInputDir, outputRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
@@ -41,6 +42,18 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   await ensureOutputDir(outputRootDir);
 
   const { brief } = await bootstrapBrief();
+
+  // RFC-0099: ProgramGate fail-closed check
+  const gate = evaluateProgramGate({
+    operation: (process.env.HDRI_OPERATION as "diagnostic" | "collect") ?? "collect",
+    period: brief.sourceToken,
+    preservationRef: null,
+    collectionReadinessRef: null,
+    publicationReadinessRef: null,
+  });
+  if (gate.status === "blocked") {
+    throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
+  }
 
   // Resolve registry.db path relative to the app root (parent of app-local .input/)
   const appRootDir = path.resolve(briefInputDir, "..");
