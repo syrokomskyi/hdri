@@ -50,6 +50,18 @@ If any check fails, the pipeline pauses with an actionable error message. All th
 
 When reading sibling app briefs (contract ontology, observatory), use `gray-matter` to extract raw frontmatter fields directly from the `.input/brief.md` file. Do not import sibling app brief parsers — cross-app imports are forbidden by AGENTS.md package rules. Only extract the minimal fields needed (`capsuleId`, `period`).
 
+## Source batch admission (RFC-0102)
+
+Source batches are admitted with verified parsers and measured yield. Three mechanisms enforce this:
+
+1. **Per-file receipts**: Each parsed file gets a `SourceFileReceipt` stored in `source_file_stats` with `content_sha256`, `parser_id`, `parser_version`, and `dependency_fingerprint`. Resume logic skips a file only if all four fields match the existing row. Pre-migration rows (NULL `content_sha256`) are always re-parsed.
+
+2. **Parser routing**: `getParserForSource` uses deepest-match routing. Nested external-host boundaries route to `UnknownSourceParser` instead of inheriting the parent's parser. Known source family patterns (e.g. `stadtbranchenbuch` subdomains) are always checked down to segment 1.
+
+3. **Per-source yield gate**: `checkPerSourceYield` runs before sealing. Each source folder must produce at least one accepted seed unless declared as `"declared-noise"` in `brief.md` frontmatter `sourceDisposition` map. A large prior registry does not bypass this check.
+
+The `batch-estimate` script supports `--mode json` and `--baseline-manifest <path>` for yield comparison against a prior capsule manifest.
+
 ## Pipeline structure
 
 The factory pipeline is a chain of **workspace applications**, not a single monolithic app. Each is a **crawl factory** component — it collects raw signals and emits them for downstream consumption by `apps/hdri/observatory`.
@@ -72,6 +84,7 @@ Each app has its own `run/` directory, brief.md, and gogol registry. Run workspa
 - `sites(id, domain, gewerk_group, bundesland, gemeinde)` — master site catalog
 - `site_pages(id, site_id, url_norm, url_sha256)` — URL registry
 - `site_source_seeds(id, site_id, batch_id, source_path, ...)` — provenance
+- `source_file_stats(source_path PRIMARY KEY, items_parsed, items_registered, items_skipped, no_url_warnings, no_url, bad_url, stop_domain, content_sha256, parser_id, parser_version, dependency_fingerprint)` — per-file receipts (RFC-0102)
 - `site_cohorts(id, description, ...)` — cohort definitions
 - `site_strata(cohort_id, site_id, gewerk_group, bundesland, ...)` — cohort membership
 
