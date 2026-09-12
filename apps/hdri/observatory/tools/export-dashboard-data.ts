@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Block unqualified publication before touching dashboard files; diagnostic environment flags cannot authorize export.</item>
   <item>Replace raw console.log/console.error with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Add secondary sort keys (id for bundeslaender, bundesland for matrix) to stabilize output order when p75 ties.</item>
   <item>Replace hardcoded K_ANONYMITY_MIN=5 with policy-driven value loaded from policies/k-anon-policy-v{N}.yaml; add effective_k_min and hard_floor to Manifest.</item>
@@ -17,6 +18,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { evaluateProgramGate } from "@syrokomskyi/factory-core";
 import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { loadKAnonPolicy, type KAnonPolicy } from "./k-anon-policy";
 
@@ -117,6 +119,18 @@ const DIMENSION_LABELS: Record<string, string> = {
 const log = createJsonLogger({ app: "observatory", gogol: "export-dashboard-data" });
 
 async function main(): Promise<void> {
+  // @ai-invariant: No dashboard writes before verified publication admission.
+  // No authoritative receipt loader is wired yet; an unknown period is not an authorization.
+  const gate = evaluateProgramGate({
+    operation: "publish",
+    period: "",
+    preservationRef: null,
+    collectionReadinessRef: null,
+    publicationReadinessRef: null,
+  });
+  if (gate.status === "blocked") {
+    throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
+  }
   await fs.mkdir(DASHBOARD_DATA_DIR, { recursive: true });
   await fs.mkdir(DASHBOARD_DEBUG_CSV_DIR, { recursive: true });
 

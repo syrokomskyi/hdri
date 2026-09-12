@@ -7,12 +7,13 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Open diagnostic databases read-only so a mistaken input cannot create a database or change its journal mode.</item>
   <item>RFC-0104: initial implementation — reads pages DB and reports extraction coverage per ext_* table.</item>
 </CHANGE_SUMMARY>
 */
 
 import { parseArgs } from "node:util";
-import { openPagesDb } from "./db/connection.js";
+import { openReadOnlyDb } from "./db/connection.js";
 import { getPagesDbPath } from "./paths.js";
 
 const { values } = parseArgs({
@@ -31,7 +32,7 @@ if (!capsulePath) {
 }
 
 const pagesDbPath = getPagesDbPath(capsulePath);
-const db = openPagesDb(pagesDbPath);
+const db = openReadOnlyDb(pagesDbPath);
 
 const extTables = db
   .prepare(

@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Require publication admission for apply mode before touching canonical or staging data.</item>
   <item>WP8: staging + validate as the publication gate; promotion is a separate, reversible step.</item>
   <item>Finding 8: --allow-drift threads through the gate to acknowledge a confirmed real data shift.</item>
 </CHANGE_SUMMARY>
@@ -15,6 +16,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { evaluateProgramGate } from "@syrokomskyi/factory-core";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { collectFindings, formatReport } from "./validate-core";
 
@@ -114,6 +116,19 @@ async function main(): Promise<void> {
   const year = Number(argValue("--year") ?? new Date().getFullYear());
   const runId = argValue("--run-id");
   const period = argValue("--period");
+  // @ai-invariant: Dry-run validation remains available; apply cannot bypass publication readiness.
+  if (APPLY) {
+    const programGate = evaluateProgramGate({
+      operation: "publish",
+      period: period ?? "",
+      preservationRef: null,
+      collectionReadinessRef: null,
+      publicationReadinessRef: null,
+    });
+    if (programGate.status === "blocked") {
+      throw new Error(`ProgramGate blocked: ${programGate.blockerCodes.join(", ")}`);
+    }
+  }
   const dbFile = `observatory_${year}.db`;
   const stagingPath = path.join(STAGING_DIR, dbFile);
   const canonicalPath = path.join(CANONICAL_DIR, dbFile);

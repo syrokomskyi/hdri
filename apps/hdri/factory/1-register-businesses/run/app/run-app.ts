@@ -6,6 +6,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Fix the operation to collect; reject diagnostic environment bypasses before creating output.</item>
   <item>Extracted from main.ts into app/ for separation of concerns.</item>
 </CHANGE_SUMMARY>
 */
@@ -25,13 +26,12 @@ import { bootstrapBrief } from "./input/bootstrap-brief.js";
 
 export const runApp = async (options: PipelineRunOptions = {}): Promise<void> => {
   await ensureOutputDir(inputDir);
-  await ensureOutputDir(outputRootDir);
 
   const { brief, year, resolvedCoreDbPath, upstreamHarvestOutputRoot } = await bootstrapBrief();
 
   // RFC-0099: ProgramGate fail-closed check
   const gate = evaluateProgramGate({
-    operation: (process.env.HDRI_OPERATION as "diagnostic" | "collect") ?? "collect",
+    operation: "collect",
     period: brief.sourceToken,
     preservationRef: null,
     collectionReadinessRef: null,
@@ -40,6 +40,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
   }
+  await ensureOutputDir(outputRootDir);
 
   const pipeline = createPipeline();
   const guide = createPipelineExecutionGuide(pipeline);

@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Block unqualified publication before touching dashboard files; diagnostic environment flags cannot authorize export.</item>
   <item>Initial archive exporter for quarterly public HDRI snapshots and comparisons.</item>
   <item>Add stable comparison categories, explicit comparison manifests, and richer suppression reasons for public trend datasets.</item>
   <item>Add minimal console progress indicators at key milestones to track export without overloading output.</item>
@@ -30,6 +31,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { evaluateProgramGate } from "@syrokomskyi/factory-core";
 import { createJsonLogger } from "@warpgogol/pipeline-core";
 import type { ComparisonPoint } from "./comparison-core";
 import { buildPanelTrends } from "./panel-core";
@@ -65,6 +67,18 @@ import {
 const log = createJsonLogger({ app: "observatory", pipeline: "dashboard-archive-export" });
 
 async function main(): Promise<void> {
+  // @ai-invariant: No dashboard writes before verified publication admission.
+  // No authoritative receipt loader is wired yet; an unknown period is not an authorization.
+  const gate = evaluateProgramGate({
+    operation: "publish",
+    period: "",
+    preservationRef: null,
+    collectionReadinessRef: null,
+    publicationReadinessRef: null,
+  });
+  if (gate.status === "blocked") {
+    throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
+  }
   console.log("📊 HDRI Dashboard Archive Export");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 

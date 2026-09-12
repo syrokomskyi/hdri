@@ -138,6 +138,14 @@ describe("RFC-0100 AC-2: receipt validates against hdri-baseline-import@1", () =
 // ---------------------------------------------------------------------------
 
 describe("RFC-0100 AC-3: ambiguous identity blocks admission", () => {
+  it("rejects unmapped historical identities instead of inventing canonical IDs", () => {
+    expect(() => resolveIdentities({
+      archivePath: "/unused", producer: "factory", databaseSha256: "abc",
+      localIds: [{ localSiteId: 1, provisionalId: "da-unmapped", evidenceRefs: [] }],
+      existingCanonicalIds: new Map(),
+    })).toThrow(/UNRESOLVED_IDENTITY/);
+  });
+
   it("fails when one localSiteId maps to two canonical owners", () => {
     expect(() =>
       resolveIdentities({

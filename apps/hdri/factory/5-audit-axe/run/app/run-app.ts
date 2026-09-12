@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Fix the operation to collect; reject diagnostic environment bypasses before creating output.</item>
   <item>Add COMPASS scaffolding.</item>
   <item>Phase B cleanup: remove cohort/fixture logic; simplify to audit all live sites from registry.db using sourceToken.</item>
   <item>Use briefInputDir for appRootDir resolution (matches 3-extract-profile pattern).</item>
@@ -37,13 +38,12 @@ const resolvePath = (p: string, appRootDir: string): string => {
 
 export const runApp = async (options: PipelineRunOptions = {}): Promise<void> => {
   await ensureOutputDir(inputDir);
-  await ensureOutputDir(outputRootDir);
 
   const { brief } = await bootstrapBrief();
 
   // RFC-0099: ProgramGate fail-closed check
   const gate = evaluateProgramGate({
-    operation: (process.env.HDRI_OPERATION as "diagnostic" | "collect") ?? "collect",
+    operation: "collect",
     period: brief.sourceToken,
     preservationRef: null,
     collectionReadinessRef: null,
@@ -52,6 +52,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
   }
+  await ensureOutputDir(outputRootDir);
 
   const appRootDir = path.resolve(briefInputDir, "..");
   const resolvedRegistryDbPath = resolvePath(brief.registryDbPath, appRootDir);

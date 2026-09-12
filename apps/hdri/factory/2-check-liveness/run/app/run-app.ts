@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Fix the operation to collect; reject diagnostic environment bypasses before creating output.</item>
   <item>Initial implementation: liveness pipeline entry point.</item>
   <item>Add COMPASS scaffolding.</item>
   <item>Phase B cleanup: derive year/month from sourceToken instead of removed deprecated fields.</item>
@@ -39,13 +40,12 @@ const resolveRegistryDbPath = (registryDbPath: string, appRootDir: string): stri
 
 export const runApp = async (options: PipelineRunOptions = {}): Promise<void> => {
   await ensureOutputDir(inputDir);
-  await ensureOutputDir(outputRootDir);
 
   const { brief } = await bootstrapBrief();
 
   // RFC-0099: ProgramGate fail-closed check
   const gate = evaluateProgramGate({
-    operation: (process.env.HDRI_OPERATION as "diagnostic" | "collect") ?? "collect",
+    operation: "collect",
     period: brief.sourceToken,
     preservationRef: null,
     collectionReadinessRef: null,
@@ -54,6 +54,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
   }
+  await ensureOutputDir(outputRootDir);
 
   // Resolve registry.db path relative to the app root (parent of app-local .input/)
   const appRootDir = path.resolve(briefInputDir, "..");

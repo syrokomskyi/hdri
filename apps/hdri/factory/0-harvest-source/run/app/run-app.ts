@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Fix the operation to collect; reject diagnostic environment bypasses before creating output.</item>
   <item>Added COMPASS scaffolding to define module purpose, responsibilities, and boundaries.</item>
   <item>Phase B cleanup: derive year/quarter from sourceToken instead of removed deprecated fields.</item>
   <item>Discover the current folder plus every preserved earlier batch for cumulative rebuild.</item>
@@ -75,7 +76,6 @@ const readSiblingBriefField = async (
 
 export const runApp = async (options: PipelineRunOptions = {}): Promise<void> => {
   await ensureOutputDir(inputDir);
-  await ensureOutputDir(outputRootDir);
 
   const { brief, rootBrief } = await bootstrapBrief();
 
@@ -117,7 +117,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
 
   // RFC-0099: ProgramGate fail-closed check
   const gate = evaluateProgramGate({
-    operation: (process.env.HDRI_OPERATION as "diagnostic" | "collect") ?? "collect",
+    operation: "collect",
     period: brief.sourceToken,
     preservationRef: null,
     collectionReadinessRef: null,
@@ -126,6 +126,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
   }
+  await ensureOutputDir(outputRootDir);
 
   const { batchNames, discovery } = await bootstrapBatches(brief, isFirstQuarter);
 

@@ -6,6 +6,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Fix the operation to collect; reject diagnostic environment bypasses before creating output.</item>
   <item>Add coreDbs: [] to initial pipeline state.</item>
   <item>Add axeDbs: [] to initial pipeline state.</item>
 </CHANGE_SUMMARY>
@@ -26,13 +27,12 @@ import { bootstrapBrief } from "./input/bootstrap-brief.js";
 
 export const runApp = async (options: PipelineRunOptions = {}): Promise<void> => {
   await ensureOutputDir(inputDir);
-  await ensureOutputDir(outputRootDir);
 
   const { brief, ontology } = await bootstrapBrief();
 
   // RFC-0099: ProgramGate fail-closed check
   const gate = evaluateProgramGate({
-    operation: (process.env.HDRI_OPERATION as "diagnostic" | "collect") ?? "collect",
+    operation: "collect",
     period: brief.period,
     preservationRef: null,
     collectionReadinessRef: null,
@@ -41,6 +41,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
   }
+  await ensureOutputDir(outputRootDir);
 
   const pipeline = createPipeline();
   const guide = createPipelineExecutionGuide(pipeline);

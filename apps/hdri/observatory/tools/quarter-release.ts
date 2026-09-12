@@ -8,6 +8,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Block unqualified direct releases before copying artifacts or loading signing keys.</item>
   <item>RFC-0031: split combined validate+seal+release into release-only. Validation moved to quarter:validate, sealing moved to SealCapsuleGogol.</item>
   <item>RFC-0109: replace --capsule/--validation/--replica-config/--vault-dir/--public-archive-dir with --release-input manifest. Build ReleaseEnvelope, resumable copy with read-back verify, validate replica independence, create PublicationAttestation, atomic publish. Remove QuarterReleaseManifest — forward-only replacement.</item>
 </CHANGE_SUMMARY>
@@ -17,7 +18,7 @@ import "@syrokomskyi/observatory-crypto/auto-env";
 import crypto, { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { verifyQuarterCapsuleArtifacts, type QuarterCapsule } from "@syrokomskyi/factory-core";
+import { evaluateProgramGate, verifyQuarterCapsuleArtifacts, type QuarterCapsule } from "@syrokomskyi/factory-core";
 import { canonicalize, loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
 import {
   createPublicationAttestation,
@@ -70,6 +71,17 @@ const replicaConfigPath = path.resolve(releaseInput.replicaConfigPath);
 
 const sealedCapsule = JSON.parse(await fs.readFile(capsuleManifestPath, "utf8")) as QuarterCapsule;
 if (sealedCapsule.state !== "sealed") throw new Error("Release requires a sealed capsule manifest");
+// @ai-invariant: A sealed measurement capsule alone does not authorize publication.
+const gate = evaluateProgramGate({
+  operation: "publish",
+  period: sealedCapsule.period,
+  preservationRef: null,
+  collectionReadinessRef: null,
+  publicationReadinessRef: null,
+});
+if (gate.status === "blocked") {
+  throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
+}
 await verifyQuarterCapsuleArtifacts(capsuleDir, sealedCapsule);
 
 const replicaConfig = JSON.parse(await fs.readFile(replicaConfigPath, "utf8")) as ReplicaConfig[];

@@ -6,6 +6,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Fix the operation to publish; reject diagnostic environment bypasses before creating output or clients.</item>
   <item>Replace raw console.log with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Mark successful runs as canonical published, supersede prior published runs for the period, and stamp failed runs.</item>
   <item>WP8: run into a staging DB seeded from canonical; finalizeRun only marks the run finished (candidate) — publication is gated behind a separate validate + promote step.</item>
@@ -46,16 +47,13 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   // an operator can still override the target explicitly.
   process.env[DB_TARGET_ENV] ??= "staging";
 
-  const clients = createClients();
-
   await ensureOutputDir(inputDir);
-  await ensureOutputDir(outputRootDir);
 
   const { brief } = await bootstrapBrief();
 
   // RFC-0099: ProgramGate fail-closed check
   const gate = evaluateProgramGate({
-    operation: (process.env.HDRI_OPERATION as "diagnostic" | "publish") ?? "publish",
+    operation: "publish",
     period: brief.period,
     preservationRef: null,
     collectionReadinessRef: null,
@@ -64,6 +62,8 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
   }
+  await ensureOutputDir(outputRootDir);
+  const clients = createClients();
 
   if (process.env[DB_TARGET_ENV] === "staging") {
     await seedStagingFromCanonical(parsePeriod(brief.period).year);

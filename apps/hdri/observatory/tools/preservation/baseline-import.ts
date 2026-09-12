@@ -9,6 +9,7 @@
 <CHANGE_SUMMARY>
   <item>RFC-0100: baseline import and identity resolution.</item>
   <item>RFC-0100 review fix: DNA-8 — hash actual converter source instead of constant string.</item>
+  <item>Reject unresolved historical identity instead of synthesizing a new canonical identifier.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -37,12 +38,12 @@ export const resolveIdentities = (opts: IdentityResolutionOptions): BaselineIden
   const canonicalByLocalId = new Map<number, string>();
 
   for (const local of opts.localIds) {
-    let canonicalId = opts.existingCanonicalIds.get(local.provisionalId);
+    const canonicalId = opts.existingCanonicalIds.get(local.provisionalId);
 
-    if (canonicalId === undefined) {
-      // Mint a new canonical UUID (deterministic from producer + db digest + localId)
-      const seed = `${opts.producer}\0${opts.databaseSha256}\0${local.localSiteId}`;
-      canonicalId = createHash("sha256").update(seed).digest("hex").slice(0, 36);
+    if (canonicalId === undefined || canonicalId.trim().length === 0) {
+      throw new Error(
+        `UNRESOLVED_IDENTITY: ${opts.producer}/${opts.databaseSha256}/${local.localSiteId}`,
+      );
     }
 
     // AC-3: if one historical numeric ID has two unresolved canonical owners → fail
