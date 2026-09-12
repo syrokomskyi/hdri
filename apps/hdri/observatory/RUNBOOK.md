@@ -202,6 +202,45 @@ mv .output/old-laptop .output/-old-laptop   # leading dash → ignored
 
 ---
 
+## Qualification harness (RFC-0111)
+
+The `quarter:rehearse` tool coordinates the full production-path harness from 1k to 200k deterministic fixture targets.
+
+### Small full-chain CI gate (100 targets)
+
+Runs on every HDRI/shared dependency change as part of the observatory test suite:
+
+```sh
+pnpm --filter @syrokomskyi/observatory exec vitest run run/tests/hdri-qualification-contract.test.ts
+```
+
+### Weekly 10k rehearsal
+
+Runs on a provisioned runner, extending the existing weekly CI schedule:
+
+```sh
+pnpm --filter @syrokomskyi/observatory quarter:rehearse -- --profile <fixture-profile> --targets 10000 --evidence-root <fresh-root> --json
+```
+
+### Pre-quarter 200k qualification
+
+Triggered manually before each quarter's live capture on a separately provisioned runner:
+
+```sh
+pnpm --filter @syrokomskyi/observatory quarter:rehearse -- --profile <fixture-profile> --targets 200000 --evidence-root <fresh-root> --json
+```
+
+Both produce archived signed `QualificationReceipt` files. Neither blocks the 100-target CI gate.
+
+### Receipt validation
+
+```sh
+# Validate a receipt against reference-profile limits
+# Coordinator RSS <=2 GiB, process-tree RSS <=12 GiB, duration <=12h
+```
+
+---
+
 ## Key rotation
 
 1. `pnpm setup:device-id <DEVICE_ID> --force`
