@@ -43,7 +43,10 @@
     "upgrade-packages": "pnpm up --latest",
     "stream:rehearse": "tsx -C @syrokomskyi/source tools/streaming-rehearsal.ts",
     "changelog": "changelog-live",
-    "changelog:init": "changelog-live init"
+    "changelog:init": "changelog-live init",
+    "preserve:q2": "tsx -C @syrokomskyi/source tools/preservation/cli.ts preserve:q2",
+    "preserve:verify": "tsx -C @syrokomskyi/source tools/preservation/cli.ts preserve:verify",
+    "baseline:import": "tsx -C @syrokomskyi/source tools/preservation/cli.ts baseline:import"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",
