@@ -255,3 +255,22 @@ Signing key loss is handled by preserving public keys for historical verificatio
 ### Performance estimate
 
 Typical Q3 capsule (~117k sites): vault rehydration ~5–10 min, rescoring ~15–30 min, canonical serialization ~5 min. Two-host verification doubles wall-clock time. Tests use small fixtures completing in seconds.
+
+## Quarterly continuity and obsolete path retirement (RFC-0112)
+
+Enforce calendar-continuous quarter ledger, retire `quarter:seal-legacy`, and gate readiness on preservation/qualification/capacity evidence.
+
+### Key contracts
+
+- `QuarterRecord` — schema `hdri-quarter-record@1` with period, capsuleId, predecessorPeriod, predecessorManifestSha256, collection status, publication status, checkpoint, and gap decision.
+- `ReadinessReceipt` — schema `hdri-quarter-readiness@1` with preservation, qualification, predecessor, and capacity digests. Status `ready` or `blocked` with stable blocker codes.
+- `discoverQuarterRecord` — resolves predecessor across calendar years (Q4→Q1 rollover), creates gap records for missing predecessors.
+- `computePredecessorPeriod` — computes the immediately preceding quarter period with year rollover.
+
+### Changed interfaces
+
+- `quarter:init` renamed `--current-period` to `--period`, `--prior-capsule` to `--predecessor`. Now persists `quarter-record.json` alongside `prior-capsules.json`. Idempotent re-init returns the same record for the same period.
+- `quarter:seal-legacy` (RFC-0045) removed — tool, test, and script deleted.
+- New `quarter:status` — read-only projection of quarter ledger state.
+- New `quarter:readiness` — binds evidence digests into `ReadinessReceipt`.
+- New `preservation:check` — full-byte integrity scan of retained closure.

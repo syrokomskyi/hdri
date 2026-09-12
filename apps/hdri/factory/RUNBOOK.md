@@ -478,3 +478,36 @@ After factory completes, proceed to `apps/hdri/observatory` for:
 - Mart generation
 
 See `apps/hdri/observatory/RUNBOOK.md`
+
+---
+
+## RFC-0112: Quarterly Continuity and Obsolete Path Retirement
+
+### Quarter initialization
+
+Use `quarter:init --predecessor <capsule-manifest> --period <yyyy-qn>` to initialize a new quarter. The tool:
+
+- Verifies the predecessor capsule manifest and signature
+- Creates/updates `prior-capsules.json` with cumulative source ledger entries
+- Persists a `QuarterRecord` with collection status, predecessor reference, and capsule identity
+- Is idempotent: re-running with the same `--period` returns the same record and capsule ID
+
+### Cross-year continuity (Q4 → Q1)
+
+When initializing Q1 after Q4, the quarter record references the previous year's Q4 collection lineage. The `discoverQuarterRecord` function computes the predecessor period using `computePredecessorPeriod`, which handles year rollover automatically (Q4 → Q1 of next year).
+
+### Gap records
+
+If a historical quarter is missing (no predecessor capsule found), the ledger creates a gap record with `collection: "gap"` and `predecessorManifestSha256: null`. An explicit `gapDecisionSha256` must be provided to document the gap reason.
+
+### Readiness receipts
+
+`quarter:readiness --period <yyyy-qn>` binds preservation, qualification, predecessor, and capacity evidence digests into a `ReadinessReceipt`. The receipt status is `ready` only when all evidence is present and no obsolete runtime entries remain.
+
+### Preservation checks
+
+`preservation:check --archive-root <dir> [--policy <file>]` performs a full-byte integrity scan of retained closure. Corrupted objects cause `status: "degraded"` with violation details.
+
+### Obsolete path retirement
+
+`quarter:seal-legacy` (RFC-0045) has been removed. No legacy dual mode survives. The readiness gate rejects any remaining obsolete runtime entries with `OBSOLETE_RUNTIME_REMAINS` blocker.
