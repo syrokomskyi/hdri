@@ -52,6 +52,8 @@ type DetectedUrlRow = {
   content_sha256: string;
   url: string;
   table_name: string;
+  asset_id: string;
+  page_observation_id: number;
 };
 
 type DetectedUrlGroup = {
@@ -83,16 +85,18 @@ const updateExtTableWithDetectedSha256 = (
   tableName: string,
   contentSha256: string,
   detectedPageSha256: string,
+  assetId: string,
+  pageObservationId: number,
 ): void => {
   pagesDb
     .prepare(
       `
     UPDATE ${tableName}
     SET detected_page_sha256 = ?
-    WHERE content_sha256 = ?
+    WHERE content_sha256 = ? AND asset_id = ? AND page_observation_id = ?
   `,
     )
-    .run(detectedPageSha256, contentSha256);
+    .run(detectedPageSha256, contentSha256, assetId, pageObservationId);
 };
 
 const updateDetectedSources = (
@@ -106,6 +110,8 @@ const updateDetectedSources = (
       row.table_name,
       row.content_sha256,
       detectedPageSha256,
+      row.asset_id,
+      row.page_observation_id,
     );
   }
 
@@ -146,17 +152,24 @@ export class FetchDetectedPagesGogol extends Gogol {
         const rows = pagesDb
           .prepare<[]>(
             `
-            SELECT content_sha256, url FROM ${table}
+            SELECT content_sha256, url, asset_id, page_observation_id FROM ${table}
             WHERE present = 1 AND url IS NOT NULL
           `,
           )
-          .all() as { content_sha256: string; url: string }[];
+          .all() as {
+          content_sha256: string;
+          url: string;
+          asset_id: string;
+          page_observation_id: number;
+        }[];
 
         for (const row of rows) {
           detectedUrls.push({
             content_sha256: row.content_sha256,
             url: row.url!,
             table_name: table,
+            asset_id: row.asset_id,
+            page_observation_id: row.page_observation_id,
           });
         }
       }
@@ -184,6 +197,28 @@ export class FetchDetectedPagesGogol extends Gogol {
       uniqueUrls = Array.from(urlMap.values());
       console.log(`[fetch-detected-pages] ${uniqueUrls.length} unique URL(s) after deduplication`);
 
+      // ── 2b. Enforce 20 detected URL limit per asset (RFC-0104) ──────────────
+      const DETECTED_URL_LIMIT = 20;
+      const assetUrlCount = new Map<string, number>();
+      const limitedUrls: DetectedUrlGroup[] = [];
+      const limitExcluded: DetectedUrlGroup[] = [];
+      for (const item of uniqueUrls) {
+        const assetId = item.rows[0]?.asset_id ?? "";
+        const count = assetUrlCount.get(assetId) ?? 0;
+        if (count >= DETECTED_URL_LIMIT) {
+          limitExcluded.push(item);
+          continue;
+        }
+        assetUrlCount.set(assetId, count + 1);
+        limitedUrls.push(item);
+      }
+      if (limitExcluded.length > 0) {
+        console.log(
+          `[fetch-detected-pages] ${limitExcluded.length} URL(s) excluded (>${DETECTED_URL_LIMIT} per asset limit)`,
+        );
+      }
+      uniqueUrls = limitedUrls;
+
       if (uniqueUrls.length === 0) {
         console.log(`[fetch-detected-pages] No URLs to fetch`);
         return;
@@ -206,33 +241,10 @@ export class FetchDetectedPagesGogol extends Gogol {
           return;
         }
 
-        // Determine site_id from homepage observation (join via content_sha256)
-        const homepageObs = pagesDb
-          .prepare<[string], { site_page_id: number }>(
-            `
-            SELECT site_page_id FROM page_observations WHERE content_sha256 = ? LIMIT 1
-          `,
-          )
-          .get(primaryRow.content_sha256) as { site_page_id: number } | undefined;
-
-        if (!homepageObs) {
-          stats.push({
-            url: item.url,
-            source_table: sourceTablesLabel(item.rows),
-            ok: false,
-            httpStatus: null,
-            isNewContent: false,
-            errorCode: "NO_HOMEPAGE_OBS",
-            updatedRows: 0,
-          });
-          completed++;
-          return;
-        }
-
-        // Get site_id from site_pages
+        // Use explicit context key from ext_* row (RFC-0104: no LIMIT 1 ownership guessing)
         const sitePage = pagesDb
           .prepare<[number], { site_id: number }>(`SELECT site_id FROM site_pages WHERE id = ?`)
-          .get(homepageObs.site_page_id) as { site_id: number } | undefined;
+          .get(primaryRow.page_observation_id) as { site_id: number } | undefined;
 
         if (!sitePage) {
           stats.push({
@@ -251,18 +263,16 @@ export class FetchDetectedPagesGogol extends Gogol {
         // Check if already fetched and apply hardcoded rescan policy (B.2)
         // Policy: error rows always re-fetched, OK rows never re-fetched (skip)
         const existingSitePage = pagesDb
-          .prepare<
-            [number, string],
-            { id: number }
-          >(`SELECT id FROM site_pages WHERE site_id = ? AND url_sha256 = ?`)
+          .prepare<[number, string], { id: number }>(
+            `SELECT id FROM site_pages WHERE site_id = ? AND url_sha256 = ?`,
+          )
           .get(sitePage.site_id, urlSha256);
 
         if (existingSitePage) {
           const hasObservation = pagesDb
-            .prepare<
-              [number],
-              { content_sha256: string }
-            >(`SELECT content_sha256 FROM page_observations WHERE site_page_id = ? LIMIT 1`)
+            .prepare<[number], { content_sha256: string }>(
+              `SELECT content_sha256 FROM page_observations WHERE site_page_id = ? LIMIT 1`,
+            )
             .get(existingSitePage.id);
 
           if (hasObservation) {
@@ -344,7 +354,11 @@ export class FetchDetectedPagesGogol extends Gogol {
           "detected",
         );
 
-        upsertPageObservation(pagesDb, sitePageId, sha256, isNewContent);
+        upsertPageObservation(pagesDb, sitePageId, sha256, isNewContent, "ok", {
+          urlFinal: fetched.finalUrl,
+          deviceId: brief.deviceId,
+          sourceToken: brief.sourceToken,
+        });
 
         const updatedRows = updateDetectedSources(pagesDb, item.rows, sha256);
 

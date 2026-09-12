@@ -32,10 +32,20 @@ export class ExtractOpeningHoursGogol extends ExtractGogolBase {
     return [r.text, r.source, r.confidence];
   }
   protected override get csvColumns(): string[] {
-    return ["content_sha256", "text", "source", "confidence"];
+    return [
+      "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
+      "text",
+      "source",
+      "confidence",
+    ];
   }
   protected override get upsertSql(): string {
-    return `INSERT INTO ext_opening_hours (content_sha256, extractor_ver, text, source, confidence) VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(content_sha256) DO UPDATE SET extractor_ver=excluded.extractor_ver, text=excluded.text, source=excluded.source, confidence=excluded.confidence, extracted_at=unixepoch()`;
+    return `INSERT INTO ext_opening_hours (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash, text, source, confidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET text=excluded.text, source=excluded.source, confidence=excluded.confidence, extracted_at=unixepoch()`;
   }
 }

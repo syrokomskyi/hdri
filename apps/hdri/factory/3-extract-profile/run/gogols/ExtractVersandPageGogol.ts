@@ -27,19 +27,25 @@ export class ExtractVersandPageGogol extends ExtractGogolBase {
   override readonly id = "extract-versand-page";
   override readonly table = "ext_versand_page";
 
-  protected override get querySql(): string {
-    return `SELECT po.content_sha256, pc.storage_path, sp.url_norm FROM page_observations po JOIN page_contents pc ON pc.sha256 = po.content_sha256 JOIN site_pages sp ON sp.id = po.site_page_id WHERE sp.source = 'homepage'`;
-  }
-
   protected override extractDom($: CheerioAPI, row: ObsRow): unknown[] | null {
     const r = extractVersandPage($, row.url_norm!);
     return [r.present ? 1 : 0, r.url, r.confidence];
   }
   protected override get csvColumns(): string[] {
-    return ["content_sha256", "present", "url", "confidence"];
+    return [
+      "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
+      "present",
+      "url",
+      "confidence",
+    ];
   }
   protected override get upsertSql(): string {
-    return `INSERT INTO ext_versand_page (content_sha256, extractor_ver, present, url, confidence) VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(content_sha256) DO UPDATE SET extractor_ver=excluded.extractor_ver, present=excluded.present, url=excluded.url, confidence=excluded.confidence, extracted_at=unixepoch()`;
+    return `INSERT INTO ext_versand_page (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash, present, url, confidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET present=excluded.present, url=excluded.url, confidence=excluded.confidence, extracted_at=unixepoch()`;
   }
 }

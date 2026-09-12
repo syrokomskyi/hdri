@@ -33,10 +33,19 @@ export class ExtractImpressumContactsGogol extends ExtractGogolBase {
   // Read the FETCHED Impressum page content (not the homepage): ext_impressum
   // links the homepage to the fetched Impressum page via detected_page_sha256.
   protected override get querySql(): string {
-    return `SELECT ei.detected_page_sha256 AS content_sha256, pc.storage_path
+    return `SELECT ei.detected_page_sha256 AS content_sha256, pc.storage_path,
+            ei.asset_id, ei.page_observation_id, ei.effective_url, ei.rowid AS _rowid
             FROM ext_impressum ei
             JOIN page_contents pc ON pc.sha256 = ei.detected_page_sha256
             WHERE ei.detected_page_sha256 IS NOT NULL`;
+  }
+
+  protected override get paginationColumn(): string {
+    return "ei.rowid";
+  }
+
+  protected override getPaginationKey(row: ObsRow): string | number {
+    return (row as ObsRow & { _rowid?: number })._rowid ?? row.content_sha256;
   }
 
   protected override extractDom($: CheerioAPI, _row: ObsRow): unknown[] | null {
@@ -66,6 +75,11 @@ export class ExtractImpressumContactsGogol extends ExtractGogolBase {
   protected override get csvColumns(): string[] {
     return [
       "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
       "company_name",
       "person_names",
       "street",
@@ -79,11 +93,12 @@ export class ExtractImpressumContactsGogol extends ExtractGogolBase {
 
   protected override get upsertSql(): string {
     return `INSERT INTO ext_impressum_contacts
-      (content_sha256, extractor_ver, company_name, person_names, street, postal_code, city, phone, email, vat_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(content_sha256) DO UPDATE SET
-        extractor_ver=excluded.extractor_ver, company_name=excluded.company_name,
-        person_names=excluded.person_names, street=excluded.street, postal_code=excluded.postal_code,
+      (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash,
+       company_name, person_names, street, postal_code, city, phone, email, vat_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET
+        company_name=excluded.company_name, person_names=excluded.person_names,
+        street=excluded.street, postal_code=excluded.postal_code,
         city=excluded.city, phone=excluded.phone, email=excluded.email, vat_id=excluded.vat_id,
         extracted_at=unixepoch()`;
   }

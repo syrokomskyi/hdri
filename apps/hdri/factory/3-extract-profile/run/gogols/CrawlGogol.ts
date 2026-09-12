@@ -156,12 +156,12 @@ export class CrawlGogol extends Gogol {
     const keyFor = (site: SiteRow): WorkKey => ({
       period,
       capsuleId: brief.capsuleId,
-      stageId: "profile",
+      stageId: "homepage-capture",
       provisionalAssetId: site.provisionalAssetId as WorkKey["provisionalAssetId"],
       instrumentVersion: "profile-v2",
     });
     await journal.declareStageTargets({
-      stageId: "profile",
+      stageId: "homepage-capture",
       keys: stageTargetSites.map(keyFor),
       eventId: mintAssetId(),
       now: new Date().toISOString(),
@@ -176,7 +176,10 @@ export class CrawlGogol extends Gogol {
             : evidence.result.httpStatus >= 500
               ? "http_5xx"
               : "http_4xx";
-        upsertPageObservation(pagesDb, sitePageId, evidenceSha256, false, errorClass);
+        upsertPageObservation(pagesDb, sitePageId, evidenceSha256, false, errorClass, {
+          deviceId: brief.deviceId,
+          sourceToken: brief.sourceToken,
+        });
         return;
       }
       const result = evidence.result;
@@ -190,7 +193,11 @@ export class CrawlGogol extends Gogol {
       const finalHash = sha256Hex(finalUrl);
       if (finalHash !== sha256Hex(initialUrl))
         upsertSitePage(pagesDb, site.id, finalUrl, finalHash);
-      upsertPageObservation(pagesDb, sitePageId, result.contentHash, result.isNewContent);
+      upsertPageObservation(pagesDb, sitePageId, result.contentHash, result.isNewContent, "ok", {
+        urlFinal: result.finalUrl,
+        deviceId: brief.deviceId,
+        sourceToken: brief.sourceToken,
+      });
     };
     for (const site of sites) {
       const sha256 = journal.terminalResultSha256(keyFor(site));
@@ -339,7 +346,7 @@ export class CrawlGogol extends Gogol {
 
     if (brief.maxDomains < 0) {
       await journal.sealStage({
-        stageId: "profile",
+        stageId: "homepage-capture",
         keys: stageTargetSites.map(keyFor),
         eventId: mintAssetId(),
         now: new Date().toISOString(),

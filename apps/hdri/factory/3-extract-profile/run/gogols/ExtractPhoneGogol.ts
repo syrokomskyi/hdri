@@ -26,26 +26,31 @@ export class ExtractPhoneGogol extends ExtractGogolBase {
   override readonly id = "extract-phone";
   override readonly table = "ext_phone";
 
-  protected override get querySql(): string {
-    return `SELECT po.content_sha256, pc.storage_path, sp.url_norm FROM page_observations po JOIN page_contents pc ON pc.sha256 = po.content_sha256 JOIN site_pages sp ON sp.id = po.site_page_id WHERE sp.source = 'homepage'`;
-  }
-
   protected override extractDom($: CheerioAPI, row: ObsRow): unknown[] | null {
     const signals = extractPageSignals($, row.url_norm!);
     const count = signals.phones.length;
     return [count > 0 ? 1 : 0, count];
   }
   protected override get csvColumns(): string[] {
-    return ["content_sha256", "present", "count"];
+    return [
+      "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
+      "present",
+      "count",
+    ];
   }
   protected override get upsertSql(): string {
-    return `INSERT INTO ext_phone (content_sha256, extractor_ver, present, count) VALUES (?, ?, ?, ?)
-      ON CONFLICT(content_sha256, extractor_ver) DO UPDATE SET extractor_ver=excluded.extractor_ver, present=excluded.present, count=excluded.count, extracted_at=unixepoch()`;
+    return `INSERT INTO ext_phone (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash, present, count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET present=excluded.present, count=excluded.count, extracted_at=unixepoch()`;
   }
 
   protected override afterProcessResults(
     results: Array<{ sha256: string; params: unknown[] }>,
   ): Record<string, unknown> {
-    return { totalPhones: results.reduce((sum, r) => sum + (r.params[1] as number), 0) };
+    return { totalPhones: results.reduce((sum, r) => sum + (r.params[7] as number), 0) };
   }
 }

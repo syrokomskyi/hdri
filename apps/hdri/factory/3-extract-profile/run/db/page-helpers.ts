@@ -133,7 +133,8 @@ export const getOrCreateSitePage = (
 
 /**
  * Upsert a page_observations row for a given site_page.
- * On conflict, updates content_sha256, is_new_content, and observed_at.
+ * On conflict, updates content_sha256, is_new_content, observed_at, and any
+ * optional provenance fields that are provided.
  */
 export const upsertPageObservation = (
   pagesDb: Database.Database,
@@ -141,18 +142,43 @@ export const upsertPageObservation = (
   contentSha256: string,
   isNewContent: boolean,
   errorClass = "ok",
+  options?: {
+    urlFinal?: string;
+    deviceId?: string;
+    sourceToken?: string;
+    measuredAt?: string;
+  },
 ): void => {
+  const urlFinal = options?.urlFinal ?? null;
+  const deviceId = options?.deviceId ?? "";
+  const sourceToken = options?.sourceToken ?? "";
+  const measuredAt = options?.measuredAt ?? null;
+
   pagesDb
     .prepare(
       `
-    INSERT INTO page_observations (site_page_id, content_sha256, is_new_content, error_class)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO page_observations
+      (site_page_id, content_sha256, is_new_content, error_class, url_final, device_id, source_token, measured_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(site_page_id) DO UPDATE SET
       content_sha256 = excluded.content_sha256,
       is_new_content = excluded.is_new_content,
       error_class    = excluded.error_class,
+      url_final      = excluded.url_final,
+      device_id      = excluded.device_id,
+      source_token   = excluded.source_token,
+      measured_at    = excluded.measured_at,
       observed_at    = unixepoch()
   `,
     )
-    .run(sitePageId, contentSha256, isNewContent ? 1 : 0, errorClass);
+    .run(
+      sitePageId,
+      contentSha256,
+      isNewContent ? 1 : 0,
+      errorClass,
+      urlFinal,
+      deviceId,
+      sourceToken,
+      measuredAt,
+    );
 };

@@ -9,7 +9,8 @@
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
     "start": "tsx -C @syrokomskyi/source --max-old-space-size=2048 run/run.ts",
     "changelog": "changelog-live",
-    "changelog:init": "changelog-live init"
+    "changelog:init": "changelog-live init",
+    "profile:coverage": "tsx -C @syrokomskyi/source run/profile-coverage.ts"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",

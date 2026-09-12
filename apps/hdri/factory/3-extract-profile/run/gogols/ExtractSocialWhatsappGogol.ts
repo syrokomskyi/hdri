@@ -31,10 +31,19 @@ export class ExtractSocialWhatsappGogol extends ExtractGogolBase {
     return [r.present ? 1 : 0, r.url];
   }
   protected override get csvColumns(): string[] {
-    return ["content_sha256", "present", "url"];
+    return [
+      "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
+      "present",
+      "url",
+    ];
   }
   protected override get upsertSql(): string {
-    return `INSERT INTO ext_social_whatsapp (content_sha256, extractor_ver, present, url) VALUES (?, ?, ?, ?)
-      ON CONFLICT(content_sha256) DO UPDATE SET extractor_ver=excluded.extractor_ver, present=excluded.present, url=excluded.url, extracted_at=unixepoch()`;
+    return `INSERT INTO ext_social_whatsapp (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash, present, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET present=excluded.present, url=excluded.url, extracted_at=unixepoch()`;
   }
 }

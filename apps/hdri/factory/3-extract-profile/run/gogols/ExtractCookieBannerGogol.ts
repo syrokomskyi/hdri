@@ -30,10 +30,20 @@ export class ExtractCookieBannerGogol extends ExtractGogolBase {
     return [r.present ? 1 : 0, r.confidence, r.quality];
   }
   protected override get csvColumns(): string[] {
-    return ["content_sha256", "present", "confidence", "quality"];
+    return [
+      "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
+      "present",
+      "confidence",
+      "quality",
+    ];
   }
   protected override get upsertSql(): string {
-    return `INSERT INTO ext_cookie_banner (content_sha256, extractor_ver, present, confidence, quality) VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(content_sha256) DO UPDATE SET extractor_ver=excluded.extractor_ver, present=excluded.present, confidence=excluded.confidence, quality=excluded.quality, extracted_at=unixepoch()`;
+    return `INSERT INTO ext_cookie_banner (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash, present, confidence, quality) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET present=excluded.present, confidence=excluded.confidence, quality=excluded.quality, extracted_at=unixepoch()`;
   }
 }

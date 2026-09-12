@@ -30,10 +30,18 @@ export class ExtractCopyrightYearGogol extends ExtractGogolBase {
     return [extractCopyrightYear($).year];
   }
   protected override get csvColumns(): string[] {
-    return ["content_sha256", "year"];
+    return [
+      "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
+      "year",
+    ];
   }
   protected override get upsertSql(): string {
-    return `INSERT INTO ext_copyright_year (content_sha256, extractor_ver, year) VALUES (?, ?, ?)
-      ON CONFLICT(content_sha256) DO UPDATE SET extractor_ver=excluded.extractor_ver, year=excluded.year, extracted_at=unixepoch()`;
+    return `INSERT INTO ext_copyright_year (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash, year) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET year=excluded.year, extracted_at=unixepoch()`;
   }
 }

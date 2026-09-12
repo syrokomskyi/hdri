@@ -60,7 +60,17 @@ export abstract class ExtractGogolBase extends Gogol {
 
   /** Override to include url_norm or other columns / joins. */
   protected get querySql(): string {
-    return `SELECT po.content_sha256, pc.storage_path, sp.url_norm, sp.url_sha256, po.site_page_id AS page_observation_id, sp.site_id FROM page_observations po JOIN page_contents pc ON pc.sha256 = po.content_sha256 JOIN site_pages sp ON sp.id = po.site_page_id WHERE sp.source = 'homepage'`;
+    return `SELECT po.content_sha256, pc.storage_path, sp.url_norm, sp.url_sha256, po.site_page_id AS page_observation_id, sp.site_id AS asset_id FROM page_observations po JOIN page_contents pc ON pc.sha256 = po.content_sha256 JOIN site_pages sp ON sp.id = po.site_page_id WHERE sp.source = 'homepage'`;
+  }
+
+  /** Column for keyset pagination. Override for gogols with non-standard querySql. */
+  protected get paginationColumn(): string {
+    return "po.site_page_id";
+  }
+
+  /** Extract the pagination key from a row. Override for gogols with non-standard paginationColumn. */
+  protected getPaginationKey(row: ObsRow): string | number {
+    return (row.page_observation_id as number) ?? row.content_sha256;
   }
 
   /** Maximum pending rows per pagination batch (RFC-0104 AC-7). */
@@ -101,7 +111,7 @@ export abstract class ExtractGogolBase extends Gogol {
     const { pagesDbName, brief } = ctx.state;
     const db = openPagesDb(getPagesDbPath(pagesDbName));
     const contentRoot = getContentRootDir();
-    const policyHash = brief.sourceToken ?? "";
+    const policyHash = "";
 
     // RFC-0104: keyset pagination — process in chunks of ≤256 pending rows
     const limit = ExtractGogolBase.PAGINATION_LIMIT;
@@ -113,14 +123,14 @@ export abstract class ExtractGogolBase extends Gogol {
     let presentCount = 0;
     const allResults: ExtractResultItem[] = [];
 
-    let lastSitePageId = 0;
+    let lastPaginationKey: string | number = 0;
     let batchRows: ObsRow[];
     do {
-      // Keyset pagination on site_page_id (page_observation_id)
-      const paginatedSql = `${this.querySql} AND po.site_page_id > ? ORDER BY po.site_page_id ASC LIMIT ?`;
-      batchRows = db.prepare(paginatedSql).all(lastSitePageId, limit) as ObsRow[];
+      const paginatedSql = `${this.querySql} AND ${this.paginationColumn} > ? ORDER BY ${this.paginationColumn} ASC LIMIT ?`;
+      batchRows = db.prepare(paginatedSql).all(lastPaginationKey, limit) as ObsRow[];
       if (batchRows.length === 0) break;
-      lastSitePageId = (batchRows[batchRows.length - 1]!.page_observation_id as number) ?? 0;
+      const lastRow = batchRows[batchRows.length - 1]!;
+      lastPaginationKey = this.getPaginationKey(lastRow);
       totalRows += batchRows.length;
 
       console.log(

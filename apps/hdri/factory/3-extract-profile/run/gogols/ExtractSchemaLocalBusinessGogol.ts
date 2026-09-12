@@ -30,10 +30,18 @@ export class ExtractSchemaLocalBusinessGogol extends ExtractGogolBase {
     return [extractSchemaLocalBusiness($).present ? 1 : 0];
   }
   protected override get csvColumns(): string[] {
-    return ["content_sha256", "present"];
+    return [
+      "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
+      "present",
+    ];
   }
   protected override get upsertSql(): string {
-    return `INSERT INTO ext_schema_local_business (content_sha256, extractor_ver, present) VALUES (?, ?, ?)
-      ON CONFLICT(content_sha256) DO UPDATE SET extractor_ver=excluded.extractor_ver, present=excluded.present, extracted_at=unixepoch()`;
+    return `INSERT INTO ext_schema_local_business (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash, present) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET present=excluded.present, extracted_at=unixepoch()`;
   }
 }

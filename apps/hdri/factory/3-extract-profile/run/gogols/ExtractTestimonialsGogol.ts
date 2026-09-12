@@ -31,10 +31,19 @@ export class ExtractTestimonialsGogol extends ExtractGogolBase {
     return [r.present ? 1 : 0, r.confidence];
   }
   protected override get csvColumns(): string[] {
-    return ["content_sha256", "present", "confidence"];
+    return [
+      "content_sha256",
+      "extractor_ver",
+      "asset_id",
+      "page_observation_id",
+      "effective_url",
+      "policy_hash",
+      "present",
+      "confidence",
+    ];
   }
   protected override get upsertSql(): string {
-    return `INSERT INTO ext_testimonials (content_sha256, extractor_ver, present, confidence) VALUES (?, ?, ?, ?)
-      ON CONFLICT(content_sha256) DO UPDATE SET extractor_ver=excluded.extractor_ver, present=excluded.present, confidence=excluded.confidence, extracted_at=unixepoch()`;
+    return `INSERT INTO ext_testimonials (content_sha256, extractor_ver, asset_id, page_observation_id, effective_url, policy_hash, present, confidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) DO UPDATE SET present=excluded.present, confidence=excluded.confidence, extracted_at=unixepoch()`;
   }
 }
