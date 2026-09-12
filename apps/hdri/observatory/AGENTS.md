@@ -149,3 +149,23 @@ Output format: `{ schema, operation, status, inputFingerprint, evidenceRefs, vio
 
 - Non-trivial source files under `run/testing/` (not just `run/tests/`) must carry full Compass scaffolding (`MODULE_CONTRACT` + `CHANGE_SUMMARY`), same as production code.
 - Test-only modules in `run/testing/` are imported by test files in `run/tests/` — they are test infrastructure, not production code, but they follow the same Compass contract.
+
+## Scientific admission contract (RFC-0107)
+
+Scientific admission consumes typed manifest-bound products (`ScientificInputs`) and independently gates coverage, methodology, panel comparability, classification and population weighting.
+
+### Key contracts
+
+- `ScientificInputs` — typed manifest with refs to source admission, frame, observations, scores, methodology, classification plan/labels, and population frame.
+- `ProductVerdict` — per-product eligibility or suppression with reasons.
+- `ScientificReport` — schema-bound report with input fingerprint, violations, product verdicts, and evidence refs.
+- `SCIENTIFIC_REPORTS` registry — 8 reports with schema and report type metadata.
+
+### Changed interfaces
+
+- `quarter:validate` now accepts `--input-manifest <scientific-inputs.json> --report-root <new-revision-root> --json` instead of ad-hoc guessed paths.
+- `reconcile-counts.ts` uses set-based reconciliation (not count equality). Multiple observations per asset are valid; zero unexplained references is mandatory.
+- `methodology-compare.ts` uses content-based methodology identity (canonical hash), not version-string comparison. Schema validation rejects absent fields.
+- `population-frame-contract.ts` uses parsed exact hostname matching (`new URL().hostname`), not substring matching.
+- `classification-qc.ts` loads thresholds from `policies/classification-qc-policy-v1.yaml` (`minimumWilsonLowerBound`), not hardcoded values.
+- `methodology-core.ts` extends `MethodologyFingerprint` with `signalMapSha256` and `missingnessPolicySha256`.

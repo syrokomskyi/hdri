@@ -1,10 +1,11 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Compares Q2 and Q3 methodology snapshots to determine comparability and identify hard suppressions.</purpose>
+<purpose>Compares Q2 and Q3 methodology snapshots using content-based identity to determine comparability and identify hard suppressions.</purpose>
 <non-goals><item>Does not perform backcast — only flags incompatibilities.</item></non-goals>
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing methodology-compare module contract for Compass-aware maintenance.</item>
+  <item>RFC-0107: replace version-string comparison with content-based methodology identity (codebook hash, ontology hash, scoring semantics). Schema validation rejects absent fields; never compare undefined values.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -35,22 +36,34 @@ if (!q2SnapshotPath || !q3SnapshotPath) {
       codebookVersion: string;
       ontologyVersion: string;
       scoringVersion?: string;
+      codebookSha256?: string;
+      ontologySha256?: string;
+      canonicalHash?: string;
       sourceFrameId: string;
     }>(q2SnapshotPath);
     const q3 = await readJsonFile<{
       codebookVersion: string;
       ontologyVersion: string;
       scoringVersion?: string;
+      codebookSha256?: string;
+      ontologySha256?: string;
+      canonicalHash?: string;
       sourceFrameId: string;
     }>(q3SnapshotPath);
 
-    scoreComparable =
-      q2.codebookVersion === q3.codebookVersion && q2.ontologyVersion === q3.ontologyVersion;
+    const q2ContentId = q2.canonicalHash ?? q2.codebookSha256 ?? q2.ontologySha256;
+    const q3ContentId = q3.canonicalHash ?? q3.codebookSha256 ?? q3.ontologySha256;
+
+    if (!q2ContentId || !q3ContentId) {
+      violations.push("methodology_content_identity_absent");
+    } else {
+      scoreComparable = q2ContentId === q3ContentId;
+    }
     panelComparable = scoreComparable;
     postStratComparable = scoreComparable;
 
     if (!scoreComparable) {
-      hardSuppressions.push("direct_score_delta_suppressed_version_mismatch");
+      hardSuppressions.push("direct_score_delta_suppressed_content_mismatch");
       warnings.push(
         `codebook:${q2.codebookVersion}→${q3.codebookVersion}`,
         `ontology:${q2.ontologyVersion}→${q3.ontologyVersion}`,

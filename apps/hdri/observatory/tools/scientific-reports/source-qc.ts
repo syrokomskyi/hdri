@@ -5,6 +5,7 @@
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing source-qc module contract for Compass-aware maintenance.</item>
+  <item>RFC-0107: read actual source-segment-manifest.json instead of guessed ledger-manifest.json.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -29,7 +30,7 @@ if (!sourceLedgerDir) {
   if (!(await fileExists(ledgerPath))) {
     violations.push("source_ledger_not_found");
   } else {
-    const manifestPath = path.join(ledgerPath, "ledger-manifest.json");
+    const manifestPath = path.join(ledgerPath, "source-segment-manifest.json");
     if (!(await fileExists(manifestPath))) {
       violations.push("source_ledger_manifest_missing");
     } else {

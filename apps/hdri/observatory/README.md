@@ -193,3 +193,7 @@ Die Q2-Evidenz wird vor der Umstellung der Konsumenten bewahrt. Danach wird ein 
 ### Fehlermodi
 
 Alle Fehlerbedingungen sind blockierend — Exit-Code 1, kein partielles Ergebnis. Exit-Code 0 bedeutet Pass. Es gibt keinen Warn-und-Weiter-Modus: geänderte Quell-Bytes, aktive Writer, Identitätsmehrdeutigkeit, fehlende Evidenz, ungültige Signaturen, unzureichende Kapazität oder unüberprüfte Replika-Unabhängigkeit blockieren die Zulassung.
+
+## Scientific admission contract (RFC-0107)
+
+Scientific admission consumes typed manifest-bound products and independently gates coverage, methodology, panel comparability, classification and population weighting. The `quarter:validate` interface accepts `--input-manifest <scientific-inputs.json> --report-root <new-revision-root> --json` instead of ad-hoc guessed paths. Reconciliation uses set-based checks (not count equality), methodology identity is content-based (not version-string), and population-frame provenance uses parsed exact hostname matching (not substring). Classification QC thresholds are loaded from `policies/classification-qc-policy-v1.yaml`.

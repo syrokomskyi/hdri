@@ -5,6 +5,7 @@
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing classification-qc module contract for Compass-aware maintenance.</item>
+  <item>RFC-0107: load thresholds from classification-qc-policy-v1.yaml (minimumWilsonLowerBound) instead of hardcoded 0.8.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -60,8 +61,13 @@ if (!predictionsPath || !samplePath) {
 
     let minPrecision = 0.8;
     if (policyPath && (await fileExists(path.resolve(policyPath)))) {
-      const policy = await readJsonFile<{ minPrecision?: number }>(path.resolve(policyPath));
-      if (typeof policy.minPrecision === "number") minPrecision = policy.minPrecision;
+      const policy = await readJsonFile<{
+        minPrecision?: number;
+        minimumWilsonLowerBound?: number;
+      }>(path.resolve(policyPath));
+      if (typeof policy.minimumWilsonLowerBound === "number")
+        minPrecision = policy.minimumWilsonLowerBound;
+      else if (typeof policy.minPrecision === "number") minPrecision = policy.minPrecision;
     }
 
     if (precision < minPrecision) {

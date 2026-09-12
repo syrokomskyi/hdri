@@ -10,6 +10,7 @@ is reproducible and tamper-evident.</purpose>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>WP12: freeze codebook/ontology/scorer version into each run's record for reproducibility.</item>
+  <item>RFC-0107: extend MethodologyFingerprint with signalMapSha256 and missingnessPolicySha256 for content-based methodology identity.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: publication is gated by k-anonymity enforcement; never publish suppressed groups
@@ -27,6 +28,10 @@ export type MethodologyFingerprint = {
   codebookSha256: string;
   /** SHA-256 of the exact ontology source, or null in legacy (no-ontology) mode. */
   ontologySha256: string | null;
+  /** SHA-256 of the signal map, or null when absent. */
+  signalMapSha256: string | null;
+  /** SHA-256 of the missingness policy, or null when absent. */
+  missingnessPolicySha256: string | null;
   /** Stable hash over all of the above — the single methodology identity for the run. */
   methodologyHash: string;
 };
@@ -40,6 +45,10 @@ export type MethodologyInput = {
   codebookSource: string;
   /** Raw ontology.yaml text, or null when the codebook declares no ontologyRef. */
   ontologySource: string | null;
+  /** Raw signal map text, or null when absent. */
+  signalMapSource: string | null;
+  /** Raw missingness policy text, or null when absent. */
+  missingnessPolicySource: string | null;
 };
 
 /**
@@ -50,6 +59,9 @@ export type MethodologyInput = {
 export function computeMethodologyFingerprint(input: MethodologyInput): MethodologyFingerprint {
   const codebookSha256 = sha256(input.codebookSource);
   const ontologySha256 = input.ontologySource != null ? sha256(input.ontologySource) : null;
+  const signalMapSha256 = input.signalMapSource != null ? sha256(input.signalMapSource) : null;
+  const missingnessPolicySha256 =
+    input.missingnessPolicySource != null ? sha256(input.missingnessPolicySource) : null;
   const methodologyHash = sha256Json({
     codebookId: input.codebookId,
     codebookVersion: input.codebookVersion,
@@ -57,6 +69,8 @@ export function computeMethodologyFingerprint(input: MethodologyInput): Methodol
     scorerVersion: input.scorerVersion,
     codebookSha256,
     ontologySha256,
+    signalMapSha256,
+    missingnessPolicySha256,
   });
   return {
     codebookId: input.codebookId,
@@ -65,6 +79,8 @@ export function computeMethodologyFingerprint(input: MethodologyInput): Methodol
     scorerVersion: input.scorerVersion,
     codebookSha256,
     ontologySha256,
+    signalMapSha256,
+    missingnessPolicySha256,
     methodologyHash,
   };
 }

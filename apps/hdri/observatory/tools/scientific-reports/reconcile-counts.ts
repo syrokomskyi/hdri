@@ -1,10 +1,11 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Reconciles source ledger, observation, and score counts to detect any count violations.</purpose>
+<purpose>Reconciles source ledger, observation, and score counts using set-based reconciliation to detect unexplained references.</purpose>
 <non-goals><item>Does not fix counts — reports violations only.</item></non-goals>
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing reconcile-counts module contract for Compass-aware maintenance.</item>
+  <item>RFC-0107: replace count equality with set reconciliation. Multiple observations per asset are valid; zero unexplained references is mandatory; unequal entity counts are not automatically an error.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -21,6 +22,7 @@ const warnings: string[] = [];
 let sourceCount = 0;
 let observationCount = 0;
 let scoreCount = 0;
+let unexplainedRefs = 0;
 
 if (!sourceLedgerPath || !observationsPath || !scoresPath) {
   violations.push("reconciliation_inputs_missing");
@@ -32,20 +34,53 @@ if (!sourceLedgerPath || !observationsPath || !scoresPath) {
   } else if (!(await fileExists(scoresPath))) {
     violations.push("scores_not_found");
   } else {
-    const ledger = await readJsonFile<{ batches: { sourceCount: number }[] }>(sourceLedgerPath);
+    const ledger = await readJsonFile<{ batches: { sourceCount: number; sourceIds?: string[] }[] }>(
+      sourceLedgerPath,
+    );
     sourceCount = ledger.batches.reduce((sum, b) => sum + b.sourceCount, 0);
 
-    const observations = await readJsonFile<{ count: number } | string[]>(observationsPath);
+    const observations = await readJsonFile<{ count: number; refs?: string[] } | string[]>(
+      observationsPath,
+    );
     observationCount = Array.isArray(observations) ? observations.length : observations.count;
 
-    const scores = await readJsonFile<{ count: number } | string[]>(scoresPath);
+    const scores = await readJsonFile<{ count: number; refs?: string[] } | string[]>(scoresPath);
     scoreCount = Array.isArray(scores) ? scores.length : scores.count;
 
-    if (sourceCount !== observationCount) {
-      violations.push(`source_observation_mismatch:${sourceCount}:${observationCount}`);
+    const sourceIds = new Set<string>();
+    for (const batch of ledger.batches) {
+      if (batch.sourceIds) {
+        for (const id of batch.sourceIds) sourceIds.add(id);
+      }
     }
-    if (observationCount !== scoreCount) {
-      violations.push(`observation_score_mismatch:${observationCount}:${scoreCount}`);
+
+    const observationRefs = new Set<string>();
+    if (!Array.isArray(observations) && observations.refs) {
+      for (const ref of observations.refs) observationRefs.add(ref);
+    } else if (Array.isArray(observations)) {
+      for (const ref of observations) observationRefs.add(String(ref));
+    }
+
+    const scoreRefs = new Set<string>();
+    if (!Array.isArray(scores) && scores.refs) {
+      for (const ref of scores.refs) scoreRefs.add(ref);
+    } else if (Array.isArray(scores)) {
+      for (const ref of scores) scoreRefs.add(String(ref));
+    }
+
+    for (const obsRef of observationRefs) {
+      if (sourceIds.size > 0 && !sourceIds.has(obsRef)) {
+        unexplainedRefs++;
+      }
+    }
+    for (const scoreRef of scoreRefs) {
+      if (observationRefs.size > 0 && !observationRefs.has(scoreRef)) {
+        unexplainedRefs++;
+      }
+    }
+
+    if (unexplainedRefs > 0) {
+      violations.push(`unexplained_references:${unexplainedRefs}`);
     }
   }
 }
@@ -60,5 +95,5 @@ await writeReport(
   violations,
   warnings,
   [],
-  { sourceCount, observationCount, scoreCount },
+  { sourceCount, observationCount, scoreCount, unexplainedRefs },
 );

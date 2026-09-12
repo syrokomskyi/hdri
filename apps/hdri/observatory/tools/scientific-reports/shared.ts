@@ -5,6 +5,7 @@
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing shared module contract for Compass-aware maintenance.</item>
+  <item>RFC-0107: add --input-manifest and --report-root arg parsing helpers.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -35,6 +36,9 @@ export const requireCommonArgs = (): {
   capsuleId: requireArg("--capsule-id"),
   evidenceDir: path.resolve(requireArg("--evidence-dir")),
 });
+
+export const argInputManifest = (): string | undefined => arg("--input-manifest");
+export const argReportRoot = (): string | undefined => arg("--report-root");
 
 export const fileExists = async (filePath: string): Promise<boolean> => {
   try {

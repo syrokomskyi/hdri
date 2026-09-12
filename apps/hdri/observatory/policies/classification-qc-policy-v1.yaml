@@ -1,0 +1,10 @@
+schema: "classification-qc-policy@1"
+maxSamplePerCell: 100
+minimumWilsonLowerBound: 0.90
+censusCellsUseExactPrecision: true
+suppressedProductsOnMissingLabels:
+  - cross-section
+  - panel
+  - post-stratified
+suppressedProductsOnFailedStrata:
+  - post-stratified

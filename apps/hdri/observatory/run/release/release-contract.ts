@@ -5,6 +5,7 @@
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing release-contract module contract for Compass-aware maintenance.</item>
+  <item>RFC-0107: add ScientificInputs, ProductVerdict, ScientificReport typed contracts and product verdict suppression.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -15,17 +16,55 @@ import path from "node:path";
 import type { CapsuleArtifact, QuarterCapsule } from "@syrokomskyi/factory-core";
 
 export const SCIENTIFIC_REPORTS = {
-  "q2-restore.json": "q2-restore",
-  "source-qc.json": "source-qc",
-  "classification-qc.json": "classification-qc",
-  "comparability.json": "comparability",
-  "availability.json": "availability",
-  "privacy-disclosure.json": "privacy-disclosure",
-  "methodology-snapshot.json": "methodology-snapshot",
-  "reconciliation.json": "reconciliation",
+  "q2-restore.json": { reportType: "q2-restore", schema: "hdri-scientific-report@1" },
+  "source-qc.json": { reportType: "source-qc", schema: "hdri-scientific-report@1" },
+  "classification-qc.json": { reportType: "classification-qc", schema: "hdri-scientific-report@1" },
+  "comparability.json": { reportType: "comparability", schema: "hdri-scientific-report@1" },
+  "availability.json": { reportType: "availability", schema: "hdri-scientific-report@1" },
+  "privacy-disclosure.json": {
+    reportType: "privacy-disclosure",
+    schema: "hdri-scientific-report@1",
+  },
+  "methodology-snapshot.json": {
+    reportType: "methodology-snapshot",
+    schema: "hdri-scientific-report@1",
+  },
+  "reconciliation.json": { reportType: "reconciliation", schema: "hdri-scientific-report@1" },
 } as const;
 
-export type ScientificReportType = (typeof SCIENTIFIC_REPORTS)[keyof typeof SCIENTIFIC_REPORTS];
+export type ScientificReportType =
+  (typeof SCIENTIFIC_REPORTS)[keyof typeof SCIENTIFIC_REPORTS]["reportType"];
+
+export type ScientificProduct = "cross-section" | "panel" | "availability" | "post-stratified";
+
+export interface ScientificInputs {
+  schema: "hdri-scientific-inputs@1";
+  capsuleManifestSha256: string;
+  sourceAdmissionRef: string;
+  frameRef: string;
+  observationManifestRef: string;
+  scoresRef: string;
+  methodologyRef: string;
+  classificationPlanRef: string;
+  classificationLabelsRef: string | null;
+  populationFrameRef: string | null;
+}
+
+export interface ProductVerdict {
+  product: ScientificProduct;
+  status: "eligible" | "suppressed";
+  reasons: string[];
+}
+
+export interface ScientificReport {
+  schema: "hdri-scientific-report@1";
+  reportType: string;
+  inputFingerprint: string;
+  status: "pass" | "fail";
+  violations: string[];
+  productVerdicts: ProductVerdict[];
+  evidenceRefs: string[];
+}
 
 export type ScientificGateReport = Readonly<{
   schemaVersion: "1";
@@ -116,7 +155,8 @@ export const readScientificReports = async (
   capsule: QuarterCapsule,
 ): Promise<ScientificGateReport[]> => {
   const reports: ScientificGateReport[] = [];
-  for (const [filename, reportType] of Object.entries(SCIENTIFIC_REPORTS)) {
+  for (const [filename, entry] of Object.entries(SCIENTIFIC_REPORTS)) {
+    const reportType = entry.reportType;
     const report = JSON.parse(
       await fs.readFile(path.join(evidenceDir, filename), "utf8"),
     ) as ScientificGateReport;

@@ -6,6 +6,7 @@
 <CHANGE_SUMMARY>
   <item>RFC-0033: add source URL domain validation (genesis.destatis.de, statistikportal.de).</item>
   <item>RFC-0033: add reference year floor (>= 2020) validation.</item>
+  <item>RFC-0107: replace substring host matching with parsed exact hostname validation.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -93,9 +94,15 @@ export const assertCompletePopulationFrame = (frame: ProvenancedPopulationFrame)
       "Population frame manifest does not describe the canonical Destatis 53111-0011 frame",
     );
   }
-  if (!ALLOWED_SOURCE_DOMAINS.some((d) => manifest.sourceUrl.includes(d))) {
+  let sourceHost: string;
+  try {
+    sourceHost = new URL(manifest.sourceUrl).hostname;
+  } catch {
+    throw new Error(`Population frame sourceUrl is not a valid URL: ${manifest.sourceUrl}`);
+  }
+  if (!ALLOWED_SOURCE_DOMAINS.includes(sourceHost as (typeof ALLOWED_SOURCE_DOMAINS)[number])) {
     throw new Error(
-      `Population frame sourceUrl must be from ${ALLOWED_SOURCE_DOMAINS.join(" or ")}, got: ${manifest.sourceUrl}`,
+      `Population frame sourceUrl hostname must be exactly ${ALLOWED_SOURCE_DOMAINS.join(" or ")}, got: ${sourceHost}`,
     );
   }
   if (!Number.isInteger(manifest.referenceYear) || manifest.referenceYear < 2020) {

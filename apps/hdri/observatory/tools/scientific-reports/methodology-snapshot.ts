@@ -5,6 +5,7 @@
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing methodology-snapshot module contract for Compass-aware maintenance.</item>
+  <item>RFC-0107: include content hashes (codebookSha256, ontologySha256) in snapshot output for content-based methodology identity.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -29,6 +30,8 @@ const hashFile = async (filePath: string): Promise<string> => {
 let codebookVersion: string | undefined;
 let ontologyVersion: string | undefined;
 let canonicalHash: string | undefined;
+let codebookSha256: string | undefined;
+let ontologySha256: string | undefined;
 
 if (!codebookPath || !ontologyPath) {
   violations.push("methodology_inputs_missing");
@@ -40,6 +43,8 @@ if (!codebookPath || !ontologyPath) {
   } else {
     const codebookHash = await hashFile(path.resolve(codebookPath));
     const ontologyHash = await hashFile(path.resolve(ontologyPath));
+    codebookSha256 = codebookHash;
+    ontologySha256 = ontologyHash;
 
     const codebook = await fs.readFile(path.resolve(codebookPath), "utf8");
     const codebookMatch = codebook.match(/version:\s*["']?([^"'\n#]+)/);
@@ -78,5 +83,5 @@ await writeReport(
   violations,
   warnings,
   [],
-  { codebookVersion, ontologyVersion, canonicalHash },
+  { codebookVersion, ontologyVersion, canonicalHash, codebookSha256, ontologySha256 },
 );
