@@ -3,6 +3,10 @@ concurrency: 5
 timeoutMs: 45000
 retries: 1
 skipGogols: []
+poolSize: 4
+recycleAfterTargets: 20
+deadlineMs: 120000
+terminationGraceMs: 5000
 instrumentPlan:
   - instrument: liveness
     state: required
@@ -36,9 +40,13 @@ This brief configures the axe-core accessibility audit.
 
 | Field | Description | Default |
 |-------|-------------|---------|
-| `concurrency` | Parallel audits (browser instances) | 5 |
-| `timeoutMs` | Page load + audit timeout | 45000 |
+| `concurrency` | Legacy parallel audits (now managed by pool) | 5 |
+| `timeoutMs` | Page load timeout | 45000 |
 | `retries` | Retry attempts | 1 |
+| `poolSize` | Worker pool size (ADR-0023) | 4 |
+| `recycleAfterTargets` | Recycle worker after N targets | 20 |
+| `deadlineMs` | Total deadline per target (RFC-0105) | 120000 |
+| `terminationGraceMs` | Grace period before SIGKILL | 5000 |
 
 ## Output
 

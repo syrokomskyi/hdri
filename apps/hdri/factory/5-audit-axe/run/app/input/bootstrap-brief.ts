@@ -37,6 +37,10 @@ const localBriefTemplate = [
   "timeoutMs: 60000",
   "retries: 2",
   "skipGogols: []",
+  "poolSize: 4",
+  "recycleAfterTargets: 20",
+  "deadlineMs: 120000",
+  "terminationGraceMs: 5000",
   "---",
   "",
 ].join("\n");
