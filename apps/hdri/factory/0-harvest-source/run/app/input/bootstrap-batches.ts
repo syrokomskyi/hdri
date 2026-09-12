@@ -13,16 +13,19 @@
   <item>Remove raw folder scanning (listBatchNames) for prior quarters.</item>
   <item>Remove selectCumulativeBatchNames — prior batch IDs come from sealed manifests.</item>
   <item>RFC-0043: add isFirstQuarter parameter; replace silent ENOENT catch with explicit PipelinePauseError or warning.</item>
+  <item>RFC-0102: verify predecessor manifest hashes using discoverPriorCapsules with verification keys.</item>
 </CHANGE_SUMMARY>
 */
 
 import fs from "node:fs/promises";
 import { PipelinePauseError } from "@warpgogol/pipeline-core";
 import {
+  discoverPriorCapsules,
   parsePriorCapsulesFile,
   type LedgerDiscoveryResult,
   type PriorCapsuleRef,
 } from "@syrokomskyi/factory-core";
+import { getTransparencyKeysDir, loadVerificationKeys } from "@syrokomskyi/observatory-crypto";
 import type { Brief } from "../../brief.js";
 import { getBatchInputDir } from "../../paths.js";
 import { inputDir } from "../../config.js";
@@ -38,19 +41,14 @@ export const discoverLedger = async (
   sourceToken: string,
   isFirstQuarter = false,
 ): Promise<LedgerDiscoveryResult> => {
-  // Phase 1: Read prior-capsules.json for prior sealed capsule segments
+  // Phase 1: Read prior-capsules.json and verify prior sealed capsule segments
   const priorCapsulesPath = `${inputDir}/${PRIOR_CAPSULES_PATH}`;
   let priorRefs: PriorCapsuleRef[] = [];
   try {
     const raw = await fs.readFile(priorCapsulesPath, "utf8");
-    const parsed = parsePriorCapsulesFile(raw);
-    priorRefs = parsed.priorCapsules.map((entry) => ({
-      capsuleId: entry.capsuleId,
-      period: entry.period,
-      manifestPath: entry.manifestPath,
-      segmentHashes: [],
-      batchIds: entry.batchIds,
-    }));
+    parsePriorCapsulesFile(raw); // validate structure
+    const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
+    priorRefs = [...(await discoverPriorCapsules(inputDir, verificationKeys))];
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       throw new PipelinePauseError(
