@@ -124,3 +124,23 @@ All failure conditions are blocking — exit code 1, no partial result. Exit cod
 ### Concurrency
 
 A PID-checked file lock (`.preserve-lock.json` in archive root) prevents concurrent preservation runs. Two runs targeting the same root fail fast with `LOCK_VIOLATION`. Uses shared `acquirePidLock` from `@syrokomskyi/utils` (extracted from RFC-0089 `batch-lock.ts` per DNA-3).
+
+## Crash-safe execution (RFC-0101)
+
+### quarter:inspect
+
+`quarter:inspect -- --capsule <path> --json` is a read-only diagnostic that projects execution state for a capsule. It never acquires work, writes evidence, or modifies state. It reads the SQLite sequence database in read-only mode and reports:
+
+- Ordered events (sequence, lease epochs, attempt IDs)
+- Measurement evidence references (workKey/attemptId)
+- Sealed journal segment integrity (recomputed vs stored hash)
+- Violations (e.g. `SEGMENT_HASH_MISMATCH`, `NO_EXECUTION_DB`)
+
+Output format: `{ schema, operation, status, inputFingerprint, evidenceRefs, violations }`.
+
+### Publication-readiness contract
+
+- Event ordering is determined by SQLite autoincrement sequence, not wall-clock time.
+- `MeasurementEvidence.contentRefs` are CAS SHA-256 digests of evidence artifacts stored via `writeExecutionCasObject`.
+- Sealed journal segments carry ordered events and predecessor digests. The reconstructed selected-result set from a sealed segment is identical to in-memory replay.
+- Dependency fingerprints from RFC-0094 are included in every measurement. A changed dependency invalidates declared consumers.

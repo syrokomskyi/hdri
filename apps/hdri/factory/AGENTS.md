@@ -219,3 +219,17 @@ Every factory app's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomsky
 - Diagnostic mode (`HDRI_OPERATION=diagnostic`) bypasses the gate — always allowed.
 - Bootstrap state (all refs `null`) correctly blocks — this is the intended initial behavior per AC-5.
 - Subsequent RFCs will populate evidence refs as they produce real proof.
+
+## Crash-safe execution (RFC-0101)
+
+HDRI execution uses SQLite transactional sequence authority for crash-safe publication, fenced logical ordering, and the shared fingerprint lifecycle.
+
+### Execution-state invariants
+
+- Event ordering is determined by SQLite autoincrement sequence, not wall-clock time. Wall-clock regression does not affect replayed work state.
+- Lease epochs are monotonically increasing and allocated in the same transaction as ownership. A stale worker with an old epoch cannot commit terminal results or release a newer lease.
+- Measurement evidence is immutable: `measuredAt` is recorded once at first capture and preserved across replays. Replay reconstructs SQLite projections using the original timestamp.
+- Sealed journal segments carry ordered events and predecessor digests. Compaction writes verified immutable segments plus a rebuildable bounded index — no deletion of unreplicated evidence.
+- `MeasurementEvidence.contentRefs` are CAS SHA-256 digests of evidence artifacts stored via `writeExecutionCasObject`.
+- Dependency fingerprints from RFC-0094 are included in every measurement. A changed output-affecting dependency invalidates declared consumers.
+- Crash recovery: if execution stops at any publication failpoint, restart exposes either complete verified evidence or an explicit incomplete state — never partial or corrupt state.
