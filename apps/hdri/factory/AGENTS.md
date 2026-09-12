@@ -284,3 +284,13 @@ homepage-capture → link-discovery → detected-page-capture → signal-extract
 ### Coverage diagnostic
 
 - `pnpm --filter @syrokomskyi/site-profile profile:coverage -- --capsule <path> [--json]` reports extraction coverage per `ext_*` table.
+
+## RFC-0106: Translate only verified immutable HDRI evidence
+
+Source admission is manifest-based only. `DiscoverSourcesGogol` requires `inputManifestSet` in `brief.md` and calls `validateManifestSet()` from `@syrokomskyi/factory-core` to verify period, capsuleId, stage seals, and safe artifact refs before admitting any upstream database.
+
+`TranslateOntologyGogol` computes a `TranslationClosure` comparing expected signal keys (from `EXT_SIGNAL_MAP`, `AXE_SIGNAL_MAP`, and liveness) against emitted keys in the observation DB. The closure records `expectedKeysSha256`, `emittedKeysSha256`, `sourceSnapshots`, and `unresolvedReferences`.
+
+`EmitBundleGogol` refuses emission unless `translationClosure` exists, has zero unresolved references, and expected/emitted key hashes match.
+
+The `--verify-inputs` CLI flag runs `validateManifestSet` in read-only diagnostic mode, emitting JSON with `{ schema, operation, status, inputFingerprint, evidenceRefs, violations }`.
