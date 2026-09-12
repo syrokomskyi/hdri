@@ -23,7 +23,6 @@ capsuleId: "0198f3a4-5b6c-7d8e-9f01-234567890abc"
 ontologyVersion: "1.0.0"
 codebookVersion: "hdri-v1.0.0"
 factoryContractRootDir: "../factory/a-contract-ontology"
-publicMode: false
 skipGogols: []
 ---
 

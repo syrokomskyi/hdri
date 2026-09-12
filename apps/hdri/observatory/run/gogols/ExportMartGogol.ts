@@ -11,6 +11,7 @@
   <item>Replace raw console.log/console.warn with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Join mart exports against asset states and mappings from the same run for quarter-correct archive output.</item>
   <item>Replace hardcoded K_ANONYMITY_MIN=5 with policy-driven value loaded from policies/k-anon-policy-v{N}.yaml via loadKAnonPolicy.</item>
+  <item>RFC-0108: remove publicMode branching — private-only export with full identifiers. Public products handled by ExportPublicProductsGogol.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -78,7 +79,6 @@ export class ExportMartGogol extends Gogol {
 
   override async run(ctx: PipelineContext): Promise<void> {
     const runId = ctx.state.runId!;
-    const publicMode = ctx.state.brief.publicMode ?? false;
     const policy = await loadKAnonPolicy();
     const kAnonymityMin = policy.effective_k_min;
     const martDir = path.join(outputRootDir, "mart");
@@ -110,21 +110,6 @@ export class ExportMartGogol extends Gogol {
         .all(runId) as ScoredAssetRow[];
 
       let siteRows = scoredAssets;
-      let filteredSites = 0;
-
-      if (publicMode) {
-        // k-anonymity: filter out groups smaller than kAnonymityMin
-        const groupCounts = new Map<string, number>();
-        for (const row of scoredAssets) {
-          const key = `${row.strata_code ?? "null"}|${row.bundesland ?? "null"}`;
-          groupCounts.set(key, (groupCounts.get(key) ?? 0) + 1);
-        }
-        siteRows = scoredAssets.filter((row) => {
-          const key = `${row.strata_code ?? "null"}|${row.bundesland ?? "null"}`;
-          return (groupCounts.get(key) ?? 0) >= kAnonymityMin;
-        });
-        filteredSites = scoredAssets.length - siteRows.length;
-      }
 
       const sitesCsvPath = path.join(martDir, "site-scores.csv");
       const sitesOutput = stringify(siteRows, {
@@ -141,7 +126,7 @@ export class ExportMartGogol extends Gogol {
         ],
       });
       await fs.writeFile(sitesCsvPath, sitesOutput, "utf-8");
-      files.push({ name: "site-scores.csv", rows: siteRows.length, filtered: filteredSites });
+      files.push({ name: "site-scores.csv", rows: siteRows.length, filtered: 0 });
 
       // 2. Remediation report — actionable guidance for low-scoring indicators
       const remediationRows = db
@@ -225,20 +210,14 @@ export class ExportMartGogol extends Gogol {
           )
           .all(cohortId) as AggRow[];
 
-        let filteredAggs = 0;
         let aggOutput = aggRows;
-
-        if (publicMode) {
-          aggOutput = aggRows.filter((r) => r.n >= kAnonymityMin);
-          filteredAggs = aggRows.length - aggOutput.length;
-        }
 
         const aggsPath = path.join(martDir, "cohort-aggregates.json");
         await fs.writeFile(aggsPath, JSON.stringify(aggOutput, null, 2), "utf-8");
         files.push({
           name: "cohort-aggregates.json",
           rows: aggOutput.length,
-          filtered: filteredAggs,
+          filtered: 0,
         });
       }
     } finally {
@@ -252,7 +231,6 @@ export class ExportMartGogol extends Gogol {
       JSON.stringify(
         {
           mart_dir: martDir,
-          public_mode: publicMode,
           k_anonymity_min: kAnonymityMin,
           files,
           run_id: runId,

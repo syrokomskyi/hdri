@@ -6,6 +6,7 @@
  * <CHANGE_SUMMARY>
   <item>Document the existing release-contract module contract for Compass-aware maintenance.</item>
   <item>RFC-0107: add ScientificInputs, ProductVerdict, ScientificReport typed contracts and product verdict suppression.</item>
+  <item>RFC-0108: add PublicProductRef, DisclosureReport, PUBLIC_PRODUCT_SCHEMAS typed contracts for private/public mart separation.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -65,6 +66,76 @@ export interface ScientificReport {
   productVerdicts: ProductVerdict[];
   evidenceRefs: string[];
 }
+
+export type PublicProductType =
+  "cross-section" | "panel" | "availability" | "post-stratified" | "methodology";
+
+export interface PublicProductRef {
+  schema: "hdri-public-product@1";
+  product: PublicProductType;
+  format: "csv" | "json";
+  contentSha256: string;
+  bytes: number;
+  policySha256: string;
+  schemaId: string;
+  sourceAggregateSha256: string;
+}
+
+export interface DisclosureReport {
+  schema: "hdri-disclosure-report@1";
+  publicManifestSha256: string;
+  filesChecked: number;
+  cellsChecked: number;
+  effectiveK: number;
+  status: "pass" | "fail";
+  violations: string[];
+}
+
+export const PUBLIC_PRODUCT_SCHEMAS: Record<
+  PublicProductType,
+  { allowedFields: readonly string[]; prohibitedFields: readonly string[] }
+> = {
+  "cross-section": {
+    allowedFields: [
+      "axis",
+      "axis_value",
+      "stat_type",
+      "dimension_id",
+      "n",
+      "mean",
+      "p10",
+      "p25",
+      "p50",
+      "p75",
+      "p90",
+      "min_val",
+      "max_val",
+    ],
+    prohibitedFields: ["asset_id", "domain", "url", "email", "phone", "remediation", "score"],
+  },
+  panel: {
+    allowedFields: ["period", "dimension_id", "n", "mean", "delta", "reliable"],
+    prohibitedFields: ["asset_id", "domain", "url", "email", "phone", "remediation", "score"],
+  },
+  availability: {
+    allowedFields: ["period", "n", "available", "unavailable", "rate"],
+    prohibitedFields: ["asset_id", "domain", "url", "email", "phone", "remediation", "score"],
+  },
+  "post-stratified": {
+    allowedFields: ["strata_code", "bundesland", "n", "weighted_mean", "weighted_n"],
+    prohibitedFields: ["asset_id", "domain", "url", "email", "phone", "remediation", "score"],
+  },
+  methodology: {
+    allowedFields: [
+      "codebook_version",
+      "ontology_version",
+      "codebook_sha256",
+      "ontology_sha256",
+      "canonical_hash",
+    ],
+    prohibitedFields: ["asset_id", "domain", "url", "email", "phone", "remediation", "score"],
+  },
+};
 
 export type ScientificGateReport = Readonly<{
   schemaVersion: "1";

@@ -28,6 +28,7 @@ export type PipelineState = {
   capsuleDir?: string;
   vaultShardPaths?: string[];
   martPaths?: string[];
+  publicManifestPath?: string;
   candidateManifestPath?: string;
 };
 

@@ -27,15 +27,11 @@ export type Brief = {
   factoryContractRootDir: string;
   /** Absolute path to the vault directory (accumulates Parquet shards across runs) */
   vaultDir: string;
-  publicMode: boolean;
   skipGogols: string[];
 };
 
 const getString = (value: unknown): string | undefined =>
   typeof value === "string" ? value.trim() : undefined;
-
-const getBoolean = (value: unknown, fallback: boolean): boolean =>
-  typeof value === "boolean" ? value : fallback;
 
 const getStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
@@ -82,7 +78,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     throw new Error("brief.md: missing required field: factoryContractRootDir");
   }
   const vaultDir = getString(data.vaultDir) ?? "";
-  const publicMode = getBoolean(data.publicMode, false);
 
   return {
     outputLanguage,
@@ -92,7 +87,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     capsuleId,
     factoryContractRootDir,
     vaultDir,
-    publicMode,
     skipGogols: getStringArray(data.skipGogols),
   };
 };

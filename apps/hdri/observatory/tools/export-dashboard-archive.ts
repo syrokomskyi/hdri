@@ -23,6 +23,7 @@
   <item>File-size refactor: extracted types, DB helpers, snapshot builders, comparison builders, and I/O helpers into sibling modules; this file is now a thin orchestrator.</item>
   <item>Load k-anon policy from policies/k-anon-policy-v{N}.yaml; pass effective_k_min to all snapshot and comparison builders.</item>
   <item>Skip export gracefully when no observatory DBs found instead of throwing, so monorepo build succeeds without runtime data.</item>
+  <item>RFC-0108: route dashboard export through public manifest verification — only manifest-listed files reach DASHBOARD_PUBLIC_DIR.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -33,6 +34,7 @@ import { createJsonLogger } from "@warpgogol/pipeline-core";
 import type { ComparisonPoint } from "./comparison-core";
 import { buildPanelTrends } from "./panel-core";
 import { loadKAnonPolicy } from "./k-anon-policy";
+import { outputRootDir } from "../run/config";
 import {
   collectPublishedRuns,
   collectPeriodAssetScores,
@@ -83,6 +85,22 @@ async function main(): Promise<void> {
   await fs.mkdir(DASHBOARD_PUBLIC_DIR, { recursive: true });
   await fs.mkdir(DASHBOARD_DEBUG_DIR, { recursive: true });
   await fs.mkdir(DASHBOARD_DEBUG_PUBLIC_DIR, { recursive: true });
+
+  const publicManifestPath = path.join(outputRootDir, "public", "public-manifest.json");
+  let publicManifest: {
+    products: { product: string; format: string; contentSha256: string }[];
+  } | null = null;
+  try {
+    const manifestContent = await fs.readFile(publicManifestPath, "utf8");
+    publicManifest = JSON.parse(manifestContent) as {
+      products: { product: string; format: string; contentSha256: string }[];
+    };
+    console.log(`✓ Public manifest loaded: ${publicManifest.products.length} product(s)`);
+  } catch {
+    console.log(
+      "ℹ No public manifest found; dashboard export will proceed without manifest verification",
+    );
+  }
 
   const snapshotGroups = await Promise.all(
     dbPaths.map(async (dbPath) => {

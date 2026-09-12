@@ -6,6 +6,5 @@ factoryContractRootDir: "../factory/a-contract-ontology"
 vaultDir: ".output/vault"
 ontologyVersion: "1.0.0"
 codebookId: "observatory-v1"
-publicMode: false
 skipGogols: []
 ---

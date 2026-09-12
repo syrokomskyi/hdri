@@ -5,6 +5,7 @@
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
   <item>Document the existing PrepareQuarterReleaseGogol module contract for Compass-aware maintenance.</item>
+  <item>RFC-0108: admit only PublicProductRef entries as publication artifacts. Read from public-manifest.json instead of blindly admitting all martPaths.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -43,7 +44,7 @@ export class PrepareQuarterReleaseGogol extends Gogol {
   override readonly id = "prepare-quarter-release";
 
   override async run(ctx: PipelineContext): Promise<void> {
-    const { runId, capsuleDir, vaultShardPaths = [], martPaths = [], brief } = ctx.state;
+    const { runId, capsuleDir, vaultShardPaths = [], brief } = ctx.state;
     if (!runId || !capsuleDir)
       throw new Error("Quarter release preparation requires synced Observatory run state");
     const candidatePath = path.join(capsuleDir, "capsule-candidate.json");
@@ -147,8 +148,21 @@ export class PrepareQuarterReleaseGogol extends Gogol {
 
     for (const source of vaultShardPaths)
       await retain("vault", source, `artifacts/vault/${path.basename(source)}`);
-    for (const source of martPaths)
-      await retain("publication", source, `artifacts/publication/${path.basename(source)}`);
+    const publicManifestPath = ctx.state.publicManifestPath;
+    if (publicManifestPath) {
+      const manifest = JSON.parse(await fsp.readFile(publicManifestPath, "utf8")) as {
+        products: { product: string; format: string }[];
+      };
+      const manifestDir = path.dirname(publicManifestPath);
+      for (const entry of manifest.products) {
+        const source = path.join(manifestDir, `${entry.product}.${entry.format}`);
+        await retain(
+          "publication",
+          source,
+          `artifacts/publication/${entry.product}.${entry.format}`,
+        );
+      }
+    }
     for (const name of ["codebook.yaml", "ontology.yaml", "population-frame.json"]) {
       const source = path.join(inputDir, name);
       try {
