@@ -7,10 +7,17 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Rewritten as thin entry point for declaration-driven pipeline.</item>
+  <item>RFC-0106: add --verify-inputs read-only diagnostic command.</item>
 </CHANGE_SUMMARY>
 */
 
 import "@syrokomskyi/observatory-crypto/auto-env";
 import { runApp } from "./app/run-app.js";
+import { verifyInputs } from "./app/verify-inputs.js";
 
-await runApp();
+const args = process.argv.slice(2);
+if (args.includes("--verify-inputs")) {
+  await verifyInputs(args);
+} else {
+  await runApp();
+}
