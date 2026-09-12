@@ -8,6 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0100: baseline import and identity resolution.</item>
+  <item>RFC-0100 review fix: DNA-8 — hash actual converter source instead of constant string.</item>
 </CHANGE_SUMMARY>
 */
 

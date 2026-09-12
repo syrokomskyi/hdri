@@ -8,6 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0100: inventory and preservation lock.</item>
+  <item>RFC-0100 review fix: remove dead code, delegate lock to shared @syrokomskyi/utils acquirePidLock (DNA-3).</item>
 </CHANGE_SUMMARY>
 */
 

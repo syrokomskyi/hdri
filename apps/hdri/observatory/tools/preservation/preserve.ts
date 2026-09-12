@@ -8,6 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0100: preservation and replica coordinator.</item>
+  <item>RFC-0100 review fix: DNA-8 — persist Ed25519 signature to disk; always check replica independence in verifyReplicas.</item>
 </CHANGE_SUMMARY>
 */
 

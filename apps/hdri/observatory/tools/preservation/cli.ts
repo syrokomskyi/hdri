@@ -8,6 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0100: preservation and baseline-import CLI.</item>
+  <item>RFC-0100 review fix: add 3rd replica, add --inventory and --identities args for baseline:import.</item>
 </CHANGE_SUMMARY>
 */
 
