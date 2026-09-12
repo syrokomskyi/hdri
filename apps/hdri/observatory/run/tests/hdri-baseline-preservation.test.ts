@@ -3,18 +3,18 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { generateSigningKey } from "@syrokomskyi/observatory-crypto";
 
-import { validateBaselineImportReceipt, type BaselineImportReceipt } from "../../tools/preservation/contracts.js";
+import {
+  validateBaselineImportReceipt,
+  type BaselineImportReceipt,
+} from "../../tools/preservation/contracts.js";
 import {
   acquirePreservationLock,
-  inventorySources,
   verifyInventoryIntegrity,
   checkMissingCasRefs,
   type InventoryEntry,
 } from "../../tools/preservation/inventory.js";
 import {
-  preserveQ2,
   verifyReplicas,
   checkReplicaIndependence,
   type ReplicaInfo,
@@ -29,8 +29,7 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const mkdtemp = (prefix: string): string =>
-  fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+const mkdtemp = (prefix: string): string => fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 
 const createFakeQ2Corpus = (dir: string): string => {
   fs.mkdirSync(dir, { recursive: true });
@@ -69,12 +68,23 @@ describe("RFC-0100 AC-1: baseline import preserves canonical asset IDs", () => {
     const dir = mkdtemp("hdri-ac1-");
     try {
       const archivePath = path.join(dir, "archive");
-      const targetRoot = path.join(dir, "target");
       fs.mkdirSync(archivePath, { recursive: true });
 
       const identities = [
-        { producer: "factory", databaseSha256: "abc", localSiteId: 1, provisionalId: "da-1", evidenceRefs: ["ref1"] },
-        { producer: "factory", databaseSha256: "abc", localSiteId: 2, provisionalId: "da-2", evidenceRefs: ["ref2"] },
+        {
+          producer: "factory",
+          databaseSha256: "abc",
+          localSiteId: 1,
+          provisionalId: "da-1",
+          evidenceRefs: ["ref1"],
+        },
+        {
+          producer: "factory",
+          databaseSha256: "abc",
+          localSiteId: 2,
+          provisionalId: "da-2",
+          evidenceRefs: ["ref2"],
+        },
       ];
 
       const resolved = resolveIdentities({
@@ -184,9 +194,7 @@ describe("RFC-0100 AC-5: missing CAS references block gate", () => {
   });
 
   it("passes when all CAS refs present", () => {
-    const inventory: InventoryEntry[] = [
-      fakeInventoryEntry("/path/cas/obj1", "cas/obj1"),
-    ];
+    const inventory: InventoryEntry[] = [fakeInventoryEntry("/path/cas/obj1", "cas/obj1")];
     const missing = checkMissingCasRefs(["/path/cas/obj1"], inventory);
     expect(missing).toEqual([]);
   });
@@ -234,8 +242,22 @@ describe("RFC-0100 AC-7: replica verification requires 3 independent copies", ()
         schema: "hdri-replica-receipt@1",
         period: "2026-q2",
         replicas: [
-          { path: "/fake/1", sha256: "a".repeat(64), bytes: 1, failureDomain: "a", medium: "ssd", credentialBoundary: "k1" },
-          { path: "/fake/2", sha256: "b".repeat(64), bytes: 1, failureDomain: "b", medium: "hdd", credentialBoundary: "k2" },
+          {
+            path: "/fake/1",
+            sha256: "a".repeat(64),
+            bytes: 1,
+            failureDomain: "a",
+            medium: "ssd",
+            credentialBoundary: "k1",
+          },
+          {
+            path: "/fake/2",
+            sha256: "b".repeat(64),
+            bytes: 1,
+            failureDomain: "b",
+            medium: "hdd",
+            credentialBoundary: "k2",
+          },
         ],
         contentManifestSha256: "c".repeat(64),
         signatureSha256: "c".repeat(64),
@@ -260,8 +282,22 @@ describe("RFC-0100 AC-7: replica verification requires 3 independent copies", ()
 
   it("rejects replicas with same failure domain", () => {
     const replicas: ReplicaInfo[] = [
-      { path: "/a", sha256: "x", bytes: 1, failureDomain: "same", medium: "ssd", credentialBoundary: "k1" },
-      { path: "/b", sha256: "y", bytes: 1, failureDomain: "same", medium: "hdd", credentialBoundary: "k2" },
+      {
+        path: "/a",
+        sha256: "x",
+        bytes: 1,
+        failureDomain: "same",
+        medium: "ssd",
+        credentialBoundary: "k1",
+      },
+      {
+        path: "/b",
+        sha256: "y",
+        bytes: 1,
+        failureDomain: "same",
+        medium: "hdd",
+        credentialBoundary: "k2",
+      },
     ];
     expect(() => checkReplicaIndependence(replicas)).toThrow(/failure domain/);
   });
