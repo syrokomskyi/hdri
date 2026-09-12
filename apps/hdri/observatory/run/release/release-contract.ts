@@ -8,6 +8,7 @@
   <item>RFC-0107: add ScientificInputs, ProductVerdict, ScientificReport typed contracts and product verdict suppression.</item>
   <item>RFC-0108: add PublicProductRef, DisclosureReport, PUBLIC_PRODUCT_SCHEMAS typed contracts for private/public mart separation.</item>
   <item>RFC-0109: add ReleaseEnvelope, ReleaseInput, PublicationAttestation, new ReplicaReceipt schema. Remove validateReleaseEvidence and N+8+3 arithmetic. Add acyclic closure verification, resumable copy, independence validation, and attestation delivery.</item>
+  <item>RFC-0110: replace RebuildReceipt with hdri-independent-rebuild@1 schema. Add RebuildInput, computeInputClosureSha256, createRebuildReceipt, verifyRebuildReceipt.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -153,16 +154,31 @@ export type ScientificGateReport = Readonly<{
   Readonly<Record<string, unknown>>;
 
 export type RebuildReceipt = Readonly<{
-  schemaVersion: "1";
-  period: string;
-  capsuleId: string;
-  candidateManifestSha256: string;
-  primaryPublicArchiveHash: string;
-  rebuiltPublicArchiveHash: string;
-  preparedEmptyAt: string;
-  verifiedAt: string;
-  matched: true;
+  schema: "hdri-independent-rebuild@1";
+  capsuleManifestSha256: string;
+  methodologySha256: string;
+  runtimeClosureSha256: string;
+  rebuiltPublicManifestSha256: string;
+  expectedPublicManifestSha256: string;
+  inputClosureSha256: string;
+  comparisonReportSha256: string;
+  isolationProofSha256: string;
+  startedAt: string;
+  completedAt: string;
 }>;
+
+export interface RebuildInput {
+  schema: "hdri-rebuild-input@1";
+  capsuleManifestPath: string;
+  vaultDir: string;
+  codebookPath: string;
+  ontologyPath: string;
+  signalMapPath: string | null;
+  methodologyPath: string;
+  runtimeClosurePath: string;
+  expectedPublicDigest: string;
+  publicManifestPath: string;
+}
 
 export type ReplicaReceipt = Readonly<{
   schema: "hdri-replica-receipt@1";
@@ -299,6 +315,86 @@ export interface PublicationAttestation {
 }
 
 const SHA256_HEX = /^[a-f0-9]{64}$/;
+
+export const computeInputClosureSha256 = async (inputPaths: readonly string[]): Promise<string> => {
+  const hashes: string[] = [];
+  for (const p of [...inputPaths].sort()) {
+    if (p == null) continue;
+    try {
+      hashes.push(`${p}\0${await sha256File(p)}`);
+    } catch {
+      // Skip missing optional paths
+    }
+  }
+  return createHash("sha256").update(hashes.join("\n")).digest("hex");
+};
+
+export const createRebuildReceipt = (
+  capsuleManifestSha256: string,
+  methodologySha256: string,
+  runtimeClosureSha256: string,
+  rebuiltPublicManifestSha256: string,
+  expectedPublicManifestSha256: string,
+  inputClosureSha256: string,
+  comparisonReportSha256: string,
+  isolationProofSha256: string,
+  startedAt: string,
+  completedAt: string,
+): RebuildReceipt => ({
+  schema: "hdri-independent-rebuild@1",
+  capsuleManifestSha256,
+  methodologySha256,
+  runtimeClosureSha256,
+  rebuiltPublicManifestSha256,
+  expectedPublicManifestSha256,
+  inputClosureSha256,
+  comparisonReportSha256,
+  isolationProofSha256,
+  startedAt,
+  completedAt,
+});
+
+export const verifyRebuildReceipt = (receipt: RebuildReceipt): string[] => {
+  const violations: string[] = [];
+  if (receipt.schema !== "hdri-independent-rebuild@1") {
+    violations.push("rebuild_receipt_schema_mismatch");
+    return violations;
+  }
+  if (!SHA256_HEX.test(receipt.capsuleManifestSha256)) {
+    violations.push("rebuild_receipt_capsule_manifest_hash_invalid");
+  }
+  if (!SHA256_HEX.test(receipt.methodologySha256)) {
+    violations.push("rebuild_receipt_methodology_hash_invalid");
+  }
+  if (!SHA256_HEX.test(receipt.runtimeClosureSha256)) {
+    violations.push("rebuild_receipt_runtime_closure_hash_invalid");
+  }
+  if (!SHA256_HEX.test(receipt.rebuiltPublicManifestSha256)) {
+    violations.push("rebuild_receipt_rebuilt_public_manifest_hash_invalid");
+  }
+  if (!SHA256_HEX.test(receipt.expectedPublicManifestSha256)) {
+    violations.push("rebuild_receipt_expected_public_manifest_hash_invalid");
+  }
+  if (!SHA256_HEX.test(receipt.inputClosureSha256)) {
+    violations.push("rebuild_receipt_input_closure_hash_invalid");
+  }
+  if (!SHA256_HEX.test(receipt.comparisonReportSha256)) {
+    violations.push("rebuild_receipt_comparison_report_hash_invalid");
+  }
+  if (!SHA256_HEX.test(receipt.isolationProofSha256)) {
+    violations.push("rebuild_receipt_isolation_proof_hash_invalid");
+  }
+  if (!Number.isFinite(Date.parse(receipt.startedAt))) {
+    violations.push("rebuild_receipt_started_at_invalid");
+  }
+  if (!Number.isFinite(Date.parse(receipt.completedAt))) {
+    violations.push("rebuild_receipt_completed_at_invalid");
+  }
+  if (receipt.rebuiltPublicManifestSha256 !== receipt.expectedPublicManifestSha256) {
+    violations.push("rebuild_receipt_public_manifest_digest_mismatch");
+  }
+  return violations;
+};
 
 export const computeClosureDigest = (
   inventory: readonly ReleaseEnvelope["inventory"][number][],

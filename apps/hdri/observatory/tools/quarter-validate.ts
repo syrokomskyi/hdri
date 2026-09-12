@@ -6,6 +6,7 @@
 <CHANGE_SUMMARY>
   <item>RFC-0031: write validation-report.json to capsule artifacts/qc/release/ directory.</item>
   <item>RFC-0109: replace --candidate/--evidence-dir with --release-input manifest. Validate scientific reports with inputFingerprint. No preliminary/final distinction — one immutable verification per input. Output JSON with releaseId, scientificReportsVerified, rebuildMatch.</item>
+  <item>RFC-0110: update RebuildReceipt validation for hdri-independent-rebuild@1 schema. Check schema field, hash match, and verifyRebuildReceipt.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -17,6 +18,7 @@ import { verifyQuarterCapsuleArtifacts } from "@syrokomskyi/factory-core";
 import {
   readScientificReports,
   sha256File,
+  verifyRebuildReceipt,
   type QuarterValidationReport,
   type RebuildReceipt,
   type ReleaseInput,
@@ -51,11 +53,8 @@ const reports = await readScientificReports(evidenceDir, sealedCapsule);
 let rebuildMatch = false;
 try {
   const rebuild = JSON.parse(await fs.readFile(rebuildReceiptPath, "utf8")) as RebuildReceipt;
-  rebuildMatch =
-    rebuild.schemaVersion === "1" &&
-    rebuild.period === sealedCapsule.period &&
-    rebuild.capsuleId === sealedCapsule.capsuleId &&
-    rebuild.matched === true;
+  const violations = verifyRebuildReceipt(rebuild);
+  rebuildMatch = violations.length === 0;
 } catch {
   rebuildMatch = false;
 }
