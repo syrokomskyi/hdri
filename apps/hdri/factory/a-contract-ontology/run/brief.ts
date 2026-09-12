@@ -12,6 +12,7 @@
   <item>Normalize period to lowercase after validation — lowercase is the canonical format.</item>
   <item>Remove unused direct database paths; discovery is period-scoped and filesystem-derived.</item>
   <item>RFC-0046: add instrumentPlan field parsed from brief frontmatter with skipGogols consistency validation.</item>
+  <item>RFC-0106: add inputManifestSet field for verified source admission.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -31,6 +32,8 @@ export type Brief = {
   skipGogols: string[];
   /** Instrument plan for this quarter. Defaults to Lighthouse disabled. */
   instrumentPlan: InstrumentPlanEntry[];
+  /** RFC-0106: Explicit manifest paths for verified source admission. */
+  inputManifestSet: string[];
 };
 
 const PERIOD_RE = /^(\d{4})-Q([1-4])$/i;
@@ -79,11 +82,16 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     throw new Error("brief.md: capsuleId must be a UUID v7");
   }
 
+  const inputManifestSet = Array.isArray(data.inputManifestSet)
+    ? data.inputManifestSet.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    : [];
+
   return {
     period,
     ontologyVersion,
     capsuleId,
     skipGogols,
     instrumentPlan,
+    inputManifestSet,
   };
 };
