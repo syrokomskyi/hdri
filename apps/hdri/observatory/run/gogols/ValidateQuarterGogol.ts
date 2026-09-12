@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Validates the sealed capsule: generates 8 scientific QC reports, runs empty-scratch rebuild verification, and produces a QuarterValidationReport.</purpose>
+<purpose>Validates the sealed capsule: generates 8 scientific QC reports, runs empty-scratch rebuild verification, and invokes quarter-validate.ts with --release-input to produce a QuarterValidationReport.</purpose>
 <non-goals>
   <item>Does not seal the capsule — use SealCapsuleGogol.</item>
   <item>Does not create replicas or publish — use ReleaseQuarterGogol.</item>
@@ -12,24 +12,17 @@
   <item>Pass domain-specific args to each scientific report tool (source-ledger, products-dir, codebook, etc.).</item>
   <item>Run methodology-snapshot before methodology-compare so Q3 snapshot is available.</item>
   <item>Run quarter-rebuild-verify (prepare + copy publication artifacts + verify) before writing validation report.</item>
-  <item>Write validation report directly via validateReleaseEvidence, tolerating missing replicas.</item>
   <item>Capture stderr from tool invocations for diagnostics instead of swallowing with stdio: pipe.</item>
+  <item>RFC-0109: use --release-input contract. Invoke quarter-validate.ts instead of calling validateReleaseEvidence directly. No mutable overwrite of preliminary reports — immutable revisions via shared.ts.</item>
 </CHANGE_SUMMARY>
 */
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
-import type { QuarterCapsule } from "@syrokomskyi/factory-core";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { outputRootDir } from "../config";
-import {
-  readScientificReports,
-  validateReleaseEvidence,
-  sha256File,
-  type RebuildReceipt,
-} from "../release/release-contract";
 
 export class ValidateQuarterGogol extends Gogol {
   override readonly id = "validate-quarter";
@@ -191,28 +184,27 @@ export class ValidateQuarterGogol extends Gogol {
       publicationDir,
     ]);
 
-    // 5. Read all 8 scientific reports (throws if any report fails)
-    const sealedCapsule = JSON.parse(await fs.readFile(manifestPath, "utf8")) as QuarterCapsule;
-    const reports = await readScientificReports(evidenceDir, sealedCapsule);
-
-    // 6. Write preliminary validation report (replicas not yet available —
-    //    quarter-release.ts will re-validate with replicas and overwrite this file)
-    const candidateManifestSha256 = await sha256File(
-      path.join(capsuleDir, "capsule-candidate.json"),
-    );
-    const rebuild = JSON.parse(
-      await fs.readFile(path.join(evidenceDir, "rebuild-receipt.json"), "utf8"),
-    ) as RebuildReceipt;
-
-    const report = validateReleaseEvidence(
-      sealedCapsule,
-      reports,
-      rebuild,
-      [],
-      candidateManifestSha256,
-    );
-
-    await fs.writeFile(validationPath, `${JSON.stringify(report, null, 2)}\n`);
+    // 5. Invoke quarter-validate.ts with --release-input
+    const releaseInputPath =
+      ctx.state.releaseInputPath ?? path.join(capsuleDir, "release-input.json");
+    try {
+      execFileSync(
+        process.execPath,
+        [
+          "--import",
+          "tsx",
+          path.join(toolsDir, "quarter-validate.ts"),
+          "--release-input",
+          releaseInputPath,
+        ],
+        { stdio: ["pipe", "pipe", "pipe"], cwd: process.cwd() },
+      );
+    } catch (error) {
+      const stderr = (error as { stderr?: Buffer }).stderr?.toString() ?? "";
+      throw new Error(`quarter-validate failed: ${stderr || (error as Error).message}`, {
+        cause: error,
+      });
+    }
 
     // Clean up scratch directory
     await fs.rm(scratchDir, { recursive: true, force: true }).catch(() => undefined);

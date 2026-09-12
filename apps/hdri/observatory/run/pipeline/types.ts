@@ -7,6 +7,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Add scoreCount, cohortId fields to PipelineState for interpret phase.</item>
+  <item>RFC-0109: add releaseInputPath and releaseEnvelopePath to PipelineState.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -30,6 +31,8 @@ export type PipelineState = {
   martPaths?: string[];
   publicManifestPath?: string;
   candidateManifestPath?: string;
+  releaseInputPath?: string;
+  releaseEnvelopePath?: string;
 };
 
 export type PipelineAiServices = Record<string, never>;

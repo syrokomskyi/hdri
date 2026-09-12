@@ -6,6 +6,7 @@
  * <CHANGE_SUMMARY>
   <item>Document the existing PrepareQuarterReleaseGogol module contract for Compass-aware maintenance.</item>
   <item>RFC-0108: admit only PublicProductRef entries as publication artifacts. Read from public-manifest.json instead of blindly admitting all martPaths.</item>
+  <item>RFC-0109: output release-input.json manifest with capsule, evidence, public manifest, rebuild receipt, replica config, vault dir, public archive root refs. Set ctx.state.releaseInputPath.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -29,7 +30,7 @@ import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";
-import { inputDir } from "../config";
+import { inputDir, outputRootDir } from "../config";
 
 const hashFile = async (file: string): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -74,12 +75,14 @@ export class PrepareQuarterReleaseGogol extends Gogol {
       }
       await verifyQuarterCapsuleArtifacts(capsuleDir, finalCapsule);
       ctx.state.candidateManifestPath = finalPath;
+      await this.writeReleaseInput(ctx, finalPath);
       return;
     }
     try {
       const existing = JSON.parse(await fsp.readFile(candidatePath, "utf8")) as QuarterCapsule;
       await verifyQuarterCapsuleArtifacts(capsuleDir, existing);
       ctx.state.candidateManifestPath = candidatePath;
+      await this.writeReleaseInput(ctx, candidatePath);
       return;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
@@ -176,5 +179,36 @@ export class PrepareQuarterReleaseGogol extends Gogol {
 
     const candidate = { ...staging, state: "candidate" as const, artifacts };
     ctx.state.candidateManifestPath = await writeQuarterCapsuleCandidate(capsuleDir, candidate);
+    await this.writeReleaseInput(ctx, ctx.state.candidateManifestPath);
+  }
+
+  private async writeReleaseInput(
+    ctx: PipelineContext,
+    capsuleManifestPath: string,
+  ): Promise<void> {
+    const { capsuleDir, brief } = ctx.state;
+    if (!capsuleDir) throw new Error("writeReleaseInput requires capsuleDir");
+    const vaultDir = brief.vaultDir
+      ? path.resolve(brief.vaultDir)
+      : path.join(outputRootDir, "vault");
+    const releaseInput = {
+      schema: "hdri-release-input@1" as const,
+      capsuleManifestPath,
+      evidenceDir: path.join(capsuleDir, "artifacts", "qc", "release"),
+      publicManifestPath: ctx.state.publicManifestPath ?? "",
+      rebuildReceiptPath: path.join(
+        capsuleDir,
+        "artifacts",
+        "qc",
+        "release",
+        "rebuild-receipt.json",
+      ),
+      replicaConfigPath: path.join(inputDir, "replica-config.json"),
+      vaultDir,
+      publicArchiveRoot: path.join(outputRootDir, "public-archive"),
+    };
+    const releaseInputPath = path.join(capsuleDir, "release-input.json");
+    await fsp.writeFile(releaseInputPath, `${JSON.stringify(releaseInput, null, 2)}\n`);
+    ctx.state.releaseInputPath = releaseInputPath;
   }
 }
