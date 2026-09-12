@@ -48,11 +48,14 @@ if (!sourceLedgerPath || !observationsPath || !scoresPath) {
     scoreCount = Array.isArray(scores) ? scores.length : scores.count;
 
     const sourceIds = new Set<string>();
+    let hasSourceIds = false;
     for (const batch of ledger.batches) {
       if (batch.sourceIds) {
+        hasSourceIds = true;
         for (const id of batch.sourceIds) sourceIds.add(id);
       }
     }
+    if (!hasSourceIds) warnings.push("source_ids_absent_in_ledger");
 
     const observationRefs = new Set<string>();
     if (!Array.isArray(observations) && observations.refs) {

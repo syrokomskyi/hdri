@@ -51,8 +51,8 @@ if (!q2SnapshotPath || !q3SnapshotPath) {
       sourceFrameId: string;
     }>(q3SnapshotPath);
 
-    const q2ContentId = q2.canonicalHash ?? q2.codebookSha256 ?? q2.ontologySha256;
-    const q3ContentId = q3.canonicalHash ?? q3.codebookSha256 ?? q3.ontologySha256;
+    const q2ContentId = q2.canonicalHash || q2.codebookSha256 || q2.ontologySha256;
+    const q3ContentId = q3.canonicalHash || q3.codebookSha256 || q3.ontologySha256;
 
     if (!q2ContentId || !q3ContentId) {
       violations.push("methodology_content_identity_absent");

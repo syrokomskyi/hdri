@@ -10,6 +10,8 @@
 */
 
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
+import fs from "node:fs/promises";
 import { arg, fileExists, readJsonFile, requireCommonArgs, writeReport } from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
@@ -61,10 +63,11 @@ if (!predictionsPath || !samplePath) {
 
     let minPrecision = 0.8;
     if (policyPath && (await fileExists(path.resolve(policyPath)))) {
-      const policy = await readJsonFile<{
+      const policyContent = await fs.readFile(path.resolve(policyPath), "utf8");
+      const policy = parseYaml(policyContent) as {
         minPrecision?: number;
         minimumWilsonLowerBound?: number;
-      }>(path.resolve(policyPath));
+      };
       if (typeof policy.minimumWilsonLowerBound === "number")
         minPrecision = policy.minimumWilsonLowerBound;
       else if (typeof policy.minPrecision === "number") minPrecision = policy.minPrecision;
