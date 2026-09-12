@@ -17,6 +17,7 @@ import "@syrokomskyi/observatory-crypto/auto-env";
 import { loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
 
 import { importBaseline } from "./baseline-import.js";
+import { type BaselineIdentity } from "./contracts.js";
 import { inventorySources, type InventoryEntry } from "./inventory.js";
 import { preserveQ2, verifyReplicas } from "./preserve.js";
 
@@ -26,6 +27,7 @@ import { preserveQ2, verifyReplicas } from "./preserve.js";
 
 type ParsedArgs = {
   inventory?: string;
+  identities?: string;
   archiveRoot?: string;
   archive?: string;
   target?: string;
@@ -41,6 +43,9 @@ const parseArgs = (args: string[]): ParsedArgs => {
     switch (arg) {
       case "--inventory":
         parsed.inventory = args[++i];
+        break;
+      case "--identities":
+        parsed.identities = args[++i];
         break;
       case "--archive-root":
         parsed.archiveRoot = args[++i];
@@ -84,8 +89,6 @@ const runPreserveQ2 = async (args: string[]): Promise<number> => {
 
   const signingKey = loadSigningKeyFromEnv();
   const inventory = await inventorySources({
-    period: "2026-q2",
-    producers: ["factory", "observatory"],
     roots: [opts.archiveRoot],
   });
 
@@ -106,6 +109,12 @@ const runPreserveQ2 = async (args: string[]): Promise<number> => {
         failureDomain: "host-b",
         medium: "hdd",
         credentialBoundary: "key-b",
+      },
+      {
+        dest: path.join(opts.archiveRoot, "replica-3"),
+        failureDomain: "host-c",
+        medium: "tape",
+        credentialBoundary: "key-c",
       },
     ],
   });
@@ -140,16 +149,29 @@ const runPreserveVerify = async (args: string[]): Promise<number> => {
 const runBaselineImport = async (args: string[]): Promise<number> => {
   const opts = parseArgs(args);
   if (!opts.archive || !opts.target) {
-    console.error("Usage: baseline:import -- --archive <path> --target <fresh-root> [--json]");
+    console.error(
+      "Usage: baseline:import -- --archive <path> --target <fresh-root> [--inventory <file>] [--identities <file>] [--json]",
+    );
     return 1;
   }
 
-  const inventory: InventoryEntry[] = [];
+  let inventory: InventoryEntry[] = [];
+  if (opts.inventory) {
+    const raw = await import("node:fs/promises").then((m) => m.readFile(opts.inventory!, "utf8"));
+    inventory = JSON.parse(raw) as InventoryEntry[];
+  }
+
+  let identities: BaselineIdentity[] = [];
+  if (opts.identities) {
+    const raw = await import("node:fs/promises").then((m) => m.readFile(opts.identities!, "utf8"));
+    identities = JSON.parse(raw) as BaselineIdentity[];
+  }
+
   const receipt = await importBaseline({
     archivePath: opts.archive,
     targetRoot: opts.target,
     inventory,
-    identities: [],
+    identities,
   });
 
   if (opts.json) {

@@ -154,15 +154,19 @@ export const preserveQ2 = async (opts: PreserveQ2Options): Promise<PreservationD
       period: "2026-q2",
       artifacts: opts.inventory,
     };
-    const { manifestSha256 } = await signContentManifest(manifest, opts.signingKey);
+    const { manifestSha256, signature } = await signContentManifest(manifest, opts.signingKey);
 
-    // Write replica receipt
+    // Write replica receipt with actual signature
+    const signaturePath = path.join(opts.archiveRoot, "content-manifest.sig");
+    await fs.writeFile(signaturePath, signature, "utf8");
+    const signatureSha256 = createHash("sha256").update(signature, "utf8").digest("hex");
+
     const receipt: ReplicaReceipt = {
       schema: "hdri-replica-receipt@1",
       period: "2026-q2",
       replicas,
       contentManifestSha256: manifestSha256,
-      signatureSha256: manifestSha256, // Detached signature stored separately
+      signatureSha256,
     };
     const receiptPath = path.join(opts.archiveRoot, "replica-receipt.json");
     await fs.mkdir(opts.archiveRoot, { recursive: true });
@@ -234,29 +238,40 @@ export const verifyReplicas = async (
     };
   }
 
-  // Verify each replica's content digest
+  // Verify each replica's content digest (full mode) and independence (always)
   const violations: PreservationDiagnostic["violations"] = [];
-  for (const replica of receipt.replicas) {
-    try {
-      const actualSha256 = await sha256File(replica.path);
-      if (actualSha256 !== replica.sha256) {
+
+  if (opts.full) {
+    // Full mode: re-verify each replica's content digest on disk
+    for (const replica of receipt.replicas) {
+      try {
+        const actualSha256 = await sha256File(replica.path);
+        if (actualSha256 !== replica.sha256) {
+          violations.push({
+            code: "UNVERIFIED_REPLICA",
+            message: `Content digest mismatch for ${replica.path}`,
+            artifactRef: replica.path,
+          });
+        }
+      } catch {
         violations.push({
-          code: "UNVERIFIED_REPLICA",
-          message: `Content digest mismatch for ${replica.path}`,
+          code: "MISSING_EVIDENCE",
+          message: `Replica file not found: ${replica.path}`,
           artifactRef: replica.path,
         });
       }
-    } catch {
-      violations.push({
-        code: "MISSING_EVIDENCE",
-        message: `Replica file not found: ${replica.path}`,
-        artifactRef: replica.path,
-      });
     }
   }
 
-  if (opts.full) {
+  // Independence is always required (AC-7: "three independent complete copies")
+  try {
     checkReplicaIndependence(receipt.replicas);
+  } catch (error) {
+    violations.push({
+      code: "UNVERIFIED_REPLICA",
+      message: error instanceof Error ? error.message : String(error),
+      artifactRef: receiptPath,
+    });
   }
 
   return {

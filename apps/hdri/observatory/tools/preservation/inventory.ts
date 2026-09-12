@@ -16,72 +16,24 @@ import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { ProtectedInput, PreservationDiagnostic, ViolationCode } from "./contracts.js";
+import { acquirePidLock, type PidLockHandle } from "@syrokomskyi/utils";
+
+import type { ProtectedInput } from "./contracts.js";
 
 // ---------------------------------------------------------------------------
-// Preservation lock — PID-checked file lock (RFC-0089 batch-lock pattern)
+// Preservation lock — delegates to shared PID-checked lock (DNA-3)
 // ---------------------------------------------------------------------------
 
-export type LockHandle = {
-  lockPath: string;
-  release: () => Promise<void>;
-};
+export type LockHandle = PidLockHandle;
 
 const LOCK_TIMEOUT_MS = 86_400_000; // 24 hours
 
-const isProcessAlive = (pid: number): boolean => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-export const acquirePreservationLock = async (archiveRoot: string): Promise<LockHandle> => {
-  const lockPath = path.join(archiveRoot, ".preserve-lock.json");
-
-  try {
-    const content = await fs.readFile(lockPath, "utf8");
-    const existing = JSON.parse(content) as { pid: number; acquiredAt: string };
-    if (isProcessAlive(existing.pid)) {
-      const age = Date.now() - Date.parse(existing.acquiredAt);
-      if (age < LOCK_TIMEOUT_MS) {
-        throw new Error(
-          "LOCK_VIOLATION: archive root is locked by another active preservation run",
-        );
-      }
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith("LOCK_VIOLATION")) {
-      throw error;
-    }
-    // No lock file, corrupted JSON, or stale lock — proceed
-  }
-
-  const lock = { pid: process.pid, acquiredAt: new Date().toISOString() };
-  await fs.mkdir(archiveRoot, { recursive: true });
-  const lockBytes = JSON.stringify(lock, null, 2);
-  try {
-    const handle = await fs.open(lockPath, "wx");
-    try {
-      await handle.writeFile(lockBytes, "utf8");
-      await handle.sync();
-    } finally {
-      await handle.close();
-    }
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-    throw new Error("LOCK_VIOLATION: archive root is already locked");
-  }
-
-  return {
-    lockPath,
-    release: async () => {
-      await fs.rm(lockPath, { force: true });
-    },
-  };
-};
+export const acquirePreservationLock = async (archiveRoot: string): Promise<LockHandle> =>
+  acquirePidLock(
+    archiveRoot,
+    { lockFileName: ".preserve-lock.json", timeoutMs: LOCK_TIMEOUT_MS },
+    "LOCK_VIOLATION",
+  );
 
 // ---------------------------------------------------------------------------
 // SHA-256 file hashing
@@ -106,8 +58,6 @@ export type InventoryEntry = ProtectedInput & {
 };
 
 export type InventoryOptions = {
-  period: string;
-  producers: string[];
   roots: string[];
 };
 
@@ -213,22 +163,6 @@ export const verifyInventoryIntegrity = (
 // CAS reference check (AC-5)
 // ---------------------------------------------------------------------------
 
-export const checkCasReferences = (inventory: InventoryEntry[], casRoot: string): string[] => {
-  const casPaths = inventory.filter((e) => e.absolutePath.includes(casRoot));
-  const missing: string[] = [];
-
-  for (const entry of casPaths) {
-    // If the entry exists in inventory it was found on disk — but we need
-    // to check if referenced CAS objects are actually present
-    // This is a pure check: the inventory already reflects what's on disk,
-    // so missing files would not appear in inventory. The caller passes
-    // expected CAS refs separately and we check against inventory.
-    void entry;
-  }
-
-  return missing;
-};
-
 export const checkMissingCasRefs = (
   expectedCasRefs: string[],
   inventory: InventoryEntry[],
@@ -236,20 +170,3 @@ export const checkMissingCasRefs = (
   const inventoryPaths = new Set(inventory.map((e) => e.absolutePath));
   return expectedCasRefs.filter((ref) => !inventoryPaths.has(path.resolve(ref)));
 };
-
-// ---------------------------------------------------------------------------
-// Diagnostic builder
-// ---------------------------------------------------------------------------
-
-export const buildDiagnostic = (
-  operation: PreservationDiagnostic["operation"],
-  inputFingerprint: string,
-  violations: { code: ViolationCode; message: string; artifactRef: string }[],
-): PreservationDiagnostic => ({
-  schema: "hdri-preservation@1",
-  operation,
-  status: violations.length === 0 ? "pass" : "incomplete",
-  inputFingerprint,
-  evidenceRefs: [],
-  violations,
-});

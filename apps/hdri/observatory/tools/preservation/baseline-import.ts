@@ -100,9 +100,11 @@ export const convertToBaseline = async (
     .update(opts.inventory.map((e) => e.sha256).join("\n"))
     .digest("hex");
 
-  // Conversion implementation hash (the conversion executable's source digest)
+  // Conversion implementation hash — digest of the converter module source
+  const converterSourcePath = new URL("./baseline-import.ts", import.meta.url);
+  const converterSource = await fs.readFile(converterSourcePath, "utf8");
   const conversionImplementationSha256 = createHash("sha256")
-    .update("rfc-0100-baseline-import@1")
+    .update(converterSource, "utf8")
     .digest("hex");
 
   // Write current baseline manifest
