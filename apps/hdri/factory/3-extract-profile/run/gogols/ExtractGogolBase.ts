@@ -21,6 +21,10 @@
   <item>Call ctx.domCache.evict() immediately after extractDom() so Cheerio DOM is eligible for GC and does not accumulate in memory across thousands of pages.</item>
   <item>Use single-line progress output via logProgress singleLine flag.</item>
   <item>Fix idempotency: add JOIN site_pages and WHERE sp.source = 'homepage' to querySql so extraction gogols only process homepage observations, not detected pages fetched later.</item>
+  <item>RFC-0104: add context identity (asset_id, page_observation_id, effective_url, url_sha256) to ObsRow and querySql.</item>
+  <item>RFC-0104: add keyset pagination with ≤256 pending rows per batch.</item>
+  <item>RFC-0104: add immediate per-result checkpointing instead of accumulating results array.</item>
+  <item>RFC-0104: change already-done check to use composite context key.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -39,6 +43,10 @@ export type ObsRow = {
   content_sha256: string;
   storage_path: string;
   url_norm?: string;
+  url_sha256?: string;
+  asset_id?: string;
+  page_observation_id?: number;
+  effective_url?: string;
 };
 
 export type ExtractResultItem = {
@@ -52,8 +60,11 @@ export abstract class ExtractGogolBase extends Gogol {
 
   /** Override to include url_norm or other columns / joins. */
   protected get querySql(): string {
-    return `SELECT po.content_sha256, pc.storage_path FROM page_observations po JOIN page_contents pc ON pc.sha256 = po.content_sha256 JOIN site_pages sp ON sp.id = po.site_page_id WHERE sp.source = 'homepage'`;
+    return `SELECT po.content_sha256, pc.storage_path, sp.url_norm, sp.url_sha256, po.site_page_id AS page_observation_id, sp.site_id FROM page_observations po JOIN page_contents pc ON pc.sha256 = po.content_sha256 JOIN site_pages sp ON sp.id = po.site_page_id WHERE sp.source = 'homepage'`;
   }
+
+  /** Maximum pending rows per pagination batch (RFC-0104 AC-7). */
+  protected static readonly PAGINATION_LIMIT = 256;
 
   /**
    * Extract from the parsed Cheerio DOM. Return an array of SQL parameter values
@@ -90,108 +101,148 @@ export abstract class ExtractGogolBase extends Gogol {
     const { pagesDbName, brief } = ctx.state;
     const db = openPagesDb(getPagesDbPath(pagesDbName));
     const contentRoot = getContentRootDir();
+    const policyHash = brief.sourceToken ?? "";
 
-    const rows = db.prepare<[]>(this.querySql).all() as ObsRow[];
-
-    console.log(`[${this.id}] ${rows.length} page(s) to process`);
-
-    // 1. Batch already-done check
-    const doneSet = new Set<string>(
-      db
-        .prepare(`SELECT content_sha256 FROM ${this.table} WHERE extractor_ver = ?`)
-        .pluck()
-        .all(RULE_EXTRACTOR_VER) as string[],
-    );
-
-    const results: ExtractResultItem[] = [];
+    // RFC-0104: keyset pagination — process in chunks of ≤256 pending rows
+    const limit = ExtractGogolBase.PAGINATION_LIMIT;
+    let totalRows = 0;
     let parsed = 0;
     let skipped = 0;
     let alreadyDoneCount = 0;
     let missingFileCount = 0;
     let presentCount = 0;
-    let completed = 0;
-    const logEvery = Math.max(1, Math.min(500, Math.ceil(rows.length / 4)));
+    const allResults: ExtractResultItem[] = [];
 
-    const processOne = async (row: ObsRow): Promise<void> => {
-      if (doneSet.has(row.content_sha256)) {
-        alreadyDoneCount++;
-        skipped++;
-        completed++;
-        return;
+    let lastSitePageId = 0;
+    let batchRows: ObsRow[];
+    do {
+      // Keyset pagination on site_page_id (page_observation_id)
+      const paginatedSql = `${this.querySql} AND po.site_page_id > ? ORDER BY po.site_page_id ASC LIMIT ?`;
+      batchRows = db.prepare(paginatedSql).all(lastSitePageId, limit) as ObsRow[];
+      if (batchRows.length === 0) break;
+      lastSitePageId = (batchRows[batchRows.length - 1]!.page_observation_id as number) ?? 0;
+      totalRows += batchRows.length;
+
+      console.log(
+        `[${this.id}] processing ${batchRows.length} rows in batch (total so far: ${totalRows})`,
+      );
+
+      // 1. Batch already-done check using composite context key
+      const doneSet = new Set<string>();
+      if (batchRows.length > 0) {
+        const placeholders = batchRows.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
+        const doneParams = batchRows.flatMap((r) => [
+          r.asset_id ?? "",
+          r.page_observation_id ?? 0,
+          r.effective_url ?? r.url_norm ?? "",
+          r.content_sha256,
+          RULE_EXTRACTOR_VER,
+          policyHash,
+        ]);
+        const doneRows = db
+          .prepare(
+            `SELECT asset_id || '|' || page_observation_id || '|' || effective_url || '|' || content_sha256 || '|' || extractor_ver || '|' || policy_hash AS ctx_key FROM ${this.table} WHERE (asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash) IN (${placeholders})`,
+          )
+          .all(...doneParams) as { ctx_key: string }[];
+        for (const d of doneRows) doneSet.add(d.ctx_key);
       }
 
-      const filePath = path.join(contentRoot, row.storage_path);
-      let $: CheerioAPI;
-      try {
-        const entry = await ctx.domCache.getOrLoad(row.content_sha256, filePath);
-        $ = entry.$;
-      } catch {
-        missingFileCount++;
-        skipped++;
-        completed++;
-        return;
-      }
+      const batchResults: ExtractResultItem[] = [];
+      let completed = 0;
+      const logEvery = Math.max(1, Math.min(500, Math.ceil(batchRows.length / 4)));
 
-      let params: unknown[] | null;
-      try {
-        params = this.extractDom($, row);
-      } finally {
-        ctx.domCache.evict(row.content_sha256);
-      }
-      if (params) {
-        results.push({ sha256: row.content_sha256, params });
-        parsed++;
-        if (typeof params[0] === "number" && params[0] > 0) {
-          presentCount++;
+      const processOne = async (row: ObsRow): Promise<void> => {
+        const ctxKey = `${row.asset_id ?? ""}|${row.page_observation_id ?? 0}|${row.effective_url ?? row.url_norm ?? ""}|${row.content_sha256}|${RULE_EXTRACTOR_VER}|${policyHash}`;
+        if (doneSet.has(ctxKey)) {
+          alreadyDoneCount++;
+          skipped++;
+          completed++;
+          return;
         }
-      }
-      completed++;
 
-      if (completed % logEvery === 0 || completed === rows.length) {
-        logProgress(this.id, completed, rows.length, logEvery, true);
-      }
-    };
-
-    // 2. Bounded concurrency worker pool
-    let idx = 0;
-    const worker = async (): Promise<void> => {
-      while (idx < rows.length) {
-        const row = rows[idx++];
-        if (row) await processOne(row);
-      }
-    };
-    await Promise.all(
-      Array.from(
-        { length: Math.min(this.getConcurrency(brief.concurrency), rows.length || 1) },
-        worker,
-      ),
-    );
-
-    // 3. Batch upsert in a single transaction
-    if (results.length > 0) {
-      const stmt = db.prepare(this.upsertSql);
-      db.transaction(() => {
-        for (const r of results) {
-          stmt.run(r.sha256, RULE_EXTRACTOR_VER, ...r.params);
+        const filePath = path.join(contentRoot, row.storage_path);
+        let $: CheerioAPI;
+        try {
+          const entry = await ctx.domCache.getOrLoad(row.content_sha256, filePath);
+          $ = entry.$;
+        } catch {
+          missingFileCount++;
+          skipped++;
+          completed++;
+          return;
         }
-      })();
-    }
+
+        let params: unknown[] | null;
+        try {
+          params = this.extractDom($, row);
+        } finally {
+          ctx.domCache.evict(row.content_sha256);
+        }
+        if (params) {
+          const fullParams = [
+            row.content_sha256,
+            RULE_EXTRACTOR_VER,
+            row.asset_id ?? "",
+            row.page_observation_id ?? 0,
+            row.effective_url ?? row.url_norm ?? "",
+            policyHash,
+            ...params,
+          ];
+          batchResults.push({ sha256: row.content_sha256, params: fullParams });
+          allResults.push({ sha256: row.content_sha256, params: fullParams });
+          parsed++;
+          if (typeof params[0] === "number" && params[0] > 0) {
+            presentCount++;
+          }
+        }
+        completed++;
+
+        if (completed % logEvery === 0 || completed === batchRows.length) {
+          logProgress(this.id, completed, batchRows.length, logEvery, true);
+        }
+      };
+
+      // 2. Bounded concurrency worker pool
+      let idx = 0;
+      const worker = async (): Promise<void> => {
+        while (idx < batchRows.length) {
+          const row = batchRows[idx++];
+          if (row) await processOne(row);
+        }
+      };
+      await Promise.all(
+        Array.from(
+          { length: Math.min(this.getConcurrency(brief.concurrency), batchRows.length || 1) },
+          worker,
+        ),
+      );
+
+      // 3. Immediate checkpointing — write batch results immediately (RFC-0104)
+      if (batchResults.length > 0) {
+        const stmt = db.prepare(this.upsertSql);
+        db.transaction(() => {
+          for (const r of batchResults) {
+            stmt.run(...r.params);
+          }
+        })();
+      }
+    } while (batchRows.length === limit);
 
     db.close();
 
     const cacheStats = ctx.domCache.stats;
     console.log(
-      `[${this.id}] Done. total=${rows.length} parsed=${parsed} skipped=${skipped} alreadyDone=${alreadyDoneCount} missingFile=${missingFileCount} present=${presentCount} cache=${cacheStats.size} hit=${cacheStats.hitCount} miss=${cacheStats.missCount}`,
+      `[${this.id}] Done. total=${totalRows} parsed=${parsed} skipped=${skipped} alreadyDone=${alreadyDoneCount} missingFile=${missingFileCount} present=${presentCount} cache=${cacheStats.size} hit=${cacheStats.hitCount} miss=${cacheStats.missCount}`,
     );
 
-    const extraFields = this.afterProcessResults(results);
+    const extraFields = this.afterProcessResults(allResults);
     const outDir = ctx.getGogolOutputDir(this.id);
     await ctx.writeTextFile(
       path.join(outDir, "extract-report.json"),
       JSON.stringify(
         {
           sourceToken: brief.sourceToken,
-          total: rows.length,
+          total: totalRows,
           parsed,
           skipped,
           alreadyDoneCount,
@@ -206,11 +257,8 @@ export abstract class ExtractGogolBase extends Gogol {
 
     // 4. Optional CSV artifact
     const columns = this.csvColumns;
-    if (columns && results.length > 0) {
-      const csvRows = results.map((r) => [
-        r.sha256,
-        ...r.params.map((p) => (p == null ? "" : String(p))),
-      ]);
+    if (columns && allResults.length > 0) {
+      const csvRows = allResults.map((r) => r.params.map((p) => (p == null ? "" : String(p))));
       await ctx.writeTextFile(
         path.join(outDir, "extracted-records.csv"),
         csvStringify([columns, ...csvRows]),
