@@ -39,15 +39,16 @@ export const detectChallenge = (
   mainStatus: number | null,
   pageContent: string,
 ): ChallengeOutcome => {
-  if (mainStatus !== null && mainStatus >= 500) {
-    return "site-unavailable";
-  }
-
   const content = pageContent ?? "";
   const matches = CHALLENGE_PATTERNS.filter((re) => re.test(content));
 
+  // Check for explicit challenge blocks (403/503 with challenge patterns) first
   if (mainStatus !== null && (mainStatus === 403 || mainStatus === 503) && matches.length > 0) {
     return "blocked";
+  }
+
+  if (mainStatus !== null && mainStatus >= 500) {
+    return "site-unavailable";
   }
 
   if (matches.length > 0 && (mainStatus === null || mainStatus >= 400)) {
