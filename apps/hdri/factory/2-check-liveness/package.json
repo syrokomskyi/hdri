@@ -5,6 +5,7 @@
   "scripts": {
     "build": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/2-check-liveness/tsconfig.json --pretty false",
     "typecheck": "pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/2-check-liveness/tsconfig.json --pretty false",
+    "test": "pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/2-check-liveness/vitest.config.ts",
     "dev": "tsx -C @syrokomskyi/source watch run/run.ts",
     "start": "tsx -C @syrokomskyi/source run/run.ts",
     "changelog": "changelog-live",
