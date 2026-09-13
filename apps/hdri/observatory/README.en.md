@@ -163,7 +163,7 @@ The `dashboard` Astro app consumes aggregated JSON data exported from the observ
 
 ## Publication
 
-Aggregated, anonymised quarterly data are published on **[handwerk-index.de](https://handwerk-index.de)**. The complete methodology is in [`METHODOLOGY.en.md`](../../METHODOLOGY.en.md).
+Aggregated, anonymised quarterly data are published on **[handwerk-index.de](https://handwerk-index.de)**. The complete methodology is in [`METHODOLOGY.en.md`](../METHODOLOGY.en.md).
 
 ### K-Anonymity Policy
 

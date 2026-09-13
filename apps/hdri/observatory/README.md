@@ -166,7 +166,7 @@ Die `dashboard`-Astro-App verbraucht aggregierte JSON-Daten, die aus der Observa
 
 ## Veröffentlichung
 
-Aggregierte, anonymisierte Quartalsdaten werden auf **[handwerk-index.de](https://handwerk-index.de)** veröffentlicht. Die vollständige Methodik des Index findet sich in [`METHODOLOGY.md`](../../METHODOLOGY.md).
+Aggregierte, anonymisierte Quartalsdaten werden auf **[handwerk-index.de](https://handwerk-index.de)** veröffentlicht. Die vollständige Methodik des Index findet sich in [`METHODOLOGY.md`](../METHODOLOGY.md).
 
 ### K-Anonymität-Politik
 
