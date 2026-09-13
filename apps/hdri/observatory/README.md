@@ -11,11 +11,14 @@ Asset-zentriertes longitudinales Observatorium für die Analyse der digitalen Pr
 
 Live collection and publication remain blocked pending verified evidence admission.
 Direct exports and promotion apply cannot bypass this gate. Independent rebuild
-explicitly reports executor unavailable; no restore proof is emitted. The baseline
-converter and several producer/consumer boundaries remain incomplete. Existing
-architectural descriptions below are not an operational readiness certificate.
-See the [factory runbook](../factory/RUNBOOK.md) and its linked review before running
-commands. Original Q2 and existing public data must remain untouched.
+also stops at admission; its behind-gate reconstruction remains incomplete. The new
+offline rehearsal controller verifies real isolated adapter outputs and resume,
+but always reports `operationallyQualified: false`. Production adapters and the
+1k/10k/50k/200k whole-chain proofs remain open. The operator approved this machine
+for offline work; approval is not qualification. See the [factory runbook](../factory/RUNBOOK.md)
+and [current review](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md)
+before running commands. Existing descriptions are not an operational certificate.
+Original Q2 and existing public data must remain untouched.
 
 ## Architektur
 

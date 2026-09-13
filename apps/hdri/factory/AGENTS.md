@@ -4,12 +4,13 @@ This file provides AI agent guidance specific to the `apps/hdri/factory` pipelin
 
 ## Executable release and recovery evidence (RFC-0115)
 
-See `apps/hdri/factory/RUNBOOK.md` § Executable release and recovery evidence for the full operational guide covering:
-
-- Failure-atomic release with durable transaction lock and idempotent retries
-- 13-stage qualification harness with deterministic failpoints and `--resume`
-- Ongoing custody scans (integrity, replica-lag, restore-drill)
-- Ledger transition wiring via `quarter:record`
+See `apps/hdri/factory/RUNBOOK.md` § Executable release and recovery evidence for
+current command status and the ordered corrective plan. The 2026-09-13 review
+reopened production-path criteria: release, independent rebuild, actual fault
+barriers, custody and outcome-to-ledger wiring are not operationally verified.
+The new offline rehearsal controller verifies adapter output bytes and resume,
+but always reports `operationallyQualified: false`. This machine is approved for
+offline qualification work; no 200k run or live activation has been certified.
 
 ## Locality invariant (hard rule)
 
@@ -233,20 +234,24 @@ When adding a new audit or crawl gogol, extend the relevant base class or import
 
 ## Program Gate (RFC-0099)
 
-The 2026-09-13 integration review found that the contracts below are not fully wired into the live chain. Read `docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md` and the draft corrective sequence RFC-0113–0115 before modifying this area. Do not infer operational readiness from a terminal RFC status or a helper test.
+The 2026-09-13 integration review found that the contracts below are not fully wired into the live chain. Read `docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md` and the corrective plan for RFC-0115 before modifying this area. Archived implementation status for RFC-0113/0114 does not settle the new findings. Do not infer operational readiness from a terminal RFC status or a helper test.
 
 Every factory app's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomskyi/factory-core` after `bootstrapBrief()` and before `runPipelineEngine()`. The gate uses operation `"collect"` for factory apps.
 
 ### Fail-closed contract
 
-- Without preservation and collection readiness evidence, the gate blocks the run with stable blocker codes (`NO_PRESERVATION_RECEIPT`, `NO_COLLECTION_READINESS`).
+- Without preservation, qualification, predecessor and capacity evidence, the gate blocks collection with stable missing-evidence codes.
 - Mutating entry points fix operation to collect; environment variables cannot select diagnostic admission. Only separate read-only diagnostics are ungated.
 - Bootstrap state (all refs `null`) correctly blocks — this is the intended initial behavior per AC-5.
 - Verified receipt loading remains unimplemented; do not populate refs with unchecked paths or strings.
 
 ## Crash-safe execution (RFC-0101)
 
-The durable helper exposes the intended SQLite execution contract, but existing collectors still use the older execution store. RFC-0114 proposes the cutover; the invariants below are requirements, not claims that all callers meet them. The current helper rejects conflicting measurement rewrites and never revives an older epoch after a newer epoch is released.
+The execution store now exposes durable APIs, but a single end-to-end authority
+across attempt allocation, CAS, event journal and selected projection still needs
+production crash/race verification. Orderly close/reopen and sequential calls on
+one database connection do not prove process-crash recovery or concurrent fencing.
+The invariants below are requirements, not claims that all callers meet them.
 
 ### Execution-state invariants
 
@@ -260,12 +265,12 @@ The durable helper exposes the intended SQLite execution contract, but existing 
 
 ## Egress boundary and preflight (RFC-0103)
 
-- All HTTP acquisition in `2-check-liveness` and `3-extract-profile` is bounded by wire byte limits (default 2 MiB) and decoded byte limits (default 4 MiB). Responses exceeding limits are truncated and marked `complete: false`.
-- Egress policy denies private addresses, loopback, link-local, multicast, and reserved IP ranges by default. IPv6 denials are enabled when `includeIpv6` is true.
+- Page capture uses entity-body limits (default 2 MiB) and UTF-8 decoded limits (default 4 MiB), not compressed wire-byte measurements. `contentHash` identifies the exact returned UTF-8 HTML stored in CAS; `entitySha256` identifies the pre-charset body. Truncation sets `complete: false`; propagation through actual consumers remains open and must not manufacture absence observations.
+- Egress policy helpers classify private, loopback, link-local, multicast and reserved addresses. Actual socket/redirect enforcement is not established by those helpers or mocked-fetch tests; live acquisition remains gated.
 - `robots.txt` handling is fail-closed: 404/410 means absent (allowed); network error or 5xx means unavailable (deferred, NOT allowed). The retrieved robots policy bytes, status, timestamp, and user-agent are preserved in `RobotsDecision`.
 - Collector health state machine pauses acquisition after 2 consecutive sentinel failures or when collector-owned failures exceed 50% of recent attempts (window: 100). Resume requires 2 consecutive successes.
 - Preflight (`capture:preflight` npm script) checks sentinels, runtime dependencies, clock sanity, egress enforcement, and storage budget (minimum 1 GiB free disk). Exits 0 on pass, non-zero on blocked. JSON diagnostic output includes `violations` with stable codes for each blocker.
-- `HttpEvidence` is persisted through the existing `writeExecutionCasObject` mechanism from `@syrokomskyi/factory-core`. No changes to `pipeline-core` or `pipeline-node` are required.
+- `HttpEvidence` schema `hdri-http-evidence@2` declares `entityBytes`. Full production retention/consumption of this contract still needs verification; do not infer it from test constructors. Existing Q2 bytes stay unchanged.
 
 ## Profile closure (RFC-0104)
 
@@ -318,6 +323,7 @@ All factory entry points use `createBootstrapAdmission()` from `@syrokomskyi/fac
 - A collection receipt alone does not authorize publication — the gate distinguishes `collect` from `publish`.
 - Environment flags cannot turn mutating pipelines into diagnostics.
 - `createBootstrapAdmission` is the only way to construct the initial admission state.
+- Verified authority belongs to the frozen instance issued by the verifier; spread/cast/JSON copies are rejected. Every evidence result must authenticate the exact requested scope. The actual filesystem/signature/domain verifier remains unimplemented; `quarter:readiness --period ... --operation ... --evidence-input ...` is a blocked diagnostic, not an activation route.
 
 ### Append-only quarter ledger
 

@@ -22,10 +22,15 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | --- | --- |
 | `build` | `pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/2-check-liveness/tsconfig.json --pretty false` |
 | `typecheck` | `pnpm --dir ../../../.. exec tsc -b apps/hdri/factory/2-check-liveness/tsconfig.json --pretty false` |
+| `test` | `pnpm --dir ../../../.. exec vitest run --config apps/hdri/factory/2-check-liveness/vitest.config.ts` |
 | `dev` | `tsx -C @syrokomskyi/source watch run/run.ts` |
 | `start` | `tsx -C @syrokomskyi/source run/run.ts` |
 | `changelog` | `changelog-live` |
 | `changelog:init` | `changelog-live init` |
+
+The test configuration includes `run/**/*.test.ts` from the repository root.
+The collector must remain selected in the HDRI CI job. Policy unit tests are not
+proof of network enforcement or whole-chain qualification.
 
 ## Dependencies
 

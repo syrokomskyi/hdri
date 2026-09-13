@@ -204,40 +204,63 @@ mv .output/old-laptop .output/-old-laptop   # leading dash → ignored
 
 ## Qualification harness (RFC-0111)
 
-The `quarter:rehearse` tool coordinates the full production-path harness from 1k to 200k deterministic fixture targets.
+The current `quarter:rehearse` controller is executable offline infrastructure,
+not production-path qualification. Every run manifest says
+`operationallyQualified: false`. No signed qualification receipt is produced.
+Actual production adapters, operation-level fault barriers and complete resource/
+runtime evidence are still required by RFC-0115.
 
-### Small full-chain CI gate (100 targets)
+### Profile and isolation
 
-Runs on every HDRI/shared dependency change as part of the observatory test suite:
+A profile is closed JSON with schema `hdri-rehearsal-profile@1`, absolute canonical
+`runtimeRoot` and `fixtureRoot`, ordered `stages`, `comparisonFiles` and positive
+`stageTimeoutMs` (at most 12 hours). The thirteen stage names come from
+`QUALIFICATION_STAGES` in observatory-emit. Each stage declares relative
+`producer` and `verifier` JavaScript entry points under runtimeRoot, plus unique
+nonempty `outputs` paths under `work/`. Comparison files must be declared outputs.
+
+The controller launches each adapter in Linux bubblewrap with no host network,
+read-only runtime/fixture mounts and only stage work scratch writable. Inherited
+credentials are absent. A separate verifier must return matching
+`hdri-stage-verification@1` output hashes and input identity. Zero exit alone fails.
+See `run/tests/rehearsal-controller.test.ts` for mechanism fixtures; these are not
+substitutes for the production adapters.
+
+This [machine profile](../../../docs/rfcs/verification/rfc-0115-approved-local-runner-2026-09-13.json)
+records operator approval and observed hardware, not runnable adapters or a reserved
+resource budget. Unsupported OS isolation blocks execution; never fall back to
+unisolated execution or relax global host security policy.
+
+### Fresh, interrupted and resumed runs
+
+After preparing actual runtime and fixture closures:
 
 ```sh
-pnpm --filter @syrokomskyi/observatory exec vitest run run/tests/hdri-qualification-contract.test.ts
+pnpm --filter @syrokomskyi/observatory quarter:rehearse --profile /absolute/profile.json --targets 1000 --evidence-root /absolute/new-clean-root --json
+pnpm --filter @syrokomskyi/observatory quarter:rehearse --profile /absolute/profile.json --targets 1000 --evidence-root /absolute/new-resume-root --interrupt-after-stage extraction --json
+pnpm --filter @syrokomskyi/observatory quarter:rehearse --profile /absolute/profile.json --targets 1000 --evidence-root /absolute/new-resume-root --resume /absolute/new-resume-root/run-manifest.json --compare /absolute/new-clean-root/run-manifest.json --json
 ```
 
-### Weekly 10k rehearsal
+Fresh roots must be empty/new; resume must point to that root's own manifest.
+Keep `run-manifest.json`, `receipts/`, `work/` and the SQLite lock together.
+Input/runtime/fixture identity, retained receipts, measurements and output hashes
+are checked before reuse. Comparison checks actual files in both runs. A changed
+source, missing output, false verifier or conflicting run fails closed.
 
-Runs on a provisioned runner, extending the existing weekly CI schedule:
+`--interrupt-after-stage` exercises controller recovery only. It does not inject
+a crash at CAS, event transaction, selected-result publication, extraction,
+scientific report, replica or public-pointer boundaries.
 
-```sh
-pnpm --filter @syrokomskyi/observatory quarter:rehearse -- --profile <fixture-profile> --targets 10000 --evidence-root <fresh-root> --json
-```
+### Qualification still required
 
-### Pre-quarter 200k qualification
-
-Triggered manually before each quarter's live capture on a separately provisioned runner:
-
-```sh
-pnpm --filter @syrokomskyi/observatory quarter:rehearse -- --profile <fixture-profile> --targets 200000 --evidence-root <fresh-root> --json
-```
-
-Both produce archived signed `QualificationReceipt` files. Neither blocks the 100-target CI gate.
-
-### Receipt validation
-
-```sh
-# Validate a receipt against reference-profile limits
-# Coordinator RSS <=2 GiB, process-tree RSS <=12 GiB, duration <=12h
-```
+CI now selects every collector and the shared authority/process boundaries.
+The small controller tests are not the required 1k whole-chain CI fixture.
+There is no verified scheduled 10k run or completed 50k/200k qualification.
+Before scale-up, close the [ordered corrective plan](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md),
+retain measured disk/inode peaks and whole-tree RSS, freeze complete runtime
+identity, execute the actual fault schedule and independently verify signed proof.
+Limits remain 2 GiB coordinator RSS, 12 GiB whole-tree RSS, four browser slots and
+12 hours. Store lasting run evidence on durable storage, never only in `/tmp`.
 
 ---
 

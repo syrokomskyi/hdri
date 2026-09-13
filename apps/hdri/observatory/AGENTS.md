@@ -249,7 +249,7 @@ Publish immutable release envelopes with resumable replication, read-back verifi
 
 ## Independent rebuild status
 
-`quarter:rebuild-verify` currently throws `REBUILD_EXECUTOR_UNAVAILABLE` before filesystem effects. Its former placeholder created an empty public directory without reconstruction; that implementation was removed. No receipt is emitted. RFC-0115 C2 proposes the actual isolated reconstruction.
+`quarter:rebuild-verify` currently stops at the blocked admission gate before reconstruction. Its behind-gate worker does not meet RFC-0115 C2: it still uses the opt-in JS wrapper, exposes expected output to the worker and has incomplete producer/schema wiring. No operational rebuild proof exists. Do not remove the gate to exercise that worker. The real `runIsolatedProcess` boundary now exists in pipeline-node, but is not wired into rebuild.
 
 `RebuildInput`/`RebuildReceipt` types and validators remain library contracts, not proof of execution. `RebuildSandbox` is an opt-in JS wrapper, not an enforced filesystem/network/native-process boundary; do not use its log hash as operational isolation proof. No runtime estimate or two-host equivalence is established.
 
@@ -271,24 +271,23 @@ Enforce calendar-continuous quarter ledger, retire `quarter:seal-legacy`, and ga
 - `quarter:init` renamed `--current-period` to `--period`, `--prior-capsule` to `--predecessor`. Now persists `quarter-record.json` alongside `prior-capsules.json`. Idempotent re-init returns the same record for the same period.
 - `quarter:seal-legacy` (RFC-0045) removed — tool, test, and script deleted.
 - New `quarter:status` — read-only projection of quarter ledger state.
-- New `quarter:readiness` — binds evidence digests into `ReadinessReceipt`.
+- `quarter:readiness` — strict read-only admission diagnostic; blocked until operational evidence verification is implemented.
 - New `preservation:check` — full-byte integrity scan of retained closure.
 
-### Evidence digest files for `quarter:readiness`
+### Readiness diagnostic
 
-`quarter:readiness` reads the following flat-file digests from the `--input` directory (default: `apps/hdri/factory/.input/`). Each file contains a single SHA-256 hex digest on one line. An empty or missing file results in a blocker.
+`quarter:readiness --period <yyyy-qn> --operation <collect|publish|diagnostic> --evidence-input <AdmissionInput.json> --json`
+parses a closed typed input and checks period/operation scope. It currently returns
+`ADMISSION_VERIFIER_UNAVAILABLE` with nonzero exit and no filesystem mutations.
+Digest text files, `--input`, sentinels and synthetic ready receipts are not supported.
+The operational verifier must authenticate exact retained bytes, pinned signatures,
+scope and domain verdicts before this guard can be replaced.
 
-| File                            | Blocker if missing                                     |
-| ------------------------------- | ------------------------------------------------------ |
-| `preservation-gate-sha256.txt`  | `MISSING_PRESERVATION_GATE`                            |
-| `qualification-sha256.txt`      | `MISSING_QUALIFICATION`                                |
-| `predecessor-sha256.txt`        | `MISSING_PREDECESSOR`                                  |
-| `capacity-report-sha256.txt`    | `MISSING_CAPACITY_REPORT`                              |
-| `obsolete-runtime-remains.flag` | `OBSOLETE_RUNTIME_REMAINS` (presence triggers blocker) |
-
-Operators produce these files from the corresponding pipeline steps (preservation, qualification, capacity report). The `obsolete-runtime-remains.flag` is a zero-byte sentinel — its presence means an obsolete runtime path was detected and not yet removed.
-
-These text files are not verified scoped receipts and must not unlock production. The current readiness command cannot authenticate their claims. RFC-0113 proposes replacement with actual verified references; do not bypass the fixed entry-point gate.
+`VerifiedAdmissionInput` is an immutable, instance-branded authority issued by the
+shared verifier. A spread/cast/JSON copy is unverified, including a copy of bootstrap.
+All evidence callbacks must return scope authenticated from their payloads.
+Current operational entry points still use blocked bootstrap, not this missing I/O
+verifier. Test callbacks are not operational verification.
 
 ### Exact inventory integrity check
 
@@ -300,22 +299,33 @@ For a Q2 archive of ~50k sites: bounded I/O, estimated <10 min on local SSD, pro
 
 ## Executable release and recovery evidence (RFC-0115)
 
-### Failure-atomic release
+The [current review](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md)
+reopens scientific/public wiring, independent rebuild, release retry/closure,
+custody and outcome-to-ledger proofs. Existing CLI names and helper tests do not
+certify those operations. See the [corrective plan](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
 
-`quarter:release` performs atomic publication with a durable transaction lock (`.release-lock.json`, 30-min timeout). The release intent is frozen as a hash of canonicalized input before any filesystem effects. The acyclic closure order is M+K → S → P0/D/P → R → E → Ri → A. Revalidation occurs before pointer switch. Idempotent retries use `flag: "wx"` and byte-equality checks.
+### Offline rehearsal controller
 
-### Qualification harness (13 stage proofs)
+`quarter:rehearse` now executes thirteen explicit producer/verifier adapters in
+real Linux bubblewrap isolation. Each producer must create declared nonempty output
+files; its independent verifier must report matching byte hashes and input scope.
+Exit zero or a stage name cannot certify completion. The profile schema is
+`hdri-rehearsal-profile@1`; see RUNBOOK for fields and command usage.
 
-`quarter:rehearse` runs 13 stage proofs with distinct consumed/produced/verified evidence. Deterministic failpoints replace `Math.random` with a counter-based mechanism. The `--resume` flag loads progress from `.rehearse-state.json`. Coordinator RSS and process tree RSS are measured separately. The implementation fingerprint covers actual output-affecting code, configuration, and dependencies.
+A fresh evidence root must be new/empty. Resume requires
+`--resume <same-root/run-manifest.json>`; it checks input/runtime identity, output
+bytes, execution/verifier receipts and measurement logs before reusing a stage.
+`--compare <clean-root/run-manifest.json>` compares declared actual projections,
+including the clean run's retained files. A durable SQLite lock protects each run.
+`--interrupt-after-stage <stage>` is a controller boundary test, not a CAS/event
+transaction failpoint. Worker scratch cannot write the controller's receipts.
 
-### Ledger transitions
+Outputs: `run-manifest.json`, `receipts/`, `work/`, `.rehearsal-lock.sqlite`.
+Coordinator and descendant RSS are sampled while workers are alive; output and
+deadlines are bounded. Runtime adapter/fixture/Node bytes are fingerprinted, but
+the full controller/dependency/OS closure and disk/inode peaks remain open.
 
-`quarter:record --transition <schedule|collect|seal|release|suppress> --period <yyyy-qn>` wires A3 ledger transitions to actual outcomes. Each transition creates a new immutable revision with chained digest, preserving old heads byte-for-byte.
-
-### Custody continuity scanner
-
-`custody:scan --mode <integrity|replica-lag|restore-drill> --archive-root <dir>` provides recurring custody continuity checks:
-
-- **integrity** — Full-byte integrity scan against authenticated inventory (requires `--policy <file>`)
-- **replica-lag** — Checks replica receipts against 24h threshold for unsealed evidence
-- **restore-drill** — Verifies vault manifest, shard integrity, and key rotation needs
+Every manifest reports `operationallyQualified: false`. Test adapters verify
+controller behavior only; production adapters, actual fault barriers and signed
+1k/10k/50k/200k execution proofs remain missing. This machine is operator-approved
+for offline work, not automatically capacity-qualified or an independent replica.

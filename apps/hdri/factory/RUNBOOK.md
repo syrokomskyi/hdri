@@ -479,13 +479,22 @@ apps/hdri/factory/
 
 ## Qualification harness (RFC-0111)
 
-The factory chain is qualified end-to-end by the `quarter:rehearse` harness in the observatory. The harness coordinates app launchers through declared executable/path adapters, measures RSS/inodes/disk, injects faults, and produces a `QualificationReceipt`.
+`quarter:rehearse` currently provides an offline adapter controller, not end-to-end
+factory qualification. It verifies actual adapter output bytes, independent
+verifier receipts and explicit resume, and always reports
+`operationallyQualified: false`.
 
-- Small full-chain CI gate (100 targets): runs as part of the observatory test suite on every HDRI/shared dependency change.
-- Weekly 10k rehearsal: runs on a provisioned runner, extending the existing weekly CI schedule.
-- Pre-quarter 200k qualification: triggered manually before each quarter's live capture on a separately provisioned runner.
+All seven collectors are now included in the HDRI CI test gate. Policy/contract
+tests and small controller fixtures do not constitute the required 1k whole-chain
+run. Actual production adapters, operation-boundary fault injection, complete
+runtime/resource evidence and signed 10k/50k/200k runs remain open.
 
-See `apps/hdri/observatory/RUNBOOK.md` § Qualification harness (RFC-0111) for full details.
+This machine is approved for offline work: see the
+[recorded profile](../../../docs/rfcs/verification/rfc-0115-approved-local-runner-2026-09-13.json).
+This is hardware/authorization context, not a runnable adapter profile or a
+capacity receipt. See the [observatory runbook](../observatory/RUNBOOK.md) for the
+current controller contract. No live capture or public promotion is authorized by
+a controller manifest.
 
 ---
 
@@ -522,7 +531,7 @@ If a historical quarter is missing (no predecessor capsule found), the ledger cr
 
 ### Readiness receipts
 
-`quarter:readiness --period <yyyy-qn>` binds preservation, qualification, predecessor, and capacity evidence digests into a `ReadinessReceipt`. The receipt status is `ready` only when all evidence is present and no obsolete runtime entries remain.
+`quarter:readiness --period <yyyy-qn> --operation <collect|publish|diagnostic> --evidence-input <AdmissionInput.json> --json` is read-only and currently blocked: the production filesystem/signature/domain verifier is not implemented. It validates input shape and requested scope but cannot issue a ready receipt.
 
 ### Preservation checks
 
@@ -543,6 +552,8 @@ All factory and observatory entry points use `VerifiedAdmissionInput` from `@syr
 - **`createBootstrapAdmission`** creates a `VerifiedAdmissionInput` with all evidence refs set to `null` — the initial blocked state.
 - **`AdmissionInput`** (schema `hdri-admission-input@1`) is the JSON contract for loading verified evidence from disk.
 - Each `EvidenceRef` carries a 64-character hex `sha256` digest. Invalid digests are rejected at parse time.
+- Verified objects are deeply frozen and instance-branded. A spread, cast, copied symbol or JSON round-trip loses authority. Each evidence result must authenticate the same scope from its payload; echoing the requested scope is not verification.
+- Actual collectors still use blocked bootstrap. Test verification callbacks are not a production I/O verifier.
 
 ### Preservation (A1)
 
@@ -560,39 +571,49 @@ All factory and observatory entry points use `VerifiedAdmissionInput` from `@syr
 
 ### Quarter readiness from verified evidence
 
-`quarter:readiness` accepts `--evidence-input <path>` pointing to an `AdmissionInput` JSON file. Evidence refs are extracted and verified from the typed input instead of hashing arbitrary files. Unverified strings without valid SHA-256 digests are rejected.
+`quarter:readiness` requires `--period`, `--operation` and `--evidence-input`. It parses typed JSON and rejects a scope mismatch, then returns `ADMISSION_VERIFIER_UNAVAILABLE` and nonzero exit without writing anything. Digest files and the old `--input` fallback have been removed. Do not fill bootstrap refs with unchecked objects to bypass this diagnostic.
 
 ---
 
 ## Executable release and recovery evidence (RFC-0115)
 
-### Release with failure-atomic sealing
+### Current boundary
 
-`quarter:release` performs atomic publication of sealed capsules and replicas with concurrency safety. A durable transaction lock (`.release-lock.json`) prevents concurrent releases from corrupting data. The release intent is frozen as a hash of canonicalized release input, written atomically before any filesystem effects.
+The [2026-09-13 review](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md)
+found that green helper tests did not exercise the actual release, rebuild or
+custody commands. Criteria AC-1–AC-8 and AC-10 remain open; AC-9 records this
+documentation only. No readiness claim follows from archived RFC status.
 
-The acyclic closure order is: M+K → S → P0/D/P → R → E → Ri → A (Measurement+Key bundle → Scientific input → Public products/Dashboard/Public archive → Replicas → Envelope → Replica receipts → Attestation). Revalidation occurs before the pointer switch, verifying destination custody and staged public bytes.
+The rehearsal controller now runs real isolated producer/verifier processes,
+retains byte-bound output/receipt/sample evidence, resumes the same locked run and
+compares real declared projection files. It never issues operational qualification.
+`--interrupt-after-stage` tests controller progress, not durable CAS/event boundaries.
 
-Idempotent retries use `flag: "wx"` for atomic file creation and check existing bytes for equality or conflict. A second concurrent release attempt fails with a conflict code.
+### Commands and limitations
 
-### Qualification through actual commands
-
-`quarter:rehearse` runs 13 stage proofs with distinct consumed/produced/verified evidence. Each stage has deterministic failpoints (counter-based, not `Math.random`). The `--resume` flag allows resuming interrupted runs from `.rehearse-state.json`. Coordinator RSS and process tree are measured separately. The implementation fingerprint covers actual output-affecting code, configuration, and dependencies.
-
-### Ongoing custody and final cutover
-
-`quarter:record` wires A3 ledger transitions to actual collector, seal, release, and scheduler outcomes. Each transition creates a new immutable revision with chained digest.
-
-`custody:scan` provides three modes:
-
-- **integrity** — Full-byte integrity scan against authenticated inventory
-- **replica-lag** — Checks replica receipts against a 24h threshold for unsealed evidence
-- **restore-drill** — Verifies vault manifest, shard integrity, and key rotation needs
-
-### Command reference
-
-| Command | Purpose |
+| Command | Current status |
 | --- | --- |
-| `quarter:release` | Atomic publication with concurrency lock and idempotent retries |
-| `quarter:rehearse` | 13 stage proofs with deterministic failpoints and `--resume` |
-| `quarter:record --transition <schedule\|collect\|seal\|release\|suppress>` | Wire ledger transitions to actual outcomes |
-| `custody:scan --mode <integrity\|replica-lag\|restore-drill>` | Recurring custody continuity scans |
+| `quarter:readiness` | Read-only typed-input diagnostic; production verifier unavailable |
+| `quarter:rehearse` | Offline adapter execution and byte-verified resume; no production qualification |
+| `quarter:rebuild-verify` | Admission-blocked; independent reconstruction and isolation wiring incomplete |
+| `quarter:release` | Admission-blocked; sealed-root writes, retry identity and complete replica closure need correction |
+| `quarter:record` | Transition API exists; automatic actual-outcome/scheduler wiring is not proved |
+| `custody:scan` | Diagnostic implementation is not trusted recurring custody; integrity, lag and restore semantics need correction |
+
+`custody:scan --mode restore-drill` currently checks stored objects and keys; it
+does not reconstruct a release. Receipt age is not the age of unreplicated evidence.
+Use neither as recovery proof or as permission to discard evidence.
+
+### Safe sequence
+
+Follow the [corrective implementation order](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
+Complete authenticated admission and collector/snapshot authority first; then real
+scientific/public production, isolated reconstruction, failure-atomic release,
+whole-chain qualification, and scheduled custody. Keep live gates closed meanwhile.
+
+Use fresh explicit evidence/scratch roots; archive durable run evidence on the
+recorded ext4 filesystem, not volatile `/tmp`. Recheck free disk/inodes and competing
+load before every scale level. Retain the original 2 GiB coordinator / 12 GiB whole
+tree / four browser slots / 12 h qualification limits. Q2, sealed capsules and public
+history remain immutable. Restoring data may create a separate verified copy, never
+rewrite the only original.
