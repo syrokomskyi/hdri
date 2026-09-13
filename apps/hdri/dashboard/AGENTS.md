@@ -2,6 +2,15 @@
 
 See also the root `AGENTS.md` for repo-wide rules (write all comments and documentation in English).
 
+## Publication admission
+
+The 2026-09-13 HDRI integration review blocks observatory dashboard export before
+any writes until verified publication admission is connected. The current build
+and dev scripts invoke that exporter, so they can stop at this gate. Do not bypass
+it or delete existing public data to make a build pass. The manifest-only export
+and build/publication separation are proposed in RFC-0115; see the factory runbook
+and review before changing these entrypoints.
+
 ## CSS convention
 
 - No `<style>` blocks inside `.astro` files. Always use separate CSS files, imported in the frontmatter.

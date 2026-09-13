@@ -4,6 +4,16 @@
 
 Asset-centric longitudinal observatory for digital presence analysis.
 
+## Current readiness (2026-09-13)
+
+Live collection and publication remain blocked pending verified evidence admission.
+Direct exports and promotion apply cannot bypass this gate. Independent rebuild
+explicitly reports executor unavailable; no restore proof is emitted. The baseline
+converter and several producer/consumer boundaries remain incomplete. Existing
+architectural descriptions below are not an operational readiness certificate.
+See the [factory runbook](../factory/RUNBOOK.md) and its linked review before running
+commands. Original Q2 and existing public data must remain untouched.
+
 ## Architecture
 
 Four-layer data model:
@@ -69,7 +79,6 @@ period: "2025-Q2"
 ontologyVersion: "1.0.0"
 codebookVersion: "hdri-v1.0.0"
 sourceDbDir: "../factory/0-harvest-source/.output"
-publicMode: false
 skipGogols: []
 ---
 ```
@@ -81,7 +90,6 @@ skipGogols: []
 - `ontologyVersion` — Version of signal ontology to use (must match `signal-ontology-v{X}.json` in observatory-core)
 - `codebookVersion` — Version of HDRI codebook (must match `codebook-{version}.yaml` in .input/)
 - `sourceDbDir` — Path to factory output directory containing `core.db` (relative to .input/)
-- `publicMode` — If true, applies stricter privacy controls for public publication
 - `skipGogols` — Array of gogol IDs to skip during execution (e.g., `["export-mart"]`)
 
 ### Data Coverage and Liveness Filtering

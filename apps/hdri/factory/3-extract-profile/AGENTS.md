@@ -72,7 +72,7 @@ All `ext_*` tables use a composite primary key: `(asset_id, page_observation_id,
 
 ### Result set hash verification
 
-Profile closure requires all four child seals (homepage-capture, link-discovery, detected-page-capture, signal-extraction). The expected and observed result set hashes must match. A missing evidence entry causes a hash mismatch and blocks closure.
+Profile closure requires all four child seals (homepage-capture, link-discovery, detected-page-capture, signal-extraction), but the integration review found this wiring incomplete. Do not equate hashes of work IDs with hashes of evidence values. RFC-0114 proposes separate membership, selected-result and projection digest domains.
 
 ### Detected-page ownership
 
@@ -80,7 +80,7 @@ Detected-page ownership uses the explicit context key (`asset_id`, `page_observa
 
 ### Pagination
 
-The extraction runner processes at most 256 pending metadata rows per batch (`PAGINATION_LIMIT = 256`). Keyset pagination with immediate per-result checkpointing replaces full-table result accumulation.
+The extraction runner paginates at most 256 pending metadata rows per batch (`PAGINATION_LIMIT = 256`), but retains corpus-sized results. Bounded output persistence remains an open finding; do not claim bounded memory from this limit.
 
 ### Provenance fields
 
@@ -88,6 +88,6 @@ The extraction runner processes at most 256 pending metadata rows per batch (`PA
 
 ### Coverage diagnostic
 
-Run `pnpm --filter @syrokomskyi/site-profile profile:coverage -- --capsule <path> [--json]` for a read-only diagnostic report of extraction coverage per `ext_*` table.
+Run `pnpm --filter @syrokomskyi/site-profile profile:coverage --db <existing-profile.db> [--json]` for read-only existing-row counts per `ext_*` table. The command uses an explicit DB path and reports `inputDbPath`; it does not resolve capsules or prove missing-work coverage. Both output modes fail on invalid row counts.
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.

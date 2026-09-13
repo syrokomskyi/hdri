@@ -7,6 +7,16 @@
 
 Asset-zentriertes longitudinales Observatorium für die Analyse der digitalen Präsenz.
 
+## Current readiness (2026-09-13)
+
+Live collection and publication remain blocked pending verified evidence admission.
+Direct exports and promotion apply cannot bypass this gate. Independent rebuild
+explicitly reports executor unavailable; no restore proof is emitted. The baseline
+converter and several producer/consumer boundaries remain incomplete. Existing
+architectural descriptions below are not an operational readiness certificate.
+See the [factory runbook](../factory/RUNBOOK.md) and its linked review before running
+commands. Original Q2 and existing public data must remain untouched.
+
 ## Architektur
 
 Vier-Schichten-Datenmodell:
@@ -215,4 +225,4 @@ Private HDRI marts (asset-level identifiers, domains, remediation) are separated
 - New `ExportPublicProductsGogol` consumes eligible aggregates and emits typed `PublicProductRef` entries with allowlisted dimensions only.
 - `privacy-review.ts` accepts `--public-manifest <path>` and reads actual file bytes (CSV and JSON), not just JSON cells arrays.
 - `PrepareQuarterReleaseGogol` admits only `PublicProductRef` entries from the public manifest as publication artifacts.
-- Dashboard export (`export-dashboard-archive.ts`) loads the public manifest and verifies only manifest-listed files reach `DASHBOARD_PUBLIC_DIR`.
+- Dashboard export currently fails closed before writes. Manifest-only consumption is not yet connected; RFC-0115 proposes the replacement.

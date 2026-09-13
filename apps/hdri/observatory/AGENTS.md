@@ -100,19 +100,29 @@ See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
 
 ## Program Gate (RFC-0099)
 
+The 2026-09-13 integration review rejects production readiness despite terminal
+RFC statuses. Read `docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md`
+and draft RFC-0113–0115. Contract descriptions below do not establish that their
+producers and consumers are connected. Never replace missing operational proof
+with a fixture receipt.
+
 The observatory's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomskyi/factory-core` after `bootstrapBrief()` and before `runPipelineEngine()`. The gate uses operation `"publish"` for the observatory.
 
 ### Fail-closed contract
 
 - Without preservation, collection, and publication readiness evidence, the gate blocks the run with stable blocker codes (`NO_PRESERVATION_RECEIPT`, `NO_COLLECTION_READINESS`, `NO_PUBLICATION_READINESS`).
 - A collection receipt alone does not authorize publication — the gate distinguishes collect from publish operations (AC-2, AC-4).
-- Diagnostic mode (`HDRI_OPERATION=diagnostic`) bypasses the gate — always allowed.
+- Mutating entry points use fixed publish admission. Environment variables cannot turn them into diagnostics; separate read-only tools remain available.
 - Bootstrap state (all refs `null`) correctly blocks — this is the intended initial behavior per AC-5.
-- Subsequent RFCs will populate evidence refs as they produce real proof.
+- Direct quarter:release, promote apply and both dashboard exporters also enforce the blocked bootstrap gate before filesystem effects. Verified receipt loading remains unimplemented.
 
 ## Preservation and Baseline Import (RFC-0100)
 
-Offline preservation of Q2 evidence and one-time conversion to current-format baseline.
+Offline preservation and baseline conversion are not operationally verified.
+The current converter does not materialize the required baseline records or a real
+comparison. Do not use its receipt for production admission. The review found
+replica grouping/signature-verification gaps; RFC-0113 A1 specifies their closure.
+Unknown historical identities now fail instead of receiving invented IDs.
 
 ### Scripts
 
@@ -220,41 +230,21 @@ Publish immutable release envelopes with resumable replication, read-back verifi
 - `forge rfc.implement.stamp --id RFC-XXXX --implementation-commit <sha>` requires `forge rfc.verification.emit --id RFC-XXXX` to run first. Without the generated evidence file, stamping fails with `RFC-IMP-06: evidence file is missing`.
 - Acceptance criteria must use inline `(evidence: ...)` text annotations, not HTML comments `<!-- evidence: ... -->`. The stamp tool does not recognize HTML comments.
 
-## Independent rebuild contract (RFC-0110)
+## Independent rebuild status
 
-Rebuild HDRI releases independently from preserved evidence using sandbox isolation, replacing the old copy-as-rebuild verification.
+`quarter:rebuild-verify` currently throws `REBUILD_EXECUTOR_UNAVAILABLE` before
+filesystem effects. Its former placeholder created an empty public directory
+without reconstruction; that implementation was removed. No receipt is emitted.
+RFC-0115 C2 proposes the actual isolated reconstruction.
 
-### Key contracts
+`RebuildInput`/`RebuildReceipt` types and validators remain library contracts,
+not proof of execution. `RebuildSandbox` is an opt-in JS wrapper, not an enforced
+filesystem/network/native-process boundary; do not use its log hash as operational
+isolation proof. No runtime estimate or two-host equivalence is established.
 
-- `RebuildReceipt` — schema `hdri-independent-rebuild@1` with capsule manifest, methodology, runtime closure, public manifest digests, input closure, comparison report, and isolation proof hashes.
-- `RebuildInput` — schema `hdri-rebuild-input@1` manifest with paths to capsule manifest, vault dir, codebook, ontology, signal map, methodology, runtime closure, expected public digest, and public manifest.
-- `RebuildSandbox` — fs.promises interception with path allowlist, access logging, and isolation proof hashing.
-
-### Changed interfaces
-
-- `quarter:rebuild-verify` now accepts `--release-input <manifest> --scratch <empty-dedicated-root> --expected-public-digest <sha256> --json` instead of `--candidate/--primary-public`.
-- Two-phase `--prepare` protocol removed. Single-step: check scratch empty, acquire PID lock, then create marker.
-- `quarter:validate` validates new `RebuildReceipt` schema via `verifyRebuildReceipt` instead of manual field checks.
-
-### Sandbox isolation
-
-- `RebuildSandbox` wraps `fs.promises` methods at the module level, intercepting all file access.
-- Declared paths (evidence, vault, codebook, scratch root) are allowlisted; undeclared paths trigger `IsolationBoundaryViolation`.
-- Access log records all accessed paths; `computeIsolationProof()` returns SHA-256 of the sorted access log.
-- The Proxy must filter non-path string arguments (e.g. `"utf8"` encoding) — only check strings that look like paths (contain `/`, `\`, start with `.` or `~`).
-- `sha256File` and `sha256Directory` in `release-contract.ts` import `fs` at module level and bypass the sandbox. To compute hashes through the sandbox, use `sandboxedFs.readFile` + `createHash` directly instead of calling `sha256File`.
-
-### Supported host definition
-
-Two hosts are considered "supported" (producing identical canonical bytes) when they share: same OS, same Node.js version, and same lockfile hash.
-
-### Key loss policy
-
-Signing key loss is handled by preserving public keys for historical verification. New keys are used for new evidence. Historical receipts remain verifiable against preserved public keys.
-
-### Performance estimate
-
-Typical Q3 capsule (~117k sites): vault rehydration ~5–10 min, rescoring ~15–30 min, canonical serialization ~5 min. Two-host verification doubles wall-clock time. Tests use small fixtures completing in seconds.
+Publication attestation assembly now requires the exact already-signed timestamp.
+Keep that value identical between signature payload and serialized attestation;
+release retry/closure integration remains open.
 
 ## Quarterly continuity and obsolete path retirement (RFC-0112)
 
@@ -288,6 +278,19 @@ Enforce calendar-continuous quarter ledger, retire `quarter:seal-legacy`, and ga
 | `obsolete-runtime-remains.flag` | `OBSOLETE_RUNTIME_REMAINS` (presence triggers blocker) |
 
 Operators produce these files from the corresponding pipeline steps (preservation, qualification, capacity report). The `obsolete-runtime-remains.flag` is a zero-byte sentinel — its presence means an obsolete runtime path was detected and not yet removed.
+
+These text files are not verified scoped receipts and must not unlock production.
+The current readiness command cannot authenticate their claims. RFC-0113 proposes
+replacement with actual verified references; do not bypass the fixed entry-point gate.
+
+### Exact inventory integrity check
+
+`preservation:check --archive-root <dir> --policy <file>` requires a nonempty
+JSON map of exact relative POSIX paths to lowercase SHA-256 digests. Keep this
+policy outside the scanned closure. Missing, unexpected, corrupt, unsafe or
+symlinked objects fail; only hash-matching listed bytes count as verified.
+The map itself must be authenticated upstream: this diagnostic does not prove
+signature validity or physical replica independence.
 
 ### `preservation:check` performance estimate
 

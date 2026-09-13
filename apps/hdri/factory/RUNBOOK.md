@@ -2,6 +2,27 @@
 
 Operational guide for running the HDRI (Handwerk Digital Readiness Index) factory pipeline chain.
 
+## Current readiness — integration review, 2026-09-13
+
+Expanded live collection and publication remain blocked. The cross-session review
+found disconnected execution, capture, translation and release mechanisms despite
+implemented RFC statuses. Treat the architecture sections below as required
+contracts, not proof of operational readiness. Read the
+[review and remaining findings](../../../docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md)
+and the [corrective sequence](../../../docs/rfcs/rfc-0113-bind-hdri-admission-to-verified-quarter-evidence.md).
+The corrective RFCs are drafts, not authorization to run or publish.
+
+Entry points use fixed collect/publish operations; environment flags do not turn
+them into diagnostics. Direct release, promotion apply and dashboard exports also
+block before filesystem effects while verified receipt loading is absent.
+Use separate read-only diagnostics. Do not replace null references with invented
+digests or treat the current readiness text files as verified authority.
+
+Independent rebuild currently fails with REBUILD_EXECUTOR_UNAVAILABLE before any
+filesystem effect. The empty-directory placeholder was removed; no replacement
+executor or operational restore proof is claimed. Original Q2 and prior quarter
+data must remain untouched.
+
 ## Pipeline Overview
 
 The factory consists of 6 sequential pipelines:
@@ -39,11 +60,11 @@ Every factory and observatory entry point calls `evaluateProgramGate()` from `@s
 
 - **collect** (factory apps): Requires preservation receipt and collection readiness evidence. Without them, live data-mutating runs are blocked.
 - **publish** (observatory): Requires preservation, collection, and publication readiness evidence. A collection receipt alone does not authorize publication.
-- **diagnostic**: Always allowed, even when no evidence exists. Use `HDRI_OPERATION=diagnostic` to run pipelines in read-only/diagnostic mode.
+- **diagnostic**: Separate read-only diagnostic commands remain available without collection/publication readiness. Mutating pipelines cannot be relabelled as diagnostics.
 
 ### Bootstrap state
 
-In the initial implementation, all evidence refs are `null` — the gate blocks all live collection and publication. This is the correct bootstrap behavior. Subsequent RFCs (RFC-0100, RFC-0102, etc.) will populate the evidence refs as they produce real preservation and readiness proof.
+All live entry-point evidence refs remain `null`; verified receipt loading is not wired. Collection and publication stay blocked until the corrective sequence supplies real scoped proof. The earlier implemented document statuses do not fill these references.
 
 ### Blocker codes
 
@@ -506,7 +527,7 @@ If a historical quarter is missing (no predecessor capsule found), the ledger cr
 
 ### Preservation checks
 
-`preservation:check --archive-root <dir> [--policy <file>]` performs a full-byte integrity scan of retained closure. Corrupted objects cause `status: "degraded"` with violation details.
+`preservation:check --archive-root <dir> --policy <file>` requires a nonempty JSON object mapping exact relative POSIX paths to lowercase SHA-256 digests. The policy belongs outside the scanned closure. Missing, unlisted, mismatched, unsafe and symlinked objects produce `status: "degraded"` and a nonzero exit. No basename fallback or inventory-free success is allowed. This check verifies bytes against the supplied inventory; authenticating that inventory remains an admission prerequisite, not a property of this diagnostic.
 
 ### Obsolete path retirement
 

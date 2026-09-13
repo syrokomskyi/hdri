@@ -14,11 +14,11 @@ Pipeline for automated crawling and analysis of site homepages (T2 — Homepage 
 
 ## Profile closure (RFC-0104)
 
-This pipeline implements origin-aware profile evidence with a frozen internal stage graph: `homepage-capture → link-discovery → detected-page-capture → signal-extraction → profile-closure`.
+The required profile contract is `homepage-capture → link-discovery → detected-page-capture → signal-extraction → profile-closure`. The 2026-09-13 integration review found that child seals and contextual extraction are not fully connected; live collection remains blocked. See the factory runbook before starting.
 
-All `ext_*` tables use a composite context key `(asset_id, page_observation_id, effective_url, content_sha256, extractor_ver, policy_hash)` to ensure identical HTML at different origins retains separate owners. Detected-page ownership uses explicit context keys instead of `LIMIT 1` guessing. The extraction runner paginates at ≤256 pending rows per batch.
+The schema defines composite context keys. Their correct population, missing-CAS accounting and bounded result persistence still require the corrective work in RFC-0114; pagination alone does not prove bounded memory.
 
-Run `pnpm --filter @syrokomskyi/site-profile profile:coverage -- --capsule <path> [--json]` for coverage diagnostics.
+Run `pnpm --filter @syrokomskyi/site-profile profile:coverage --db <existing-profile.db> [--json]` for read-only row-count diagnostics. A missing DB is not created. JSON output reports `inputDbPath`, not a fabricated fingerprint; invalid row counts return a nonzero exit in either output mode. This is not capsule/work-set verification.
 
 ## Changelog
 
