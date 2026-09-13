@@ -65,6 +65,8 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `quarter:status` | `tsx -C @syrokomskyi/source tools/quarter-status.ts` |
 | `quarter:readiness` | `tsx -C @syrokomskyi/source tools/quarter-readiness.ts` |
 | `preservation:check` | `tsx -C @syrokomskyi/source tools/preservation-check.ts` |
+| `quarter:record` | `tsx -C @syrokomskyi/source tools/quarter-record.ts` |
+| `custody:scan` | `tsx -C @syrokomskyi/source tools/custody-scan.ts` |
 
 ## Dependencies
 
@@ -295,3 +297,25 @@ These text files are not verified scoped receipts and must not unlock production
 ### `preservation:check` performance estimate
 
 For a Q2 archive of ~50k sites: bounded I/O, estimated <10 min on local SSD, proportional to total archive size. The scan is read-only and never modifies sealed artifacts. For a Q3 capsule (~117k sites): proportionally ~25 min. Cost scales linearly with total object count and file size.
+
+## Executable release and recovery evidence (RFC-0115)
+
+### Failure-atomic release
+
+`quarter:release` performs atomic publication with a durable transaction lock (`.release-lock.json`, 30-min timeout). The release intent is frozen as a hash of canonicalized input before any filesystem effects. The acyclic closure order is M+K → S → P0/D/P → R → E → Ri → A. Revalidation occurs before pointer switch. Idempotent retries use `flag: "wx"` and byte-equality checks.
+
+### Qualification harness (13 stage proofs)
+
+`quarter:rehearse` runs 13 stage proofs with distinct consumed/produced/verified evidence. Deterministic failpoints replace `Math.random` with a counter-based mechanism. The `--resume` flag loads progress from `.rehearse-state.json`. Coordinator RSS and process tree RSS are measured separately. The implementation fingerprint covers actual output-affecting code, configuration, and dependencies.
+
+### Ledger transitions
+
+`quarter:record --transition <schedule|collect|seal|release|suppress> --period <yyyy-qn>` wires A3 ledger transitions to actual outcomes. Each transition creates a new immutable revision with chained digest, preserving old heads byte-for-byte.
+
+### Custody continuity scanner
+
+`custody:scan --mode <integrity|replica-lag|restore-drill> --archive-root <dir>` provides recurring custody continuity checks:
+
+- **integrity** — Full-byte integrity scan against authenticated inventory (requires `--policy <file>`)
+- **replica-lag** — Checks replica receipts against 24h threshold for unsealed evidence
+- **restore-drill** — Verifies vault manifest, shard integrity, and key rotation needs

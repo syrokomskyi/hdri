@@ -2,6 +2,15 @@
 
 This file provides AI agent guidance specific to the `apps/hdri/factory` pipeline chain. Apply these rules in addition to the general `apps/AGENTS.md` guidelines.
 
+## Executable release and recovery evidence (RFC-0115)
+
+See `apps/hdri/factory/RUNBOOK.md` § Executable release and recovery evidence for the full operational guide covering:
+
+- Failure-atomic release with durable transaction lock and idempotent retries
+- 13-stage qualification harness with deterministic failpoints and `--resume`
+- Ongoing custody scans (integrity, replica-lag, restore-drill)
+- Ledger transition wiring via `quarter:record`
+
 ## Locality invariant (hard rule)
 
 Every app under `apps/hdri/factory/<N>-<name>/` **writes only to its own `.output/`**. Reading from a sibling app's `.output/` is allowed in read-only mode via an explicit path declared in `brief.md`. Writes into another app's folder are bugs — fix them immediately.

@@ -561,3 +561,38 @@ All factory and observatory entry points use `VerifiedAdmissionInput` from `@syr
 ### Quarter readiness from verified evidence
 
 `quarter:readiness` accepts `--evidence-input <path>` pointing to an `AdmissionInput` JSON file. Evidence refs are extracted and verified from the typed input instead of hashing arbitrary files. Unverified strings without valid SHA-256 digests are rejected.
+
+---
+
+## Executable release and recovery evidence (RFC-0115)
+
+### Release with failure-atomic sealing
+
+`quarter:release` performs atomic publication of sealed capsules and replicas with concurrency safety. A durable transaction lock (`.release-lock.json`) prevents concurrent releases from corrupting data. The release intent is frozen as a hash of canonicalized release input, written atomically before any filesystem effects.
+
+The acyclic closure order is: M+K → S → P0/D/P → R → E → Ri → A (Measurement+Key bundle → Scientific input → Public products/Dashboard/Public archive → Replicas → Envelope → Replica receipts → Attestation). Revalidation occurs before the pointer switch, verifying destination custody and staged public bytes.
+
+Idempotent retries use `flag: "wx"` for atomic file creation and check existing bytes for equality or conflict. A second concurrent release attempt fails with a conflict code.
+
+### Qualification through actual commands
+
+`quarter:rehearse` runs 13 stage proofs with distinct consumed/produced/verified evidence. Each stage has deterministic failpoints (counter-based, not `Math.random`). The `--resume` flag allows resuming interrupted runs from `.rehearse-state.json`. Coordinator RSS and process tree are measured separately. The implementation fingerprint covers actual output-affecting code, configuration, and dependencies.
+
+### Ongoing custody and final cutover
+
+`quarter:record` wires A3 ledger transitions to actual collector, seal, release, and scheduler outcomes. Each transition creates a new immutable revision with chained digest.
+
+`custody:scan` provides three modes:
+
+- **integrity** — Full-byte integrity scan against authenticated inventory
+- **replica-lag** — Checks replica receipts against a 24h threshold for unsealed evidence
+- **restore-drill** — Verifies vault manifest, shard integrity, and key rotation needs
+
+### Command reference
+
+| Command | Purpose |
+| --- | --- |
+| `quarter:release` | Atomic publication with concurrency lock and idempotent retries |
+| `quarter:rehearse` | 13 stage proofs with deterministic failpoints and `--resume` |
+| `quarter:record --transition <schedule\|collect\|seal\|release\|suppress>` | Wire ledger transitions to actual outcomes |
+| `custody:scan --mode <integrity\|replica-lag\|restore-drill>` | Recurring custody continuity scans |
