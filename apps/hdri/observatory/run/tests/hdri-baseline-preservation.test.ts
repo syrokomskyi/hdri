@@ -139,11 +139,15 @@ describe("RFC-0100 AC-2: receipt validates against hdri-baseline-import@1", () =
 
 describe("RFC-0100 AC-3: ambiguous identity blocks admission", () => {
   it("rejects unmapped historical identities instead of inventing canonical IDs", () => {
-    expect(() => resolveIdentities({
-      archivePath: "/unused", producer: "factory", databaseSha256: "abc",
-      localIds: [{ localSiteId: 1, provisionalId: "da-unmapped", evidenceRefs: [] }],
-      existingCanonicalIds: new Map(),
-    })).toThrow(/UNRESOLVED_IDENTITY/);
+    expect(() =>
+      resolveIdentities({
+        archivePath: "/unused",
+        producer: "factory",
+        databaseSha256: "abc",
+        localIds: [{ localSiteId: 1, provisionalId: "da-unmapped", evidenceRefs: [] }],
+        existingCanonicalIds: new Map(),
+      }),
+    ).toThrow(/UNRESOLVED_IDENTITY/);
   });
 
   it("fails when one localSiteId maps to two canonical owners", () => {
@@ -247,9 +251,15 @@ describe("RFC-0100 AC-7: replica verification requires 3 independent copies", ()
 
       // Write a receipt with only 2 replicas
       const receipt = {
-        schema: "hdri-replica-receipt@1",
+        schema: "hdri-destination-receipt@1",
         period: "2026-q2",
-        replicas: [
+        destination: {
+          path: "/fake/archive",
+          failureDomain: "archive",
+          medium: "local",
+          credentialBoundary: "archive",
+        },
+        objects: [
           {
             path: "/fake/1",
             sha256: "a".repeat(64),
@@ -267,6 +277,8 @@ describe("RFC-0100 AC-7: replica verification requires 3 independent copies", ()
             credentialBoundary: "k2",
           },
         ],
+        totalObjects: 2,
+        totalBytes: 2,
         contentManifestSha256: "c".repeat(64),
         signatureSha256: "c".repeat(64),
       };
