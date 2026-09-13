@@ -9,6 +9,7 @@
 <CHANGE_SUMMARY>
   <item>RFC-0044: create quarter initialization tool that generates prior-capsules.json from a sealed prior capsule.</item>
   <item>RFC-0112: rename --current-period to --period, --prior-capsule to --predecessor. Persist QuarterRecord. Idempotent re-init returns same record.</item>
+  <item>RFC-0113 A3: append-only quarter ledger — write per-period immutable revisions instead of overwriting quarter-record.json.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -24,11 +25,20 @@ import {
   discoverQuarterRecord,
   serializeQuarterRecord,
   validateQuarterRecord,
+  createQuarterRevision,
+  createQuarterLedgerIndex,
+  advanceQuarterLedgerIndex,
+  serializeQuarterRecordRevision,
+  parseQuarterRecordRevision,
+  serializeQuarterLedgerIndex,
+  parseQuarterLedgerIndex,
   type CapsuleSignature,
   type HdriPeriod,
   type PriorCapsuleEntry,
   type QuarterCapsule,
   type QuarterRecord,
+  type QuarterRecordRevision,
+  type QuarterLedgerIndex,
 } from "@syrokomskyi/factory-core";
 import { getTransparencyKeysDir, loadVerificationKeys } from "@syrokomskyi/observatory-crypto";
 
@@ -214,58 +224,90 @@ const main = async (): Promise<void> => {
   await fs.writeFile(tmpPath, serialized, "utf8");
   await fs.rename(tmpPath, outputPath);
 
-  // 12. Persist QuarterRecord (RFC-0112)
-  const quarterRecordPath = path.join(outputDir, "quarter-record.json");
-  let quarterRecord: QuarterRecord;
+  // 12. Persist QuarterRecord via append-only ledger (RFC-0113 A3)
+  const ledgerDir = path.join(outputDir, "quarter-ledger");
+  await fs.mkdir(ledgerDir, { recursive: true });
 
-  // Check for existing record (idempotent re-init)
-  let existingRecordRaw: string | null = null;
+  const indexPath = path.join(ledgerDir, "ledger-index.json");
+  let quarterRecord: QuarterRecord;
+  let revision: QuarterRecordRevision;
+  let ledgerIndex: QuarterLedgerIndex;
+
+  // Check for existing ledger index
+  let existingIndexRaw: string | null = null;
   try {
-    existingRecordRaw = await fs.readFile(quarterRecordPath, "utf8");
+    existingIndexRaw = await fs.readFile(indexPath, "utf8");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       console.error(
-        `Existing quarter-record.json is unreadable: ${error instanceof Error ? error.message : String(error)}`,
+        `Existing ledger-index.json is unreadable: ${error instanceof Error ? error.message : String(error)}`,
       );
       process.exit(1);
     }
   }
 
-  if (existingRecordRaw) {
+  // Build the new QuarterRecord
+  const priorCapsulesFile = parsePriorCapsulesFile(serialized);
+  const newRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
+  quarterRecord = {
+    ...newRecord,
+    capsuleId: capsuleIdArg,
+  };
+  validateQuarterRecord(quarterRecord);
+
+  if (existingIndexRaw) {
     try {
-      const existingRecord = JSON.parse(existingRecordRaw) as QuarterRecord;
-      validateQuarterRecord(existingRecord);
-      // Idempotent: if period matches, return same record
-      if (existingRecord.period === currentPeriodTyped) {
-        quarterRecord = existingRecord;
+      const existingIndex = parseQuarterLedgerIndex(existingIndexRaw);
+      // Load the current head revision
+      const headRevisionPath = path.join(
+        ledgerDir,
+        `revision-${existingIndex.headRevision.toString().padStart(4, "0")}.json`,
+      );
+      let previousRevision: QuarterRecordRevision | null = null;
+      try {
+        const headRaw = await fs.readFile(headRevisionPath, "utf8");
+        previousRevision = parseQuarterRecordRevision(headRaw);
+      } catch {
+        // Head revision file missing — treat as fresh
+      }
+
+      // Idempotent: if the existing head has same period and capsuleId, return it
+      if (previousRevision && previousRevision.record.period === currentPeriodTyped) {
+        quarterRecord = previousRevision.record;
+        revision = previousRevision;
+        ledgerIndex = existingIndex;
       } else {
-        // New period — create new record using discoverQuarterRecord
-        const priorCapsulesFile = parsePriorCapsulesFile(serialized);
-        quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
-        quarterRecord = {
-          ...quarterRecord,
-          capsuleId: capsuleIdArg,
-        };
+        // Create new revision
+        revision = createQuarterRevision(quarterRecord, previousRevision);
+        ledgerIndex = advanceQuarterLedgerIndex(existingIndex, revision);
       }
     } catch {
-      // Malformed existing record — create fresh
-      const priorCapsulesFile = parsePriorCapsulesFile(serialized);
-      quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
-      quarterRecord = {
-        ...quarterRecord,
-        capsuleId: capsuleIdArg,
-      };
+      // Malformed index — create fresh ledger
+      revision = createQuarterRevision(quarterRecord, null);
+      ledgerIndex = createQuarterLedgerIndex(currentPeriodTyped, revision);
     }
   } else {
-    const priorCapsulesFile = parsePriorCapsulesFile(serialized);
-    quarterRecord = discoverQuarterRecord(priorCapsulesFile, currentPeriodTyped);
-    quarterRecord = {
-      ...quarterRecord,
-      capsuleId: capsuleIdArg,
-    };
+    // Fresh ledger
+    revision = createQuarterRevision(quarterRecord, null);
+    ledgerIndex = createQuarterLedgerIndex(currentPeriodTyped, revision);
   }
 
-  validateQuarterRecord(quarterRecord);
+  // Write revision file (immutable)
+  const revisionFileName = `revision-${revision.revision.toString().padStart(4, "0")}.json`;
+  const revisionPath = path.join(ledgerDir, revisionFileName);
+  const revisionSerialized = serializeQuarterRecordRevision(revision);
+  const revisionTmpPath = `${revisionPath}.tmp`;
+  await fs.writeFile(revisionTmpPath, revisionSerialized, "utf8");
+  await fs.rename(revisionTmpPath, revisionPath);
+
+  // Write updated index atomically
+  const indexSerialized = serializeQuarterLedgerIndex(ledgerIndex);
+  const indexTmpPath = `${indexPath}.tmp`;
+  await fs.writeFile(indexTmpPath, indexSerialized, "utf8");
+  await fs.rename(indexTmpPath, indexPath);
+
+  // Also write quarter-record.json for backward compat (points to current head)
+  const quarterRecordPath = path.join(outputDir, "quarter-record.json");
   const recordSerialized = serializeQuarterRecord(quarterRecord);
   const recordTmpPath = `${quarterRecordPath}.tmp`;
   await fs.writeFile(recordTmpPath, recordSerialized, "utf8");
