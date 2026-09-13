@@ -249,16 +249,18 @@ export class SummarizeProfileGogol extends Gogol {
       }
     }
 
-    const terminalProfiles = (
-      db.prepare(`
+    const terminalProfiles = db
+      .prepare(
+        `
         SELECT
           COUNT(DISTINCT CASE WHEN po.error_class = 'ok' THEN sp.site_id END) AS succeeded,
           COUNT(DISTINCT CASE WHEN po.error_class <> 'ok' THEN sp.site_id END) AS failed
         FROM site_pages sp
         JOIN page_observations po ON po.site_page_id = sp.id
         WHERE sp.source = 'homepage'
-      `).get() as { succeeded: number; failed: number }
-    );
+      `,
+      )
+      .get() as { succeeded: number; failed: number };
     const livenessDb = new Database(resolvedLivenessDbPath, { readonly: true });
     const targetProfiles = (
       livenessDb.prepare(`SELECT COUNT(*) AS n FROM liveness_checks WHERE is_live = 1`).get() as {
@@ -273,6 +275,29 @@ export class SummarizeProfileGogol extends Gogol {
       approvedExclusions: 0,
       quarantined: 0,
     });
+
+    // RFC-0114 B4b: Verify detected-page-capture stage completion
+    const detectedPageStats = db
+      .prepare(
+        `
+        SELECT
+          COUNT(DISTINCT CASE WHEN po.error_class = 'ok' THEN sp.site_id END) AS succeeded,
+          COUNT(DISTINCT CASE WHEN po.error_class <> 'ok' THEN sp.site_id END) AS failed
+        FROM site_pages sp
+        JOIN page_observations po ON po.site_page_id = sp.id
+        WHERE sp.source = 'detected'
+      `,
+      )
+      .get() as { succeeded: number; failed: number };
+    const totalDetectedPages = (
+      db.prepare(`SELECT COUNT(*) AS n FROM site_pages WHERE source = 'detected'`).get() as {
+        n: number;
+      }
+    ).n;
+    // Detected-page-capture is best-effort: failures don't block closure, but we log them
+    console.log(
+      `[summarize-profile] detected-page-capture: ${detectedPageStats.succeeded} succeeded, ${detectedPageStats.failed} failed out of ${totalDetectedPages} total`,
+    );
     db.close();
 
     console.log(`[summarize-profile] Computing SHA-256 of ${pagesDbName}.db...`);

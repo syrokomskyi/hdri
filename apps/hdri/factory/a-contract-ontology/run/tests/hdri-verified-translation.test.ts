@@ -57,8 +57,20 @@ const makeStagingCapsule = (deviceId: string): QuarterCapsule => ({
 
 const writeManifest = async (dir: string, deviceId: string): Promise<string> => {
   const capsule = makeStagingCapsule(deviceId);
-  const manifestPath = path.join(dir, `device-${deviceId}`, "capsule-staging.json");
-  await fs.mkdir(path.dirname(manifestPath), { recursive: true });
+  const deviceDir = path.join(dir, `device-${deviceId}`);
+  const manifestPath = path.join(deviceDir, "capsule-staging.json");
+  await fs.mkdir(deviceDir, { recursive: true });
+  // RFC-0114 B5: validateManifestSet reads stage seal files from capsule dir
+  const sealsDir = path.join(deviceDir, "staging", "stage-seals");
+  await fs.mkdir(sealsDir, { recursive: true });
+  for (const entry of INSTRUMENT_PLAN) {
+    if (entry.state !== "required") continue;
+    const sealPath = path.join(sealsDir, `${entry.instrument}.json`);
+    const sealContent = {
+      payload: { selectedResultSetSha256: "s".repeat(64) },
+    };
+    await fs.writeFile(sealPath, JSON.stringify(sealContent, null, 2), "utf-8");
+  }
   await fs.writeFile(manifestPath, JSON.stringify(capsule, null, 2), "utf-8");
   return manifestPath;
 };
@@ -146,7 +158,7 @@ describe("RFC-0106 acceptance", () => {
           (a) => !(a.stage === "qc" && a.uri === "staging/stage-seals/profile.json"),
         ),
       };
-      const brokenPath = path.join(root, "broken.json");
+      const brokenPath = path.join(root, "device-test-0001", "capsule-broken.json");
       await fs.writeFile(brokenPath, JSON.stringify(broken, null, 2), "utf-8");
 
       const emptyKeys = new Map();

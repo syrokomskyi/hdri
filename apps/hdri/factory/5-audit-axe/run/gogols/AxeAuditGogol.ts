@@ -31,12 +31,17 @@ import {
   QuarterExecutionJournal,
   assertStageComplete,
   capsuleConfigSha256,
+  commitAttempt,
+  declareStageTargetSet,
+  allocateLeaseEpoch,
+  openExecutionDb,
   loadLiveAuditTargets,
   quarterCapsuleDir,
   quarterExecutionEventsDir,
   readExecutionCasObject,
   withLeaseHeartbeat,
   upsertAuditRun,
+  workKeyId,
   writeExecutionCasObject,
   type HdriPeriod,
   type WorkKey,
@@ -215,6 +220,16 @@ export class AxeAuditGogol extends Gogol {
       eventId: mintAssetId(),
       now: new Date().toISOString(),
     });
+
+    // RFC-0114: Open SQLite durable authority and declare stage targets
+    const durableDb = openExecutionDb(capsuleDir);
+    const configSha = capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan);
+    declareStageTargetSet(durableDb, {
+      stageId: "axe",
+      deviceId: brief.deviceId,
+      workKeyIds: targets.map((t) => workKeyId(keyFor(t))),
+      now: new Date().toISOString(),
+    });
     const checkpoint = (target: AuditTarget, evidence: AxeEvidence): void => {
       if (evidence.result.ok) {
         upsertAuditRun(auditsDb, {
@@ -328,12 +343,16 @@ export class AxeAuditGogol extends Gogol {
           const startedAt = Date.now();
           for (let retryOrdinal = 0; retryOrdinal <= brief.retries; retryOrdinal++) {
             const leaseAt = new Date();
+            const measuredAt = leaseAt.toISOString();
             const leaseDurationMs = brief.deadlineMs + 60_000;
+            const wkId = workKeyId(keyFor(target));
+            const durableAttemptId = mintAssetId();
+            const epoch = allocateLeaseEpoch(durableDb, wkId, durableAttemptId, measuredAt);
             const attempt = await journal.begin({
               key: keyFor(target),
               attemptId: mintAssetId(),
               leaseOwner: brief.deviceId,
-              now: leaseAt.toISOString(),
+              now: measuredAt,
               leaseExpiresAt: new Date(leaseAt.getTime() + leaseDurationMs).toISOString(),
             });
             if (!attempt) return;
@@ -369,6 +388,16 @@ export class AxeAuditGogol extends Gogol {
                   result: { ok: true, reportSha256: sha256, extracted },
                 };
                 const evidence = await writeExecutionCasObject(capsuleDir, payload);
+                // RFC-0114: Commit through durable authority
+                commitAttempt(durableDb, {
+                  workKeyId: wkId,
+                  attemptId: durableAttemptId,
+                  epoch,
+                  measuredAt,
+                  inputFingerprint: configSha,
+                  evidence: [{ role: "axe-report", sha256: evidence.sha256, bytes: 0 }],
+                  outcome: "succeeded",
+                });
                 await journal.finish(attempt, {
                   eventId: mintAssetId(),
                   now: new Date().toISOString(),
@@ -407,6 +436,16 @@ export class AxeAuditGogol extends Gogol {
                   result: { ok: false, errorClass, errorMessage },
                 };
                 const evidence = await writeExecutionCasObject(capsuleDir, payload);
+                // RFC-0114: Commit through durable authority
+                commitAttempt(durableDb, {
+                  workKeyId: wkId,
+                  attemptId: durableAttemptId,
+                  epoch,
+                  measuredAt,
+                  inputFingerprint: configSha,
+                  evidence: [{ role: "axe-failure", sha256: evidence.sha256, bytes: 0 }],
+                  outcome: "failed",
+                });
                 await journal.finish(attempt, {
                   eventId: mintAssetId(),
                   now: new Date().toISOString(),
@@ -471,6 +510,16 @@ export class AxeAuditGogol extends Gogol {
                 result: { ok: false, errorClass, errorMessage },
               };
               const evidence = await writeExecutionCasObject(capsuleDir, payload);
+              // RFC-0114: Commit through durable authority
+              commitAttempt(durableDb, {
+                workKeyId: wkId,
+                attemptId: durableAttemptId,
+                epoch,
+                measuredAt,
+                inputFingerprint: configSha,
+                evidence: [{ role: "axe-error", sha256: evidence.sha256, bytes: 0 }],
+                outcome: "failed",
+              });
               await journal.finish(attempt, {
                 eventId: mintAssetId(),
                 now: new Date().toISOString(),

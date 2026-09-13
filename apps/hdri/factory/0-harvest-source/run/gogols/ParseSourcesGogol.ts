@@ -218,7 +218,7 @@ export class ParseSourcesGogol extends Gogol {
         fileHashes.set(sf.batchScopedPath, digest.sha256);
       }
 
-      const DEPENDENCY_FINGERPRINT = "harvest-v1";
+      const DEPENDENCY_FINGERPRINT = "harvest-v2";
 
       let sourceFiles = allSourceFiles.filter((sf) => {
         const existing = processedReceipts.get(sf.batchScopedPath);
@@ -561,7 +561,7 @@ const buildSourceBatchManifest = async (
       relativePath: file.logicalPath,
       ...digest,
       parserId: file.sourceFolder,
-      parserVersion: "harvest-v1",
+      parserVersion: "harvest-v2",
     });
   }
   entries.sort((a, b) => a.relativePath.localeCompare(b.relativePath));

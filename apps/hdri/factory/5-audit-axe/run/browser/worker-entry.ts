@@ -88,7 +88,11 @@ const runWorker = async (req: WorkerRequest): Promise<WorkerResponse> => {
     return { evidence };
   }
 
-  const browser = await playwright.chromium.launch({ headless: true });
+  // RFC-0114 B4a: One browser per isolated worker, fresh context per target
+  const browser = await playwright.chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
   try {
     const ctx = await browser.newContext();
     const page = await ctx.newPage();

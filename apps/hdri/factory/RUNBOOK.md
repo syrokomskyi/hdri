@@ -431,6 +431,18 @@ Liveness, profile and Axe freeze their complete target set before the first netw
 
 Do not edit a brief, instrument version or target frame after work has begun. Configuration or target drift is rejected. A full stage seals only when every declared target has a successful or observed-failure result. The bridge verifies the frozen target count/hash, exactly one matching stage-sealed event, every selected terminal event and CAS object, and the collector-bound Ed25519 stage seal before creating emit output. Therefore a diagnostic `maxDomains` run cannot be mistaken for a complete quarter.
 
+### One selected-attempt authority (RFC-0114)
+
+Every HDRI producer commits through a single fenced durable authority in `@syrokomskyi/factory-core`. The authority allocates work keys, attempt ordinals, and lease epochs transactionally. Sealed, content-verified projections are the only downstream observation inputs — the translator (`TranslateOntologyGogol`) consumes verified immutable snapshot handles and selected-result projections, never mutable device databases directly.
+
+Key properties:
+
+- **Durable selection**: The greatest allocated epoch is authoritative even after expiry. An older lease never revives. Result selection is persisted in the same transaction that verifies the lease.
+- **Immutable snapshots**: The translator uses the SQLite backup API to create consistent read-only snapshots. Mutating the live database after snapshot creation has no effect on translation output.
+- **Digest domains**: Expected work-set, terminal work-set, selected-result, and projection digests are distinct semantic domains. A verifier derives each from actual sorted values; digests are never copied across domains.
+- **Mutation detection**: If an admitted snapshot value is changed, the translator rejects its closure. Altering a selected value without changing target membership requires digest/closure rejection.
+- **Cryptographic admission**: Full admission includes trusted Ed25519 signatures, not merely the manifest field shape. Every consumed observation resolves to one durable selected attempt.
+
 ### Quarter closure
 
 The contract bridge creates a staging capsule containing the signed source-ledger segments, raw batch files, occurrence projection, signed frozen frame, consistent SQLite backup snapshots, execution journal, referenced profile HTML, referenced Axe reports, signed observations and methodology. Observatory adds canonical UUID v7 identity, vault shards and publication artifacts after the release gate, then writes `capsule-manifest.json` and detached `capsule-signature.json`. Until both files exist and verify, the quarter is not sealed and must not be published or used as the starting point for the next quarter. A retry first verifies an existing staging/final closure and performs no writes inside it. Before copying source evidence, the bridge verifies every segment signature, the signed frame, the ledger head, included batch set and occurrence-projection hash; any mismatch fails before the capsule is written. The head is rebuilt from the frame's exact signed `includedBatchIds`, so appending Q4 segments does not invalidate Q3. Expected source hashes come from that verified snapshot and are checked again on the copied capsule artifact, closing mutation races between preflight and retain. Observatory repeats the complete execution-evidence verification before final sealing and whenever it reopens an already sealed capsule.

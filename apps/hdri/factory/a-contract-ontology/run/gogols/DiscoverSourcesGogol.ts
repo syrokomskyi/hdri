@@ -100,6 +100,7 @@ export class DiscoverSourcesGogol extends Gogol {
 
       for (const [stageId, sealSha256] of verified.stageSeals) {
         const targetSha256 = verified.targetSetSha256.get(stageId) ?? "";
+        const selectedResultSha = verified.selectedResultSetSha256.get(stageId) ?? "";
         const refs = verified.artifactRefs.get(stageId) ?? [];
         verifiedSnapshots.push({
           schema: "hdri-stage-snapshot@1",
@@ -109,8 +110,8 @@ export class DiscoverSourcesGogol extends Gogol {
           stageId,
           stageSealSha256: sealSha256,
           targetSetSha256: targetSha256,
-          selectedResultSetSha256: targetSha256,
-          projectionSha256: targetSha256,
+          selectedResultSetSha256: selectedResultSha,
+          projectionSha256: selectedResultSha,
           artifactRefs: [...refs],
         });
       }

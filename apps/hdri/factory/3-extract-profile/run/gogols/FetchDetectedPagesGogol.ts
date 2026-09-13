@@ -25,6 +25,23 @@ import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
 import { markdownTable } from "markdown-table";
 import { fetchPageContent } from "@syrokomskyi/business-crawler/fetch-page";
+import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
+import { mintAssetId } from "@syrokomskyi/observatory-core";
+import {
+  QuarterExecutionJournal,
+  capsuleConfigSha256,
+  commitAttempt,
+  declareStageTargetSet,
+  allocateLeaseEpoch,
+  openExecutionDb,
+  quarterCapsuleDir,
+  quarterExecutionEventsDir,
+  withLeaseHeartbeat,
+  workKeyId,
+  writeExecutionCasObject,
+  type HdriPeriod,
+  type WorkKey,
+} from "@syrokomskyi/factory-core";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
@@ -42,6 +59,7 @@ import {
   getContentRelativePath,
   getPagesDbPath,
 } from "../paths.js";
+import { factoryRootDir } from "../config.js";
 import type Database from "better-sqlite3";
 
 // ---------------------------------------------------------------------------
@@ -71,6 +89,24 @@ type FetchStat = {
   errorCode: string | null;
   skipped?: boolean;
   updatedRows: number;
+};
+
+type DetectedPageEvidence = {
+  schemaVersion: 1;
+  stage: "detected-page-capture";
+  siteId: number;
+  provisionalAssetId: string;
+  url: string;
+  result:
+    | {
+        ok: true;
+        httpStatus: number;
+        finalUrl: string;
+        contentHash: string;
+        contentLengthBytes: number;
+        isNewContent: boolean;
+      }
+    | { ok: false; httpStatus: number | null; errorCode: string; errorMsg: string | null };
 };
 
 // ---------------------------------------------------------------------------
@@ -131,6 +167,18 @@ export class FetchDetectedPagesGogol extends Gogol {
     // ── 1. Collect detected URLs from ext_* tables ─────────────────────────────
     const pagesDbPath = getPagesDbPath(pagesDbName);
     const pagesDb = openPagesDb(pagesDbPath);
+
+    // RFC-0114 B4b: Connect to B1 durable execution authority
+    const parsed = parseSourceToken(brief.sourceToken);
+    const period = `${parsed.year}-q${parsed.quarter}` as HdriPeriod;
+    const capsuleDir = quarterCapsuleDir(factoryRootDir, brief.deviceId, period, brief.capsuleId);
+    const journal = new QuarterExecutionJournal(
+      quarterExecutionEventsDir(factoryRootDir, brief.deviceId, period, brief.capsuleId),
+      capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan),
+    );
+    await journal.initialize(mintAssetId(), new Date().toISOString());
+    const configSha = capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan);
+    const durableDb = openExecutionDb(capsuleDir);
 
     const detectedUrls: DetectedUrlRow[] = [];
     let uniqueUrls: DetectedUrlGroup[] = [];
@@ -224,6 +272,43 @@ export class FetchDetectedPagesGogol extends Gogol {
         return;
       }
 
+      // RFC-0114 B4b: Declare stage targets for detected-page-capture
+      const keyFor = (item: DetectedUrlGroup): WorkKey => ({
+        period,
+        capsuleId: brief.capsuleId,
+        stageId: "detected-page-capture",
+        provisionalAssetId: (item.rows[0]?.asset_id ?? "unknown") as WorkKey["provisionalAssetId"],
+        instrumentVersion: "profile-v2",
+      });
+      const stageTargetKeys = uniqueUrls.map(keyFor);
+      await journal.declareStageTargets({
+        stageId: "detected-page-capture",
+        keys: stageTargetKeys,
+        eventId: mintAssetId(),
+        now: new Date().toISOString(),
+      });
+      declareStageTargetSet(durableDb, {
+        stageId: "detected-page-capture",
+        deviceId: brief.deviceId,
+        workKeyIds: stageTargetKeys.map((k) => workKeyId(k)),
+        now: new Date().toISOString(),
+      });
+
+      // RFC-0114 B4b: Resume from terminal results — skip already-sealed detected pages
+      const terminalUrls = uniqueUrls.filter((item) => !journal.isTerminal(keyFor(item)));
+      const skippedTerminal = uniqueUrls.length - terminalUrls.length;
+      if (skippedTerminal > 0) {
+        console.log(
+          `[fetch-detected-pages] ${skippedTerminal} terminal, ${terminalUrls.length} remaining`,
+        );
+      }
+      uniqueUrls = terminalUrls;
+
+      if (uniqueUrls.length === 0) {
+        console.log(`[fetch-detected-pages] All detected pages already terminal`);
+        return;
+      }
+
       // ── 3. Fetch loop ────────────────────────────────────────────────────────
       await fs.mkdir(getContentDir(), { recursive: true });
 
@@ -298,15 +383,39 @@ export class FetchDetectedPagesGogol extends Gogol {
           // No page_observation means previous fetch failed — re-fetch (error rows always re-fetched)
         }
 
-        const result = await fetchPageContent(item.url, { timeoutMs: brief.timeoutMs });
+        // RFC-0114 B4b: Acquire lease through durable authority
+        const wk = keyFor(item);
+        const wkId = workKeyId(wk);
+        const measuredAt = new Date().toISOString();
+        const startedAt = new Date();
+        const leaseDurationMs = brief.timeoutMs * 2 + 60_000;
+        const durableAttemptId = mintAssetId();
+        const epoch = allocateLeaseEpoch(durableDb, wkId, durableAttemptId, measuredAt);
+        const attempt = await journal.begin({
+          key: wk,
+          attemptId: mintAssetId(),
+          leaseOwner: brief.deviceId,
+          now: measuredAt,
+          leaseExpiresAt: new Date(startedAt.getTime() + leaseDurationMs).toISOString(),
+        });
+        if (!attempt) {
+          completed++;
+          return;
+        }
+
+        const result = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, async () =>
+          fetchPageContent(item.url, { timeoutMs: brief.timeoutMs }),
+        );
         const fetched = result.ok
           ? result
           : result.errorCode === "SSL_ERROR" ||
               result.errorCode === "ENOTFOUND" ||
               result.errorCode === "ETIMEDOUT"
-            ? await fetchPageContent(item.url.replace(/^https:/, "http:"), {
-                timeoutMs: brief.timeoutMs,
-              })
+            ? await withLeaseHeartbeat(journal, attempt, leaseDurationMs, async () =>
+                fetchPageContent(item.url.replace(/^https:/, "http:"), {
+                  timeoutMs: brief.timeoutMs,
+                }),
+              )
             : result;
 
         completed++;
@@ -315,62 +424,116 @@ export class FetchDetectedPagesGogol extends Gogol {
           logProgress(this.id, completed, uniqueUrls.length, logEvery, true);
         }
 
+        // RFC-0114 B4b: Build evidence payload
+        let evidencePayload: DetectedPageEvidence;
         if (!fetched.ok || fetched.httpStatus === null || fetched.httpStatus >= 400) {
+          evidencePayload = {
+            schemaVersion: 1,
+            stage: "detected-page-capture",
+            siteId: sitePage.site_id,
+            provisionalAssetId: primaryRow.asset_id,
+            url: item.url,
+            result: {
+              ok: false,
+              httpStatus: fetched.ok ? fetched.httpStatus : null,
+              errorCode: fetched.ok
+                ? `HTTP_${fetched.httpStatus}`
+                : (fetched as { errorCode: string }).errorCode,
+              errorMsg: fetched.ok
+                ? `HTTP ${fetched.httpStatus}`
+                : ((fetched as { errorMsg: string | null }).errorMsg ?? null),
+            },
+          };
+        } else {
+          const sha256 = fetched.contentHash;
+          const storagePath = getContentRelativePath(sha256);
+          const contentFilePath = getContentFilePath(sha256);
+
+          const isNewContent = !(await fs
+            .access(contentFilePath)
+            .then(() => true)
+            .catch(() => false));
+          if (isNewContent) {
+            await fs.mkdir(path.dirname(contentFilePath), { recursive: true });
+            await fs.writeFile(contentFilePath, fetched.html, "utf-8");
+          }
+
+          upsertPageContent(pagesDb, sha256, storagePath, fetched.contentLengthBytes);
+
+          // Use the original detected URL for site_pages so rescan checks match on subsequent runs.
+          const sitePageId = upsertSitePage(
+            pagesDb,
+            sitePage.site_id,
+            urlNorm,
+            urlSha256,
+            "detected",
+          );
+
+          upsertPageObservation(pagesDb, sitePageId, sha256, isNewContent, "ok", {
+            urlFinal: fetched.finalUrl,
+            deviceId: brief.deviceId,
+            sourceToken: brief.sourceToken,
+          });
+
+          const updatedRows = updateDetectedSources(pagesDb, item.rows, sha256);
+
+          evidencePayload = {
+            schemaVersion: 1,
+            stage: "detected-page-capture",
+            siteId: sitePage.site_id,
+            provisionalAssetId: primaryRow.asset_id,
+            url: item.url,
+            result: {
+              ok: true,
+              httpStatus: fetched.httpStatus,
+              finalUrl: fetched.finalUrl,
+              contentHash: sha256,
+              contentLengthBytes: fetched.contentLengthBytes,
+              isNewContent,
+            },
+          };
+
+          stats.push({
+            url: item.url,
+            source_table: sourceTablesLabel(item.rows),
+            ok: true,
+            httpStatus: fetched.httpStatus,
+            isNewContent,
+            errorCode: null,
+            updatedRows,
+          });
+        }
+
+        // RFC-0114 B4b: Commit through durable authority
+        const evidence = await writeExecutionCasObject(capsuleDir, evidencePayload);
+        commitAttempt(durableDb, {
+          workKeyId: wkId,
+          attemptId: durableAttemptId,
+          epoch,
+          measuredAt,
+          inputFingerprint: configSha,
+          evidence: [{ role: "detected-page", sha256: evidence.sha256, bytes: 0 }],
+          outcome: evidencePayload.result.ok ? "succeeded" : "failed",
+        });
+        await journal.finish(attempt, {
+          eventId: mintAssetId(),
+          now: new Date().toISOString(),
+          state: evidencePayload.result.ok ? "succeeded" : "observed-failure",
+          resultSha256: evidence.sha256,
+          ...(!evidencePayload.result.ok ? { errorClass: evidencePayload.result.errorCode } : {}),
+        });
+
+        if (!evidencePayload.result.ok) {
           stats.push({
             url: item.url,
             source_table: sourceTablesLabel(item.rows),
             ok: false,
-            httpStatus: fetched.ok ? fetched.httpStatus : null,
+            httpStatus: evidencePayload.result.httpStatus,
             isNewContent: false,
-            errorCode: fetched.ok
-              ? `HTTP_${fetched.httpStatus}`
-              : (fetched as { errorCode: string }).errorCode,
+            errorCode: evidencePayload.result.errorCode,
             updatedRows: 0,
           });
-          return;
         }
-
-        const sha256 = fetched.contentHash;
-        const storagePath = getContentRelativePath(sha256);
-        const contentFilePath = getContentFilePath(sha256);
-
-        const isNewContent = !(await fs
-          .access(contentFilePath)
-          .then(() => true)
-          .catch(() => false));
-        if (isNewContent) {
-          await fs.mkdir(path.dirname(contentFilePath), { recursive: true });
-          await fs.writeFile(contentFilePath, fetched.html, "utf-8");
-        }
-
-        upsertPageContent(pagesDb, sha256, storagePath, fetched.contentLengthBytes);
-
-        // Use the original detected URL for site_pages so rescan checks match on subsequent runs.
-        const sitePageId = upsertSitePage(
-          pagesDb,
-          sitePage.site_id,
-          urlNorm,
-          urlSha256,
-          "detected",
-        );
-
-        upsertPageObservation(pagesDb, sitePageId, sha256, isNewContent, "ok", {
-          urlFinal: fetched.finalUrl,
-          deviceId: brief.deviceId,
-          sourceToken: brief.sourceToken,
-        });
-
-        const updatedRows = updateDetectedSources(pagesDb, item.rows, sha256);
-
-        stats.push({
-          url: item.url,
-          source_table: sourceTablesLabel(item.rows),
-          ok: true,
-          httpStatus: fetched.httpStatus,
-          isNewContent,
-          errorCode: null,
-          updatedRows,
-        });
       };
 
       // Bounded concurrency pool
@@ -384,6 +547,16 @@ export class FetchDetectedPagesGogol extends Gogol {
       await Promise.all(
         Array.from({ length: Math.min(brief.concurrency, uniqueUrls.length || 1) }, worker),
       );
+
+      // RFC-0114 B4b: Seal detected-page-capture stage when all targets are terminal
+      if (brief.maxDomains < 0) {
+        await journal.sealStage({
+          stageId: "detected-page-capture",
+          keys: stageTargetKeys,
+          eventId: mintAssetId(),
+          now: new Date().toISOString(),
+        });
+      }
     } finally {
       pagesDb.close();
     }

@@ -15,6 +15,7 @@
 */
 
 import fsp from "node:fs/promises";
+import os from "node:os";
 import crypto from "node:crypto";
 import path from "node:path";
 import Database from "better-sqlite3";
@@ -157,155 +158,176 @@ export class TranslateOntologyGogol extends Gogol {
 
     const ontologySignals = ontology.signals;
 
-    for (const src of discoveredPages) {
-      const pagesDb = new Database(src.pagesDbPath, { readonly: true });
-      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "profile"]);
-      const recordedAt = periodStart(brief.period);
-      try {
-        for (const mapping of EXT_SIGNAL_MAP) {
-          const ontDef = ontologySignals[mapping.signalPath];
-          if (!ontDef) {
-            unknownSignals.add(mapping.signalPath);
-            continue;
-          }
-          if (ontDef.deprecated_in != null) {
-            deprecatedSignals.add(mapping.signalPath);
-          }
+    const snapshotDir = await fsp.mkdtemp(path.join(os.tmpdir(), "rfc0114-translate-"));
+    try {
+      for (const src of discoveredPages) {
+        const snapshotPath = await createReadOnlySnapshot(
+          src.pagesDbPath,
+          snapshotDir,
+          `pages-${src.deviceId}`,
+        );
+        const pagesDb = new Database(snapshotPath, { readonly: true });
+        const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "profile"]);
+        const recordedAt = periodStart(brief.period);
+        try {
+          for (const mapping of EXT_SIGNAL_MAP) {
+            const ontDef = ontologySignals[mapping.signalPath];
+            if (!ontDef) {
+              unknownSignals.add(mapping.signalPath);
+              continue;
+            }
+            if (ontDef.deprecated_in != null) {
+              deprecatedSignals.add(mapping.signalPath);
+            }
 
-          const tableExists = pagesDb
-            .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`)
-            .get(mapping.table) as { name: string } | undefined;
-          if (!tableExists) continue;
+            const tableExists = pagesDb
+              .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`)
+              .get(mapping.table) as { name: string } | undefined;
+            if (!tableExists) continue;
 
-          const rows = pagesDb
-            .prepare(
-              `
+            const rows = pagesDb
+              .prepare(
+                `
               SELECT ext.*, sp.url_norm
               FROM "${mapping.table}" ext
               JOIN page_observations po ON po.content_sha256 = ext.content_sha256
               JOIN site_pages sp ON sp.id = po.site_page_id
               ORDER BY ext.content_sha256, sp.url_norm
             `,
-            )
-            .iterate() as IterableIterator<ContentRow & { url_norm: string }>;
-          for (const row of rows) {
-            let domain: string;
-            try {
-              domain = new URL(row.url_norm).hostname.toLowerCase();
-            } catch {
-              untranslated++;
-              continue;
+              )
+              .iterate() as IterableIterator<ContentRow & { url_norm: string }>;
+            for (const row of rows) {
+              let domain: string;
+              try {
+                domain = new URL(row.url_norm).hostname.toLowerCase();
+              } catch {
+                untranslated++;
+                continue;
+              }
+              const obs = buildObservation(
+                row,
+                mapping,
+                domain,
+                runId,
+                brief.ontologyVersion,
+                recordedAt,
+                brief.capsuleId,
+                brief.period,
+              );
+              if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
             }
-            const obs = buildObservation(
-              row,
-              mapping,
-              domain,
-              runId,
-              brief.ontologyVersion,
-              recordedAt,
-              brief.capsuleId,
-              brief.period,
-            );
-            if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
           }
+        } finally {
+          pagesDb.close();
         }
-      } finally {
-        pagesDb.close();
       }
-    }
 
-    for (const src of livenessDbs) {
-      const livenessDb = new Database(src.livenessDbPath, { readonly: true });
-      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "liveness"]);
-      const recordedAt = periodStart(brief.period);
-      try {
-        const rows = livenessDb
-          .prepare(
-            `
+      for (const src of livenessDbs) {
+        const livenessSnapshot = await createReadOnlySnapshot(
+          src.livenessDbPath,
+          snapshotDir,
+          `liveness-${src.deviceId}`,
+        );
+        const livenessDb = new Database(livenessSnapshot, { readonly: true });
+        const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "liveness"]);
+        const recordedAt = periodStart(brief.period);
+        try {
+          const rows = livenessDb
+            .prepare(
+              `
           SELECT provisional_asset_id, domain, checked_at, http_status, latency_ms, is_live, error_code
           FROM liveness_checks
           ORDER BY provisional_asset_id
         `,
-          )
-          .iterate() as IterableIterator<LivenessRow>;
-        for (const row of rows) {
-          const observedAt = new Date(row.checked_at * 1000).toISOString();
-          const outcome = classifyLivenessOutcome({
-            isLive: row.is_live === 1,
-            httpStatus: row.http_status,
-            errorCode: row.error_code,
-          });
-          const signals: Array<{
-            signalPath: string;
-            value: boolean | number | string | null;
-            valueType: "bool" | "num" | "str";
-          }> = [
-            { signalPath: "transport.http.status_code", value: row.http_status, valueType: "num" },
-            { signalPath: "transport.http.latency_ms", value: row.latency_ms, valueType: "num" },
-            { signalPath: "availability.website.outcome", value: outcome, valueType: "str" },
-            {
-              signalPath: "availability.website.is_reachable",
-              value: row.is_live === 1,
-              valueType: "bool",
-            },
-            {
-              signalPath: "availability.website.error_code",
-              value: row.error_code,
-              valueType: "str",
-            },
-          ];
-          for (const { signalPath, value, valueType } of signals) {
-            if (value == null) continue;
-            if (!ontologySignals[signalPath]) {
-              unknownSignals.add(signalPath);
-              continue;
-            }
-            appendObservation({
-              observation_id: observationKey({
-                period: brief.period,
-                capsuleId: brief.capsuleId,
-                provisionalAssetId: row.provisional_asset_id,
-                signalPath,
-                sourceResultSha256: sha256Json(row),
-                extractorVersion: "liveness-v1",
-              }),
-              asset_id: row.provisional_asset_id,
-              crawl_id: runId,
-              signal_path: signalPath,
-              value_bool: valueType === "bool" ? Boolean(value) : null,
-              value_num: valueType === "num" ? Number(value) : null,
-              value_str: valueType === "str" ? String(value) : null,
-              value_json: null,
-              value_type: valueType,
-              observed_at: observedAt,
-              recorded_at: observedAt || recordedAt,
-              collector_version: COLLECTOR_VERSION,
-              probe_version: "liveness-v1",
-              ruleset_version: brief.ontologyVersion,
-              source_hash: null,
-              crawl_hash: brief.capsuleId,
-              evidence_ref: null,
-              confidence: 1,
-              status: "active",
-              superseded_by: null,
-              deprecated_reason: null,
-              _device_id: src.deviceId,
+            )
+            .iterate() as IterableIterator<LivenessRow>;
+          for (const row of rows) {
+            const observedAt = new Date(row.checked_at * 1000).toISOString();
+            const outcome = classifyLivenessOutcome({
+              isLive: row.is_live === 1,
+              httpStatus: row.http_status,
+              errorCode: row.error_code,
             });
+            const signals: Array<{
+              signalPath: string;
+              value: boolean | number | string | null;
+              valueType: "bool" | "num" | "str";
+            }> = [
+              {
+                signalPath: "transport.http.status_code",
+                value: row.http_status,
+                valueType: "num",
+              },
+              { signalPath: "transport.http.latency_ms", value: row.latency_ms, valueType: "num" },
+              { signalPath: "availability.website.outcome", value: outcome, valueType: "str" },
+              {
+                signalPath: "availability.website.is_reachable",
+                value: row.is_live === 1,
+                valueType: "bool",
+              },
+              {
+                signalPath: "availability.website.error_code",
+                value: row.error_code,
+                valueType: "str",
+              },
+            ];
+            for (const { signalPath, value, valueType } of signals) {
+              if (value == null) continue;
+              if (!ontologySignals[signalPath]) {
+                unknownSignals.add(signalPath);
+                continue;
+              }
+              appendObservation({
+                observation_id: observationKey({
+                  period: brief.period,
+                  capsuleId: brief.capsuleId,
+                  provisionalAssetId: row.provisional_asset_id,
+                  signalPath,
+                  sourceResultSha256: sha256Json(row),
+                  extractorVersion: "liveness-v1",
+                }),
+                asset_id: row.provisional_asset_id,
+                crawl_id: runId,
+                signal_path: signalPath,
+                value_bool: valueType === "bool" ? Boolean(value) : null,
+                value_num: valueType === "num" ? Number(value) : null,
+                value_str: valueType === "str" ? String(value) : null,
+                value_json: null,
+                value_type: valueType,
+                observed_at: observedAt,
+                recorded_at: observedAt || recordedAt,
+                collector_version: COLLECTOR_VERSION,
+                probe_version: "liveness-v1",
+                ruleset_version: brief.ontologyVersion,
+                source_hash: null,
+                crawl_hash: brief.capsuleId,
+                evidence_ref: null,
+                confidence: 1,
+                status: "active",
+                superseded_by: null,
+                deprecated_reason: null,
+                _device_id: src.deviceId,
+              });
+            }
           }
+        } finally {
+          livenessDb.close();
         }
-      } finally {
-        livenessDb.close();
       }
-    }
 
-    for (const src of axeDbs) {
-      const axeDb = new Database(src.axeDbPath, { readonly: true });
-      const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "axe"]);
-      const recordedAt = periodStart(brief.period);
-      try {
-        const metricRows = axeDb
-          .prepare(
-            `
+      for (const src of axeDbs) {
+        const axeSnapshot = await createReadOnlySnapshot(
+          src.axeDbPath,
+          snapshotDir,
+          `axe-${src.deviceId}`,
+        );
+        const axeDb = new Database(axeSnapshot, { readonly: true });
+        const runId = sha256Json(["hdri:crawl:v1", brief.period, src.deviceId, "axe"]);
+        const recordedAt = periodStart(brief.period);
+        try {
+          const metricRows = axeDb
+            .prepare(
+              `
           SELECT ax.site_id, ax.provisional_asset_id, ax.violations_total, ax.critical_count,
                  ax.serious_count, ax.moderate_count, ax.minor_count, ax.nodes_scanned,
                  ax.axe_version, ar.fetched_at, ar.ok, ar.error_class, ar.error_message
@@ -314,73 +336,76 @@ export class TranslateOntologyGogol extends Gogol {
             ON ar.tool = 'axe' AND ar.provisional_asset_id = ax.provisional_asset_id
           ORDER BY ax.provisional_asset_id
         `,
-          )
-          .iterate() as IterableIterator<AxeMetricRow & AxeAuditRunRow>;
+            )
+            .iterate() as IterableIterator<AxeMetricRow & AxeAuditRunRow>;
 
-        for (const mapping of AXE_SIGNAL_MAP) {
-          const ontDef = ontologySignals[mapping.signalPath];
-          if (!ontDef) {
-            unknownSignals.add(mapping.signalPath);
-            continue;
-          }
-          if (ontDef.deprecated_in != null) {
-            deprecatedSignals.add(mapping.signalPath);
-          }
-        }
-
-        for (const row of metricRows) {
-          const auditRun: AxeAuditRunRow | undefined = row.ok == null ? undefined : row;
-          if (auditRun && auditRun.ok !== 1) {
-            continue;
-          }
           for (const mapping of AXE_SIGNAL_MAP) {
-            const obs = buildAxeObservation(
-              row,
-              mapping,
-              row.provisional_asset_id,
-              runId,
-              brief.ontologyVersion,
-              recordedAt,
-              brief.capsuleId,
-              auditRun,
-              brief.period,
-            );
-            if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
+            const ontDef = ontologySignals[mapping.signalPath];
+            if (!ontDef) {
+              unknownSignals.add(mapping.signalPath);
+              continue;
+            }
+            if (ontDef.deprecated_in != null) {
+              deprecatedSignals.add(mapping.signalPath);
+            }
           }
+
+          for (const row of metricRows) {
+            const auditRun: AxeAuditRunRow | undefined = row.ok == null ? undefined : row;
+            if (auditRun && auditRun.ok !== 1) {
+              continue;
+            }
+            for (const mapping of AXE_SIGNAL_MAP) {
+              const obs = buildAxeObservation(
+                row,
+                mapping,
+                row.provisional_asset_id,
+                runId,
+                brief.ontologyVersion,
+                recordedAt,
+                brief.capsuleId,
+                auditRun,
+                brief.period,
+              );
+              if (obs) appendObservation({ ...obs, _device_id: src.deviceId });
+            }
+          }
+        } finally {
+          axeDb.close();
         }
-      } finally {
-        axeDb.close();
       }
-    }
 
-    observationDb.exec("COMMIT");
-    const persistedCount = (
-      observationDb.prepare("SELECT COUNT(*) AS n FROM observations").get() as { n: number }
-    ).n;
-    console.log(
-      `[translate-ontology] Reconciled ${observationCount} obs; ${persistedCount} persisted. ` +
-        `${unknownSignals.size} unknown signal(s) skipped, ${deprecatedSignals.size} deprecated kept, ` +
-        `${untranslated} rows lacked content→domain mapping.`,
-    );
-
-    if (unknownSignals.size > 0) {
-      await fsp.writeFile(
-        path.join(ctx.outputDir, "unknown-signals.json"),
-        JSON.stringify(
-          {
-            period: brief.period,
-            unknown: [...unknownSignals],
-            deprecated: [...deprecatedSignals],
-          },
-          null,
-          2,
-        ),
-        "utf-8",
+      observationDb.exec("COMMIT");
+      const persistedCount = (
+        observationDb.prepare("SELECT COUNT(*) AS n FROM observations").get() as { n: number }
+      ).n;
+      console.log(
+        `[translate-ontology] Reconciled ${observationCount} obs; ${persistedCount} persisted. ` +
+          `${unknownSignals.size} unknown signal(s) skipped, ${deprecatedSignals.size} deprecated kept, ` +
+          `${untranslated} rows lacked content→domain mapping.`,
       );
-    }
 
-    observationDb.close();
-    ctx.state.observationDbPath = observationDbPath;
+      if (unknownSignals.size > 0) {
+        await fsp.writeFile(
+          path.join(ctx.outputDir, "unknown-signals.json"),
+          JSON.stringify(
+            {
+              period: brief.period,
+              unknown: [...unknownSignals],
+              deprecated: [...deprecatedSignals],
+            },
+            null,
+            2,
+          ),
+          "utf-8",
+        );
+      }
+
+      observationDb.close();
+      ctx.state.observationDbPath = observationDbPath;
+    } finally {
+      await fsp.rm(snapshotDir, { recursive: true, force: true });
+    }
 
     // ── RFC-0106: Coverage reconciliation ────────────────────────────────────
     const expectedKeys = new Set<string>();
@@ -456,6 +481,21 @@ const assertTranslationIdentity = (
     if (!existing) insert.run(key, value);
   }
 };
+
+async function createReadOnlySnapshot(
+  sourcePath: string,
+  tmpDir: string,
+  prefix: string,
+): Promise<string> {
+  const snapshotPath = path.join(tmpDir, `${prefix}-${crypto.randomUUID().slice(0, 8)}.db`);
+  const source = new Database(sourcePath, { readonly: true });
+  try {
+    await source.backup(snapshotPath);
+  } finally {
+    source.close();
+  }
+  return snapshotPath;
+}
 
 const periodStart = (period: string): string => {
   const match = /^(\d{4})-q([1-4])$/.exec(period);

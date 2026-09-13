@@ -34,10 +34,15 @@ import {
   assertUniqueAssetTargets,
   QuarterExecutionJournal,
   capsuleConfigSha256,
+  commitAttempt,
+  declareStageTargetSet,
+  allocateLeaseEpoch,
+  openExecutionDb,
   quarterCapsuleDir,
   quarterExecutionEventsDir,
   readExecutionCasObject,
   withLeaseHeartbeat,
+  workKeyId,
   writeExecutionCasObject,
   type HdriPeriod,
   type WorkKey,
@@ -118,6 +123,16 @@ export class CheckLivenessGogol extends Gogol {
       stageId: "liveness",
       keys: stageTargetSites.map(keyFor),
       eventId: mintAssetId(),
+      now: new Date().toISOString(),
+    });
+
+    // RFC-0114: Open SQLite durable authority and declare stage targets
+    const durableDb = openExecutionDb(capsuleDir);
+    const configSha = capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan);
+    declareStageTargetSet(durableDb, {
+      stageId: "liveness",
+      deviceId: brief.deviceId,
+      workKeyIds: stageTargetSites.map((s) => workKeyId(keyFor(s))),
       now: new Date().toISOString(),
     });
 
@@ -205,12 +220,16 @@ export class CheckLivenessGogol extends Gogol {
 
     const processOne = async (site: SiteRow): Promise<void> => {
       const startedAt = new Date();
+      const measuredAt = startedAt.toISOString();
       const leaseDurationMs = brief.timeoutMs * (brief.retryCount + 1) + 60_000;
+      const wkId = workKeyId(keyFor(site));
+      const durableAttemptId = mintAssetId();
+      const epoch = allocateLeaseEpoch(durableDb, wkId, durableAttemptId, measuredAt);
       const attempt = await journal.begin({
         key: keyFor(site),
         attemptId: mintAssetId(),
         leaseOwner: brief.deviceId,
-        now: startedAt.toISOString(),
+        now: measuredAt,
         leaseExpiresAt: new Date(startedAt.getTime() + leaseDurationMs).toISOString(),
       });
       if (!attempt) return;
@@ -227,6 +246,16 @@ export class CheckLivenessGogol extends Gogol {
         provisionalAssetId: site.provisionalAssetId,
         result,
       } satisfies LivenessEvidence);
+      // RFC-0114: Commit through durable authority (lease verify + evidence + projection + release in one transaction)
+      commitAttempt(durableDb, {
+        workKeyId: wkId,
+        attemptId: durableAttemptId,
+        epoch,
+        measuredAt,
+        inputFingerprint: configSha,
+        evidence: [{ role: "liveness", sha256: evidence.sha256, bytes: 0 }],
+        outcome: result.isLive ? "succeeded" : "failed",
+      });
       await journal.finish(attempt, {
         eventId: mintAssetId(),
         now: new Date().toISOString(),

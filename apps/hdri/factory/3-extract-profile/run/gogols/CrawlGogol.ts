@@ -39,10 +39,15 @@ import {
   assertUniqueAssetTargets,
   QuarterExecutionJournal,
   capsuleConfigSha256,
+  commitAttempt,
+  declareStageTargetSet,
+  allocateLeaseEpoch,
+  openExecutionDb,
   quarterCapsuleDir,
   quarterExecutionEventsDir,
   readExecutionCasObject,
   withLeaseHeartbeat,
+  workKeyId,
   writeExecutionCasObject,
   type HdriPeriod,
   type WorkKey,
@@ -166,6 +171,16 @@ export class CrawlGogol extends Gogol {
       eventId: mintAssetId(),
       now: new Date().toISOString(),
     });
+
+    // RFC-0114: Open SQLite durable authority and declare stage targets
+    const durableDb = openExecutionDb(capsuleDir);
+    const configSha = capsuleConfigSha256(period, brief.capsuleId, brief.instrumentPlan);
+    declareStageTargetSet(durableDb, {
+      stageId: "homepage-capture",
+      deviceId: brief.deviceId,
+      workKeyIds: stageTargetSites.map((s) => workKeyId(keyFor(s))),
+      now: new Date().toISOString(),
+    });
     const checkpoint = (site: SiteRow, evidence: ProfileEvidence, evidenceSha256: string): void => {
       const initialUrl = normalisePageUrl(`https://${site.domain}`);
       const sitePageId = getOrCreateSitePage(pagesDb, site.id, initialUrl, sha256Hex(initialUrl));
@@ -223,12 +238,16 @@ export class CrawlGogol extends Gogol {
     const processOne = async (site: SiteRow): Promise<void> => {
       const url = `https://${site.domain}`;
       const startedAt = new Date();
+      const measuredAt = startedAt.toISOString();
       const leaseDurationMs = brief.timeoutMs * 2 + 60_000;
+      const wkId = workKeyId(keyFor(site));
+      const durableAttemptId = mintAssetId();
+      const epoch = allocateLeaseEpoch(durableDb, wkId, durableAttemptId, measuredAt);
       const attempt = await journal.begin({
         key: keyFor(site),
         attemptId: mintAssetId(),
         leaseOwner: brief.deviceId,
-        now: startedAt.toISOString(),
+        now: measuredAt,
         leaseExpiresAt: new Date(startedAt.getTime() + leaseDurationMs).toISOString(),
       });
       if (!attempt) return;
@@ -297,6 +316,16 @@ export class CrawlGogol extends Gogol {
       }
 
       const evidence = await writeExecutionCasObject(capsuleDir, evidencePayload);
+      // RFC-0114: Commit through durable authority (lease verify + evidence + projection + release in one transaction)
+      commitAttempt(durableDb, {
+        workKeyId: wkId,
+        attemptId: durableAttemptId,
+        epoch,
+        measuredAt,
+        inputFingerprint: configSha,
+        evidence: [{ role: "profile", sha256: evidence.sha256, bytes: 0 }],
+        outcome: evidencePayload.result.ok ? "succeeded" : "failed",
+      });
       await journal.finish(attempt, {
         eventId: mintAssetId(),
         now: new Date().toISOString(),
