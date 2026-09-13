@@ -4,6 +4,7 @@
 <non-goals><item>Does not collect sites, calculate scores or waive a failed gate.</item></non-goals>
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
+  <item>Require the already-signed timestamp when assembling a publication attestation.</item>
   <item>Document the existing release-contract module contract for Compass-aware maintenance.</item>
   <item>RFC-0107: add ScientificInputs, ProductVerdict, ScientificReport typed contracts and product verdict suppression.</item>
   <item>RFC-0108: add PublicProductRef, DisclosureReport, PUBLIC_PRODUCT_SCHEMAS typed contracts for private/public mart separation.</item>
@@ -512,17 +513,19 @@ export const resumeReplicaCopy = async (
   };
 };
 
+// @ai-invariant: Assembly must retain the exact timestamp included in the signed payload.
 export const createPublicationAttestation = (
   envelope: ReleaseEnvelope,
   replicaReceiptSha256s: string[],
   signingKeyId: string,
   signature: string,
+  attestedAt: string,
 ): PublicationAttestation => ({
   schema: "hdri-publication-attestation@1",
   releaseId: envelope.releaseId,
   envelopeSha256: createHash("sha256").update(JSON.stringify(envelope)).digest("hex"),
   replicaReceiptSha256s,
-  attestedAt: new Date().toISOString(),
+  attestedAt,
   signingKeyId,
   signature,
 });

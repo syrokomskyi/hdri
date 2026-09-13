@@ -8,6 +8,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>Use one attestation timestamp for signing and persisted evidence.</item>
   <item>Block unqualified direct releases before copying artifacts or loading signing keys.</item>
   <item>RFC-0031: split combined validate+seal+release into release-only. Validation moved to quarter:validate, sealing moved to SealCapsuleGogol.</item>
   <item>RFC-0109: replace --capsule/--validation/--replica-config/--vault-dir/--public-archive-dir with --release-input manifest. Build ReleaseEnvelope, resumable copy with read-back verify, validate replica independence, create PublicationAttestation, atomic publish. Remove QuarterReleaseManifest — forward-only replacement.</item>
@@ -18,7 +19,11 @@ import "@syrokomskyi/observatory-crypto/auto-env";
 import crypto, { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { evaluateProgramGate, verifyQuarterCapsuleArtifacts, type QuarterCapsule } from "@syrokomskyi/factory-core";
+import {
+  evaluateProgramGate,
+  verifyQuarterCapsuleArtifacts,
+  type QuarterCapsule,
+} from "@syrokomskyi/factory-core";
 import { canonicalize, loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
 import {
   createPublicationAttestation,
@@ -225,6 +230,7 @@ try {
 
 // --- Create PublicationAttestation ---
 const replicaReceiptSha256s = [await sha256File(replicaReceiptsPath)];
+const attestedAt = new Date().toISOString();
 const attestationSignature = crypto
   .sign(
     null,
@@ -235,7 +241,7 @@ const attestationSignature = crypto
           releaseId: envelope.releaseId,
           envelopeSha256,
           replicaReceiptSha256s,
-          attestedAt: new Date().toISOString(),
+          attestedAt,
           signingKeyId: signingKey.signingKeyId,
         }),
       )
@@ -249,6 +255,7 @@ const attestation = createPublicationAttestation(
   replicaReceiptSha256s,
   signingKey.signingKeyId,
   attestationSignature,
+  attestedAt,
 );
 
 // --- Copy attestation + receipts to each destination ---

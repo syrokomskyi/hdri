@@ -1,10 +1,12 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { createHash } from "node:crypto";
+import { createHash, generateKeyPairSync, sign, verify } from "node:crypto";
+import { canonicalize } from "@syrokomskyi/observatory-crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
   computeClosureDigest,
+  createPublicationAttestation,
   createReleaseEnvelope,
   validateReplicaIndependence,
   verifyReleaseEnvelope,
@@ -49,6 +51,41 @@ const makeEnvelope = () =>
     "d".repeat(64),
     "e".repeat(64),
   );
+
+it("keeps the signed timestamp so the assembled attestation verifies cryptographically", () => {
+  const envelope = makeEnvelope();
+  const attestedAt = "2026-04-01T00:00:00.000Z";
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  const payload = {
+    schema: "hdri-publication-attestation@1",
+    releaseId: envelope.releaseId,
+    envelopeSha256: createHash("sha256").update(JSON.stringify(envelope)).digest("hex"),
+    replicaReceiptSha256s: ["a".repeat(64)],
+    attestedAt,
+    signingKeyId: "fixture-key",
+  };
+  const signature = sign(
+    null,
+    createHash("sha256").update(canonicalize(payload)).digest(),
+    privateKey,
+  ).toString("base64url");
+  const attestation = createPublicationAttestation(
+    envelope,
+    payload.replicaReceiptSha256s,
+    payload.signingKeyId,
+    signature,
+    attestedAt,
+  );
+  const { signature: persistedSignature, ...persistedPayload } = attestation;
+  expect(
+    verify(
+      null,
+      createHash("sha256").update(canonicalize(persistedPayload)).digest(),
+      publicKey,
+      Buffer.from(persistedSignature, "base64url"),
+    ),
+  ).toBe(true);
+});
 
 const makeReceipt = (
   replicaId: string,
