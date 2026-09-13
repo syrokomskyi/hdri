@@ -55,9 +55,12 @@ export function ensureUniquePeriods(snapshots: PeriodSnapshot[]): void {
   }
 }
 
-export async function writePeriodSnapshot(snapshot: PeriodSnapshot): Promise<void> {
+export async function writePeriodSnapshot(
+  snapshot: PeriodSnapshot,
+  destDir: string = DASHBOARD_PUBLIC_DIR,
+): Promise<void> {
   console.log(`  · Writing public snapshot for ${snapshot.manifest.period}`);
-  const periodDir = path.join(DASHBOARD_PUBLIC_DIR, "periods", snapshot.manifest.period);
+  const periodDir = path.join(destDir, "periods", snapshot.manifest.period);
   await fs.mkdir(periodDir, { recursive: true });
   await Promise.all([
     writeJson(path.join(periodDir, "manifest.json"), snapshot.manifest),
@@ -69,7 +72,7 @@ export async function writePeriodSnapshot(snapshot: PeriodSnapshot): Promise<voi
   ]);
 }
 
-export async function writeCodebookYaml(): Promise<void> {
+export async function writeCodebookYaml(destDir: string = DASHBOARD_PUBLIC_DIR): Promise<void> {
   const codebookPath = path.resolve(process.cwd(), ".input", "codebook.yaml");
   const yamlText = await fs.readFile(codebookPath, "utf-8");
 
@@ -77,7 +80,7 @@ export async function writeCodebookYaml(): Promise<void> {
   const version = versionMatch ? versionMatch[1] : "v1.0.0";
   const filename = `codebook-observatory-${version}.yaml`;
 
-  const buildDestination = path.join(DASHBOARD_PUBLIC_DIR, filename);
+  const buildDestination = path.join(destDir, filename);
   await fs.writeFile(buildDestination, yamlText, "utf-8");
 
   await fs.mkdir(DASHBOARD_STATIC_PUBLIC_DIR, { recursive: true });

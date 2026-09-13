@@ -14,6 +14,7 @@
   <item>Run quarter-rebuild-verify (prepare + copy publication artifacts + verify) before writing validation report.</item>
   <item>Capture stderr from tool invocations for diagnostics instead of swallowing with stdio: pipe.</item>
   <item>RFC-0109: use --release-input contract. Invoke quarter-validate.ts instead of calling validateReleaseEvidence directly. No mutable overwrite of preliminary reports — immutable revisions via shared.ts.</item>
+  <item>RFC-0115: wire --input-manifest and --report-root through SCIENTIFIC_REPORTS registry. Remove --prepare/--candidate/--primary-public rebuild simulation.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -23,6 +24,7 @@ import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { outputRootDir } from "../config";
+import { SCIENTIFIC_REPORTS } from "../release/release-contract";
 
 export class ValidateQuarterGogol extends Gogol {
   override readonly id = "validate-quarter";
@@ -31,7 +33,6 @@ export class ValidateQuarterGogol extends Gogol {
     const { capsuleDir, brief } = ctx.state;
     if (!capsuleDir) throw new Error("ValidateQuarterGogol requires capsuleDir in pipeline state");
 
-    const manifestPath = path.join(capsuleDir, "capsule-manifest.json");
     const evidenceDir = path.join(capsuleDir, "artifacts", "qc", "release");
     const validationPath = path.join(evidenceDir, "validation-report.json");
 
@@ -154,35 +155,25 @@ export class ValidateQuarterGogol extends Gogol {
       path.join(capsuleDir, "artifacts", "qc", "score-report.json"),
     ]);
 
-    // 4. Empty-scratch rebuild verification
-    const scratchDir = path.join(outputRootDir, "scratch-rebuild", brief.period);
-    await fs.rm(scratchDir, { recursive: true, force: true });
-    runTool("quarter-rebuild-verify.ts", ["--prepare", "--scratch", scratchDir]);
-
-    // Copy publication artifacts to scratch (simulating independent rebuild from capsule)
-    const publicationDir = path.join(capsuleDir, "artifacts", "publication");
-    try {
-      const pubEntries = await fs.readdir(publicationDir, { withFileTypes: true });
-      for (const entry of pubEntries) {
-        if (entry.isFile()) {
-          await fs.copyFile(
-            path.join(publicationDir, entry.name),
-            path.join(scratchDir, entry.name),
-          );
-        }
-      }
-    } catch {
-      // publication dir may not exist — rebuild verify will report the mismatch
-    }
-
+    // 4. Invoke quarter-rebuild-verify with --input-manifest and --report-root
+    const inputManifestPath =
+      ctx.state.scientificInputPath ?? path.join(capsuleDir, "scientific-inputs.json");
+    const reportRoot = path.join(capsuleDir, "artifacts", "qc", "release");
     runTool("quarter-rebuild-verify.ts", [
-      "--candidate",
-      manifestPath,
-      "--scratch",
-      scratchDir,
-      "--primary-public",
-      publicationDir,
+      "--input-manifest",
+      inputManifestPath,
+      "--report-root",
+      reportRoot,
     ]);
+
+    // 4b. Verify all registry-declared scientific reports exist
+    for (const filename of Object.keys(SCIENTIFIC_REPORTS)) {
+      try {
+        await fs.access(path.join(evidenceDir, filename));
+      } catch {
+        throw new Error(`Missing scientific report from registry: ${filename}`);
+      }
+    }
 
     // 5. Invoke quarter-validate.ts with --release-input
     const releaseInputPath =
@@ -205,8 +196,5 @@ export class ValidateQuarterGogol extends Gogol {
         cause: error,
       });
     }
-
-    // Clean up scratch directory
-    await fs.rm(scratchDir, { recursive: true, force: true }).catch(() => undefined);
   }
 }

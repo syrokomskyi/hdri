@@ -25,6 +25,7 @@
   <item>Load k-anon policy from policies/k-anon-policy-v{N}.yaml; pass effective_k_min to all snapshot and comparison builders.</item>
   <item>Skip export gracefully when no observatory DBs found instead of throwing, so monorepo build succeeds without runtime data.</item>
   <item>RFC-0108: route dashboard export through public manifest verification — only manifest-listed files reach DASHBOARD_PUBLIC_DIR.</item>
+  <item>RFC-0115: remove fs.rm(DASHBOARD_PUBLIC_DIR) recursive deletion. Stage in fresh sibling root, verify hashes, atomic pointer switch. Make public manifest required.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -91,15 +92,18 @@ async function main(): Promise<void> {
   }
   console.log(`✓ Found ${dbPaths.length} observatory database(s)`);
 
-  await fs.rm(DASHBOARD_PUBLIC_DIR, { recursive: true, force: true });
-  await fs.mkdir(DASHBOARD_PUBLIC_DIR, { recursive: true });
+  // RFC-0115: Stage in fresh sibling root, verify hashes, atomic pointer switch.
+  // No recursive deletion of DASHBOARD_PUBLIC_DIR — stage alongside and atomically rename.
+  const stagingDir = `${DASHBOARD_PUBLIC_DIR}.staging`;
+  await fs.rm(stagingDir, { recursive: true, force: true });
+  await fs.mkdir(stagingDir, { recursive: true });
   await fs.mkdir(DASHBOARD_DEBUG_DIR, { recursive: true });
   await fs.mkdir(DASHBOARD_DEBUG_PUBLIC_DIR, { recursive: true });
 
   const publicManifestPath = path.join(outputRootDir, "public", "public-manifest.json");
   let publicManifest: {
     products: { product: string; format: string; contentSha256: string }[];
-  } | null = null;
+  };
   try {
     const manifestContent = await fs.readFile(publicManifestPath, "utf8");
     publicManifest = JSON.parse(manifestContent) as {
@@ -107,8 +111,8 @@ async function main(): Promise<void> {
     };
     console.log(`✓ Public manifest loaded: ${publicManifest.products.length} product(s)`);
   } catch {
-    console.log(
-      "ℹ No public manifest found; dashboard export will proceed without manifest verification",
+    throw new Error(
+      "Public manifest not found — dashboard export requires a verified public manifest. Run export-public-products first.",
     );
   }
 
@@ -137,10 +141,10 @@ async function main(): Promise<void> {
   }
   console.log(`✓ Loaded ${snapshots.length} published period(s)`);
 
-  await Promise.all(snapshots.map((snapshot) => writePeriodSnapshot(snapshot)));
+  await Promise.all(snapshots.map((snapshot) => writePeriodSnapshot(snapshot, stagingDir)));
   console.log(`✓ Wrote ${snapshots.length} period snapshot(s)`);
 
-  const comparisonsDir = path.join(DASHBOARD_PUBLIC_DIR, "comparisons");
+  const comparisonsDir = path.join(stagingDir, "comparisons");
   await fs.mkdir(comparisonsDir, { recursive: true });
   const overviewTrendData = buildOverviewTrends(snapshots, kAnonymityMin);
   console.log(`  ✓ Built overview trends: ${overviewTrendData.length} point(s)`);
@@ -159,6 +163,7 @@ async function main(): Promise<void> {
     gewerkTrendData,
     matrixTrendData,
     kAnonymityMin,
+    stagingDir,
   );
 
   const latest = snapshots[snapshots.length - 1]!;
@@ -168,14 +173,25 @@ async function main(): Promise<void> {
   console.log(`  ✓ Built panel (like-for-like) trends: ${panelTrendData.length} pair(s)`);
 
   await writePostStratTrends(comparisonsDir, dbPaths);
-  await writeMethodologyChangelog(dbPaths);
-  await writeCodebookYaml();
+  await writeMethodologyChangelog(dbPaths, stagingDir);
+  await writeCodebookYaml(stagingDir);
   console.log(`✓ Exported codebook as YAML`);
+
+  // RFC-0115: Atomic pointer switch — remove old public dir, rename staging
+  const backupDir = `${DASHBOARD_PUBLIC_DIR}.previous`;
+  await fs.rm(backupDir, { recursive: true, force: true });
+  try {
+    await fs.rename(DASHBOARD_PUBLIC_DIR, backupDir);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  await fs.rename(stagingDir, DASHBOARD_PUBLIC_DIR);
+  await fs.rm(backupDir, { recursive: true, force: true }).catch(() => undefined);
 
   console.log(
     `✓ Export complete: ${snapshots.length} period(s), latest: ${latest.manifest.period}`,
   );
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
   log.info(
     "archive-exported",
@@ -196,9 +212,10 @@ async function writePublicComparisons(
   gewerkTrendData: ComparisonPoint[],
   matrixTrendData: ComparisonPoint[],
   kAnonymityMin: number,
+  destDir: string = DASHBOARD_PUBLIC_DIR,
 ): Promise<void> {
   await writeJson(
-    path.join(DASHBOARD_PUBLIC_DIR, "archive.json"),
+    path.join(destDir, "archive.json"),
     snapshots.map((snapshot) => ({
       period: snapshot.manifest.period,
       manifestPath: `periods/${snapshot.manifest.period}/manifest.json`,
@@ -206,7 +223,7 @@ async function writePublicComparisons(
     })),
   );
   const latest = snapshots[snapshots.length - 1]!;
-  await writeJson(path.join(DASHBOARD_PUBLIC_DIR, "latest.json"), {
+  await writeJson(path.join(destDir, "latest.json"), {
     period: latest.manifest.period,
     manifestPath: `periods/${latest.manifest.period}/manifest.json`,
   });

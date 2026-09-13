@@ -126,7 +126,10 @@ export async function writePostStratTrends(
  * so it is a faithful, tamper-evident provenance trail. Absent run_methodology → empty
  * changelog (the Methodik page degrades to its static prose).
  */
-export async function writeMethodologyChangelog(dbPaths: string[]): Promise<void> {
+export async function writeMethodologyChangelog(
+  dbPaths: string[],
+  destDir: string = DASHBOARD_PUBLIC_DIR,
+): Promise<void> {
   const records: MethodologyRecord[] = [];
   for (const dbPath of dbPaths) {
     const db = new Database(dbPath, { readonly: true });
@@ -178,7 +181,7 @@ export async function writeMethodologyChangelog(dbPaths: string[]): Promise<void
   }
 
   const entries = buildChangelog(records);
-  await writeJson(path.join(DASHBOARD_PUBLIC_DIR, "methodology-changelog.json"), {
+  await writeJson(path.join(destDir, "methodology-changelog.json"), {
     kind: "observatory-methodology-changelog",
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),

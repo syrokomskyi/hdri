@@ -8,6 +8,7 @@
 <CHANGE_SUMMARY>
   <item>Add scoreCount, cohortId fields to PipelineState for interpret phase.</item>
   <item>RFC-0109: add releaseInputPath and releaseEnvelopePath to PipelineState.</item>
+  <item>RFC-0115: add scientificInputPath to PipelineState for registry-driven validation.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -33,6 +34,7 @@ export type PipelineState = {
   candidateManifestPath?: string;
   releaseInputPath?: string;
   releaseEnvelopePath?: string;
+  scientificInputPath?: string;
 };
 
 export type PipelineAiServices = Record<string, never>;

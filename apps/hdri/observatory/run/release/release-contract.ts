@@ -108,7 +108,7 @@ export interface ScientificInputs {
 }
 
 export interface ProductVerdict {
-  product: ScientificProduct;
+  product: PublicProductType;
   status: "eligible" | "suppressed";
   reasons: string[];
 }
