@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Inventory and preservation lock for Q2 evidence closure.</purpose>
+<purpose>Inventory exact Q2 source bytes with unique relative identities and fail-closed acquisition checks.</purpose>
 <non-goals>
   <item>Does not perform database snapshots or WAL handling.</item>
   <item>Does not sign manifests — see preserve.ts.</item>
@@ -9,17 +9,18 @@
 <CHANGE_SUMMARY>
   <item>RFC-0100: inventory and preservation lock.</item>
   <item>RFC-0100 review fix: remove dead code, delegate lock to shared @syrokomskyi/utils acquirePidLock (DNA-3).</item>
+  <item>Reject missing roots, duplicate identities and changed files; scan complete file streams for secrets.</item>
 </CHANGE_SUMMARY>
 */
 
-import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { assertCanonicalFilePath, assertDisjointPaths, inspectRetainedFile } from "@warpgogol/pipeline-node";
 
 import { acquirePidLock, type PidLockHandle } from "@syrokomskyi/utils";
 
 import type { ProtectedInput } from "./contracts.js";
+// @ai-invariant: Inventorying original evidence never creates locks, snapshots or any other source-side files.
 
 // ---------------------------------------------------------------------------
 // Preservation lock — delegates to shared PID-checked lock (DNA-3)
@@ -41,13 +42,7 @@ export const acquirePreservationLock = async (archiveRoot: string): Promise<Lock
 // ---------------------------------------------------------------------------
 
 export const sha256File = async (filePath: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const hash = createHash("sha256");
-    const stream = createReadStream(filePath);
-    stream.on("data", (chunk) => hash.update(chunk));
-    stream.once("error", reject);
-    stream.once("end", () => resolve(hash.digest("hex")));
-  });
+  (await inspectRetainedFile(filePath)).sha256;
 
 // ---------------------------------------------------------------------------
 // Inventory — enumerate resolved input paths
@@ -62,8 +57,6 @@ export type InventoryOptions = {
   roots: string[];
 };
 
-const SYMLINK_ESCAPES = /\.\./;
-
 const SECRET_PATTERNS = [
   /-----BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-----/,
   /AKIA[0-9A-Z]{16}/,
@@ -75,57 +68,34 @@ const detectSecret = (content: string): boolean =>
 
 export const inventorySources = async (opts: InventoryOptions): Promise<InventoryEntry[]> => {
   const entries: InventoryEntry[] = [];
-
-  for (const root of opts.roots) {
-    const resolvedRoot = path.resolve(root);
-
-    let dirEntries: string[];
-    try {
-      dirEntries = await fs.readdir(resolvedRoot, { recursive: true });
-    } catch {
-      continue;
-    }
-
-    for (const entry of dirEntries) {
-      const fullPath = path.resolve(resolvedRoot, entry);
-
-      // Reject symlinks and path escapes
-      const relative = path.relative(resolvedRoot, fullPath);
-      if (SYMLINK_ESCAPES.test(relative)) {
-        throw new Error(`Path escape detected: ${entry}`);
-      }
-
-      const stat = await fs.lstat(fullPath);
-      if (stat.isSymbolicLink()) {
-        throw new Error(`Symlink detected in source root: ${entry}`);
-      }
-      if (!stat.isFile()) continue;
-
-      // Detect secrets (read first 4KB for pattern matching)
-      const fd = await fs.open(fullPath, "r");
-      try {
-        const buffer = Buffer.alloc(4096);
-        const { bytesRead } = await fd.read(buffer, 0, 4096, 0);
-        const head = buffer.subarray(0, bytesRead).toString("utf8");
-        if (detectSecret(head)) {
-          throw new Error(`Detected secret in source file: ${entry}`);
-        }
-      } finally {
-        await fd.close();
-      }
-
-      const sha256 = await sha256File(fullPath);
-
-      entries.push({
-        absolutePath: fullPath,
-        role: entry,
-        access: "internal",
-        sha256,
-        bytes: stat.size,
-      });
-    }
+  if (!Array.isArray(opts.roots) || !opts.roots.length) throw new Error("SOURCE_ROOTS_REQUIRED");
+  const roots = [...opts.roots].sort();
+  for (const root of roots) {
+    await assertCanonicalFilePath(root);
+    if (root === path.parse(root).root || !(await fs.lstat(root)).isDirectory()) throw new Error("INVALID_SOURCE_ROOT");
   }
-
+  assertDisjointPaths(roots);
+  for (const [index, root] of roots.entries()) {
+    const visit = async (relative: string): Promise<void> => {
+      for (const name of (await fs.readdir(path.join(root, relative))).sort()) {
+        const local = path.join(relative, name);
+        const fullPath = path.join(root, local);
+        await assertCanonicalFilePath(fullPath);
+        const stat = await fs.lstat(fullPath);
+        if (stat.isDirectory()) { await visit(local); continue; }
+        if (!stat.isFile()) throw new Error("UNSUPPORTED_SOURCE_OBJECT");
+        if (entries.length >= 1_000_000) throw new Error("SOURCE_OBJECT_LIMIT_EXCEEDED");
+        let tail = "";
+        const digest = await inspectRetainedFile(fullPath, chunk => {
+          const text = tail + chunk.toString("utf8");
+          if (detectSecret(text)) throw new Error(`Detected secret in source file: ${local}`);
+          tail = text.slice(-256);
+        });
+        entries.push({ absolutePath: fullPath, role: `source-${String(index).padStart(4, "0")}/${local.split(path.sep).join("/")}`, access: "internal", ...digest });
+      }
+    };
+    await visit("");
+  }
   return entries;
 };
 
