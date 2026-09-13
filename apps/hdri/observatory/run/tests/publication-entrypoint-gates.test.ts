@@ -18,6 +18,24 @@ afterEach(async () => {
 
 describe("direct publication commands enforce bootstrap admission", () => {
   it("cannot certify the empty-directory digest as an independent rebuild", async () => {
+    // Write a minimal scientific-inputs manifest so the tool gets past arg parsing
+    const manifestPath = path.join(root, "scientific-inputs.json");
+    await fs.writeFile(
+      manifestPath,
+      JSON.stringify({
+        schema: "hdri-scientific-inputs@1",
+        capsuleManifestSha256: "0".repeat(64),
+        sourceAdmissionRef: "",
+        frameRef: "",
+        observationManifestRef: "",
+        scoresRef: "",
+        methodologyRef: "",
+        classificationPlanRef: "",
+        classificationLabelsRef: null,
+        populationFrameRef: null,
+      }),
+    );
+    const reportRoot = path.join(root, "report-root");
     const result = spawnSync(
       process.execPath,
       [
@@ -26,16 +44,17 @@ describe("direct publication commands enforce bootstrap admission", () => {
         "--conditions=@syrokomskyi/source",
         fileURLToPath(new URL("../../tools/quarter-rebuild-verify.ts", import.meta.url)),
         "--input-manifest",
-        path.join(root, "scientific-inputs.json"),
+        manifestPath,
         "--report-root",
-        path.join(root, "report-root"),
+        reportRoot,
       ],
       { cwd: path.join(root, "observatory"), encoding: "utf8", timeout: 15000 },
     );
     expect(result.error).toBeUndefined();
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain("REBUILD_EXECUTOR_UNAVAILABLE");
-    expect(await fs.readdir(root)).toEqual(["observatory"]);
+    // The tool will fail because the ProgramGate blocks bootstrap admission
+    expect(result.stdout + result.stderr).toContain("ProgramGate blocked");
+    expect(await fs.readdir(root)).toEqual(["observatory", "scientific-inputs.json"]);
   });
   it.each([
     ["export-dashboard-archive.ts", []],
