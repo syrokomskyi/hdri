@@ -135,7 +135,7 @@ pnpm run timestamp:publication:upgrade             # embed the confirmed attesta
 pnpm run timestamp:publication:verify              # re-hash the pinned files + verify the proof
 ```
 
-This writes `transparency/timestamps/<period>/publication.json` and `publication.json.ots`. **Commit both to the public repo** — the proof must travel with the source. `--no-stamp` writes the record offline (anchor later); `--period 2026-Q2` targets a specific period. See [`transparency/timestamps/README.md`](../../transparency/timestamps/README.md) for how a third party verifies it independently.
+This writes `transparency/timestamps/<period>/publication.json` and `publication.json.ots`. **Commit both to the public repo** — the proof must travel with the source. `--no-stamp` writes the record offline (anchor later); `--period 2026-Q2` targets a specific period. See [`transparency/timestamps/README.md`](../../../transparency/timestamps/README.md) for how a third party verifies it independently.
 
 ### 5. Verify vault signatures
 

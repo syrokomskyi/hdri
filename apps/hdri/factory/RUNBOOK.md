@@ -4,11 +4,11 @@ Operational guide for running the HDRI (Handwerk Digital Readiness Index) factor
 
 ## Current readiness — integration review, 2026-09-13
 
-Expanded live collection and publication remain blocked. The cross-session review found disconnected execution, capture, translation and release mechanisms despite implemented RFC statuses. Treat the architecture sections below as required contracts, not proof of operational readiness. Read the [review and remaining findings](../../../docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md) and the [corrective sequence](../../../docs/rfcs/rfc-0113-bind-hdri-admission-to-verified-quarter-evidence.md). The corrective RFCs are drafts, not authorization to run or publish.
+Expanded live collection and publication remain blocked. The cross-session review found disconnected execution, capture, translation and release mechanisms despite implemented RFC statuses. Treat the architecture sections below as required contracts, not proof of operational readiness. Read the [current review and remaining findings](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md) and the [corrective implementation order](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md). The machine is approved for offline qualification work; implementation status is not authorization to collect or publish.
 
-Entry points use fixed collect/publish operations; environment flags do not turn them into diagnostics. Direct release, promotion apply and dashboard exports also block before filesystem effects while verified receipt loading is absent. Use separate read-only diagnostics. Do not replace null references with invented digests or treat the current readiness text files as verified authority.
+Entry points use fixed collect/publish operations; environment flags do not turn them into diagnostics. Direct release, promotion apply and dashboard exports also block before filesystem effects while operational evidence verification is absent. Use separate read-only diagnostics. Do not replace null references with unchecked objects. Readiness digest text files are no longer supported.
 
-Independent rebuild currently fails with REBUILD_EXECUTOR_UNAVAILABLE before any filesystem effect. The empty-directory placeholder was removed; no replacement executor or operational restore proof is claimed. Original Q2 and prior quarter data must remain untouched.
+Independent rebuild currently stops at admission before reconstruction. Its behind-gate worker still needs the actual isolated production-path replacement; no operational restore proof is claimed. Original Q2 and prior quarter data must remain untouched.
 
 ## Pipeline Overview
 
