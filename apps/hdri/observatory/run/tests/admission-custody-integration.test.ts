@@ -20,6 +20,8 @@ import { describe, expect, it } from "vitest";
 import {
   createBootstrapAdmission,
   evaluateProgramGate,
+  verifyAdmissionInput,
+  toAdmissionInput,
   type VerifiedAdmissionInput,
 } from "@syrokomskyi/factory-core";
 import {
@@ -203,12 +205,20 @@ describe("RFC-0113 AC-3: unknown identity blocks baseline admission", () => {
 // ---------------------------------------------------------------------------
 
 describe("RFC-0113 AC-4: admission gate rejects mutated references", () => {
-  const baseAdmission: VerifiedAdmissionInput = {
-    ...createBootstrapAdmission({
-      period: "2026-q4",
-      capsuleId: "0198faaa-0000-7000-8000-000000000000",
-      operation: "publish",
+  const baseAdmission = createBootstrapAdmission({
+    period: "2026-q4",
+    capsuleId: "0198faaa-0000-7000-8000-000000000000",
+    operation: "publish",
+  });
+
+  // This fixture verifies the gate's dependency contract, not production signatures or closure.
+  const fixtureDeps = {
+    verifyEvidenceRef: async () => ({
+      valid: true,
+      keyClass: "fixture" as const,
+      scope: baseAdmission.scope,
     }),
+    sha256: (data: string) => createHash("sha256").update(data).digest("hex"),
   };
 
   it("blocks publish when preservation is null (bootstrap)", () => {
@@ -217,16 +227,19 @@ describe("RFC-0113 AC-4: admission gate rejects mutated references", () => {
     expect(gate.blockerCodes).toContain("MISSING_PRESERVATION_RECEIPT");
   });
 
-  it("blocks publish when preservation present but qualification missing", () => {
-    const admission: VerifiedAdmissionInput = {
-      ...baseAdmission,
-      preservation: {
-        schema: "hdri-preservation-receipt@1",
-        uri: "file:///fake/receipt.json",
-        bytes: 100,
-        sha256: "a".repeat(64),
+  it("blocks publish when preservation present but qualification missing", async () => {
+    const admission = await verifyAdmissionInput(
+      {
+        ...toAdmissionInput(baseAdmission),
+        preservation: {
+          schema: "hdri-preservation-receipt@1",
+          uri: "receipt.json",
+          bytes: 100,
+          sha256: "a".repeat(64),
+        },
       },
-    };
+      fixtureDeps,
+    );
     const gate = evaluateProgramGate(admission);
     expect(gate.status).toBe("blocked");
     expect(gate.blockerCodes).toContain("MISSING_COLLECTION_READINESS");
@@ -243,31 +256,45 @@ describe("RFC-0113 AC-4: admission gate rejects mutated references", () => {
     expect(gate.blockerCodes).toContain("MISSING_PRESERVATION_RECEIPT");
   });
 
-  it("allows publish when all evidence is present", () => {
-    const admission: VerifiedAdmissionInput = {
-      ...baseAdmission,
-      preservation: {
-        schema: "hdri-preservation-receipt@1",
-        uri: "file:///fake/preservation.json",
-        bytes: 100,
-        sha256: "a".repeat(64),
+  it("allows publish when all evidence passed the verifier contract", async () => {
+    const admission = await verifyAdmissionInput(
+      {
+        ...toAdmissionInput(baseAdmission),
+        preservation: {
+          schema: "hdri-preservation-receipt@1",
+          uri: "preservation.json",
+          bytes: 100,
+          sha256: "a".repeat(64),
+        },
+        qualification: {
+          schema: "hdri-quarter-readiness@1",
+          uri: "readiness.json",
+          bytes: 100,
+          sha256: "b".repeat(64),
+        },
+        publication: {
+          schema: "hdri-publication-readiness@1",
+          uri: "publication.json",
+          bytes: 100,
+          sha256: "c".repeat(64),
+        },
       },
-      qualification: {
-        schema: "hdri-quarter-readiness@1",
-        uri: "file:///fake/readiness.json",
-        bytes: 100,
-        sha256: "b".repeat(64),
-      },
-      publication: {
-        schema: "hdri-publication-readiness@1",
-        uri: "file:///fake/pub.json",
-        bytes: 100,
-        sha256: "c".repeat(64),
-      },
-    };
+      fixtureDeps,
+    );
     const gate = evaluateProgramGate(admission);
     expect(gate.status).toBe("allowed");
     expect(gate.blockerCodes).toEqual([]);
+  });
+
+  it("rejects copying bootstrap authority and attaching unverified references", () => {
+    const fake = { schema: "receipt@1", uri: "invented.json", bytes: 100, sha256: "a".repeat(64) };
+    const copied: VerifiedAdmissionInput = {
+      ...baseAdmission,
+      preservation: fake,
+      qualification: fake,
+      publication: fake,
+    };
+    expect(() => evaluateProgramGate(copied)).toThrow("UNVERIFIED_ADMISSION_INPUT");
   });
 });
 
