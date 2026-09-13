@@ -224,10 +224,7 @@ When adding a new audit or crawl gogol, extend the relevant base class or import
 
 ## Program Gate (RFC-0099)
 
-The 2026-09-13 integration review found that the contracts below are not fully
-wired into the live chain. Read `docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md`
-and the draft corrective sequence RFC-0113–0115 before modifying this area.
-Do not infer operational readiness from a terminal RFC status or a helper test.
+The 2026-09-13 integration review found that the contracts below are not fully wired into the live chain. Read `docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md` and the draft corrective sequence RFC-0113–0115 before modifying this area. Do not infer operational readiness from a terminal RFC status or a helper test.
 
 Every factory app's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomskyi/factory-core` after `bootstrapBrief()` and before `runPipelineEngine()`. The gate uses operation `"collect"` for factory apps.
 
@@ -240,11 +237,7 @@ Every factory app's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomsky
 
 ## Crash-safe execution (RFC-0101)
 
-The durable helper exposes the intended SQLite execution contract, but existing
-collectors still use the older execution store. RFC-0114 proposes the cutover;
-the invariants below are requirements, not claims that all callers meet them.
-The current helper rejects conflicting measurement rewrites and never revives an
-older epoch after a newer epoch is released.
+The durable helper exposes the intended SQLite execution contract, but existing collectors still use the older execution store. RFC-0114 proposes the cutover; the invariants below are requirements, not claims that all callers meet them. The current helper rejects conflicting measurement rewrites and never revives an older epoch after a newer epoch is released.
 
 ### Execution-state invariants
 
@@ -288,8 +281,7 @@ homepage-capture → link-discovery → detected-page-capture → signal-extract
 ### Pagination and checkpointing
 
 - Extraction runner processes at most 256 pending rows per batch with keyset pagination.
-- Full-table result accumulation remains a review finding; do not claim bounded
-  execution from paginated input reads alone.
+- Full-table result accumulation remains a review finding; do not claim bounded execution from paginated input reads alone.
 
 ### Coverage diagnostic
 
@@ -304,3 +296,20 @@ Source admission is manifest-based only. `DiscoverSourcesGogol` requires `inputM
 `EmitBundleGogol` refuses emission unless `translationClosure` exists, has zero unresolved references, and expected/emitted key hashes match.
 
 The `--verify-inputs` CLI flag runs `validateManifestSet` in read-only diagnostic mode, emitting JSON with `{ schema, operation, status, inputFingerprint, evidenceRefs, violations }`.
+
+## RFC-0113: Verified admission and custody
+
+### Typed admission boundary
+
+All factory entry points use `createBootstrapAdmission()` from `@syrokomskyi/factory-core` to construct a `VerifiedAdmissionInput` before calling `evaluateProgramGate()`. The old string-based `ProgramGateInput` is removed. Evidence refs are typed `EvidenceRef` objects with `schema`, `uri`, `bytes`, and `sha256` — not arbitrary strings.
+
+### Fail-closed contract
+
+- Bootstrap state (all refs `null`) blocks all mutating operations with `MISSING_PRESERVATION_RECEIPT`, `MISSING_COLLECTION_READINESS`, `MISSING_PUBLICATION_READINESS`.
+- A collection receipt alone does not authorize publication — the gate distinguishes `collect` from `publish`.
+- Environment flags cannot turn mutating pipelines into diagnostics.
+- `createBootstrapAdmission` is the only way to construct the initial admission state.
+
+### Append-only quarter ledger
+
+`quarter:init` writes per-period immutable revisions to `quarter-ledger/` with chained digests. Old heads are preserved byte-for-byte. The ledger index tracks all revisions atomically. See `apps/hdri/factory/RUNBOOK.md` § Verified admission and custody.

@@ -100,29 +100,44 @@ See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
 
 ## Program Gate (RFC-0099)
 
-The 2026-09-13 integration review rejects production readiness despite terminal
-RFC statuses. Read `docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md`
-and draft RFC-0113–0115. Contract descriptions below do not establish that their
-producers and consumers are connected. Never replace missing operational proof
-with a fixture receipt.
+The 2026-09-13 integration review rejects production readiness despite terminal RFC statuses. Read `docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md` and draft RFC-0113–0115. Contract descriptions below do not establish that their producers and consumers are connected. Never replace missing operational proof with a fixture receipt.
 
 The observatory's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomskyi/factory-core` after `bootstrapBrief()` and before `runPipelineEngine()`. The gate uses operation `"publish"` for the observatory.
 
 ### Fail-closed contract
 
-- Without preservation, collection, and publication readiness evidence, the gate blocks the run with stable blocker codes (`NO_PRESERVATION_RECEIPT`, `NO_COLLECTION_READINESS`, `NO_PUBLICATION_READINESS`).
+- Without preservation, collection, and publication readiness evidence, the gate blocks the run with stable blocker codes (`MISSING_PRESERVATION_RECEIPT`, `MISSING_COLLECTION_READINESS`, `MISSING_PUBLICATION_READINESS`).
 - A collection receipt alone does not authorize publication — the gate distinguishes collect from publish operations (AC-2, AC-4).
 - Mutating entry points use fixed publish admission. Environment variables cannot turn them into diagnostics; separate read-only tools remain available.
 - Bootstrap state (all refs `null`) correctly blocks — this is the intended initial behavior per AC-5.
-- Direct quarter:release, promote apply and both dashboard exporters also enforce the blocked bootstrap gate before filesystem effects. Verified receipt loading remains unimplemented.
+- Direct quarter:release, promote apply and both dashboard exporters also enforce the blocked bootstrap gate before filesystem effects.
+- All entry points use `createBootstrapAdmission()` to construct `VerifiedAdmissionInput` — the old string-based `ProgramGateInput` is removed (RFC-0113).
+
+## Verified admission and custody (RFC-0113)
+
+### Typed admission boundary
+
+All observatory entry points use `createBootstrapAdmission()` from `@syrokomskyi/factory-core` to construct a `VerifiedAdmissionInput` before calling `evaluateProgramGate()`. Evidence refs are typed `EvidenceRef` objects with `schema`, `uri`, `bytes`, and `sha256` — not arbitrary strings.
+
+### Preservation (A1)
+
+`preserve:q2` performs real Q2 preservation with SQLite snapshotting, per-destination receipts, and hash-once-copy-exact semantics. `baseline:import` converts archived Q2 evidence with identity mapping — unknown/ambiguous identities block admission. See `apps/hdri/factory/RUNBOOK.md` § Verified admission and custody.
+
+### Append-only quarter ledger (A3)
+
+`quarter:init` writes per-period immutable revisions to `quarter-ledger/` with chained digests. Old heads are preserved byte-for-byte. The ledger index tracks all revisions atomically.
+
+### Policy manifest authentication
+
+`preservation:check` accepts `--manifest-sha256 <hash>` to authenticate the policy manifest against a verified SHA-256 hash before using it.
+
+### Quarter readiness from verified evidence
+
+`quarter:readiness` accepts `--evidence-input <path>` pointing to an `AdmissionInput` JSON file. Evidence refs are extracted and verified from the typed input.
 
 ## Preservation and Baseline Import (RFC-0100)
 
-Offline preservation and baseline conversion are not operationally verified.
-The current converter does not materialize the required baseline records or a real
-comparison. Do not use its receipt for production admission. The review found
-replica grouping/signature-verification gaps; RFC-0113 A1 specifies their closure.
-Unknown historical identities now fail instead of receiving invented IDs.
+Offline preservation and baseline conversion are not operationally verified. The current converter does not materialize the required baseline records or a real comparison. Do not use its receipt for production admission. The review found replica grouping/signature-verification gaps; RFC-0113 A1 specifies their closure. Unknown historical identities now fail instead of receiving invented IDs.
 
 ### Scripts
 
@@ -232,19 +247,11 @@ Publish immutable release envelopes with resumable replication, read-back verifi
 
 ## Independent rebuild status
 
-`quarter:rebuild-verify` currently throws `REBUILD_EXECUTOR_UNAVAILABLE` before
-filesystem effects. Its former placeholder created an empty public directory
-without reconstruction; that implementation was removed. No receipt is emitted.
-RFC-0115 C2 proposes the actual isolated reconstruction.
+`quarter:rebuild-verify` currently throws `REBUILD_EXECUTOR_UNAVAILABLE` before filesystem effects. Its former placeholder created an empty public directory without reconstruction; that implementation was removed. No receipt is emitted. RFC-0115 C2 proposes the actual isolated reconstruction.
 
-`RebuildInput`/`RebuildReceipt` types and validators remain library contracts,
-not proof of execution. `RebuildSandbox` is an opt-in JS wrapper, not an enforced
-filesystem/network/native-process boundary; do not use its log hash as operational
-isolation proof. No runtime estimate or two-host equivalence is established.
+`RebuildInput`/`RebuildReceipt` types and validators remain library contracts, not proof of execution. `RebuildSandbox` is an opt-in JS wrapper, not an enforced filesystem/network/native-process boundary; do not use its log hash as operational isolation proof. No runtime estimate or two-host equivalence is established.
 
-Publication attestation assembly now requires the exact already-signed timestamp.
-Keep that value identical between signature payload and serialized attestation;
-release retry/closure integration remains open.
+Publication attestation assembly now requires the exact already-signed timestamp. Keep that value identical between signature payload and serialized attestation; release retry/closure integration remains open.
 
 ## Quarterly continuity and obsolete path retirement (RFC-0112)
 
@@ -279,18 +286,11 @@ Enforce calendar-continuous quarter ledger, retire `quarter:seal-legacy`, and ga
 
 Operators produce these files from the corresponding pipeline steps (preservation, qualification, capacity report). The `obsolete-runtime-remains.flag` is a zero-byte sentinel — its presence means an obsolete runtime path was detected and not yet removed.
 
-These text files are not verified scoped receipts and must not unlock production.
-The current readiness command cannot authenticate their claims. RFC-0113 proposes
-replacement with actual verified references; do not bypass the fixed entry-point gate.
+These text files are not verified scoped receipts and must not unlock production. The current readiness command cannot authenticate their claims. RFC-0113 proposes replacement with actual verified references; do not bypass the fixed entry-point gate.
 
 ### Exact inventory integrity check
 
-`preservation:check --archive-root <dir> --policy <file>` requires a nonempty
-JSON map of exact relative POSIX paths to lowercase SHA-256 digests. Keep this
-policy outside the scanned closure. Missing, unexpected, corrupt, unsafe or
-symlinked objects fail; only hash-matching listed bytes count as verified.
-The map itself must be authenticated upstream: this diagnostic does not prove
-signature validity or physical replica independence.
+`preservation:check --archive-root <dir> --policy <file>` requires a nonempty JSON map of exact relative POSIX paths to lowercase SHA-256 digests. Keep this policy outside the scanned closure. Missing, unexpected, corrupt, unsafe or symlinked objects fail; only hash-matching listed bytes count as verified. The map itself must be authenticated upstream: this diagnostic does not prove signature validity or physical replica independence.
 
 ### `preservation:check` performance estimate
 

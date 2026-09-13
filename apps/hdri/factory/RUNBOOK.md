@@ -4,24 +4,11 @@ Operational guide for running the HDRI (Handwerk Digital Readiness Index) factor
 
 ## Current readiness — integration review, 2026-09-13
 
-Expanded live collection and publication remain blocked. The cross-session review
-found disconnected execution, capture, translation and release mechanisms despite
-implemented RFC statuses. Treat the architecture sections below as required
-contracts, not proof of operational readiness. Read the
-[review and remaining findings](../../../docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md)
-and the [corrective sequence](../../../docs/rfcs/rfc-0113-bind-hdri-admission-to-verified-quarter-evidence.md).
-The corrective RFCs are drafts, not authorization to run or publish.
+Expanded live collection and publication remain blocked. The cross-session review found disconnected execution, capture, translation and release mechanisms despite implemented RFC statuses. Treat the architecture sections below as required contracts, not proof of operational readiness. Read the [review and remaining findings](../../../docs/reviews/code/apps-hdri/review-2026-09-12-23-55-apps-hdri.md) and the [corrective sequence](../../../docs/rfcs/rfc-0113-bind-hdri-admission-to-verified-quarter-evidence.md). The corrective RFCs are drafts, not authorization to run or publish.
 
-Entry points use fixed collect/publish operations; environment flags do not turn
-them into diagnostics. Direct release, promotion apply and dashboard exports also
-block before filesystem effects while verified receipt loading is absent.
-Use separate read-only diagnostics. Do not replace null references with invented
-digests or treat the current readiness text files as verified authority.
+Entry points use fixed collect/publish operations; environment flags do not turn them into diagnostics. Direct release, promotion apply and dashboard exports also block before filesystem effects while verified receipt loading is absent. Use separate read-only diagnostics. Do not replace null references with invented digests or treat the current readiness text files as verified authority.
 
-Independent rebuild currently fails with REBUILD_EXECUTOR_UNAVAILABLE before any
-filesystem effect. The empty-directory placeholder was removed; no replacement
-executor or operational restore proof is claimed. Original Q2 and prior quarter
-data must remain untouched.
+Independent rebuild currently fails with REBUILD_EXECUTOR_UNAVAILABLE before any filesystem effect. The empty-directory placeholder was removed; no replacement executor or operational restore proof is claimed. Original Q2 and prior quarter data must remain untouched.
 
 ## Pipeline Overview
 
@@ -68,7 +55,7 @@ All live entry-point evidence refs remain `null`; verified receipt loading is no
 
 ### Blocker codes
 
-When blocked, the gate reports stable codes: `NO_PRESERVATION_RECEIPT`, `NO_COLLECTION_READINESS`, `NO_PUBLICATION_READINESS`, `MISSING_PERIOD`. Each code names the specific missing evidence, allowing targeted remediation rather than blanket suppression.
+When blocked, the gate reports stable codes: `MISSING_PRESERVATION_RECEIPT`, `MISSING_COLLECTION_READINESS`, `MISSING_PUBLICATION_READINESS`, `MISSING_PERIOD`. Each code names the specific missing evidence, allowing targeted remediation rather than blanket suppression.
 
 ---
 
@@ -532,3 +519,33 @@ If a historical quarter is missing (no predecessor capsule found), the ledger cr
 ### Obsolete path retirement
 
 `quarter:seal-legacy` (RFC-0045) has been removed. No legacy dual mode survives. The readiness gate rejects any remaining obsolete runtime entries with `OBSOLETE_RUNTIME_REMAINS` blocker.
+
+---
+
+## Verified admission and custody (RFC-0113)
+
+### Typed admission input
+
+All factory and observatory entry points use `VerifiedAdmissionInput` from `@syrokomskyi/factory-core` instead of the old string-based `ProgramGateInput`. The admission gate (`evaluateProgramGate`) now consumes typed `EvidenceRef` objects with `schema`, `uri`, `bytes`, and `sha256` fields — not arbitrary string digests.
+
+- **`createBootstrapAdmission`** creates a `VerifiedAdmissionInput` with all evidence refs set to `null` — the initial blocked state.
+- **`AdmissionInput`** (schema `hdri-admission-input@1`) is the JSON contract for loading verified evidence from disk.
+- Each `EvidenceRef` carries a 64-character hex `sha256` digest. Invalid digests are rejected at parse time.
+
+### Preservation (A1)
+
+`preserve:q2` performs real Q2 preservation with SQLite snapshotting, per-destination receipts, and hash-once-copy-exact semantics. Source and destination directories must not overlap. Each destination has independent failure domain, medium, and credential boundary. Content manifests are signed with Ed25519 and written at every destination.
+
+`baseline:import` converts archived Q2 evidence to current-format baseline with identity mapping. Unknown/ambiguous historical identities block admission — no invented canonical IDs. The conversion produces a detailed comparison report with per-table counts and zero unexplained differences.
+
+### Append-only quarter ledger (A3)
+
+`quarter:init` writes per-period immutable revisions to `quarter-ledger/` instead of overwriting `quarter-record.json`. Each revision is chained to its predecessor via `previousRevisionDigest`. Old heads are preserved byte-for-byte. The ledger index (`ledger-index.json`) tracks all revisions atomically.
+
+### Policy manifest authentication
+
+`preservation:check` accepts `--manifest-sha256 <hash>` to authenticate the policy manifest against a verified SHA-256 hash before using it. Unauthenticated policy files are rejected.
+
+### Quarter readiness from verified evidence
+
+`quarter:readiness` accepts `--evidence-input <path>` pointing to an `AdmissionInput` JSON file. Evidence refs are extracted and verified from the typed input instead of hashing arbitrary files. Unverified strings without valid SHA-256 digests are rejected.
