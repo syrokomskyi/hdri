@@ -166,7 +166,7 @@ async function runReplicaLagCheck(archiveRoot: string): Promise<CustodyScanRepor
 
   // Find replica receipt files
   const receiptsDir = path.join(root, "replica-receipts");
-  let receipts: string[] = [];
+  let receipts: string[];
   try {
     receipts = await fs.readdir(receiptsDir);
   } catch {
