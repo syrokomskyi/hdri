@@ -18,7 +18,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { evaluateProgramGate } from "@syrokomskyi/factory-core";
+import { evaluateProgramGate, createBootstrapAdmission } from "@syrokomskyi/factory-core";
 import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { loadKAnonPolicy, type KAnonPolicy } from "./k-anon-policy";
 
@@ -121,13 +121,9 @@ const log = createJsonLogger({ app: "observatory", gogol: "export-dashboard-data
 async function main(): Promise<void> {
   // @ai-invariant: No dashboard writes before verified publication admission.
   // No authoritative receipt loader is wired yet; an unknown period is not an authorization.
-  const gate = evaluateProgramGate({
-    operation: "publish",
-    period: "",
-    preservationRef: null,
-    collectionReadinessRef: null,
-    publicationReadinessRef: null,
-  });
+  const gate = evaluateProgramGate(
+    createBootstrapAdmission({ period: "", capsuleId: "unknown", operation: "publish" }),
+  );
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
   }

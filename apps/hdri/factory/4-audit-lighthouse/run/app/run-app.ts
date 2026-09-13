@@ -28,7 +28,11 @@ import {
 } from "@warpgogol/pipeline-core";
 import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
 import { periodFromSourceToken } from "@syrokomskyi/observatory-crypto";
-import { resolveQuarterScopedUpstreamDbPath, evaluateProgramGate } from "@syrokomskyi/factory-core";
+import {
+  resolveQuarterScopedUpstreamDbPath,
+  evaluateProgramGate,
+  createBootstrapAdmission,
+} from "@syrokomskyi/factory-core";
 import { inputDir, briefInputDir, outputRootDir, factoryRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
@@ -45,14 +49,14 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
 
   const { brief } = await bootstrapBrief();
 
-  // RFC-0099: ProgramGate fail-closed check
-  const gate = evaluateProgramGate({
-    operation: "collect",
-    period: brief.sourceToken,
-    preservationRef: null,
-    collectionReadinessRef: null,
-    publicationReadinessRef: null,
-  });
+  // RFC-0113: verified admission gate (bootstrap — all evidence refs null)
+  const gate = evaluateProgramGate(
+    createBootstrapAdmission({
+      period: brief.sourceToken,
+      capsuleId: "unknown",
+      operation: "collect",
+    }),
+  );
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
   }

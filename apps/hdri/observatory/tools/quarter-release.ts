@@ -21,6 +21,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   evaluateProgramGate,
+  createBootstrapAdmission,
   verifyQuarterCapsuleArtifacts,
   type QuarterCapsule,
 } from "@syrokomskyi/factory-core";
@@ -77,13 +78,13 @@ const replicaConfigPath = path.resolve(releaseInput.replicaConfigPath);
 const sealedCapsule = JSON.parse(await fs.readFile(capsuleManifestPath, "utf8")) as QuarterCapsule;
 if (sealedCapsule.state !== "sealed") throw new Error("Release requires a sealed capsule manifest");
 // @ai-invariant: A sealed measurement capsule alone does not authorize publication.
-const gate = evaluateProgramGate({
-  operation: "publish",
-  period: sealedCapsule.period,
-  preservationRef: null,
-  collectionReadinessRef: null,
-  publicationReadinessRef: null,
-});
+const gate = evaluateProgramGate(
+  createBootstrapAdmission({
+    period: sealedCapsule.period,
+    capsuleId: sealedCapsule.capsuleId,
+    operation: "publish",
+  }),
+);
 if (gate.status === "blocked") {
   throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
 }

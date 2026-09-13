@@ -16,7 +16,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { evaluateProgramGate } from "@syrokomskyi/factory-core";
+import { evaluateProgramGate, createBootstrapAdmission } from "@syrokomskyi/factory-core";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
 import { collectFindings, formatReport } from "./validate-core";
 
@@ -118,13 +118,13 @@ async function main(): Promise<void> {
   const period = argValue("--period");
   // @ai-invariant: Dry-run validation remains available; apply cannot bypass publication readiness.
   if (APPLY) {
-    const programGate = evaluateProgramGate({
-      operation: "publish",
-      period: period ?? "",
-      preservationRef: null,
-      collectionReadinessRef: null,
-      publicationReadinessRef: null,
-    });
+    const programGate = evaluateProgramGate(
+      createBootstrapAdmission({
+        period: period ?? "",
+        capsuleId: "unknown",
+        operation: "publish",
+      }),
+    );
     if (programGate.status === "blocked") {
       throw new Error(`ProgramGate blocked: ${programGate.blockerCodes.join(", ")}`);
     }
