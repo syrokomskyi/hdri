@@ -10,6 +10,7 @@
   <item>RFC-0108: add PublicProductRef, DisclosureReport, PUBLIC_PRODUCT_SCHEMAS typed contracts for private/public mart separation.</item>
   <item>RFC-0109: add ReleaseEnvelope, ReleaseInput, PublicationAttestation, new ReplicaReceipt schema. Remove validateReleaseEvidence and N+8+3 arithmetic. Add acyclic closure verification, resumable copy, independence validation, and attestation delivery.</item>
   <item>RFC-0110: replace RebuildReceipt with hdri-independent-rebuild@1 schema. Add RebuildInput, computeInputClosureSha256, createRebuildReceipt, verifyRebuildReceipt.</item>
+  <item>RFC-0115: add ExecutedStageProof, OperationalProof interfaces. Extend SCIENTIFIC_REPORTS registry with per-producer input schema, validator and affected products. Add complementary suppression cross-format/cross-quarter checks.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -17,27 +18,79 @@ import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { CapsuleArtifact, QuarterCapsule } from "@syrokomskyi/factory-core";
+import type { CapsuleArtifact, EvidenceRef, QuarterCapsule } from "@syrokomskyi/factory-core";
 
 export const SCIENTIFIC_REPORTS = {
-  "q2-restore.json": { reportType: "q2-restore", schema: "hdri-scientific-report@1" },
-  "source-qc.json": { reportType: "source-qc", schema: "hdri-scientific-report@1" },
-  "classification-qc.json": { reportType: "classification-qc", schema: "hdri-scientific-report@1" },
-  "comparability.json": { reportType: "comparability", schema: "hdri-scientific-report@1" },
-  "availability.json": { reportType: "availability", schema: "hdri-scientific-report@1" },
+  "q2-restore.json": {
+    reportType: "q2-restore",
+    schema: "hdri-scientific-report@1",
+    producer: "scientific-reports/q2-restore.ts",
+    inputSchema: "hdri-scientific-inputs@1",
+    validator: "verifyQ2RestoreReport",
+    affectedProducts: ["cross-section", "panel", "availability", "post-stratified"] as const,
+  },
+  "source-qc.json": {
+    reportType: "source-qc",
+    schema: "hdri-scientific-report@1",
+    producer: "scientific-reports/source-qc.ts",
+    inputSchema: "hdri-scientific-inputs@1",
+    validator: "verifySourceQcReport",
+    affectedProducts: ["cross-section", "panel", "availability"] as const,
+  },
+  "classification-qc.json": {
+    reportType: "classification-qc",
+    schema: "hdri-scientific-report@1",
+    producer: "scientific-reports/classification-qc.ts",
+    inputSchema: "hdri-scientific-inputs@1",
+    validator: "verifyClassificationQcReport",
+    affectedProducts: ["cross-section", "post-stratified"] as const,
+  },
+  "comparability.json": {
+    reportType: "comparability",
+    schema: "hdri-scientific-report@1",
+    producer: "scientific-reports/methodology-compare.ts",
+    inputSchema: "hdri-scientific-inputs@1",
+    validator: "verifyComparabilityReport",
+    affectedProducts: ["panel"] as const,
+  },
+  "availability.json": {
+    reportType: "availability",
+    schema: "hdri-scientific-report@1",
+    producer: "scientific-reports/availability-report.ts",
+    inputSchema: "hdri-scientific-inputs@1",
+    validator: "verifyAvailabilityReport",
+    affectedProducts: ["availability"] as const,
+  },
   "privacy-disclosure.json": {
     reportType: "privacy-disclosure",
     schema: "hdri-scientific-report@1",
+    producer: "scientific-reports/privacy-review.ts",
+    inputSchema: "hdri-scientific-inputs@1",
+    validator: "verifyPrivacyDisclosureReport",
+    affectedProducts: ["cross-section", "panel", "availability", "post-stratified"] as const,
   },
   "methodology-snapshot.json": {
     reportType: "methodology-snapshot",
     schema: "hdri-scientific-report@1",
+    producer: "scientific-reports/methodology-snapshot.ts",
+    inputSchema: "hdri-scientific-inputs@1",
+    validator: "verifyMethodologySnapshotReport",
+    affectedProducts: ["methodology"] as const,
   },
-  "reconciliation.json": { reportType: "reconciliation", schema: "hdri-scientific-report@1" },
+  "reconciliation.json": {
+    reportType: "reconciliation",
+    schema: "hdri-scientific-report@1",
+    producer: "scientific-reports/reconcile-counts.ts",
+    inputSchema: "hdri-scientific-inputs@1",
+    validator: "verifyReconciliationReport",
+    affectedProducts: ["cross-section", "panel", "availability", "post-stratified"] as const,
+  },
 } as const;
 
 export type ScientificReportType =
   (typeof SCIENTIFIC_REPORTS)[keyof typeof SCIENTIFIC_REPORTS]["reportType"];
+
+export type ScientificReportEntry = (typeof SCIENTIFIC_REPORTS)[keyof typeof SCIENTIFIC_REPORTS];
 
 export type ScientificProduct = "cross-section" | "panel" | "availability" | "post-stratified";
 
@@ -92,6 +145,30 @@ export interface DisclosureReport {
   effectiveK: number;
   status: "pass" | "fail";
   violations: string[];
+}
+
+// --- RFC-0115: Executed stage and operational proof contracts ---
+
+export interface ExecutedStageProof {
+  stage: string;
+  inputFingerprint: string;
+  inputRefs: readonly EvidenceRef[];
+  outputRefs: readonly EvidenceRef[];
+  executionRef: EvidenceRef;
+  verificationRef: EvidenceRef;
+}
+
+export interface OperationalProof {
+  schema: "hdri-operational-proof@1";
+  kind: "qualification" | "restore" | "custody";
+  implementationFingerprint: string;
+  policySha256: string;
+  runnerProfileRef: EvidenceRef;
+  fixtureManifestRef: EvidenceRef | null;
+  stages: readonly ExecutedStageProof[];
+  measurementsRef: EvidenceRef;
+  status: "pass" | "fail";
+  signingKeyId: string;
 }
 
 export const PUBLIC_PRODUCT_SCHEMAS: Record<
@@ -562,4 +639,80 @@ export const artifactForFile = async (
   const absolute = path.join(capsuleDir, uri);
   const stat = await fs.stat(absolute);
   return { stage, uri, sha256: await sha256File(absolute), bytes: stat.size };
+};
+
+// --- RFC-0115: Complementary suppression cross-format/cross-quarter checks ---
+
+export interface ProductDisclosureEntry {
+  product: PublicProductType;
+  format: "csv" | "json";
+  contentSha256: string;
+  n: number;
+}
+
+export interface ComplementarySuppressionResult {
+  status: "pass" | "fail";
+  violations: string[];
+  crossFormatMismatches: string[];
+  crossQuarterRegressions: string[];
+}
+
+export const checkComplementarySuppression = (
+  currentProducts: readonly ProductDisclosureEntry[],
+  priorProducts: readonly ProductDisclosureEntry[],
+  effectiveK: number,
+): ComplementarySuppressionResult => {
+  const violations: string[] = [];
+  const crossFormatMismatches: string[] = [];
+  const crossQuarterRegressions: string[] = [];
+
+  const byProduct = new Map<PublicProductType, ProductDisclosureEntry[]>();
+  for (const entry of currentProducts) {
+    const list = byProduct.get(entry.product) ?? [];
+    list.push(entry);
+    byProduct.set(entry.product, list);
+  }
+
+  for (const [product, entries] of byProduct) {
+    if (entries.length > 1) {
+      const ns = new Set(entries.map((e) => e.n));
+      if (ns.size > 1) {
+        crossFormatMismatches.push(
+          `cross_format_n_mismatch:${product}: ${entries.map((e) => `${e.format}=${e.n}`).join(", ")}`,
+        );
+        violations.push(`complementary_suppression_cross_format:${product}`);
+      }
+    }
+    for (const entry of entries) {
+      if (entry.n < effectiveK) {
+        violations.push(`below_k_threshold:${product}:${entry.format}:n=${entry.n}`);
+      }
+    }
+  }
+
+  const priorByProduct = new Map<PublicProductType, number>();
+  for (const entry of priorProducts) {
+    const existing = priorByProduct.get(entry.product);
+    if (existing === undefined || entry.n > existing) {
+      priorByProduct.set(entry.product, entry.n);
+    }
+  }
+
+  for (const [product, entries] of byProduct) {
+    const currentMaxN = Math.max(...entries.map((e) => e.n));
+    const priorN = priorByProduct.get(product);
+    if (priorN !== undefined && currentMaxN > priorN) {
+      crossQuarterRegressions.push(
+        `cross_quarter_n_regression:${product}: prior=${priorN} current=${currentMaxN}`,
+      );
+      violations.push(`complementary_suppression_cross_quarter:${product}`);
+    }
+  }
+
+  return {
+    status: violations.length === 0 ? "pass" : "fail",
+    violations,
+    crossFormatMismatches,
+    crossQuarterRegressions,
+  };
 };
