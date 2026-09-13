@@ -8,12 +8,16 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0112: add quarter:readiness tool that binds evidence digests into ReadinessReceipt.</item>
+  <item>RFC-0113 A2: accept --evidence-input path to AdmissionInput JSON; verify evidence refs instead of hashing arbitrary files; reject unverified strings.</item>
 </CHANGE_SUMMARY>
 */
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
+  AdmissionParseError,
+  type AdmissionInput,
+  type EvidenceRef,
   createReadinessReceipt,
   validateReadinessReceipt,
   type ReadinessReceipt,
@@ -29,6 +33,7 @@ const hasFlag = (name: string): boolean => process.argv.includes(name);
 const jsonOutput = hasFlag("--json");
 const periodArg = arg("--period");
 const inputArg = arg("--input");
+const evidenceInputArg = arg("--evidence-input");
 
 const INPUT_DEFAULT = path.resolve(
   path.dirname(new URL(import.meta.url).pathname),
@@ -50,20 +55,59 @@ const main = async (): Promise<void> => {
     process.exit(1);
   }
 
-  // Read evidence digests from input directory
-  const readDigest = async (filename: string): Promise<string> => {
-    try {
-      const raw = await fs.readFile(path.join(inputDir, filename), "utf8");
-      return raw.trim();
-    } catch {
-      return "";
-    }
-  };
+  // Read evidence from AdmissionInput JSON if provided, otherwise fall back to digest files
+  let preservationGateSha256 = "";
+  let qualificationSha256 = "";
+  let predecessorSha256 = "";
+  let capacityReportSha256 = "";
 
-  const preservationGateSha256 = await readDigest("preservation-gate-sha256.txt");
-  const qualificationSha256 = await readDigest("qualification-sha256.txt");
-  const predecessorSha256 = await readDigest("predecessor-sha256.txt");
-  const capacityReportSha256 = await readDigest("capacity-report-sha256.txt");
+  if (evidenceInputArg) {
+    // Load and parse AdmissionInput JSON
+    const evidencePath = path.resolve(evidenceInputArg);
+    let admissionInput: AdmissionInput;
+    try {
+      const raw = await fs.readFile(evidencePath, "utf8");
+      const parsed = JSON.parse(raw) as AdmissionInput;
+      if (parsed.schema !== "hdri-admission-input@1") {
+        throw new AdmissionParseError(`Invalid schema: ${parsed.schema}`);
+      }
+      admissionInput = parsed;
+    } catch (error) {
+      console.error(
+        `Failed to load evidence input: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exit(1);
+    }
+
+    // Extract verified evidence refs — only non-null refs with valid SHA-256
+    const extractDigest = (ref: EvidenceRef | null): string => {
+      if (ref === null) return "";
+      if (!/^[0-9a-f]{64}$/.test(ref.sha256)) {
+        throw new Error(`Invalid evidence ref sha256: ${ref.sha256}`);
+      }
+      return ref.sha256;
+    };
+
+    preservationGateSha256 = extractDigest(admissionInput.preservation);
+    qualificationSha256 = extractDigest(admissionInput.qualification);
+    predecessorSha256 = extractDigest(admissionInput.predecessor);
+    capacityReportSha256 = extractDigest(admissionInput.capacity);
+  } else {
+    // Fall back to reading digest files from input directory
+    const readDigest = async (filename: string): Promise<string> => {
+      try {
+        const raw = await fs.readFile(path.join(inputDir, filename), "utf8");
+        return raw.trim();
+      } catch {
+        return "";
+      }
+    };
+
+    preservationGateSha256 = await readDigest("preservation-gate-sha256.txt");
+    qualificationSha256 = await readDigest("qualification-sha256.txt");
+    predecessorSha256 = await readDigest("predecessor-sha256.txt");
+    capacityReportSha256 = await readDigest("capacity-report-sha256.txt");
+  }
 
   // Check for obsolete runtime entries
   let obsoleteRuntimeRemaining = false;

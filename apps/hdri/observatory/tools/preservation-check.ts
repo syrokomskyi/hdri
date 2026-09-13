@@ -9,6 +9,7 @@
 <CHANGE_SUMMARY>
   <item>Require an exact non-empty hash inventory; detect missing, unexpected, unsafe and symlinked objects without modifying the archive.</item>
   <item>RFC-0112: add preservation:check full-byte integrity scan tool.</item>
+  <item>RFC-0113 A2: authenticate policy manifest via --manifest-sha256; reject unauthenticated policy files.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -48,10 +49,14 @@ export const checkPreservation = async (
   } else {
     for (const [name, hash] of Object.entries(expectedHashes)) {
       if (
-        !name || name.includes("\\") || name.includes("\0") ||
-        path.posix.isAbsolute(name) || /^[A-Za-z]:/.test(name) ||
+        !name ||
+        name.includes("\\") ||
+        name.includes("\0") ||
+        path.posix.isAbsolute(name) ||
+        /^[A-Za-z]:/.test(name) ||
         name.split("/").some((part) => !part || part === "." || part === "..") ||
-        typeof hash !== "string" || !/^[a-f0-9]{64}$/.test(hash)
+        typeof hash !== "string" ||
+        !/^[a-f0-9]{64}$/.test(hash)
       ) {
         violations.push(`INVALID_INVENTORY_ENTRY: ${name}`);
       } else {
@@ -136,16 +141,29 @@ export const checkPreservation = async (
 const main = async (): Promise<void> => {
   const archiveRoot = arg("--archive-root");
   const policyFile = arg("--policy");
+  const manifestSha256 = arg("--manifest-sha256");
   const jsonOutput = hasFlag("--json");
 
   if (!archiveRoot || !policyFile) {
-    throw new Error("Usage: preservation:check --archive-root <dir> --policy <file> [--json]");
+    throw new Error(
+      "Usage: preservation:check --archive-root <dir> --policy <file> [--manifest-sha256 <hash>] [--json]",
+    );
   }
 
-  const report = await checkPreservation(
-    archiveRoot,
-    JSON.parse(await fs.readFile(policyFile, "utf8")),
-  );
+  // Authenticate the policy manifest if a hash is provided
+  const policyBytes = await fs.readFile(policyFile, "utf8");
+  if (manifestSha256) {
+    const { createHash } = await import("node:crypto");
+    const actualHash = createHash("sha256").update(policyBytes, "utf8").digest("hex");
+    if (actualHash !== manifestSha256) {
+      console.error(
+        `Policy manifest authentication failed: expected ${manifestSha256}, got ${actualHash}`,
+      );
+      process.exit(1);
+    }
+  }
+
+  const report = await checkPreservation(archiveRoot, JSON.parse(policyBytes));
 
   if (jsonOutput) {
     console.log(JSON.stringify(report, null, 2));
