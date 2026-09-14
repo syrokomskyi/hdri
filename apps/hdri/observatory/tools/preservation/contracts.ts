@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Defines preservation and baseline-import contracts for Q2 evidence closure.</purpose>
+<purpose>Define preservation diagnostics and baseline import contracts for retained quarterly evidence closure.</purpose>
 <non-goals>
   <item>Does not implement file I/O or network operations.</item>
   <item>Does not define pipeline steps or gogol contracts.</item>
@@ -8,6 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0100: preservation and baseline-import contracts.</item>
+  <item>Distinguish read-only preservation plans from successfully verified copy operations.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -74,7 +75,7 @@ export type PreservationViolation = Readonly<{
 export type PreservationDiagnostic = Readonly<{
   schema: "hdri-preservation@1";
   operation: "preserve:q2" | "preserve:verify" | "baseline:import";
-  status: "pass" | "incomplete";
+  status: "pass" | "incomplete" | "planned";
   inputFingerprint: string;
   evidenceRefs: string[];
   violations: PreservationViolation[];

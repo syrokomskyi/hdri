@@ -1,473 +1,260 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Preservation coordinator: copies, replica verification, and content manifest signing.</purpose>
-<non-goals>
-  <item>Does not perform identity resolution or baseline conversion — see baseline-import.ts.</item>
-  <item>Does not run database migrations or checkpoint original databases.</item>
-</non-goals>
+  <purpose>Preserve original Q2 bytes and separate SQLite snapshots across complete independently verified destination closures.</purpose>
+  <non-goals><item>Does not mutate original evidence, convert historical identities or certify physical custody from destination labels.</item></non-goals>
+  <!-- risk: snapshot -->
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY>
-  <item>RFC-0100: preservation and replica coordinator.</item>
-  <item>RFC-0100 review fix: DNA-8 — persist Ed25519 signature to disk; always check replica independence in verifyReplicas.</item>
-  <item>RFC-0113 A1: SQLite snapshot via backup API; hash-once-copy-exact; per-destination receipts; manifest+signature at every destination; compare copies to original inventory; source/destination non-overlap; destination-level independence.</item>
-</CHANGE_SUMMARY>
+<CHANGE_SUMMARY><item>Replace flat replica receipts and source-side snapshots with fresh signed closures and pinned full read-back.</item></CHANGE_SUMMARY>
 */
-
-import { createHash, sign as cryptoSign, createPrivateKey } from "node:crypto";
+// @ai-invariant: Original databases are never opened by SQLite; snapshots use private copies of retained DB/WAL bytes.
+import { createHash, createPrivateKey, createPublicKey, sign, verify } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-
 import Database from "better-sqlite3";
-import { canonicalize, type SigningKeyConfig } from "@syrokomskyi/observatory-crypto";
-
+import { canonicalize, type SigningKeyConfig, type VerificationKey } from "@syrokomskyi/observatory-crypto";
+import {
+  assertCanonicalFilePath, assertDisjointPaths, assertFreshDirectory, assertRelativeObjectPath,
+  copyVerifiedFile, inspectRetainedFile, readBoundedFile, syncDirectory, writeExclusiveFile,
+} from "@warpgogol/pipeline-node";
 import type { PreservationDiagnostic } from "./contracts.js";
-import { acquirePreservationLock, sha256File, type InventoryEntry } from "./inventory.js";
+import { acquirePreservationLock, inventorySources, verifyInventoryIntegrity, type InventoryEntry } from "./inventory.js";
 
-// ---------------------------------------------------------------------------
-// Replica metadata
-// ---------------------------------------------------------------------------
-
-export type ReplicaInfo = Readonly<{
-  path: string;
-  sha256: string;
-  bytes: number;
-  failureDomain: string;
-  medium: string;
-  credentialBoundary: string;
-}>;
-
-export type DestinationInfo = Readonly<{
-  path: string;
-  failureDomain: string;
-  medium: string;
-  credentialBoundary: string;
-}>;
-
-export type DestinationReceipt = Readonly<{
-  schema: "hdri-destination-receipt@1";
-  period: string;
-  destination: DestinationInfo;
-  objects: ReplicaInfo[];
-  totalObjects: number;
-  totalBytes: number;
-  contentManifestSha256: string;
-  signatureSha256: string;
-}>;
-
-// ---------------------------------------------------------------------------
-// SQLite detection and consistent snapshot via backup API
-// ---------------------------------------------------------------------------
-
-const SQLITE_MAGIC = Buffer.from("SQLite format 3\x00", "utf8");
-
-const isSqliteFile = async (filePath: string): Promise<boolean> => {
+export interface DestinationInfo { path: string; failureDomain: string; medium: string; credentialBoundary: string }
+interface PreservedObject {
+  uri: string; sourceRole: string; representation: "original" | "sqlite-snapshot";
+  sha256: string; bytes: number; access: "internal" | "restricted" | "public";
+}
+export interface ContentManifest {
+  schema: "hdri-content-manifest@2"; period: "2026-q2"; signingKeyId: string;
+  sourceInventory: InventoryEntry[]; artifacts: PreservedObject[];
+}
+export interface DestinationReceipt {
+  schema: "hdri-destination-receipt@2"; period: "2026-q2"; destination: DestinationInfo;
+  totalObjects: number; totalBytes: number; contentManifestSha256: string;
+  signatureSha256: string; verificationKeySha256: string;
+}
+const SHA = /^[0-9a-f]{64}$/;
+const JSON_LIMIT = 64 * 1024 * 1024;
+const MIN_DESTINATIONS = 3;
+const MAX_OBJECTS = 1_000_000;
+const META_FILES = ["content-manifest.json", "content-manifest.sig", "verification-key.pem", "destination-receipt.json"];
+const digest = (bytes: Uint8Array | string): string => createHash("sha256").update(bytes).digest("hex");
+const encode = (value: unknown): Buffer => Buffer.from(canonicalize(value), "utf8");
+function fields(value: unknown, names: string[]): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("INVALID_PRESERVATION_OBJECT");
+  const object = value as Record<string, unknown>;
+  if (Object.keys(object).length !== names.length || names.some(name => !(name in object))) throw new Error("INVALID_PRESERVATION_FIELDS");
+  return object;
+}
+export function parseDestinations(raw: unknown): DestinationInfo[] {
+  if (!Array.isArray(raw) || raw.length < MIN_DESTINATIONS || raw.length > 32) throw new Error("UNVERIFIED_REPLICA: at least three destinations required");
+  const destinations = raw.map(value => {
+    const d = fields(value, ["path", "failureDomain", "medium", "credentialBoundary"]);
+    if (Object.values(d).some(v => typeof v !== "string" || !v.trim())) throw new Error("INVALID_DESTINATION");
+    if (!path.isAbsolute(d.path as string) || path.normalize(d.path as string) !== d.path) throw new Error("INVALID_DESTINATION_PATH");
+    return d as unknown as DestinationInfo;
+  });
+  checkDestinationIndependence(destinations);
+  assertDisjointPaths(destinations.map(d => d.path));
+  return destinations;
+}
+/** Declared metadata only: physical independence requires separately authenticated custody evidence. */
+export function checkDestinationIndependence(destinations: readonly DestinationInfo[]): void {
+  for (const field of ["failureDomain", "medium", "credentialBoundary"] as const) {
+    if (destinations.some(d => typeof d[field] !== "string" || !d[field].trim()) || new Set(destinations.map(d => d[field].trim())).size !== destinations.length)
+      throw new Error(`UNVERIFIED_REPLICA: repeated or missing ${field === "failureDomain" ? "failure domain" : field}`);
+  }
+}
+export function parsePreservationInventory(raw: unknown): InventoryEntry[] {
+  if (!Array.isArray(raw) || !raw.length || raw.length > MAX_OBJECTS) throw new Error("NONEMPTY_INVENTORY_REQUIRED");
+  const inventory = raw.map(value => {
+    const entry = fields(value, ["absolutePath", "role", "access", "sha256", "bytes"]);
+    if (typeof entry.absolutePath !== "string" || !path.isAbsolute(entry.absolutePath) || typeof entry.role !== "string") throw new Error("INVALID_SOURCE_IDENTITY");
+    assertRelativeObjectPath(entry.role);
+    if (typeof entry.sha256 !== "string" || !SHA.test(entry.sha256) || !Number.isSafeInteger(entry.bytes) || (entry.bytes as number) < 0 || !["internal", "restricted", "public"].includes(String(entry.access))) throw new Error("INVALID_SOURCE_DIGEST");
+    return entry as unknown as InventoryEntry;
+  });
+  if (new Set(inventory.map(e => e.role)).size !== inventory.length || new Set(inventory.map(e => e.absolutePath)).size !== inventory.length) throw new Error("DUPLICATE_SOURCE_IDENTITY");
+  return inventory.sort((a, b) => a.role < b.role ? -1 : a.role > b.role ? 1 : 0);
+}
+function parseManifest(raw: unknown): ContentManifest {
+  const m = fields(raw, ["schema", "period", "signingKeyId", "sourceInventory", "artifacts"]);
+  if (m.schema !== "hdri-content-manifest@2" || m.period !== "2026-q2" || typeof m.signingKeyId !== "string" || !m.signingKeyId) throw new Error("INVALID_CONTENT_MANIFEST");
+  const sourceInventory = parsePreservationInventory(m.sourceInventory);
+  const sources = new Map(sourceInventory.map(e => [e.role, e]));
+  if (!Array.isArray(m.artifacts) || m.artifacts.length < sources.size || m.artifacts.length > MAX_OBJECTS * 2) throw new Error("INCOMPLETE_MANIFEST");
+  const artifacts = m.artifacts.map(raw => {
+    const a = fields(raw, ["uri", "sourceRole", "representation", "sha256", "bytes", "access"]);
+    if (typeof a.uri !== "string" || typeof a.sourceRole !== "string") throw new Error("INVALID_ARTIFACT_REF");
+    assertRelativeObjectPath(a.uri);
+    const source = sources.get(a.sourceRole);
+    if (!source || typeof a.sha256 !== "string" || !SHA.test(a.sha256) || !Number.isSafeInteger(a.bytes) || (a.bytes as number) < 0 || a.access !== source.access) throw new Error("INVALID_ARTIFACT_REF");
+    if (a.representation === "original") {
+      if (a.uri !== `originals/${source.role}` || a.sha256 !== source.sha256 || a.bytes !== source.bytes) throw new Error("ORIGINAL_IDENTITY_MISMATCH");
+    } else if (a.representation !== "sqlite-snapshot" || a.uri !== `snapshots/${source.role}` || !a.bytes) throw new Error("INVALID_SNAPSHOT_REF");
+    return a as unknown as PreservedObject;
+  });
+  if (new Set(artifacts.map(a => a.uri)).size !== artifacts.length || artifacts.filter(a => a.representation === "original").length !== sources.size) throw new Error("INCOMPLETE_MANIFEST");
+  return { schema: m.schema, period: m.period, signingKeyId: m.signingKeyId, sourceInventory, artifacts };
+}
+async function verifySources(inventory: InventoryEntry[], roots: string[]): Promise<void> {
+  const current = await inventorySources({ roots });
   try {
-    const fd = await fs.open(filePath, "r");
+    verifyInventoryIntegrity(inventory, current);
+    const sizes = new Map(current.map(e => [e.absolutePath, e.bytes]));
+    if (inventory.some(e => sizes.get(e.absolutePath) !== e.bytes)) throw new Error("size mismatch");
+  } catch (error) { throw new Error("CHANGED_SOURCE_BYTES", { cause: error }); }
+}
+async function sqliteHeader(file: string): Promise<boolean> {
+  let header: Buffer | undefined;
+  await inspectRetainedFile(file, chunk => { header ??= Buffer.from(chunk.subarray(0, 16)); });
+  return header?.equals(Buffer.from("SQLite format 3\0")) ?? false;
+}
+async function createSnapshots(primary: string, inventory: InventoryEntry[]): Promise<PreservedObject[]> {
+  const snapshots: PreservedObject[] = [];
+  const byPath = new Map(inventory.map(e => [e.absolutePath, e]));
+  for (const entry of inventory) {
+    if (!(await sqliteHeader(path.join(primary, "originals", entry.role)))) continue;
+    // SQLite may update SHM on a readonly connection: never open retained originals.
+    const scratch = await fs.mkdtemp(path.join(path.dirname(primary), ".hdri-sqlite-snapshot-"));
     try {
-      const buf = Buffer.alloc(16);
-      await fd.read(buf, 0, 16, 0);
-      return buf.subarray(0, 15).equals(SQLITE_MAGIC.subarray(0, 15));
-    } finally {
-      await fd.close();
-    }
-  } catch {
-    return false;
-  }
-};
-
-const snapshotSqlite = async (sourcePath: string, snapshotDir: string): Promise<string> => {
-  const snapshotPath = path.join(snapshotDir, path.basename(sourcePath));
-  await fs.mkdir(snapshotDir, { recursive: true });
-  const db = new Database(sourcePath, { readonly: true });
-  await db.backup(snapshotPath);
-  db.close();
-  return snapshotPath;
-};
-
-// ---------------------------------------------------------------------------
-// Copy with SHA-256 verification — hash source once, copy exact bytes, verify
-// ---------------------------------------------------------------------------
-
-export const copyWithVerification = async (
-  source: string,
-  dest: string,
-  failureDomain: string,
-  medium: string,
-  credentialBoundary: string,
-): Promise<ReplicaInfo> => {
-  const sourceSha256 = await sha256File(source);
-  const sourceStat = await fs.stat(source);
-  await fs.mkdir(path.dirname(dest), { recursive: true });
-  await fs.copyFile(source, dest);
-  const destSha256 = await sha256File(dest);
-  if (destSha256 !== sourceSha256) {
-    throw new Error(`Content digest mismatch after copy: ${source} → ${dest}`);
-  }
-  const destStat = await fs.stat(dest);
-  if (destStat.size !== sourceStat.size) {
-    throw new Error(`Size mismatch after copy: ${source} → ${dest}`);
-  }
-  return {
-    path: dest,
-    sha256: destSha256,
-    bytes: destStat.size,
-    failureDomain,
-    medium,
-    credentialBoundary,
-  };
-};
-
-// ---------------------------------------------------------------------------
-// Check destination independence — two destinations on one drive are not independent
-// ---------------------------------------------------------------------------
-
-export const checkDestinationIndependence = (destinations: DestinationInfo[]): void => {
-  const failureDomains = new Set(destinations.map((d) => d.failureDomain));
-  if (failureDomains.size < destinations.length) {
-    throw new Error("UNVERIFIED_REPLICA: two destinations share the same failure domain");
-  }
-  const media = new Set(destinations.map((d) => d.medium));
-  if (media.size < destinations.length) {
-    throw new Error("UNVERIFIED_REPLICA: two destinations share the same medium");
-  }
-};
-
-// ---------------------------------------------------------------------------
-// Check source/destination non-overlap
-// ---------------------------------------------------------------------------
-
-export const checkSourceDestinationNonOverlap = (
-  sourceRoot: string,
-  destinations: string[],
-): void => {
-  const resolvedSource = path.resolve(sourceRoot);
-  for (const dest of destinations) {
-    const resolvedDest = path.resolve(dest);
-    if (resolvedDest === resolvedSource || resolvedDest.startsWith(resolvedSource + path.sep)) {
-      throw new Error(`Source/destination overlap: ${resolvedDest} is inside ${resolvedSource}`);
-    }
-    if (resolvedSource.startsWith(resolvedDest + path.sep)) {
-      throw new Error(`Source/destination overlap: ${resolvedSource} is inside ${resolvedDest}`);
-    }
-  }
-};
-
-// ---------------------------------------------------------------------------
-// Sign content manifest (Ed25519 detached signature)
-// ---------------------------------------------------------------------------
-
-export type ContentManifest = Readonly<{
-  schema: "hdri-content-manifest@1";
-  period: string;
-  artifacts: InventoryEntry[];
-}>;
-
-export const signContentManifest = async (
-  manifest: ContentManifest,
-  signingKey: SigningKeyConfig,
-): Promise<{ manifestSha256: string; signature: string }> => {
-  const payload = createHash("sha256").update(canonicalize(manifest), "utf8").digest();
-  const signature = cryptoSign(null, payload, createPrivateKey(signingKey.privateKeyPem)).toString(
-    "base64url",
-  );
-  return { manifestSha256: payload.toString("hex"), signature };
-};
-
-// ---------------------------------------------------------------------------
-// Preserve Q2 — orchestrate lock, inventory, copies, signing
-// ---------------------------------------------------------------------------
-
-export type PreserveQ2Options = {
-  inventory: InventoryEntry[];
-  archiveRoot: string;
-  dryRun: boolean;
-  signingKey: SigningKeyConfig;
-  replicaDestinations: {
-    dest: string;
-    failureDomain: string;
-    medium: string;
-    credentialBoundary: string;
-  }[];
-};
-
-// Backward-compat: check independence across a flat list of replica objects
-export const checkReplicaIndependence = (replicas: ReplicaInfo[]): void => {
-  const failureDomains = new Set(replicas.map((r) => r.failureDomain));
-  if (failureDomains.size < replicas.length) {
-    throw new Error("UNVERIFIED_REPLICA: two replicas share the same failure domain");
-  }
-  const media = new Set(replicas.map((r) => r.medium));
-  if (media.size < replicas.length) {
-    throw new Error("UNVERIFIED_REPLICA: two replicas share the same medium");
-  }
-};
-
-export const preserveQ2 = async (opts: PreserveQ2Options): Promise<PreservationDiagnostic> => {
-  const lock = await acquirePreservationLock(opts.archiveRoot);
-
-  try {
-    if (opts.dryRun) {
-      return {
-        schema: "hdri-preservation@1",
-        operation: "preserve:q2",
-        status: "pass",
-        inputFingerprint: createHash("sha256")
-          .update(opts.inventory.map((e) => e.sha256).join("\n"))
-          .digest("hex"),
-        evidenceRefs: [],
-        violations: [],
-      };
-    }
-
-    if (opts.inventory.length === 0) {
-      throw new Error("Cannot preserve an empty inventory");
-    }
-    if (opts.replicaDestinations.length < 3) {
-      throw new Error(
-        `RFC-0100 requires at least 3 replicas, got ${opts.replicaDestinations.length}`,
-      );
-    }
-
-    // Check source/destination non-overlap
-    checkSourceDestinationNonOverlap(
-      opts.archiveRoot,
-      opts.replicaDestinations.map((d) => d.dest),
-    );
-
-    // Check destination independence
-    const destInfos: DestinationInfo[] = opts.replicaDestinations.map((d) => ({
-      path: d.dest,
-      failureDomain: d.failureDomain,
-      medium: d.medium,
-      credentialBoundary: d.credentialBoundary,
-    }));
-    checkDestinationIndependence(destInfos);
-
-    // Snapshot SQLite databases consistently, then hash-once-copy-exact
-    const snapshotDir = path.join(opts.archiveRoot, ".snapshots");
-    const snapshotPaths = new Map<string, string>(); // originalPath → snapshotPath
-    for (const entry of opts.inventory) {
-      if (await isSqliteFile(entry.absolutePath)) {
-        const snapshotPath = await snapshotSqlite(entry.absolutePath, snapshotDir);
-        snapshotPaths.set(entry.absolutePath, snapshotPath);
-      }
-    }
-
-    // Sign content manifest (computed from original inventory hashes)
-    const manifest: ContentManifest = {
-      schema: "hdri-content-manifest@1",
-      period: "2026-q2",
-      artifacts: opts.inventory,
-    };
-    const { manifestSha256, signature } = await signContentManifest(manifest, opts.signingKey);
-    const signatureSha256 = createHash("sha256").update(signature, "utf8").digest("hex");
-
-    // Per-destination: copy all objects, emit receipt at each destination
-    const allReceiptPaths: string[] = [];
-    for (const dest of opts.replicaDestinations) {
-      const destReplicas: ReplicaInfo[] = [];
-      let totalBytes = 0;
-
-      for (const entry of opts.inventory) {
-        // Use snapshot if available, otherwise original
-        const sourcePath = snapshotPaths.get(entry.absolutePath) ?? entry.absolutePath;
-        const destPath = path.join(dest.dest, entry.role);
-        const replica = await copyWithVerification(
-          sourcePath,
-          destPath,
-          dest.failureDomain,
-          dest.medium,
-          dest.credentialBoundary,
-        );
-        destReplicas.push(replica);
-        totalBytes += replica.bytes;
-      }
-
-      // Write manifest + signature at every destination
-      const destManifestPath = path.join(dest.dest, "content-manifest.json");
-      await fs.mkdir(dest.dest, { recursive: true });
-      await fs.writeFile(destManifestPath, JSON.stringify(manifest, null, 2), "utf8");
-      const destSigPath = path.join(dest.dest, "content-manifest.sig");
-      await fs.writeFile(destSigPath, signature, "utf8");
-
-      // Per-destination receipt
-      const destReceipt: DestinationReceipt = {
-        schema: "hdri-destination-receipt@1",
-        period: "2026-q2",
-        destination: {
-          path: dest.dest,
-          failureDomain: dest.failureDomain,
-          medium: dest.medium,
-          credentialBoundary: dest.credentialBoundary,
-        },
-        objects: destReplicas,
-        totalObjects: destReplicas.length,
-        totalBytes,
-        contentManifestSha256: manifestSha256,
-        signatureSha256,
-      };
-      const destReceiptPath = path.join(dest.dest, "destination-receipt.json");
-      await fs.writeFile(destReceiptPath, JSON.stringify(destReceipt, null, 2), "utf8");
-      allReceiptPaths.push(destReceiptPath);
-    }
-
-    // Also write a combined receipt at archive root for backward compat
-    const allReplicas: ReplicaInfo[] = [];
-    for (const dest of opts.replicaDestinations) {
-      for (const entry of opts.inventory) {
-        const destPath = path.join(dest.dest, entry.role);
-        const sha256 = await sha256File(destPath);
-        const stat = await fs.stat(destPath);
-        allReplicas.push({
-          path: destPath,
-          sha256,
-          bytes: stat.size,
-          failureDomain: dest.failureDomain,
-          medium: dest.medium,
-          credentialBoundary: dest.credentialBoundary,
-        });
-      }
-    }
-    const legacyReceipt: DestinationReceipt = {
-      schema: "hdri-destination-receipt@1",
-      period: "2026-q2",
-      destination: {
-        path: opts.archiveRoot,
-        failureDomain: "archive",
-        medium: "local",
-        credentialBoundary: "archive",
-      },
-      objects: allReplicas,
-      totalObjects: allReplicas.length,
-      totalBytes: allReplicas.reduce((sum, r) => sum + r.bytes, 0),
-      contentManifestSha256: manifestSha256,
-      signatureSha256,
-    };
-    const legacyReceiptPath = path.join(opts.archiveRoot, "replica-receipt.json");
-    await fs.writeFile(legacyReceiptPath, JSON.stringify(legacyReceipt, null, 2), "utf8");
-    allReceiptPaths.push(legacyReceiptPath);
-
-    // Verify copies against original inventory
-    for (const dest of opts.replicaDestinations) {
-      for (const entry of opts.inventory) {
-        const destPath = path.join(dest.dest, entry.role);
-        const destSha256 = await sha256File(destPath);
-        if (destSha256 !== entry.sha256) {
-          throw new Error(
-            `Copy verification failed: ${destPath} sha256 ${destSha256} != inventory ${entry.sha256}`,
-          );
-        }
-      }
-    }
-
-    return {
-      schema: "hdri-preservation@1",
-      operation: "preserve:q2",
-      status: "pass",
-      inputFingerprint: manifestSha256,
-      evidenceRefs: allReceiptPaths,
-      violations: [],
-    };
-  } finally {
-    await lock.release();
-  }
-};
-
-// ---------------------------------------------------------------------------
-// Verify replicas (AC-7: fewer than 3 independent complete copies → incomplete)
-// ---------------------------------------------------------------------------
-
-export type VerifyReplicasOptions = {
-  archivePath: string;
-  full: boolean;
-  expectedReplicaCount: number;
-};
-
-export const verifyReplicas = async (
-  opts: VerifyReplicasOptions,
-): Promise<PreservationDiagnostic> => {
-  const receiptPath = path.join(opts.archivePath, "replica-receipt.json");
-
-  let receipt: DestinationReceipt;
-  try {
-    const raw = await fs.readFile(receiptPath, "utf8");
-    receipt = JSON.parse(raw) as DestinationReceipt;
-  } catch {
-    return {
-      schema: "hdri-preservation@1",
-      operation: "preserve:verify",
-      status: "incomplete",
-      inputFingerprint: "",
-      evidenceRefs: [],
-      violations: [
-        {
-          code: "MISSING_EVIDENCE",
-          message: "replica-receipt.json not found",
-          artifactRef: receiptPath,
-        },
-      ],
-    };
-  }
-
-  if (receipt.objects.length < opts.expectedReplicaCount) {
-    return {
-      schema: "hdri-preservation@1",
-      operation: "preserve:verify",
-      status: "incomplete",
-      inputFingerprint: receipt.contentManifestSha256,
-      evidenceRefs: [],
-      violations: [
-        {
-          code: "UNVERIFIED_REPLICA",
-          message: `Expected ${opts.expectedReplicaCount} replicas, found ${receipt.objects.length}`,
-          artifactRef: receiptPath,
-        },
-      ],
-    };
-  }
-
-  // Verify each replica's content digest (full mode) and independence (always)
-  const violations: PreservationDiagnostic["violations"] = [];
-
-  if (opts.full) {
-    // Full mode: re-verify each replica's content digest on disk
-    for (const replica of receipt.objects) {
+      const dbFile = path.join(scratch, "source.db");
+      await copyVerifiedFile(path.join(primary, "originals", entry.role), dbFile, entry);
+      const wal = byPath.get(`${entry.absolutePath}-wal`);
+      if (wal) await copyVerifiedFile(path.join(primary, "originals", wal.role), `${dbFile}-wal`, wal);
+      const db = new Database(dbFile, { readonly: true, fileMustExist: true });
+      const output = path.join(scratch, "snapshot.db");
       try {
-        const actualSha256 = await sha256File(replica.path);
-        if (actualSha256 !== replica.sha256) {
-          violations.push({
-            code: "UNVERIFIED_REPLICA",
-            message: `Content digest mismatch for ${replica.path}`,
-            artifactRef: replica.path,
-          });
-        }
-      } catch {
-        violations.push({
-          code: "MISSING_EVIDENCE",
-          message: `Replica file not found: ${replica.path}`,
-          artifactRef: replica.path,
-        });
-      }
-    }
+        if (db.pragma("quick_check", { simple: true }) !== "ok") throw new Error("INVALID_SOURCE_SQLITE");
+        await db.backup(output);
+      } finally { db.close(); }
+      const snapshot = { uri: `snapshots/${entry.role}`, sourceRole: entry.role, representation: "sqlite-snapshot" as const, access: entry.access, ...await inspectRetainedFile(output) };
+      await copyVerifiedFile(output, path.join(primary, snapshot.uri), snapshot);
+      snapshots.push(snapshot);
+    } finally { await fs.rm(scratch, { recursive: true, force: true }); }
   }
-
-  // Independence is always required (AC-7: "three independent complete copies")
+  return snapshots;
+}
+export interface PreserveQ2Options {
+  inventory: InventoryEntry[]; sourceRoots: string[]; destinations: DestinationInfo[];
+  dryRun: boolean; signingKey?: SigningKeyConfig;
+}
+export async function preserveQ2(opts: PreserveQ2Options): Promise<PreservationDiagnostic> {
+  // Detach caller-owned metadata before yielding.
+  const inventory = parsePreservationInventory(structuredClone(opts.inventory));
+  const destinations = parseDestinations(structuredClone(opts.destinations));
+  const roots = [...opts.sourceRoots];
+  const key = opts.signingKey && { ...opts.signingKey };
+  const dryRun = opts.dryRun;
+  for (const root of roots) await assertCanonicalFilePath(root);
+  assertDisjointPaths([...roots, ...destinations.map(d => d.path)]);
+  for (const dest of destinations) await assertFreshDirectory(dest.path);
+  await verifySources(inventory, roots);
+  if (dryRun) return { schema: "hdri-preservation@1", operation: "preserve:q2", status: "planned", inputFingerprint: digest(encode(inventory)), evidenceRefs: [], violations: [] };
+  if (!key) throw new Error("PRESERVATION_SIGNING_KEY_REQUIRED");
+  const privateKey = createPrivateKey(key.privateKeyPem);
+  if (privateKey.asymmetricKeyType !== "ed25519") throw new Error("ED25519_KEY_REQUIRED");
+  const publicKey = createPublicKey(privateKey).export({ type: "spki", format: "pem" }).toString();
+  if (publicKey !== key.publicKeyPem || !key.signingKeyId) throw new Error("SIGNING_KEY_MISMATCH");
+  const primary = destinations[0].path;
+  await fs.mkdir(primary, { mode: 0o700 });
+  await syncDirectory(path.dirname(primary));
+  const lock = await acquirePreservationLock(primary);
+  let manifestSha256 = "";
   try {
-    checkReplicaIndependence(receipt.objects);
-  } catch (error) {
-    violations.push({
-      code: "UNVERIFIED_REPLICA",
-      message: error instanceof Error ? error.message : String(error),
-      artifactRef: receiptPath,
-    });
-  }
-
-  return {
-    schema: "hdri-preservation@1",
-    operation: "preserve:verify",
-    status: violations.length === 0 ? "pass" : "incomplete",
-    inputFingerprint: receipt.contentManifestSha256,
-    evidenceRefs: [receiptPath],
-    violations,
+    const artifacts: PreservedObject[] = [];
+    for (const entry of inventory) {
+      const artifact: PreservedObject = { uri: `originals/${entry.role}`, sourceRole: entry.role, representation: "original", access: entry.access, sha256: entry.sha256, bytes: entry.bytes };
+      await copyVerifiedFile(entry.absolutePath, path.join(primary, artifact.uri), entry);
+      artifacts.push(artifact);
+    }
+    artifacts.push(...await createSnapshots(primary, inventory));
+    await verifySources(inventory, roots);
+    const manifest = parseManifest({ schema: "hdri-content-manifest@2", period: "2026-q2", signingKeyId: key.signingKeyId, sourceInventory: inventory, artifacts });
+    const manifestBytes = encode(manifest);
+    if (manifestBytes.length > JSON_LIMIT) throw new Error("MANIFEST_BYTE_LIMIT_EXCEEDED");
+    manifestSha256 = digest(manifestBytes);
+    const payloadSha256 = digest(encode(manifest));
+    const signatureBytes = encode({ schema: "hdri-content-signature@1", signingKeyId: key.signingKeyId, payloadSha256, signature: sign(null, Buffer.from(payloadSha256, "hex"), privateKey).toString("base64url") });
+    const publicKeyBytes = Buffer.from(publicKey);
+    for (const dest of destinations) {
+      if (dest.path !== primary) {
+        await assertFreshDirectory(dest.path);
+        await fs.mkdir(dest.path, { mode: 0o700 });
+        await syncDirectory(path.dirname(dest.path));
+        for (const artifact of artifacts) await copyVerifiedFile(path.join(primary, artifact.uri), path.join(dest.path, artifact.uri), artifact);
+      }
+      await writeExclusiveFile(path.join(dest.path, "content-manifest.json"), manifestBytes);
+      await writeExclusiveFile(path.join(dest.path, "content-manifest.sig"), signatureBytes);
+      await writeExclusiveFile(path.join(dest.path, "verification-key.pem"), publicKeyBytes);
+      const receipt: DestinationReceipt = { schema: "hdri-destination-receipt@2", period: "2026-q2", destination: dest, totalObjects: artifacts.length, totalBytes: artifacts.reduce((sum, a) => sum + a.bytes, 0), contentManifestSha256: manifestSha256, signatureSha256: digest(signatureBytes), verificationKeySha256: digest(publicKeyBytes) };
+      await writeExclusiveFile(path.join(dest.path, "destination-receipt.json"), encode(receipt));
+    }
+    await verifySources(inventory, roots);
+  } finally { await lock.release(); await syncDirectory(primary); }
+  const checked = await verifyReplicas({ destinations, manifestSha256, verificationKeys: new Map([[key.signingKeyId, { signingKeyId: key.signingKeyId, publicKeyPem: publicKey }]]) });
+  if (checked.status !== "pass") throw new Error("PRESERVATION_READBACK_FAILED", { cause: checked.violations });
+  return { ...checked, operation: "preserve:q2" };
+}
+export interface VerifyReplicasOptions {
+  destinations: DestinationInfo[]; manifestSha256: string; verificationKeys: ReadonlyMap<string, VerificationKey>;
+}
+async function listFiles(root: string): Promise<string[]> {
+  const files: string[] = [];
+  const visit = async (relative: string): Promise<void> => {
+    for (const name of await fs.readdir(path.join(root, relative))) {
+      const uri = relative ? `${relative}/${name}` : name;
+      assertRelativeObjectPath(uri);
+      const full = path.join(root, uri);
+      await assertCanonicalFilePath(full);
+      const stat = await fs.lstat(full);
+      if (stat.isDirectory()) await visit(uri);
+      else if (stat.isFile()) files.push(uri);
+      else throw new Error("UNSAFE_REPLICA_OBJECT");
+      if (files.length > MAX_OBJECTS * 2 + META_FILES.length) throw new Error("REPLICA_OBJECT_LIMIT_EXCEEDED");
+    }
   };
-};
+  await assertCanonicalFilePath(root);
+  await visit("");
+  return files.sort();
+}
+async function verifyDestination(dest: DestinationInfo, expectedSha: string, keys: ReadonlyMap<string, VerificationKey>): Promise<void> {
+  await assertCanonicalFilePath(dest.path);
+  const manifestBytes = await readBoundedFile(path.join(dest.path, "content-manifest.json"), JSON_LIMIT);
+  if (digest(manifestBytes) !== expectedSha) throw new Error("MANIFEST_DIGEST_MISMATCH");
+  const manifest = parseManifest(JSON.parse(manifestBytes.toString("utf8")));
+  const signatureBytes = await readBoundedFile(path.join(dest.path, "content-manifest.sig"), 4096);
+  const signed = fields(JSON.parse(signatureBytes.toString("utf8")), ["schema", "signingKeyId", "payloadSha256", "signature"]);
+  const trusted = keys.get(manifest.signingKeyId);
+  if (!trusted || trusted.signingKeyId !== manifest.signingKeyId || signed.schema !== "hdri-content-signature@1" || signed.signingKeyId !== manifest.signingKeyId || signed.payloadSha256 !== digest(encode(manifest)) || typeof signed.signature !== "string" || !/^[A-Za-z0-9_-]{86}$/.test(signed.signature)) throw new Error("INVALID_SIGNATURE");
+  const publicKey = createPublicKey(trusted.publicKeyPem);
+  if (publicKey.asymmetricKeyType !== "ed25519" || !verify(null, Buffer.from(signed.payloadSha256 as string, "hex"), publicKey, Buffer.from(signed.signature, "base64url"))) throw new Error("INVALID_SIGNATURE");
+  const keyBytes = await readBoundedFile(path.join(dest.path, "verification-key.pem"), 4096);
+  if (keyBytes.toString("utf8") !== publicKey.export({ type: "spki", format: "pem" }).toString()) throw new Error("VERIFICATION_KEY_MISMATCH");
+  const expectedFiles = [...META_FILES, ...manifest.artifacts.map(a => a.uri)].sort();
+  if (JSON.stringify(await listFiles(dest.path)) !== JSON.stringify(expectedFiles)) throw new Error("REPLICA_CLOSURE_MISMATCH");
+  for (const artifact of manifest.artifacts) {
+    const actual = await inspectRetainedFile(path.join(dest.path, artifact.uri));
+    if (actual.bytes !== artifact.bytes || actual.sha256 !== artifact.sha256) throw new Error("REPLICA_OBJECT_MISMATCH");
+  }
+  const receipt = fields(JSON.parse((await readBoundedFile(path.join(dest.path, "destination-receipt.json"), 64 * 1024)).toString("utf8")), ["schema", "period", "destination", "totalObjects", "totalBytes", "contentManifestSha256", "signatureSha256", "verificationKeySha256"]);
+  fields(receipt.destination, ["path", "failureDomain", "medium", "credentialBoundary"]);
+  if (receipt.schema !== "hdri-destination-receipt@2" || receipt.period !== "2026-q2" || canonicalize(receipt.destination) !== canonicalize(dest) || receipt.totalObjects !== manifest.artifacts.length || receipt.totalBytes !== manifest.artifacts.reduce((n, a) => n + a.bytes, 0) || receipt.contentManifestSha256 !== expectedSha || receipt.signatureSha256 !== digest(signatureBytes) || receipt.verificationKeySha256 !== digest(keyBytes)) throw new Error("DESTINATION_RECEIPT_MISMATCH");
+}
+export async function verifyReplicas(opts: VerifyReplicasOptions): Promise<PreservationDiagnostic> {
+  const violations: PreservationDiagnostic["violations"] = [];
+  const evidenceRefs: string[] = [];
+  const fingerprint = typeof opts.manifestSha256 === "string" ? opts.manifestSha256 : "";
+  try {
+    const destinations = parseDestinations(structuredClone(opts.destinations));
+    if (!SHA.test(fingerprint)) throw new Error("EXPECTED_MANIFEST_DIGEST_REQUIRED");
+    const keys = new Map([...opts.verificationKeys].map(([id, key]) => [id, { ...key }]));
+    for (const dest of destinations) {
+      try {
+        await verifyDestination(dest, fingerprint, keys);
+        evidenceRefs.push(path.join(dest.path, "destination-receipt.json"));
+      } catch (error) { violations.push({ code: "UNVERIFIED_REPLICA", message: error instanceof Error ? error.message : String(error), artifactRef: dest.path }); }
+    }
+  } catch (error) { violations.push({ code: "UNVERIFIED_REPLICA", message: error instanceof Error ? error.message : String(error), artifactRef: "preservation-input" }); }
+  return { schema: "hdri-preservation@1", operation: "preserve:verify", status: violations.length ? "incomplete" : "pass", inputFingerprint: fingerprint, evidenceRefs, violations };
+}
