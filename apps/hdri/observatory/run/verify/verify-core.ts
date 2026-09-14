@@ -15,6 +15,7 @@ known-key, trusted-key policy and ed25519 verification. Retains bounded diagnost
 <CHANGE_SUMMARY>
   <item>WP16 finding-1: stream verification (bounded memory) + testable core.</item>
   <item>Reject substituted row IDs and contradictory or partial embedded signing envelopes; bound diagnostic configuration and entries.</item>
+  <item>Share row/envelope consistency with the bounded retained observation reader.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -34,6 +35,26 @@ import type { Observation } from "@syrokomskyi/observatory-core";
 const MAX_FAILED_IDS = 10_000;
 const MAX_DIAGNOSTIC_CHARACTERS = 512;
 const SIGNING_FIELDS = ["signature", "signed_at", "signing_key_id", "collector_id"] as const;
+
+/** Structural agreement only; signing metadata itself is not covered by historical signatures. */
+export function hasConsistentObservationEnvelope(
+  row: Readonly<Record<string, unknown>>,
+  payload: Readonly<Record<string, unknown>>,
+): boolean {
+  return (
+    typeof row.id === "string" &&
+    row.id.trim().length > 0 &&
+    Object.hasOwn(payload, "observation_id") &&
+    payload.observation_id === row.id &&
+    (!SIGNING_FIELDS.some((field) => Object.hasOwn(payload, field)) ||
+      SIGNING_FIELDS.every(
+        (field) =>
+          Object.hasOwn(payload, field) &&
+          Object.hasOwn(row, field) &&
+          payload[field] === row[field],
+      ))
+  );
+}
 
 /** One signed observation row as stored in the observatory DB. */
 export type SignedRow = {
@@ -133,16 +154,7 @@ export function verifySignedRows(
       continue;
     }
     const object = payload as Record<string, unknown>;
-    const embedded = SIGNING_FIELDS.some((field) => Object.hasOwn(object, field));
-    if (
-      typeof row.id !== "string" ||
-      row.id.trim().length === 0 ||
-      object.observation_id !== row.id ||
-      (embedded &&
-        SIGNING_FIELDS.some(
-          (field) => !Object.hasOwn(object, field) || object[field] !== row[field],
-        ))
-    ) {
+    if (!hasConsistentObservationEnvelope(row, object)) {
       inconsistent++;
       fail(`${row.id} (row/payload identity or signing envelope mismatch)`);
       continue;
