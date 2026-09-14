@@ -4,7 +4,7 @@
   <non-goals><item>Does not mutate original evidence, convert historical identities or certify physical custody from destination labels.</item></non-goals>
   <!-- risk: crypto, sign, fs-write -->
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>Replace flat replica receipts and source-side snapshots with fresh signed closures and pinned full read-back.</item><item>Recover private journal copies and finalize standalone SQLite snapshots before retaining their exact bytes.</item><item>Prepare isolated baseline input from externally pinned complete replicas, with exact copy read-back and snapshot coverage checks.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY><item>Replace flat replica receipts and source-side snapshots with fresh signed closures and pinned full read-back.</item><item>Recover private journal copies and finalize standalone SQLite snapshots before retaining their exact bytes.</item><item>Prepare isolated baseline input from externally pinned complete replicas, with exact copy read-back and snapshot coverage checks.</item><item>Recognize completed process-local preparation objects without admitting reconstructed metadata.</item></CHANGE_SUMMARY>
 */
 // @ai-invariant: Original databases are never opened by SQLite; snapshots use private copies of retained DB/WAL bytes.
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from "node:crypto";
@@ -524,6 +524,16 @@ export interface PreparedBaselineSource {
   };
 }
 
+const preparedSources = new WeakSet<object>();
+
+/** Process-local acquisition check, not admission or proof of current file stability. */
+export function assertPreparedBaselineSource(
+  value: unknown,
+): asserts value is PreparedBaselineSource {
+  if (!value || typeof value !== "object" || !preparedSources.has(value))
+    throw new Error("PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED");
+}
+
 /**
  * Copy the entire authenticated artifact closure into fresh private working storage.
  * This is input preparation, NOT conversion, an import receipt or admission authority.
@@ -610,7 +620,7 @@ export async function prepareBaselineSource(
   )
     throw new Error("BASELINE_SNAPSHOT_COVERAGE_MISMATCH");
   await syncDirectory(workRoot);
-  return Object.freeze({
+  const prepared = Object.freeze({
     root: workRoot,
     manifestSha256: fingerprint,
     manifest: Object.freeze({
@@ -619,6 +629,8 @@ export async function prepareBaselineSource(
       artifacts: Object.freeze(manifest.artifacts.map((artifact) => Object.freeze(artifact))),
     }),
   });
+  preparedSources.add(prepared);
+  return prepared;
 }
 export async function verifyReplicas(opts: VerifyReplicasOptions): Promise<PreservationDiagnostic> {
   const violations: PreservationDiagnostic["violations"] = [];

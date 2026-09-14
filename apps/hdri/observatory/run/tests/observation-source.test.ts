@@ -13,6 +13,7 @@ import { inventorySources } from "../../tools/preservation/inventory.js";
 import {
   preserveQ2,
   prepareBaselineSource,
+  assertPreparedBaselineSource,
   verifyReplicas,
 } from "../../tools/preservation/preserve.js";
 import { streamPreparedObservations } from "../../tools/preservation/observation-source.js";
@@ -219,6 +220,53 @@ describe("bounded observation source from private retained snapshots", () => {
     await expect(collect(f.rows())).rejects.toThrow("UNSUPPORTED_OBSERVATION_SOURCE_ENCODING");
   });
 
+  it("rejects a primary key whose collation would require a different ordering", async () => {
+    const f = await fixture((db) => {
+      const sql = db
+        .prepare("SELECT sql FROM sqlite_master WHERE name='observations'")
+        .pluck()
+        .get() as string;
+      db.exec("DROP TABLE observations");
+      db.exec(sql.replace(/id\s+TEXT PRIMARY KEY/, "id TEXT PRIMARY KEY COLLATE NOCASE"));
+    });
+    await expect(collect(f.rows())).rejects.toThrow("UNSUPPORTED_OBSERVATION_SOURCE_INDEX");
+  });
+
+  it("preserves Unicode, an initial BOM and embedded NUL inside text cells without normalization", async () => {
+    const text = "\uFEFFcafé\0🙂";
+    const payload = { ...observation, value_bool: null, value_str: text, value_type: "str" };
+    const f = await fixture((db) =>
+      db
+        .prepare(
+          "UPDATE observations SET value_bool=NULL, value_str=?, value_type='str', obs_json=?",
+        )
+        .run(text, JSON.stringify(payload)),
+    );
+    const [row] = await collect(f.rows());
+    expect(row.columns.value_str).toBe(text);
+    expect(row.payload.value_str).toBe(text);
+    expect(row.columns.obs_json).toBe(JSON.stringify(payload));
+  });
+
+  it("preserves numeric and opaque JSON values as stored, not as reserialized JSON", async () => {
+    const f = await fixture((db) => {
+      const payload = { ...observation, value_bool: null, value_num: 1.25, value_type: "num" };
+      db.prepare(
+        "UPDATE observations SET value_bool=NULL, value_num=1.25, value_type='num', obs_json=?",
+      ).run(JSON.stringify(payload));
+    });
+    const [number] = await collect(f.rows());
+    expect(number.columns.value_num).toBe(1.25);
+    const text = '{ "b":2, "a":1 }';
+    const g = await fixture((db) => {
+      const payload = { ...observation, value_bool: null, value_json: text, value_type: "json" };
+      db.prepare(
+        "UPDATE observations SET value_bool=NULL, value_json=?, value_type='json', obs_json=?",
+      ).run(text, JSON.stringify(payload));
+    });
+    expect((await collect(g.rows()))[0].columns.value_json).toBe(text);
+  });
+
   it.each([
     ["period", "UPDATE observations SET period='2026-q3'", "PERIOD_MISMATCH"],
     ["missing JSON", "UPDATE observations SET obs_json=NULL", "INVALID_OR_OVERSIZED"],
@@ -263,6 +311,11 @@ describe("bounded observation source from private retained snapshots", () => {
       "UNSUPPORTED",
     ],
     [
+      "nonfinite parsed number",
+      (json: string) => json.replace('"source_hash": null', '"source_hash": 1e999'),
+      "UNSUPPORTED",
+    ],
+    [
       "partial signature",
       (json: string) => json.replace(/"collector_id": "test-device"/, '"collection_status": null'),
       "SIGNING_MISMATCH",
@@ -290,7 +343,9 @@ describe("bounded observation source from private retained snapshots", () => {
       if (sql.startsWith("SELECT CASE WHEN")) {
         const iterate = statement.iterate.bind(statement);
         vi.spyOn(statement, "iterate").mockImplementation(function* () {
-          for (const raw of iterate() as Iterable<Record<string, unknown>>) {
+          for (const raw of Reflect.apply(iterate, statement, []) as Iterable<
+            Record<string, unknown>
+          >) {
             sentinelSeen = true;
             expect(raw.admissible).toBe(0n);
             expect(
@@ -326,6 +381,24 @@ describe("bounded observation source from private retained snapshots", () => {
     expect(open).not.toHaveBeenCalled();
   });
 
+  it("rejects a symlink replacing the selected snapshot", async () => {
+    const f = await fixture();
+    await fs.rename(f.file, f.file + ".saved");
+    await fs.symlink(f.file + ".saved", f.file);
+    await expect(collect(f.rows())).rejects.toThrow("UNSAFE_OBJECT_PATH");
+  });
+
+  it("closes and checks the snapshot after a decoding failure", async () => {
+    const f = await fixture((db) => db.exec("UPDATE observations SET obs_json='{'"));
+    const close = vi.spyOn(Database.prototype, "close");
+    await expect(collect(f.rows())).rejects.toThrow();
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(await inspectRetainedFile(f.file)).toEqual({
+      sha256: f.snapshot.sha256,
+      bytes: f.snapshot.bytes,
+    });
+  });
+
   it.each(["-wal", "-shm", "-journal"])(
     "rejects even an empty snapshot sidecar %s",
     async (suffix) => {
@@ -347,6 +420,26 @@ describe("bounded observation source from private retained snapshots", () => {
         f.prepared.manifest.artifacts.find((a) => a.representation === "original")!.uri,
       ),
     ).toThrow("DECLARED");
+  });
+
+  it("accepts only the completed preparation object, never forged or deserialized metadata", async () => {
+    const f = await fixture();
+    expect(() => assertPreparedBaselineSource(f.prepared)).not.toThrow();
+    const lstat = vi.spyOn(fs, "lstat");
+    for (const forged of [structuredClone(f.prepared), Object.freeze({ ...f.prepared })]) {
+      expect(() => assertPreparedBaselineSource(forged)).toThrow(
+        "PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED",
+      );
+      expect(() => streamPreparedObservations(forged, f.snapshot.uri)).toThrow(
+        "PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED",
+      );
+    }
+    for (const invalid of [null, undefined, {}, "metadata", 1]) {
+      expect(() => assertPreparedBaselineSource(invalid)).toThrow(
+        "PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED",
+      );
+    }
+    expect(lstat).not.toHaveBeenCalled();
   });
 
   it.each(["exhaustion", "early return"])(

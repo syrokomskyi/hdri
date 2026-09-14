@@ -3,7 +3,7 @@
   <purpose>Read retained Observatory observations from pinned private snapshots with bounded payload transfer.</purpose>
   <non-goals>
     <item>Does not open originals, migrate databases, write records or issue admission receipts.</item>
-    <item>Does not authenticate caller-supplied preparation metadata, identities, signatures or referenced CAS objects.</item>
+    <item>Does not accept reconstructed preparation metadata or authenticate identities, signatures or referenced CAS objects.</item>
     <item>Does not validate the complete database schema, ontology or historical provenance claims.</item>
   </non-goals>
   <!-- risk: crypto, vault -->
@@ -17,7 +17,7 @@ import path from "node:path";
 import { TextDecoder } from "node:util";
 import Database from "better-sqlite3";
 import { assertRelativeObjectPath, inspectRetainedFile } from "@warpgogol/pipeline-node";
-import type { PreparedBaselineSource } from "./preserve.js";
+import { assertPreparedBaselineSource, type PreparedBaselineSource } from "./preserve.js";
 import { hasConsistentObservationEnvelope } from "../../run/verify/verify-core.js";
 
 // Exact table contract retained by Observatory migrations 1–3. Additional database
@@ -219,7 +219,8 @@ function readRows(db: Database.Database, period: string): Generator<RetainedObse
         Object.entries(object).some(
           ([name, value]) =>
             !ALLOWED_PAYLOAD.has(name) ||
-            (value !== null && !["string", "number", "boolean"].includes(typeof value)),
+            (value !== null && !["string", "number", "boolean"].includes(typeof value)) ||
+            (typeof value === "number" && !Number.isFinite(value)),
         )
       )
         throw new Error("UNSUPPORTED_OBSERVATION_SOURCE_PAYLOAD");
@@ -248,7 +249,7 @@ function readRows(db: Database.Database, period: string): Generator<RetainedObse
 
 /**
  * Internal reader: prepared must come directly from prepareBaselineSource, not JSON
- * or a caller-asserted manifest. It is metadata, not an admission brand. Only this
+ * or a caller-asserted manifest. Acquisition origin is process-local, not admission. Only this
  * table is covered. Full exhaustion plus final reread is needed; early return closes
  * resources and rereads bytes but cannot establish domain completeness.
  */
@@ -256,6 +257,7 @@ export function streamPreparedObservations(
   prepared: PreparedBaselineSource,
   snapshotUri: string,
 ): AsyncGenerator<RetainedObservationSourceRow> {
+  assertPreparedBaselineSource(prepared);
   assertRelativeObjectPath(snapshotUri);
   const matches = prepared.manifest.artifacts.filter((artifact) => artifact.uri === snapshotUri);
   if (matches.length !== 1 || matches[0].representation !== "sqlite-snapshot")
