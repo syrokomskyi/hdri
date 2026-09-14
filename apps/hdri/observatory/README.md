@@ -202,6 +202,12 @@ WAL snapshots. They are building blocks, not the completed converter: archive-bo
 schema mapping, imported-evidence provenance and final receipt wiring remain open.
 See the [conversion boundary](RUNBOOK.md#baseline-comparison-building-blocks-a1-partial).
 
+Archive input preparation now authenticates all declared copies and creates a
+fresh, fully reread working copy without opening retained databases. It checks
+standalone snapshot coverage and rejects changed or unexpected bytes. This is an
+internal converter building block, not a new command or completed Q2 import.
+See [verified input preparation](RUNBOOK.md#verified-baseline-input-preparation-a1-partial).
+
 ### Befehle
 
 | Befehl | Zweck |

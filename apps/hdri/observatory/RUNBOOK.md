@@ -317,13 +317,55 @@ record comparison kernel. It does **not** replace the blocked conversion command
   hashes of final SQLite/CAS files. Final-file hashing after DB close, authenticated
   runtime/schema dependency closure and receipt creation are still pending.
 
-The WAL integration fixture uses the actual preservation coordinator to obtain a
-standalone snapshot and verifies all replica bytes again after comparison. A first
+The WAL integration fixture uses the actual preservation coordinator and verified
+input preparation to obtain a private standalone snapshot; it verifies all replica
+bytes again after comparison. A first
 direct-source SELECT fixture changed SHM; the retained assertion was kept and the
 fixture now follows the safe snapshot path. Real Q2 sources were inspected only
 through `sqlite3` immutable read-only URI access for schema/aggregate diagnostics
 after checking that the inspected WAL files were empty; they were not converted.
 Immutable mode ignores WAL and must not be used to read uncheckpointed raw evidence.
+
+### Verified baseline input preparation (A1 partial)
+
+Code checkpoint `ac6a4e2` adds `prepareBaselineSource` to the existing preservation
+owner. It accepts `destinations`, `manifestSha256`, `verificationKeys`, an exact
+`sourceDestinationPath` selecting one declared copy, and a new absolute `workRoot`.
+There is no CLI command for this intermediate step; `baseline:import` stays blocked.
+
+The function verifies signatures, receipts and every object in all declared copies
+before creating work files. Trust comes from the externally supplied digest/key,
+never the bundled key or a caller-supplied manifest. Caller-owned metadata is
+detached before asynchronous work. The existing current `source-NNNN/<relative>`
+inventory layout identifies original roots solely to prevent filesystem overlap;
+it does not establish producer/device attribution. Unknown/inconsistent layouts
+fail before working output. Recorded original paths are not opened or required to
+exist, but the work root must be disjoint from them and every replica.
+
+It copies all listed artifacts with exclusive creation, held bounded reads,
+digest/size verification and file/directory synchronization, then checks the exact
+working file set and independently hashes every copied object. Each SQLite original
+must have a snapshot with SQLite magic and rollback-format read/write header bytes.
+A correctly signed archive with a missing snapshot, WAL main file or non-SQLite
+snapshot still fails. This is not SQLite integrity checking or schema recognition:
+the converter must perform those on the private snapshots before domain decoding.
+
+The result contains only the work root, pinned manifest digest and deeply frozen
+manifest metadata. It creates no receipt, resume checkpoint or second baseline
+format. Work contains artifact paths only (`originals/`, `snapshots/` as applicable),
+not copied destination attestations. Never treat its structural TypeScript type as
+admission authority. Maintain writer exclusion and stable ancestors throughout
+consumption; immutable metadata does not make the filesystem immutable. Only open
+copied snapshots with SQLite; retained originals remain byte evidence.
+
+Cost: one complete read of every declared replica plus a copy, copy read-back and
+final read-back of the selected artifact closure. Working disk needs the entire
+artifact closure, not just DB snapshots; no table or whole artifact is buffered.
+Metadata inherits the preservation limits (64 MiB manifest, bounded object count).
+Capacity/inode preflight, enforced writer exclusion and process-death/fsync proofs
+remain required by A1 step 6. The new injected disk-full/sync tests demonstrate
+error propagation, not real crash durability. Failed working roots remain for
+diagnosis and cannot be resumed or overwritten; retry with a new root.
 
 ---
 

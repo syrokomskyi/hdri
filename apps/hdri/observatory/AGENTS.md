@@ -143,6 +143,24 @@ No operational Q2 preservation or baseline conversion has been verified. The cop
 
 ### Implemented building blocks, not end-to-end conversion
 
+`prepareBaselineSource` in `tools/preservation/preserve.ts` authenticates every
+declared replica against an external manifest digest and key map, then copies the
+selected replica's entire artifact closure to a fresh private work root. Every
+copy is checked against the authenticated object digest and independently reread
+after copying. It reuses the preservation verifier; do not add a second verifier
+or accept a caller-supplied parsed manifest as verification. Work must be disjoint
+from all replicas and original inventory roots, reconstructed from the current
+`inventorySources` layout. Original paths need not be online.
+
+Only open copied `sqlite-snapshot` objects, never original DB/WAL sets or archive
+paths. Preparation requires one standalone rollback-format snapshot per SQLite
+original; this checks coverage/header format, not supported domain schemas or
+database contents. Its deeply frozen return value is process-local input metadata,
+not an admission brand, persisted baseline format or import receipt. Stable path
+ancestors and writer-exclusive working storage remain external prerequisites.
+Failure retains partial working files; retry into a fresh root. Tests are in
+`run/tests/baseline-source-boundary.test.ts`; CLI import remains blocked.
+
 `BaselineIdentity` now requires `device`. `parseBaselineIdentities` accepts only the
 closed seven-field shape, preserves UUID bytes, rejects duplicate scoped local IDs
 and conflicting provisional aliases, and detaches/freezes evidence refs. The tuple
