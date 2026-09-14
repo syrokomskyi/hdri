@@ -447,6 +447,59 @@ capacity/inodes and enforced writer exclusion remain the operational envelope.
 The 10,000-record WAL/copy/decoder fixtures are tests, not real Q2 conversion or
 200,000-site qualification. Full import remains blocked.
 
+### Snapshot-bound observation identity joins (A1 partial)
+
+`streamPreparedObservationIdentities(prepared, snapshotUri, assetIdNamespace)` uses
+the same acquisition, file hashing, private SQLite lifecycle and bounded observation
+decoder. It additionally recognizes the exact `asset_id_map` table from the retained
+Observatory schema: `provisional_id`, `canonical_id`, `domain`, `first_seen`.
+Both the provisional primary key and `aim_canonical_idx` must be single-column,
+unique, nonpartial, ascending BINARY indexes. Views, schema additions, missing keys
+and changed index contracts fail. No retained DDL is executed or migrated.
+
+The caller must declare `provisional` or `canonical`. These namespaces can overlap:
+the same string may be one row's provisional ID and another row's canonical ID.
+Never guess from the string's shape, try both columns or choose the first match.
+The complete converter must authenticate this declaration with the source schema
+and provenance contract; successful lookup alone does not establish its correctness.
+Current `MintAssetIdsGogol` persists mappings without rewriting observation payloads,
+which is why a canonical-only implicit join would lose valid provisional references.
+
+For every observation, one indexed lookup must find a retained mapping. All four
+cells must be TEXT and at most 4 KiB each before driver transfer; invalid matched
+rows emit a NULL sentinel and stop the stream. Fatal UTF-8 decoding, nonblank/control-
+free provisional keys and shared canonical UUID syntax validation follow. UUID case,
+raw `domain` and `first_seen` are preserved. Blank metadata is not replaced by the
+domain derived from another record or by the current/measurement timestamp.
+
+Each frozen result contains the original observation (including exact signed JSON),
+the mapping, and a source reference with manifest SHA-256, snapshot URI/SHA-256/bytes,
+explicit namespace, and structured locators `{table:'observations', id}` and
+`{table:'asset_id_map', provisional_id}`. Locator keys are data, not executable SQL.
+They locate rows in this exact snapshot, not a factory database or a physical device.
+The map's canonical UUID is separate from the immutable observation asset ID.
+
+This output is internal source attribution, **not** an imported-evidence descriptor,
+an authenticated historical device claim, target payload digest or success receipt.
+Prepared roots do not contain a copied manifest file: do not invent its URI to fill
+the generic descriptor. The converter must retain and verify an actual manifest
+object in the final reference closure. NULL evidence refs remain NULL; source/crawl
+hash labels do not establish CAS links. Complete factory/local-ID joins, run/ontology
+provenance, CAS verification and target materialization/comparison remain required.
+
+Cost: two full snapshot hashes, one observation scan and one indexed identity lookup
+per observation, without a table-wide map/cache. Identity transfer is at most 16 KiB
+per matched row in addition to the observation bound. This is not a native SQLite
+memory or corruption-proof index-integrity guarantee. Unreferenced identity rows are
+not scanned by this join and need their own domain projection/reconciliation; empty
+observations are not identity-domain success. A joined row can precede final hashing.
+Exhaustion, failure and early return share the existing close/read-back behavior.
+
+Regression coverage adds 28 integration cases and a 200-case UUID property. The
+10,000-observation fixture now also exercises indexed joins. All 634 Observatory
+tests / 57 files and scoped typecheck pass. These are temporary fixtures, not real
+Q2 conversion, independent custody or 200,000-site qualification.
+
 ---
 
 ## Qualification harness (RFC-0111)

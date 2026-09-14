@@ -141,6 +141,20 @@ prove its time/device claims. The signature CLI skips unsigned/NULL-JSON rows an
 can spot-check, so its success is not closure. Full source-stream exhaustion plus
 final hashing is necessary; early return only releases resources, not completeness.
 
+`streamPreparedObservationIdentities(prepared, snapshotUri, assetIdNamespace)` joins
+those rows to the same snapshot's exact four-column `asset_id_map`. The namespace
+must be explicitly `provisional` or `canonical`; never infer it or fall back to the
+other column. Both unique BINARY indexes are checked. Matched identity cells are
+limited to 4 KiB each before driver transfer, with strict UTF-8 and shared canonical
+UUID syntax validation. Missing mappings and malformed matched rows fail. The result
+keeps the untouched observation, raw mapping fields and structured primary-key
+locators bound to the manifest digest and snapshot URI/digest/bytes. This is not a
+converted-evidence descriptor: no manifest file URI, factory local ID or device proof
+is fabricated. The namespace still needs an externally grounded source declaration.
+Unreferenced mappings and other source domains require separate complete scans;
+blank `domain`/`first_seen` stay blank, never become measurement facts. The observation
+reader's original hash/sidecar/closure checks are shared, not duplicated or bypassed.
+
 Tests: `run/tests/observation-source.test.ts` uses actual preservation/SQLite/WAL and
 driver-boundary sentinels; `verify-envelope.pbt.test.ts` checks shared consistency.
 The 10,000-row fixture is not a real 200,000-site qualification. Native SQLite/schema

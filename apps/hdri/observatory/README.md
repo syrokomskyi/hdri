@@ -220,6 +220,13 @@ contradictions and preserves original payload bytes. This covers the known
 observation table, not complete source provenance, current-format materialization
 or an operational import. See [bounded observation reading](RUNBOOK.md#bounded-observation-source-reader-a1-partial).
 
+The identity-joined reader additionally resolves each observation against the same
+pinned snapshot's retained ID map. It requires an explicit provisional/canonical
+namespace, preserves source JSON and UUID spelling, and returns snapshot-bound row
+locators. Missing mappings fail instead of silently reassigning a site. This does
+not establish factory/device provenance or full identity-domain coverage.
+See [retained identity joins](RUNBOOK.md#snapshot-bound-observation-identity-joins-a1-partial).
+
 ### Befehle
 
 | Befehl | Zweck |
