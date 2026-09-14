@@ -202,6 +202,89 @@ mv .output/old-laptop .output/-old-laptop   # leading dash → ignored
 
 ---
 
+## Q2 preservation boundary
+
+The 2026-09-14 correction verifies actual complete copies; A1 is still incomplete.
+No operational Q2 run has been performed by these tests. Keep production admission
+blocked until baseline conversion, capacity/fault proofs and authenticated physical
+custody are complete. Three local fixture directories do not prove three independent
+media or custodians. Approval of this qualification machine does not supply those facts.
+
+### Explicit inputs
+
+Prepare a closed JSON inventory outside every source and destination root:
+
+```ts
+type PreservationInput = {
+  schema: "hdri-preservation-input@1";
+  sourceRoots: string[]; // Nonempty, explicit absolute canonical directories.
+  entries: Array<{
+    absolutePath: string;
+    role: string; // Unique relative POSIX file identity, no traversal or prefix collisions.
+    access: "internal" | "restricted" | "public";
+    sha256: string; // SHA-256 of the actual original bytes, lowercase hex.
+    bytes: number;
+  }>;
+```
+
+Use `inventorySources` from `tools/preservation/inventory.ts` for acquisition after
+stopping source writers. It walks all declared roots, including SQLite sidecars;
+missing/unreadable roots, symlinks and detected secret markers fail. Roles emitted
+by this producer are `source-0000/<relative-path>`, etc., ordered by source root.
+Review and retain that input; the CLI compares it to actual files, not substitutes
+a new inventory. The 64 MiB input/manifest limit and one-million-source-file cap
+are bounds, not a proven capacity profile.
+
+The destinations file is a JSON array of at least three and at most 32 exact
+`{ path, failureDomain, medium, credentialBoundary }` objects. Supply real approved
+metadata, never invented labels. Paths must be absolute, canonical, fresh
+(nonexistent, with existing parents), pairwise disjoint and outside all sources.
+Stop other writers and keep all ancestor directories stable. Directory fsync must
+be supported; this mechanism is not an OS snapshot or an adversarial-writer sandbox.
+
+### Commands and proof domains
+
+From the repository root, after preparing those explicit inputs:
+
+```sh
+pnpm --filter @syrokomskyi/observatory preserve:q2 --inventory /absolute/inventory.json --destinations /absolute/destinations.json --dry-run --json
+pnpm --filter @syrokomskyi/observatory preserve:q2 --inventory /absolute/inventory.json --destinations /absolute/destinations.json --json
+pnpm --filter @syrokomskyi/observatory preserve:verify --destinations /absolute/destinations.json --manifest-sha256 <retained-manifest-file-sha256> --verification-key /absolute/trusted-public.pem --key-id <trusted-key-id> --json
+```
+
+Only the writing command requires explicit `DEVICE_ID` and `DEVICE_SIGNING_KEY`
+in its environment; no implicit `.env` is loaded. Dry-run and verification need
+no private key. Pin the verification key independently of the copy's bundled PEM.
+Retain the expected manifest file digest outside the copies; recomputing it from
+an untrusted replacement is not an independent pin.
+
+Each destination contains exact `originals/<role>` bytes, separate
+`snapshots/<role>` for SQLite databases, and `content-manifest.json`,
+`content-manifest.sig`, `verification-key.pem`, `destination-receipt.json`.
+SQLite opens only private scratch copies of the retained DB/WAL/journal; originals
+and their SHM bytes are never opened by SQLite. Snapshots use standalone DELETE
+journal mode before their final digest is recorded. Original and snapshot digests
+are distinct identities. The Ed25519 signature covers the SHA-256 of canonical
+manifest JSON; the external pin hashes exact stored manifest bytes. A receipt
+counts the complete artifact set at one destination, never individual files as
+independent replicas. It is consistency metadata, not a signed custodian statement.
+
+Verification always reads every file, checks the exact listed set, hashes, sizes,
+signature, external key and destination receipt. Unexpected files and symlinks
+fail. Keep diagnostic logs outside the closure. Copy/read-back is O(total bytes)
+with several passes, O(file count) inventory memory and bounded streaming buffers;
+it is not the 200k qualification run.
+
+`planned` with zero exit means read-only validation only. `pass` with zero exit
+means all declared copies passed byte/signature checks, not operational admission.
+Errors/interruptions can leave partial output; never delete originals or overwrite
+an attempted destination to retry. Keep partial roots and select new destinations.
+The `baseline:import` CLI currently fails before I/O with
+`BASELINE_CONVERSION_UNVERIFIED`; do not bypass it using internal converter helpers.
+Follow the [A1 correction sequence](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
+
+---
+
 ## Qualification harness (RFC-0111)
 
 The current `quarter:rehearse` controller is executable offline infrastructure,

@@ -194,19 +194,19 @@ Alle Export-Tools (`export-dashboard-data`, `export-dashboard-archive`, `ExportM
 
 ## Preservation und Baseline-Import (RFC-0100)
 
-Die Q2-Evidenz wird vor der Umstellung der Konsumenten bewahrt. Danach wird ein Current-Format-Baseline durch eine einzelne Offline-Konversion mit auditierbarer Identitätskarte erstellt.
+Der Kopiermechanismus bewahrt Q2-Originalbytes und getrennte SQLite-Snapshots in vollständigen signierten Kopien. Eine operative Sicherung ist damit noch nicht nachgewiesen. Die Baseline-Konversion bleibt bis zur Korrektur der Identitätszuordnung und des Wertevergleichs gesperrt.
 
 ### Befehle
 
 | Befehl | Zweck |
 | --- | --- |
-| `preserve:q2` | Q2-Evidenz inventarisieren, replizieren und signieren. `--dry-run` für Diagnose. |
-| `preserve:verify` | Replika-Integrität und Signatur verifizieren. `--full` für vollständige Prüfung. |
-| `baseline:import` | Archiv in ein Current-Format-Baseline konvertieren. Schreibt `BaselineImportReceipt`. |
+| `preserve:q2` | Explizite `--inventory` und `--destinations` verarbeiten; Originale und Snapshots signiert sichern. `--dry-run` schreibt nichts. |
+| `preserve:verify` | Alle Dateien prüfen; `--destinations`, `--manifest-sha256`, `--verification-key` und `--key-id` sind erforderlich. |
+| `baseline:import` | Vor jedem Dateizugriff gesperrt: `BASELINE_CONVERSION_UNVERIFIED`. |
 
 ### Fehlermodi
 
-Alle Fehlerbedingungen sind blockierend — Exit-Code 1, kein partielles Ergebnis. Exit-Code 0 bedeutet Pass. Es gibt keinen Warn-und-Weiter-Modus: geänderte Quell-Bytes, aktive Writer, Identitätsmehrdeutigkeit, fehlende Evidenz, ungültige Signaturen, unzureichende Kapazität oder unüberprüfte Replika-Unabhängigkeit blockieren die Zulassung.
+Fehler liefern Exit-Code 1 ohne Erfolgsnachweis; unvollständige Zielverzeichnisse bleiben zur Diagnose erhalten und werden nicht überschrieben. Exit-Code 0 mit `planned` bedeutet nur Diagnose, mit `pass` nur erfolgreiche Kopierprüfung — keine operative Zulassung. Physische Unabhängigkeit, Kapazität und stillgelegte Quell-Writer müssen gesondert belegt werden. Formate und Grenzen: [Runbook](RUNBOOK.md#q2-preservation-boundary).
 
 ## Scientific admission contract (RFC-0107)
 

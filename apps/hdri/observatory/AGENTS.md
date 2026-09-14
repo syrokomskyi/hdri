@@ -123,7 +123,7 @@ All observatory entry points use `createBootstrapAdmission()` from `@syrokomskyi
 
 ### Preservation (A1)
 
-`preserve:q2` performs real Q2 preservation with SQLite snapshotting, per-destination receipts, and hash-once-copy-exact semantics. `baseline:import` converts archived Q2 evidence with identity mapping — unknown/ambiguous identities block admission. See `apps/hdri/factory/RUNBOOK.md` § Verified admission and custody.
+`preserve:q2` retains original bytes and separate standalone SQLite snapshots in three or more fresh signed destination closures. Actual copy/read-back and CLI fixtures pass; this is not authenticated physical custody or completed A1. `baseline:import` is blocked before I/O pending replacement of the unsafe converter. See `RUNBOOK.md` § Q2 preservation boundary.
 
 ### Append-only quarter ledger (A3)
 
@@ -139,21 +139,21 @@ All observatory entry points use `createBootstrapAdmission()` from `@syrokomskyi
 
 ## Preservation and Baseline Import (RFC-0100)
 
-Offline preservation and baseline conversion are not operationally verified. The current converter does not materialize the required baseline records or a real comparison. Do not use its receipt for production admission. The review found replica grouping/signature-verification gaps; RFC-0113 A1 specifies their closure. Unknown historical identities now fail instead of receiving invented IDs.
+No operational Q2 preservation or baseline conversion has been verified. The copy mechanism now verifies complete destinations, exact bytes and pinned signatures. The converter still lacks domain-aware identity mapping, current-format records and a real value comparison; its CLI is blocked with `BASELINE_CONVERSION_UNVERIFIED`. Do not invoke its internal helpers on real archives or admit their receipts. Complete the A1 follow-up in the RFC-0115 corrective plan before A2.
 
 ### Scripts
 
-- `preserve:q2` — Inventory, replicate (3 independent copies), and sign Q2 evidence. `--dry-run` for diagnostics only.
-- `preserve:verify` — Verify replica integrity and signatures. `--full` for complete independence check.
-- `baseline:import` — Convert archived Q2 evidence to current-format baseline with `BaselineImportReceipt`.
+- `preserve:q2 --inventory <file> --destinations <file>` — Consume explicit source roots and exact inventory; retain signed copies. `--dry-run` is read-only, needs no private key and returns `planned`, not preservation success.
+- `preserve:verify --destinations <file> --manifest-sha256 <digest> --verification-key <pem> --key-id <id>` — Always read all objects and verify signatures against external pins, not the key bundled with the copies.
+- `baseline:import` — Currently blocked before any input/output access; no success receipt is produced.
 
 ### Failure modes
 
-All failure conditions are blocking — exit code 1, no partial result. Exit code 0 means pass. No warn-and-continue: changed source bytes, active writers, identity ambiguity, missing evidence, invalid signatures, insufficient capacity, or unverified replica independence block admission.
+Errors return a nonzero exit without a successful attestation. An interrupted copy can leave partial fresh destinations; preserve them for diagnosis and use different fresh roots on retry. A zero exit with `planned` is only a dry-run; `pass` establishes file-copy verification, not admission. Source-writer exclusion, storage capacity and actual custody evidence remain separate operational prerequisites. Secret-marker detection scans full streams but is heuristic and can reject a public example key; do not disable it to force an operational pass.
 
 ### Concurrency
 
-A PID-checked file lock (`.preserve-lock.json` in archive root) prevents concurrent preservation runs. Two runs targeting the same root fail fast with `LOCK_VIOLATION`. Uses shared `acquirePidLock` from `@syrokomskyi/utils` (extracted from RFC-0089 `batch-lock.ts` per DNA-3).
+The primary destination is created exclusively before its PID lock; an existing root is rejected even if empty. No lock or SQLite connection touches original evidence. SQLite recovery and backup operate only on private copied DB/WAL/journal bytes, then finalize standalone snapshots before hashing. Source roots and every destination must be disjoint nonsymlink paths with stable ancestors. Stop source writers before inventorying; repeated before/after hashing is not an OS-enforced multi-file snapshot.
 
 ## Crash-safe execution (RFC-0101)
 
