@@ -175,8 +175,8 @@ iterators by exact typed values and keys. `empty` is not `equal`; duplicates,
 out-of-order keys, malformed rows and reader failures throw. The report contains
 per-field differences and projection digests, not target-file digests or an import
 receipt. Preserve integer precision with SQLite `safeIntegers()` and sort keys by
-UTF-8 bytes (`COLLATE BINARY`). Reader/domain completeness, schema mappings, typed
-imported-evidence provenance and physical archive verification remain caller work
+UTF-8 bytes (`COLLATE BINARY`). Reader/domain completeness, schema mappings, authenticated
+imported-evidence references and physical archive verification remain caller work
 in the A1 cutover. Do not wire this helper to the old copier as an admission patch.
 
 Tests live in `run/tests/baseline-{identity-boundary,comparison}*.test.ts`;
@@ -184,6 +184,13 @@ Tests live in `run/tests/baseline-{identity-boundary,comparison}*.test.ts`;
 SQLite fixtures include the real current migrations and the actual signed
 preservation → standalone snapshot → comparison → full replica read-back chain.
 Do not open original WAL databases for comparison: even SELECT can change SHM.
+
+The generic imported-evidence descriptor now exists in observatory-core and is
+validated by the ordinary emit evidence writer/reader. It distinguishes known time,
+unknown time and not-observed records without changing Observation timestamps or
+claiming live collection. See the core README. The actual converter must still bind
+every descriptor to authenticated source locators, preserved UUIDs and exact target
+payload bytes. No source adapter or operational import is supplied by that schema.
 
 ### Scripts
 
