@@ -27,10 +27,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `start` | `tsx -C @syrokomskyi/source run/run.ts` |
 | `changelog` | `changelog-live` |
 | `changelog:init` | `changelog-live init` |
-
-The test configuration includes `run/**/*.test.ts` from the repository root.
-The collector must remain selected in the HDRI CI job. Policy unit tests are not
-proof of network enforcement or whole-chain qualification.
+| `capture:preflight` | `tsx -C @syrokomskyi/source run/preflight.ts` |
 
 ## Dependencies
 
@@ -42,9 +39,9 @@ proof of network enforcement or whole-chain qualification.
 - `@syrokomskyi/observatory-core`
 - `@syrokomskyi/observatory-crypto`
 - `@syrokomskyi/observatory-emit`
-- `@syrokomskyi/pipeline-core`
-- `@syrokomskyi/pipeline-node`
-- `@syrokomskyi/pipeline-steps`
+- `@warpgogol/pipeline-core`
+- `@warpgogol/pipeline-node`
+- `@syrokomskyi/pipeline-steps-hdri`
 - `@syrokomskyi/utils`
 - `@warpgogol/changelog-live`
 

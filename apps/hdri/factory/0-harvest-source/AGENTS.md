@@ -37,15 +37,15 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `@syrokomskyi/observatory-core`
 - `@syrokomskyi/observatory-crypto`
 - `@syrokomskyi/observatory-emit`
-- `@syrokomskyi/pipeline-core`
-- `@syrokomskyi/pipeline-node`
-- `@syrokomskyi/pipeline-steps`
-- `@syrokomskyi/rate-limit`
+- `@warpgogol/pipeline-core`
+- `@warpgogol/pipeline-node`
+- `@syrokomskyi/pipeline-steps-hdri`
 - `@syrokomskyi/utils`
 - `@warpgogol/changelog-live`
 
 **External:**
 
+- `p-limit` `^6.2.0`
 - `@types/better-sqlite3` `^9.6.0`
 - `@types/node` `^26.2.0`
 - `better-sqlite3` `^13.0.3`

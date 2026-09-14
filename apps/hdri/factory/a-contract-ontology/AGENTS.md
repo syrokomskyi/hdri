@@ -37,8 +37,8 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `@syrokomskyi/observatory-core`
 - `@syrokomskyi/observatory-crypto`
 - `@syrokomskyi/observatory-emit`
-- `@syrokomskyi/pipeline-core`
-- `@syrokomskyi/pipeline-node`
+- `@warpgogol/pipeline-core`
+- `@warpgogol/pipeline-node`
 - `@syrokomskyi/utils`
 - `@warpgogol/changelog-live`
 
