@@ -16,7 +16,10 @@ import {
   assertPreparedBaselineSource,
   verifyReplicas,
 } from "../../tools/preservation/preserve.js";
-import { streamPreparedObservations } from "../../tools/preservation/observation-source.js";
+import {
+  streamPreparedObservations,
+  streamPreparedObservationIdentities,
+} from "../../tools/preservation/observation-source.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -63,6 +66,12 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false, enco
     db.pragma("wal_autocheckpoint=0");
   }
   migrateObservatory(db);
+  db.prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)").run(
+    "da-retained-site",
+    observation.asset_id,
+    "retained.example",
+    "2026-05-03T11:00:00Z",
+  );
   async function* observations() {
     yield observation;
   }
@@ -497,7 +506,265 @@ describe("bounded observation source from private retained snapshots", () => {
       expect(row.columns.id).toBe(`obs-${String(count++).padStart(5, "0")}`);
     }
     expect(count).toBe(10_000);
+    let joined = 0;
+    for await (const row of streamPreparedObservationIdentities(
+      f.prepared,
+      f.snapshot.uri,
+      "canonical",
+    )) {
+      expect(row.source.observationLocator.id).toBe(`obs-${String(joined++).padStart(5, "0")}`);
+      expect(row.identity.provisional_id).toBe("da-retained-site");
+    }
+    expect(joined).toBe(10_000);
     const empty = await fixture((db) => db.exec("DELETE FROM observations"));
     expect(await collect(empty.rows())).toEqual([]);
+  });
+});
+
+describe("snapshot-bound observation identity references", () => {
+  it.each(["provisional", "canonical"] as const)(
+    "resolves explicitly declared %s IDs without changing signed source bytes",
+    async (namespace) => {
+      const f = await fixture((db) => {
+        if (namespace === "provisional") {
+          const signed = signObservation({ ...observation, asset_id: "da-retained-site" }, key);
+          db.prepare(
+            "UPDATE observations SET asset_id=?, obs_json=?, signature=?, signed_at=?",
+          ).run(
+            signed.asset_id,
+            JSON.stringify(signed, null, 2),
+            signed.signature,
+            signed.signed_at,
+          );
+        }
+      }, true);
+      const before = await inventorySources({ roots: [f.source] });
+      const [raw] = await collect(f.rows());
+      const [row] = await collect(
+        streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, namespace),
+      );
+      expect(row.observation).toEqual(raw);
+      expect(row.identity).toEqual({
+        provisional_id: "da-retained-site",
+        canonical_id: observation.asset_id,
+        domain: "retained.example",
+        first_seen: "2026-05-03T11:00:00Z",
+      });
+      expect(row.source).toEqual({
+        manifestSha256: f.prepared.manifestSha256,
+        artifact: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
+        observationLocator: { table: "observations", id },
+        identityLocator: { table: "asset_id_map", provisional_id: "da-retained-site" },
+        assetIdNamespace: namespace,
+      });
+      for (const value of [
+        row,
+        row.identity,
+        row.source,
+        row.source.artifact,
+        row.source.observationLocator,
+        row.source.identityLocator,
+      ])
+        expect(Object.isFrozen(value)).toBe(true);
+      expect(await inventorySources({ roots: [f.source] })).toEqual(before);
+      expect((await verifyReplicas(f.options)).status).toBe("pass");
+    },
+  );
+
+  it("never infers the namespace or accepts a forged preparation", async () => {
+    const f = await fixture();
+    const lstat = vi.spyOn(fs, "lstat");
+    expect(() =>
+      streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "auto" as "canonical"),
+    ).toThrow("EXPLICIT_SOURCE_ASSET_ID_NAMESPACE_REQUIRED");
+    expect(() =>
+      streamPreparedObservationIdentities({ ...f.prepared }, f.snapshot.uri, "canonical"),
+    ).toThrow("PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED");
+    expect(lstat).not.toHaveBeenCalled();
+    await expect(
+      collect(streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "provisional")),
+    ).rejects.toThrow("UNRESOLVED_OBSERVATION_IDENTITY");
+  });
+
+  it.each([
+    ["missing mapping", "DELETE FROM asset_id_map", "UNRESOLVED_OBSERVATION_IDENTITY"],
+    [
+      "extra schema column",
+      "ALTER TABLE asset_id_map ADD COLUMN device TEXT",
+      "UNSUPPORTED_IDENTITY_SOURCE_SCHEMA",
+    ],
+    ["missing schema", "DROP TABLE asset_id_map", "UNSUPPORTED_IDENTITY_SOURCE_SCHEMA"],
+    [
+      "view",
+      "ALTER TABLE asset_id_map RENAME TO hidden_map; CREATE VIEW asset_id_map AS SELECT * FROM hidden_map",
+      "UNSUPPORTED_IDENTITY_SOURCE_SCHEMA",
+    ],
+    [
+      "nonunique index",
+      "DROP INDEX aim_canonical_idx; CREATE INDEX aim_canonical_idx ON asset_id_map(canonical_id)",
+      "UNSUPPORTED_IDENTITY_SOURCE_INDEX",
+    ],
+    [
+      "partial index",
+      "DROP INDEX aim_canonical_idx; CREATE UNIQUE INDEX aim_canonical_idx ON asset_id_map(canonical_id) WHERE domain<>''",
+      "UNSUPPORTED_IDENTITY_SOURCE_INDEX",
+    ],
+    [
+      "case-insensitive index",
+      "DROP INDEX aim_canonical_idx; CREATE UNIQUE INDEX aim_canonical_idx ON asset_id_map(canonical_id COLLATE NOCASE)",
+      "UNSUPPORTED_IDENTITY_SOURCE_INDEX",
+    ],
+    [
+      "descending index",
+      "DROP INDEX aim_canonical_idx; CREATE UNIQUE INDEX aim_canonical_idx ON asset_id_map(canonical_id DESC)",
+      "UNSUPPORTED_IDENTITY_SOURCE_INDEX",
+    ],
+    [
+      "composite index",
+      "DROP INDEX aim_canonical_idx; CREATE UNIQUE INDEX aim_canonical_idx ON asset_id_map(canonical_id,domain)",
+      "UNSUPPORTED_IDENTITY_SOURCE_INDEX",
+    ],
+    [
+      "NULL key",
+      "UPDATE asset_id_map SET provisional_id=NULL",
+      "INVALID_OR_OVERSIZED_IDENTITY_SOURCE_ROW",
+    ],
+    [
+      "binary domain",
+      "UPDATE asset_id_map SET domain=X'61'",
+      "INVALID_OR_OVERSIZED_IDENTITY_SOURCE_ROW",
+    ],
+    ["empty key", "UPDATE asset_id_map SET provisional_id=' '", "INVALID_IDENTITY_SOURCE_KEY"],
+    [
+      "control key",
+      "UPDATE asset_id_map SET provisional_id=char(0)||'hidden'",
+      "INVALID_IDENTITY_SOURCE_KEY",
+    ],
+    ["bad UTF-8", "UPDATE asset_id_map SET domain=CAST(X'80' AS TEXT)", "encoded data"],
+  ])("rejects %s instead of losing or reattributing observations", async (_label, sql, failure) => {
+    const f = await fixture((db) => db.exec(sql));
+    const close = vi.spyOn(Database.prototype, "close");
+    await expect(
+      collect(streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "canonical")),
+    ).rejects.toThrow(failure);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it("validates canonical UUID syntax without inventing a replacement", async () => {
+    const f = await fixture((db) => {
+      db.prepare("UPDATE asset_id_map SET provisional_id=?,canonical_id='not-a-uuid'").run(
+        observation.asset_id,
+      );
+    });
+    await expect(
+      collect(streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "provisional")),
+    ).rejects.toThrow("INVALID_BASELINE_INPUT: canonicalId");
+  });
+
+  it("resolves overlapping alias and canonical namespaces only as explicitly declared", async () => {
+    const f = await fixture((db) =>
+      db
+        .prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)")
+        .run(observation.asset_id, "0198F000-0000-7000-8000-000000000003", "other.example", ""),
+    );
+    const [canonical] = await collect(
+      streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "canonical"),
+    );
+    const [provisional] = await collect(
+      streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "provisional"),
+    );
+    expect(canonical.identity.canonical_id).toBe(observation.asset_id);
+    expect(provisional.identity.canonical_id).toBe("0198F000-0000-7000-8000-000000000003");
+    expect(canonical.observation).toEqual(provisional.observation);
+    expect(canonical.source.assetIdNamespace).not.toBe(provisional.source.assetIdNamespace);
+  });
+
+  it.each(["provisional_id", "canonical_id", "domain", "first_seen"])(
+    "rejects oversized %s before transferring identity cells",
+    async (column) => {
+      const f = await fixture((db) => {
+        if (column === "canonical_id")
+          db.prepare("UPDATE asset_id_map SET provisional_id=?").run(observation.asset_id);
+        db.prepare(`UPDATE asset_id_map SET "${column}"=?`).run("я".repeat(2049));
+      });
+      const prepare = Database.prototype.prepare;
+      let sentinelSeen = false;
+      vi.spyOn(Database.prototype, "prepare").mockImplementation(function (
+        this: Database.Database,
+        sql: string,
+      ) {
+        const statement = prepare.call(this, sql);
+        if (sql.startsWith("SELECT CASE WHEN") && sql.includes("FROM asset_id_map")) {
+          const get = statement.get.bind(statement);
+          vi.spyOn(statement, "get").mockImplementation((...args: unknown[]) => {
+            const row = Reflect.apply(get, statement, args);
+            expect(row).toEqual({
+              admissible: 0,
+              provisional_id: null,
+              canonical_id: null,
+              domain: null,
+              first_seen: null,
+            });
+            sentinelSeen = true;
+            return row;
+          });
+        }
+        return statement;
+      });
+      await expect(
+        collect(
+          streamPreparedObservationIdentities(
+            f.prepared,
+            f.snapshot.uri,
+            column === "canonical_id" ? "provisional" : "canonical",
+          ),
+        ),
+      ).rejects.toThrow("INVALID_OR_OVERSIZED_IDENTITY_SOURCE_ROW");
+      expect(sentinelSeen).toBe(true);
+    },
+  );
+
+  it("preserves blank historical metadata rather than substituting a measurement time or domain", async () => {
+    const f = await fixture((db) => db.exec("UPDATE asset_id_map SET domain='', first_seen=''"));
+    const [row] = await collect(
+      streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "canonical"),
+    );
+    expect(row.identity.domain).toBe("");
+    expect(row.identity.first_seen).toBe("");
+    expect(row.observation.payload.observed_at).toBe("2026-05-02T10:00:00+02:00");
+  });
+
+  it("keeps identical observation and alias keys in different snapshots distinctly attributable", async () => {
+    const first = await fixture();
+    const second = await fixture((db) => db.exec("UPDATE asset_id_map SET domain='other.example'"));
+    const [a] = await collect(
+      streamPreparedObservationIdentities(first.prepared, first.snapshot.uri, "canonical"),
+    );
+    const [b] = await collect(
+      streamPreparedObservationIdentities(second.prepared, second.snapshot.uri, "canonical"),
+    );
+    expect(a.source.observationLocator).toEqual(b.source.observationLocator);
+    expect(a.source.identityLocator).toEqual(b.source.identityLocator);
+    expect(a.source.artifact.sha256).not.toBe(b.source.artifact.sha256);
+    expect(a.source.manifestSha256).not.toBe(b.source.manifestSha256);
+    expect(a.identity.domain).toBe("retained.example");
+    expect(b.identity.domain).toBe("other.example");
+  });
+
+  it.each(["exhaustion", "early return"])("rehashes the joined snapshot on %s", async (finish) => {
+    const f = await fixture();
+    const rows = streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "canonical");
+    expect((await rows.next()).done).toBe(false);
+    await fs.appendFile(f.file, "changed");
+    await expect(finish === "exhaustion" ? rows.next() : rows.return(undefined)).rejects.toThrow(
+      "OBSERVATION_SNAPSHOT_CHANGED",
+    );
+  });
+
+  it("does not manufacture an identity result when there are no observations", async () => {
+    const f = await fixture((db) => db.exec("DELETE FROM observations"));
+    expect(
+      await collect(streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "canonical")),
+    ).toEqual([]);
   });
 });

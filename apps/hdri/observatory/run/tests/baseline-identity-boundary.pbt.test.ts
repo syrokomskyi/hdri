@@ -1,6 +1,9 @@
 import fc from "fast-check";
 import { expect, it } from "vitest";
-import { parseBaselineIdentities } from "../../tools/preservation/contracts.js";
+import {
+  assertBaselineCanonicalId,
+  parseBaselineIdentities,
+} from "../../tools/preservation/contracts.js";
 import { resolveIdentities } from "../../tools/preservation/baseline-import.js";
 
 const sha256 = fc
@@ -13,6 +16,33 @@ const row = fc.record({
   provisionalId: fc.uuid(),
   canonicalId: fc.uuid({ version: 7 }),
   evidenceRefs: fc.uuid().map((id) => [`originals/${id}`]),
+});
+
+// Case invariance: syntax validation accepts both hex cases but never normalizes retained IDs.
+it("canonical validation preserves case and rejects any appended identity suffix", () => {
+  fc.assert(
+    fc.property(fc.uuid({ version: 7 }), (uuid) => {
+      for (const value of [uuid, uuid.toUpperCase()]) {
+        expect(() => assertBaselineCanonicalId(value)).not.toThrow();
+        expect(
+          parseBaselineIdentities([
+            {
+              producer: "p",
+              device: "d",
+              databaseSha256: "a".repeat(64),
+              localSiteId: 1,
+              provisionalId: "alias",
+              canonicalId: value,
+              evidenceRefs: ["originals/source"],
+            },
+          ])[0].canonicalId,
+        ).toBe(value);
+        for (const suffix of ["x", "\n", "\r", "\r\n", "\u2028", "\u2029"])
+          expect(() => assertBaselineCanonicalId(value + suffix)).toThrow("canonicalId");
+      }
+    }),
+    { numRuns: 200 },
+  );
 });
 
 // Idempotency: validated identity input already has its one closed canonical shape.

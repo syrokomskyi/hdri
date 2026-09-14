@@ -3,12 +3,15 @@
   <purpose>Read retained Observatory observations from pinned private snapshots with bounded payload transfer.</purpose>
   <non-goals>
     <item>Does not open originals, migrate databases, write records or issue admission receipts.</item>
-    <item>Does not accept reconstructed preparation metadata or authenticate identities, signatures or referenced CAS objects.</item>
+    <item>Does not accept reconstructed preparation metadata or authenticate historical device claims, signatures or referenced CAS objects.</item>
     <item>Does not validate the complete database schema, ontology or historical provenance claims.</item>
   </non-goals>
   <!-- risk: crypto, vault -->
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>RFC-0115 A1: enforce the known observation-table shape, transfer bounds, exact SQL/JSON agreement and snapshot read-back.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY>
+  <item>RFC-0115 A1: enforce the known observation-table shape, transfer bounds, exact SQL/JSON agreement and snapshot read-back.</item>
+  <item>Join retained identity mappings in the same pinned snapshot using an explicit identifier namespace and bounded indexed lookups.</item>
+</CHANGE_SUMMARY>
 */
 // @ai-invariant: Only consume prepareBaselineSource output in writer-exclusive storage; an accepted row is not a verified archive or completed stream.
 import { createHash } from "node:crypto";
@@ -19,9 +22,10 @@ import Database from "better-sqlite3";
 import { assertRelativeObjectPath, inspectRetainedFile } from "@warpgogol/pipeline-node";
 import { assertPreparedBaselineSource, type PreparedBaselineSource } from "./preserve.js";
 import { hasConsistentObservationEnvelope } from "../../run/verify/verify-core.js";
+import { assertBaselineCanonicalId } from "./contracts.js";
 
-// Exact table contract retained by Observatory migrations 1–3. Additional database
-// domains are intentionally not recognized or executed by this reader.
+// Exact observation table contract retained by Observatory migrations 1–3.
+// Identity joins below recognize one additional, explicitly declared table.
 const COLUMNS = [
   ["id", "TEXT", 0, 1],
   ["asset_id", "TEXT", 1, 0],
@@ -92,21 +96,47 @@ const REQUIRED_PAYLOAD = [...MIRRORS.map(([, name]) => name), "value_bool", ...P
 const ALLOWED_PAYLOAD = new Set([...REQUIRED_PAYLOAD, "collection_status", ...SIGNING_FIELDS]);
 const utf8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
-function checkSchema(db: Database.Database): void {
+// These schemas and index names are authored constants, never retained SQL or caller input.
+const IDENTITY_COLUMNS = [
+  ["provisional_id", "TEXT", 0, 1],
+  ["canonical_id", "TEXT", 1, 0],
+  ["domain", "TEXT", 1, 0],
+  ["first_seen", "TEXT", 1, 0],
+] as const;
+type IdentityColumn = (typeof IDENTITY_COLUMNS)[number][0];
+export type RetainedObservationIdentity = Readonly<{
+  observation: RetainedObservationSourceRow;
+  identity: Readonly<Record<IdentityColumn, string>>;
+  source: Readonly<{
+    manifestSha256: string;
+    artifact: Readonly<{ uri: string; sha256: string; bytes: number }>;
+    observationLocator: Readonly<{ table: "observations"; id: string }>;
+    identityLocator: Readonly<{ table: "asset_id_map"; provisional_id: string }>;
+    assetIdNamespace: "provisional" | "canonical";
+  }>;
+}>;
+
+function checkTableSchema(
+  db: Database.Database,
+  name: "observations" | "asset_id_map",
+  columns: readonly (readonly [string, string, number, number])[],
+): void {
+  const error =
+    name === "observations"
+      ? "UNSUPPORTED_OBSERVATION_SOURCE_SCHEMA"
+      : "UNSUPPORTED_IDENTITY_SOURCE_SCHEMA";
   const table = db
-    .prepare(
-      "SELECT type, ncol, wr FROM pragma_table_list WHERE schema='main' AND name='observations'",
-    )
-    .get() as { type: string; ncol: number; wr: number } | undefined;
-  if (!table || table.type !== "table" || table.ncol !== COLUMNS.length || table.wr !== 0)
-    throw new Error("UNSUPPORTED_OBSERVATION_SOURCE_SCHEMA");
+    .prepare("SELECT type, ncol, wr FROM pragma_table_list WHERE schema='main' AND name=?")
+    .get(name) as { type: string; ncol: number; wr: number } | undefined;
+  if (!table || table.type !== "table" || table.ncol !== columns.length || table.wr !== 0)
+    throw new Error(error);
   let index = 0;
   for (const actual of db
     .prepare(
       `SELECT cid, substr(name,1,64) AS name,
-    substr(type,1,16) AS type, "notnull", pk, hidden FROM pragma_table_xinfo('observations') ORDER BY cid`,
+    substr(type,1,16) AS type, "notnull", pk, hidden FROM pragma_table_xinfo(?) ORDER BY cid`,
     )
-    .iterate() as Iterable<{
+    .iterate(name) as Iterable<{
     cid: number;
     name: string;
     type: string;
@@ -114,7 +144,7 @@ function checkSchema(db: Database.Database): void {
     pk: number;
     hidden: number;
   }>) {
-    const expected = COLUMNS[index++];
+    const expected = columns[index++];
     if (
       !expected ||
       actual.cid !== index - 1 ||
@@ -124,31 +154,49 @@ function checkSchema(db: Database.Database): void {
       actual.pk !== expected[3] ||
       actual.hidden !== 0
     )
-      throw new Error("UNSUPPORTED_OBSERVATION_SOURCE_SCHEMA");
+      throw new Error(error);
   }
-  if (index !== COLUMNS.length) throw new Error("UNSUPPORTED_OBSERVATION_SOURCE_SCHEMA");
-  // A known BINARY ascending primary-key index avoids an unbounded temporary sort.
-  const pk = db
+  if (index !== columns.length) throw new Error(error);
+}
+
+function checkUniqueIndex(
+  db: Database.Database,
+  table: "observations" | "asset_id_map",
+  name: string,
+  column: string,
+  cid: number,
+  origin: "pk" | "c",
+): void {
+  const index = db
     .prepare(
-      `SELECT count(*) FROM pragma_index_list('observations')
-    WHERE name='sqlite_autoindex_observations_1' AND origin='pk' AND "unique"=1 AND partial=0`,
+      `SELECT count(*) FROM pragma_index_list(?)
+      WHERE name=? AND origin=? AND "unique"=1 AND partial=0`,
     )
     .pluck()
-    .get();
+    .get(table, name, origin);
   const key = db
     .prepare(
-      `SELECT count(*) FROM pragma_index_xinfo('sqlite_autoindex_observations_1')
-    WHERE key=1 AND seqno=0 AND cid=0 AND name='id' AND coll='BINARY' AND "desc"=0`,
+      `SELECT count(*) FROM pragma_index_xinfo(?)
+      WHERE key=1 AND seqno=0 AND cid=? AND name=? AND coll='BINARY' AND "desc"=0`,
     )
     .pluck()
-    .get();
+    .get(name, cid, column);
   const count = db
-    .prepare(
-      "SELECT count(*) FROM pragma_index_xinfo('sqlite_autoindex_observations_1') WHERE key=1",
-    )
+    .prepare("SELECT count(*) FROM pragma_index_xinfo(?) WHERE key=1")
     .pluck()
-    .get();
-  if (pk !== 1 || key !== 1 || count !== 1) throw new Error("UNSUPPORTED_OBSERVATION_SOURCE_INDEX");
+    .get(name);
+  if (index !== 1 || key !== 1 || count !== 1)
+    throw new Error(
+      table === "observations"
+        ? "UNSUPPORTED_OBSERVATION_SOURCE_INDEX"
+        : "UNSUPPORTED_IDENTITY_SOURCE_INDEX",
+    );
+}
+
+function checkSchema(db: Database.Database): void {
+  checkTableSchema(db, "observations", COLUMNS);
+  // A known BINARY ascending primary-key index avoids an unbounded temporary sort.
+  checkUniqueIndex(db, "observations", "sqlite_autoindex_observations_1", "id", 0, "pk");
   if (db.pragma("encoding", { simple: true }) !== "UTF-8")
     throw new Error("UNSUPPORTED_OBSERVATION_SOURCE_ENCODING");
 }
@@ -257,6 +305,92 @@ export function streamPreparedObservations(
   prepared: PreparedBaselineSource,
   snapshotUri: string,
 ): AsyncGenerator<RetainedObservationSourceRow> {
+  return streamSnapshot(prepared, snapshotUri, (db) => readRows(db, prepared.manifest.period));
+}
+
+/**
+ * Resolve the observation's explicitly declared ID namespace against retained mappings.
+ * Locators describe actual rows in this snapshot, not factory local IDs or device proof.
+ * Never rewrite the signed payload with the canonical ID. Complete consumption and
+ * independent domain reconciliation remain necessary before target admission.
+ */
+export function streamPreparedObservationIdentities(
+  prepared: PreparedBaselineSource,
+  snapshotUri: string,
+  assetIdNamespace: "provisional" | "canonical",
+): AsyncGenerator<RetainedObservationIdentity> {
+  if (assetIdNamespace !== "provisional" && assetIdNamespace !== "canonical")
+    throw new Error("EXPLICIT_SOURCE_ASSET_ID_NAMESPACE_REQUIRED");
+  return streamSnapshot(prepared, snapshotUri, function* (db, artifact) {
+    checkTableSchema(db, "asset_id_map", IDENTITY_COLUMNS);
+    for (const [name, column, cid, origin] of [
+      ["sqlite_autoindex_asset_id_map_1", "provisional_id", 0, "pk"],
+      ["aim_canonical_idx", "canonical_id", 1, "c"],
+    ] as const) {
+      checkUniqueIndex(db, "asset_id_map", name, column, cid, origin);
+    }
+    const column = assetIdNamespace === "provisional" ? "provisional_id" : "canonical_id";
+    const index =
+      assetIdNamespace === "provisional" ? "sqlite_autoindex_asset_id_map_1" : "aim_canonical_idx";
+    // Each cell is guarded before transfer. Invalid matched rows fail, not disappear.
+    const guard = IDENTITY_COLUMNS.map(
+      ([name]) => `typeof("${name}")='text' AND octet_length("${name}")<=${MAX_KEY_BYTES}`,
+    ).join(" AND ");
+    const selected = IDENTITY_COLUMNS.map(
+      ([name]) => `CASE WHEN ${guard} THEN CAST("${name}" AS BLOB) END AS "${name}"`,
+    ).join(",");
+    const lookup = db.prepare(`SELECT CASE WHEN ${guard} THEN 1 ELSE 0 END AS admissible,
+      ${selected} FROM asset_id_map INDEXED BY ${index} WHERE "${column}" COLLATE BINARY=?`);
+    for (const observation of readRows(db, prepared.manifest.period)) {
+      const assetId = observation.columns.asset_id;
+      if (
+        typeof assetId !== "string" ||
+        !assetId.trim() ||
+        Buffer.byteLength(assetId) > MAX_KEY_BYTES
+      )
+        throw new Error("INVALID_OBSERVATION_IDENTITY_KEY");
+      const raw = lookup.get(assetId) as Record<string, unknown> | undefined;
+      if (!raw) throw new Error("UNRESOLVED_OBSERVATION_IDENTITY");
+      if (raw.admissible !== 1) throw new Error("INVALID_OR_OVERSIZED_IDENTITY_SOURCE_ROW");
+      const identity = Object.fromEntries(
+        IDENTITY_COLUMNS.map(([name]) => {
+          if (!(raw[name] instanceof Uint8Array)) throw new Error("INVALID_IDENTITY_SOURCE_TEXT");
+          return [name, utf8.decode(raw[name])];
+        }),
+      ) as Record<IdentityColumn, string>;
+      if (!identity.provisional_id.trim() || /[\u0000-\u001f\u007f]/.test(identity.provisional_id))
+        throw new Error("INVALID_IDENTITY_SOURCE_KEY");
+      assertBaselineCanonicalId(identity.canonical_id);
+      if (identity[column] !== assetId) throw new Error("OBSERVATION_IDENTITY_MISMATCH");
+      yield Object.freeze({
+        observation,
+        identity: Object.freeze(identity),
+        source: Object.freeze({
+          manifestSha256: prepared.manifestSha256,
+          artifact,
+          observationLocator: Object.freeze({
+            table: "observations" as const,
+            id: observation.columns.id as string,
+          }),
+          identityLocator: Object.freeze({
+            table: "asset_id_map" as const,
+            provisional_id: identity.provisional_id,
+          }),
+          assetIdNamespace,
+        }),
+      });
+    }
+  });
+}
+
+function streamSnapshot<T>(
+  prepared: PreparedBaselineSource,
+  snapshotUri: string,
+  read: (
+    db: Database.Database,
+    artifact: Readonly<{ uri: string; sha256: string; bytes: number }>,
+  ) => Iterable<T>,
+): AsyncGenerator<T> {
   assertPreparedBaselineSource(prepared);
   assertRelativeObjectPath(snapshotUri);
   const matches = prepared.manifest.artifacts.filter((artifact) => artifact.uri === snapshotUri);
@@ -264,7 +398,11 @@ export function streamPreparedObservations(
     throw new Error("DECLARED_OBSERVATION_SNAPSHOT_REQUIRED");
   const expected = { ...matches[0] };
   const file = path.join(prepared.root, snapshotUri);
-  const period = prepared.manifest.period;
+  const artifact = Object.freeze({
+    uri: expected.uri,
+    sha256: expected.sha256,
+    bytes: expected.bytes,
+  });
   async function verifyBytes() {
     let header = Buffer.alloc(0);
     const actual = await inspectRetainedFile(file, (chunk) => {
@@ -297,7 +435,7 @@ export function streamPreparedObservations(
       db.pragma("query_only=ON");
       db.pragma("trusted_schema=OFF");
       checkSchema(db);
-      yield* readRows(db, period);
+      yield* read(db, artifact);
     } finally {
       try {
         db.close();

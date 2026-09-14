@@ -10,6 +10,7 @@
   <item>RFC-0100: preservation and baseline-import contracts.</item>
   <item>Distinguish read-only preservation plans from successfully verified copy operations.</item>
   <item>Validate device-scoped identities and closed receipt shapes without granting evidence authority.</item>
+  <item>Share canonical UUID syntax validation with retained identity joins without normalization or minting.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -95,6 +96,12 @@ const SHA256_HEX = /^[0-9a-f]{64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const MAX_BASELINE_IDENTITIES = 1_000_000;
 
+/** Validate retained canonical syntax without minting, normalizing or proving its origin. */
+export function assertBaselineCanonicalId(value: unknown): asserts value is string {
+  if (typeof value !== "string" || !UUID.test(value))
+    throw new Error("INVALID_BASELINE_INPUT: canonicalId");
+}
+
 function closedObject(
   value: unknown,
   fields: readonly string[],
@@ -152,8 +159,7 @@ export function parseBaselineIdentities(value: unknown): readonly BaselineIdenti
         row.localSiteId < 1
       )
         throw new Error("INVALID_BASELINE_INPUT: localSiteId");
-      if (typeof row.canonicalId !== "string" || !UUID.test(row.canonicalId))
-        throw new Error("INVALID_BASELINE_INPUT: canonicalId");
+      assertBaselineCanonicalId(row.canonicalId);
       if (
         !Array.isArray(row.evidenceRefs) ||
         row.evidenceRefs.length < 1 ||
