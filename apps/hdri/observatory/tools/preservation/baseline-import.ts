@@ -1,18 +1,20 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Baseline import: identity resolution, conversion, and receipt generation for Q2 evidence.</purpose>
+<purpose>Resolve retained identities and contain the unverified offline baseline copier.</purpose>
 <non-goals>
   <item>Does not perform full deterministic publication reconstruction — that is RFC-0110.</item>
-  <item>Does not write Q2 originals or invent identities/timestamps.</item>
+  <item>Does not establish current-format baseline admission; the CLI must remain blocked.</item>
 </non-goals>
+<!-- risk: crypto, fs-write -->
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0100: baseline import and identity resolution.</item>
   <item>RFC-0100 review fix: DNA-8 — hash actual converter source instead of constant string.</item>
   <item>Reject unresolved historical identity instead of synthesizing a new canonical identifier.</item>
-  <item>RFC-0113 A1: Real bounded conversion — materialize target SQLite tables, copy rows with identity mapping, produce detailed comparison report.</item>
+  <item>Reject ambiguous cross-device/DB scopes and alias overlap before copier effects; validate retained UUIDs and detach identity input.</item>
 </CHANGE_SUMMARY>
 */
+// @ai-invariant: The copier below is not a validated conversion path; never call it on real retained archives or admit its receipts (RFC-0115 A1/Q17).
 
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
@@ -21,7 +23,11 @@ import path from "node:path";
 import Database from "better-sqlite3";
 
 import type { BaselineIdentity, BaselineImportReceipt } from "./contracts.js";
-import { validateBaselineImportReceipt } from "./contracts.js";
+import {
+  MAX_BASELINE_IDENTITIES,
+  parseBaselineIdentities,
+  validateBaselineImportReceipt,
+} from "./contracts.js";
 import type { InventoryEntry } from "./inventory.js";
 
 // ---------------------------------------------------------------------------
@@ -161,38 +167,44 @@ const convertSqliteDb = async (
 // ---------------------------------------------------------------------------
 
 export type IdentityResolutionOptions = {
-  archivePath: string;
   producer: string;
+  device: string;
   databaseSha256: string;
   localIds: { localSiteId: number; provisionalId: string; evidenceRefs: string[] }[];
-  existingCanonicalIds: Map<string, string>; // localId → canonicalId
+  existingCanonicalIds: ReadonlyMap<string, string>; // provisionalId → canonicalId, within this declared source scope
 };
 
 export const resolveIdentities = (opts: IdentityResolutionOptions): BaselineIdentity[] => {
+  if (
+    !opts ||
+    typeof opts !== "object" ||
+    Object.keys(opts).sort().join(",") !==
+      "databaseSha256,device,existingCanonicalIds,localIds,producer" ||
+    !Array.isArray(opts.localIds) ||
+    !opts.localIds.length ||
+    opts.localIds.length > MAX_BASELINE_IDENTITIES ||
+    !(opts.existingCanonicalIds instanceof Map) ||
+    opts.existingCanonicalIds.size > MAX_BASELINE_IDENTITIES
+  )
+    throw new Error("INVALID_BASELINE_INPUT: identity resolution");
   const identities: BaselineIdentity[] = [];
-  const canonicalByLocalId = new Map<number, string>();
 
   for (const local of opts.localIds) {
+    if (
+      !local ||
+      typeof local !== "object" ||
+      Object.keys(local).sort().join(",") !== "evidenceRefs,localSiteId,provisionalId"
+    )
+      throw new Error("INVALID_BASELINE_INPUT: local identity");
     const canonicalId = opts.existingCanonicalIds.get(local.provisionalId);
 
-    if (canonicalId === undefined || canonicalId.trim().length === 0) {
-      throw new Error(
-        `UNRESOLVED_IDENTITY: ${opts.producer}/${opts.databaseSha256}/${local.localSiteId}`,
-      );
+    if (canonicalId === undefined) {
+      throw new Error("UNRESOLVED_IDENTITY: no retained canonical binding in the declared scope");
     }
-
-    // AC-3: if one historical numeric ID has two unresolved canonical owners → fail
-    const existing = canonicalByLocalId.get(local.localSiteId);
-    if (existing !== undefined && existing !== canonicalId) {
-      throw new Error(
-        `IDENTITY_AMBIGUITY: localSiteId ${local.localSiteId} maps to two canonical IDs: ${existing} and ${canonicalId}`,
-      );
-    }
-
-    canonicalByLocalId.set(local.localSiteId, canonicalId);
 
     identities.push({
       producer: opts.producer,
+      device: opts.device,
       databaseSha256: opts.databaseSha256,
       localSiteId: local.localSiteId,
       provisionalId: local.provisionalId,
@@ -201,7 +213,7 @@ export const resolveIdentities = (opts: IdentityResolutionOptions): BaselineIden
     });
   }
 
-  return identities;
+  return [...parseBaselineIdentities(identities)];
 };
 
 // ---------------------------------------------------------------------------
@@ -224,18 +236,30 @@ export type ConversionOptions = {
 export const convertToBaseline = async (
   opts: ConversionOptions,
 ): Promise<{ receipt: BaselineImportReceipt; comparisonReport: ComparisonReport }> => {
-  await fs.mkdir(opts.targetRoot, { recursive: true });
+  const identities = parseBaselineIdentities(opts.identities);
+  // The old copier cannot attribute a table to a producer/device/DB generation.
+  // Refuse cross-scope input before effects; only the replacement converter may
+  // consume multiple scopes. The operational CLI remains blocked for all input.
+  if (
+    new Set(identities.map((id) => JSON.stringify([id.producer, id.device, id.databaseSha256])))
+      .size > 1
+  )
+    throw new Error("BASELINE_CONVERSION_UNVERIFIED: source-scoped table conversion is required");
 
   // Build identity map for conversion (provisionalId → canonicalId)
   const identityMap = new Map<string, string>();
-  for (const id of opts.identities) {
-    identityMap.set(id.provisionalId, id.canonicalId);
-    identityMap.set(String(id.localSiteId), id.canonicalId);
+  for (const id of identities) {
+    for (const key of [id.provisionalId, String(id.localSiteId)]) {
+      if (identityMap.has(key) && identityMap.get(key) !== id.canonicalId)
+        throw new Error("IDENTITY_AMBIGUITY: overlapping local and provisional aliases");
+      identityMap.set(key, id.canonicalId);
+    }
   }
+  await fs.mkdir(opts.targetRoot, { recursive: true });
 
   // Write identity map
   const identityMapPath = path.join(opts.targetRoot, "identity-map.json");
-  const identityMapBytes = JSON.stringify(opts.identities, null, 2);
+  const identityMapBytes = JSON.stringify(identities, null, 2);
   await fs.writeFile(identityMapPath, identityMapBytes, "utf8");
   const identityMapSha256 = createHash("sha256").update(identityMapBytes, "utf8").digest("hex");
 
@@ -294,7 +318,7 @@ export const convertToBaseline = async (
     schema: "hdri-current-baseline@1",
     period: "2026-q2",
     origin: "converted-evidence",
-    identities: opts.identities.length,
+    identities: identities.length,
     artifacts: opts.inventory.map((e) => ({ role: e.role, sha256: e.sha256, bytes: e.bytes })),
   };
   const manifestPath = path.join(opts.targetRoot, "baseline-manifest.json");

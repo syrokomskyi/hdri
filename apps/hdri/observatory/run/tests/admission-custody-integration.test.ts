@@ -94,16 +94,16 @@ describe("RFC-0113 AC-1: multi-object fixture preserved to destinations", () => 
       ];
 
       const identities = resolveIdentities({
-        archivePath,
         producer: "factory",
-        databaseSha256: "abc",
+        device: "fixture-device",
+        databaseSha256: "a".repeat(64),
         localIds: [
           { localSiteId: 1, provisionalId: "da-1", evidenceRefs: ["ref1"] },
           { localSiteId: 2, provisionalId: "da-2", evidenceRefs: ["ref2"] },
         ],
         existingCanonicalIds: new Map([
-          ["da-1", "canonical-uuid-1"],
-          ["da-2", "canonical-uuid-2"],
+          ["da-1", "0198f000-0000-7000-8000-000000000001"],
+          ["da-2", "0198f000-0000-7000-8000-000000000002"],
         ]),
       });
 
@@ -172,9 +172,9 @@ describe("RFC-0113 AC-3: unknown identity blocks baseline admission", () => {
   it("rejects unmapped historical identities", () => {
     expect(() =>
       resolveIdentities({
-        archivePath: "/unused",
         producer: "factory",
-        databaseSha256: "abc",
+        device: "fixture-device",
+        databaseSha256: "a".repeat(64),
         localIds: [{ localSiteId: 1, provisionalId: "da-unmapped", evidenceRefs: [] }],
         existingCanonicalIds: new Map(),
       }),
@@ -184,16 +184,16 @@ describe("RFC-0113 AC-3: unknown identity blocks baseline admission", () => {
   it("rejects ambiguous identity mapping", () => {
     expect(() =>
       resolveIdentities({
-        archivePath: "/tmp",
         producer: "factory",
-        databaseSha256: "abc",
+        device: "fixture-device",
+        databaseSha256: "a".repeat(64),
         localIds: [
-          { localSiteId: 1, provisionalId: "da-1", evidenceRefs: [] },
-          { localSiteId: 1, provisionalId: "da-2", evidenceRefs: [] },
+          { localSiteId: 1, provisionalId: "da-1", evidenceRefs: ["retained/id-map"] },
+          { localSiteId: 1, provisionalId: "da-2", evidenceRefs: ["retained/id-map"] },
         ],
         existingCanonicalIds: new Map([
-          ["da-1", "canonical-uuid-1"],
-          ["da-2", "canonical-uuid-2"],
+          ["da-1", "0198f000-0000-7000-8000-000000000001"],
+          ["da-2", "0198f000-0000-7000-8000-000000000002"],
         ]),
       }),
     ).toThrow(/IDENTITY_AMBIGUITY/);

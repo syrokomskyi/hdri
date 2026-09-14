@@ -72,15 +72,11 @@ describe("RFC-0100 AC-1: baseline import preserves canonical asset IDs", () => {
 
       const identities = [
         {
-          producer: "factory",
-          databaseSha256: "abc",
           localSiteId: 1,
           provisionalId: "da-1",
           evidenceRefs: ["ref1"],
         },
         {
-          producer: "factory",
-          databaseSha256: "abc",
           localSiteId: 2,
           provisionalId: "da-2",
           evidenceRefs: ["ref2"],
@@ -88,19 +84,19 @@ describe("RFC-0100 AC-1: baseline import preserves canonical asset IDs", () => {
       ];
 
       const resolved = resolveIdentities({
-        archivePath,
         producer: "factory",
-        databaseSha256: "abc",
+        device: "fixture-device",
+        databaseSha256: "a".repeat(64),
         localIds: identities,
         existingCanonicalIds: new Map([
-          ["da-1", "canonical-uuid-1"],
-          ["da-2", "canonical-uuid-2"],
+          ["da-1", "0198f000-0000-7000-8000-000000000001"],
+          ["da-2", "0198f000-0000-7000-8000-000000000002"],
         ]),
       });
 
       expect(resolved).toHaveLength(2);
-      expect(resolved[0].canonicalId).toBe("canonical-uuid-1");
-      expect(resolved[1].canonicalId).toBe("canonical-uuid-2");
+      expect(resolved[0].canonicalId).toBe("0198f000-0000-7000-8000-000000000001");
+      expect(resolved[1].canonicalId).toBe("0198f000-0000-7000-8000-000000000002");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -141,9 +137,9 @@ describe("RFC-0100 AC-3: ambiguous identity blocks admission", () => {
   it("rejects unmapped historical identities instead of inventing canonical IDs", () => {
     expect(() =>
       resolveIdentities({
-        archivePath: "/unused",
         producer: "factory",
-        databaseSha256: "abc",
+        device: "fixture-device",
+        databaseSha256: "a".repeat(64),
         localIds: [{ localSiteId: 1, provisionalId: "da-unmapped", evidenceRefs: [] }],
         existingCanonicalIds: new Map(),
       }),
@@ -153,16 +149,16 @@ describe("RFC-0100 AC-3: ambiguous identity blocks admission", () => {
   it("fails when one localSiteId maps to two canonical owners", () => {
     expect(() =>
       resolveIdentities({
-        archivePath: "/tmp",
         producer: "factory",
-        databaseSha256: "abc",
+        device: "fixture-device",
+        databaseSha256: "a".repeat(64),
         localIds: [
-          { localSiteId: 1, provisionalId: "da-1", evidenceRefs: [] },
-          { localSiteId: 1, provisionalId: "da-2", evidenceRefs: [] },
+          { localSiteId: 1, provisionalId: "da-1", evidenceRefs: ["retained/id-map"] },
+          { localSiteId: 1, provisionalId: "da-2", evidenceRefs: ["retained/id-map"] },
         ],
         existingCanonicalIds: new Map([
-          ["da-1", "canonical-uuid-1"],
-          ["da-2", "canonical-uuid-2"],
+          ["da-1", "0198f000-0000-7000-8000-000000000001"],
+          ["da-2", "0198f000-0000-7000-8000-000000000002"],
         ]),
       }),
     ).toThrow(/IDENTITY_AMBIGUITY/);
@@ -323,11 +319,11 @@ describe("RFC-0100 full baseline import", () => {
       ];
 
       const identities = resolveIdentities({
-        archivePath,
         producer: "factory",
-        databaseSha256: "abc",
+        device: "fixture-device",
+        databaseSha256: "a".repeat(64),
         localIds: [{ localSiteId: 1, provisionalId: "da-1", evidenceRefs: ["ref1"] }],
-        existingCanonicalIds: new Map([["da-1", "canonical-uuid-1"]]),
+        existingCanonicalIds: new Map([["da-1", "0198f000-0000-7000-8000-000000000001"]]),
       });
 
       const receipt = await importBaseline({
