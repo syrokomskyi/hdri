@@ -64,7 +64,9 @@ export type ViolationCode =
   | "INVALID_SIGNATURE"
   | "INSUFFICIENT_CAPACITY"
   | "UNVERIFIED_REPLICA"
-  | "LOCK_VIOLATION";
+  | "LOCK_VIOLATION"
+  | "BASELINE_CONVERSION_UNVERIFIED"
+  | "PRESERVATION_COMMAND_FAILED";
 
 export type PreservationViolation = Readonly<{
   code: ViolationCode;
@@ -89,7 +91,9 @@ const SHA256_HEX = /^[0-9a-f]{64}$/;
 
 export const validateBaselineImportReceipt = (receipt: BaselineImportReceipt): void => {
   if (receipt.schema !== "hdri-baseline-import@1") {
-    throw new Error(`Invalid receipt schema: expected hdri-baseline-import@1, got ${receipt.schema}`);
+    throw new Error(
+      `Invalid receipt schema: expected hdri-baseline-import@1, got ${receipt.schema}`,
+    );
   }
   if (receipt.period !== "2026-q2") {
     throw new Error(`Invalid receipt period: expected 2026-q2, got ${receipt.period}`);

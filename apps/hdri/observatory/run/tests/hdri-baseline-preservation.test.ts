@@ -16,8 +16,8 @@ import {
 } from "../../tools/preservation/inventory.js";
 import {
   verifyReplicas,
-  checkReplicaIndependence,
-  type ReplicaInfo,
+  checkDestinationIndependence,
+  type DestinationInfo,
 } from "../../tools/preservation/preserve.js";
 import {
   resolveIdentities,
@@ -244,82 +244,36 @@ describe("RFC-0100 AC-6: comparison report zero differences", () => {
 
 describe("RFC-0100 AC-7: replica verification requires 3 independent copies", () => {
   it("fails when fewer than 3 replicas", async () => {
-    const dir = mkdtemp("hdri-ac7-");
-    try {
-      const archivePath = path.join(dir, "archive");
-      fs.mkdirSync(archivePath, { recursive: true });
-
-      // Write a receipt with only 2 replicas
-      const receipt = {
-        schema: "hdri-destination-receipt@1",
-        period: "2026-q2",
-        destination: {
-          path: "/fake/archive",
-          failureDomain: "archive",
-          medium: "local",
-          credentialBoundary: "archive",
-        },
-        objects: [
-          {
-            path: "/fake/1",
-            sha256: "a".repeat(64),
-            bytes: 1,
-            failureDomain: "a",
-            medium: "ssd",
-            credentialBoundary: "k1",
-          },
-          {
-            path: "/fake/2",
-            sha256: "b".repeat(64),
-            bytes: 1,
-            failureDomain: "b",
-            medium: "hdd",
-            credentialBoundary: "k2",
-          },
-        ],
-        totalObjects: 2,
-        totalBytes: 2,
-        contentManifestSha256: "c".repeat(64),
-        signatureSha256: "c".repeat(64),
-      };
-      fs.writeFileSync(
-        path.join(archivePath, "replica-receipt.json"),
-        JSON.stringify(receipt, null, 2),
-      );
-
-      const diagnostic = await verifyReplicas({
-        archivePath,
-        full: false,
-        expectedReplicaCount: 3,
-      });
-
-      expect(diagnostic.status).toBe("incomplete");
-      expect(diagnostic.violations[0].code).toBe("UNVERIFIED_REPLICA");
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
+    const diagnostic = await verifyReplicas({
+      destinations: [0, 1].map((i) => ({
+        path: `/copy-${i}`,
+        failureDomain: `host-${i}`,
+        medium: `medium-${i}`,
+        credentialBoundary: `key-${i}`,
+      })),
+      manifestSha256: "c".repeat(64),
+      verificationKeys: new Map(),
+    });
+    expect(diagnostic.status).toBe("incomplete");
+    expect(diagnostic.violations[0].code).toBe("UNVERIFIED_REPLICA");
   });
 
   it("rejects replicas with same failure domain", () => {
-    const replicas: ReplicaInfo[] = [
+    const replicas: DestinationInfo[] = [
       {
         path: "/a",
-        sha256: "x",
-        bytes: 1,
         failureDomain: "same",
         medium: "ssd",
         credentialBoundary: "k1",
       },
       {
         path: "/b",
-        sha256: "y",
-        bytes: 1,
         failureDomain: "same",
         medium: "hdd",
         credentialBoundary: "k2",
       },
     ];
-    expect(() => checkReplicaIndependence(replicas)).toThrow(/failure domain/);
+    expect(() => checkDestinationIndependence(replicas)).toThrow(/failure domain/);
   });
 });
 
