@@ -283,6 +283,48 @@ The `baseline:import` CLI currently fails before I/O with
 `BASELINE_CONVERSION_UNVERIFIED`; do not bypass it using internal converter helpers.
 Follow the [A1 correction sequence](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
 
+### Baseline comparison building blocks (A1 partial)
+
+Code checkpoint `947b5f9` adds structural identity validation and a bounded exact
+record comparison kernel. It does **not** replace the blocked conversion command.
+
+- Identity input has exactly `producer`, `device`, `databaseSha256`, `localSiteId`,
+  `provisionalId`, `canonicalId`, `evidenceRefs`. Keep producer/device provenance
+  explicit; do not derive it from a convenient directory name. Evidence refs must
+  be unique safe relative object paths; this parser does not prove their existence.
+- Scope local IDs by the complete producer/device/database generation. UUIDs are
+  retained byte-for-byte. Duplicate scoped rows and conflicting provisional aliases
+  fail, including duplicates with the same UUID. Known aliases in different scopes
+  can refer to the same canonical UUID. Empty resolution does not count as import.
+- `validateBaselineImportReceipt` validates a closed shape, lowercase SHA-256 text
+  and nonnegative safe-integer reference counts. It does not authenticate the receipt
+  or assert that a positive unresolved count is acceptable for admission.
+- `compareBaselineRecords` consumes separate source/target iterators with the same
+  explicitly ordered field list. Project all required fields independently from
+  verified source and closed/reopened target; do not reuse the writer's output as
+  expected data. Streams need unique keys ordered by UTF-8 bytes. Use SQLite
+  `safeIntegers()` to avoid rounding 64-bit integers before comparison.
+- Equality preserves typed NULL/bool/number/integer/text/blob values, timestamps,
+  statuses, evidence refs and keys without normalization. JSON text is byte-exact;
+  explained format transformations belong to the audited projection contract, not
+  an implicit equivalence rule. Empty domains return `empty`, never `equal`.
+- The kernel retains a row pair, at most 100 sampled differences and fixed per-field
+  counters. Limits are 256 fields, 4 KiB keys, 8 MiB encoded records and 100 million
+  rows per side. These defensive caps are not a measured capacity qualification.
+  I/O readers must bound cells before allocation and prove complete domain coverage;
+  the kernel cannot detect a caller that silently supplies only a matching subset.
+- Projection hashes bind domain, field order, typed values and keys. They are not
+  hashes of final SQLite/CAS files. Final-file hashing after DB close, authenticated
+  runtime/schema dependency closure and receipt creation are still pending.
+
+The WAL integration fixture uses the actual preservation coordinator to obtain a
+standalone snapshot and verifies all replica bytes again after comparison. A first
+direct-source SELECT fixture changed SHM; the retained assertion was kept and the
+fixture now follows the safe snapshot path. Real Q2 sources were inspected only
+through `sqlite3` immutable read-only URI access for schema/aggregate diagnostics
+after checking that the inspected WAL files were empty; they were not converted.
+Immutable mode ignores WAL and must not be used to read uncheckpointed raw evidence.
+
 ---
 
 ## Qualification harness (RFC-0111)

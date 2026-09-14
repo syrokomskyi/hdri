@@ -196,6 +196,12 @@ Alle Export-Tools (`export-dashboard-data`, `export-dashboard-archive`, `ExportM
 
 Der Kopiermechanismus bewahrt Q2-Originalbytes und getrennte SQLite-Snapshots in vollständigen signierten Kopien. Eine operative Sicherung ist damit noch nicht nachgewiesen. Die Baseline-Konversion bleibt bis zur Korrektur der Identitätszuordnung und des Wertevergleichs gesperrt.
 
+The device-scoped identity validator and exact streaming record comparator now have
+real SQLite regression coverage, including same-count value changes and preserved
+WAL snapshots. They are building blocks, not the completed converter: archive-bound
+schema mapping, imported-evidence provenance and final receipt wiring remain open.
+See the [conversion boundary](RUNBOOK.md#baseline-comparison-building-blocks-a1-partial).
+
 ### Befehle
 
 | Befehl | Zweck |

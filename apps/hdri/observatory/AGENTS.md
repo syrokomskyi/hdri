@@ -141,6 +141,32 @@ All observatory entry points use `createBootstrapAdmission()` from `@syrokomskyi
 
 No operational Q2 preservation or baseline conversion has been verified. The copy mechanism now verifies complete destinations, exact bytes and pinned signatures. The converter still lacks domain-aware identity mapping, current-format records and a real value comparison; its CLI is blocked with `BASELINE_CONVERSION_UNVERIFIED`. Do not invoke its internal helpers on real archives or admit their receipts. Complete the A1 follow-up in the RFC-0115 corrective plan before A2.
 
+### Implemented building blocks, not end-to-end conversion
+
+`BaselineIdentity` now requires `device`. `parseBaselineIdentities` accepts only the
+closed seven-field shape, preserves UUID bytes, rejects duplicate scoped local IDs
+and conflicting provisional aliases, and detaches/freezes evidence refs. The tuple
+is `(producer, device, databaseSha256, localSiteId)`. `resolveIdentities` no longer
+accepts an unused `archivePath`; its canonical map belongs to one explicit scope.
+These functions validate structure, not the retained provenance or existence of
+their references. The old copier rejects multiple scopes and overlapping aliases
+before creating output; single-scope input is still not safe operational conversion.
+
+`tools/preservation/baseline-comparison.ts` compares independent sorted record
+iterators by exact typed values and keys. `empty` is not `equal`; duplicates,
+out-of-order keys, malformed rows and reader failures throw. The report contains
+per-field differences and projection digests, not target-file digests or an import
+receipt. Preserve integer precision with SQLite `safeIntegers()` and sort keys by
+UTF-8 bytes (`COLLATE BINARY`). Reader/domain completeness, schema mappings, typed
+imported-evidence provenance and physical archive verification remain caller work
+in the A1 cutover. Do not wire this helper to the old copier as an admission patch.
+
+Tests live in `run/tests/baseline-{identity-boundary,comparison}*.test.ts`;
+`fast-check` is a dev-only dependency for identity immutability/invariance tests.
+SQLite fixtures include the real current migrations and the actual signed
+preservation → standalone snapshot → comparison → full replica read-back chain.
+Do not open original WAL databases for comparison: even SELECT can change SHM.
+
 ### Scripts
 
 - `preserve:q2 --inventory <file> --destinations <file>` — Consume explicit source roots and exact inventory; retain signed copies. `--dry-run` is read-only, needs no private key and returns `planned`, not preservation success.
