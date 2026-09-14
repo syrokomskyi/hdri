@@ -4,7 +4,7 @@
   <non-goals><item>Does not mutate original evidence, convert historical identities or certify physical custody from destination labels.</item></non-goals>
   <!-- risk: crypto, sign, fs-write -->
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>Replace flat replica receipts and source-side snapshots with fresh signed closures and pinned full read-back.</item><item>Recover private journal copies and finalize standalone SQLite snapshots before retaining their exact bytes.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY><item>Replace flat replica receipts and source-side snapshots with fresh signed closures and pinned full read-back.</item><item>Recover private journal copies and finalize standalone SQLite snapshots before retaining their exact bytes.</item><item>Prepare isolated baseline input from externally pinned complete replicas, with exact copy read-back and snapshot coverage checks.</item></CHANGE_SUMMARY>
 */
 // @ai-invariant: Original databases are never opened by SQLite; snapshots use private copies of retained DB/WAL bytes.
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from "node:crypto";
@@ -429,7 +429,7 @@ async function verifyDestination(
   dest: DestinationInfo,
   expectedSha: string,
   keys: ReadonlyMap<string, VerificationKey>,
-): Promise<void> {
+): Promise<ContentManifest> {
   await assertCanonicalFilePath(dest.path);
   const manifestBytes = await readBoundedFile(
     path.join(dest.path, "content-manifest.json"),
@@ -506,6 +506,119 @@ async function verifyDestination(
     receipt.verificationKeySha256 !== digest(keyBytes)
   )
     throw new Error("DESTINATION_RECEIPT_MISMATCH");
+  return manifest;
+}
+
+export interface PrepareBaselineSourceOptions extends VerifyReplicasOptions {
+  /** Must exactly select one of destinations; no implicit fallback to another copy. */
+  sourceDestinationPath: string;
+  /** New private directory, disjoint from every replica and original inventory root. */
+  workRoot: string;
+}
+export interface PreparedBaselineSource {
+  readonly root: string;
+  readonly manifestSha256: string;
+  readonly manifest: Readonly<Omit<ContentManifest, "sourceInventory" | "artifacts">> & {
+    readonly sourceInventory: readonly Readonly<InventoryEntry>[];
+    readonly artifacts: readonly Readonly<PreservedObject>[];
+  };
+}
+
+/**
+ * Copy the entire authenticated artifact closure into fresh private working storage.
+ * This is input preparation, NOT conversion, an import receipt or admission authority.
+ * No SQLite connection touches originals or replicas. Consumers must open only copied
+ * sqlite-snapshot representations, validate supported schemas and keep the work root
+ * writer-exclusive until all source streams are consumed and checked again.
+ * Failed roots remain for diagnosis; retries require another fresh root.
+ */
+export async function prepareBaselineSource(
+  opts: PrepareBaselineSourceOptions,
+): Promise<PreparedBaselineSource> {
+  // Pin caller-owned metadata before the first await; never accept a supplied manifest.
+  const destinations = parseDestinations(structuredClone(opts.destinations));
+  const fingerprint = opts.manifestSha256;
+  const selected = opts.sourceDestinationPath;
+  const workRoot = opts.workRoot;
+  const keys = new Map([...opts.verificationKeys].map(([id, key]) => [id, { ...key }]));
+  if (typeof fingerprint !== "string" || !SHA.test(fingerprint))
+    throw new Error("EXPECTED_MANIFEST_DIGEST_REQUIRED");
+  if (!destinations.some((d) => d.path === selected))
+    throw new Error("DECLARED_SOURCE_DESTINATION_REQUIRED");
+  await assertFreshDirectory(workRoot);
+  assertDisjointPaths([workRoot, ...destinations.map((d) => d.path)]);
+  let manifest: ContentManifest | undefined;
+  for (const destination of destinations) {
+    const verified = await verifyDestination(destination, fingerprint, keys);
+    if (destination.path === selected) manifest = verified;
+  }
+  if (!manifest) throw new Error("DECLARED_SOURCE_DESTINATION_REQUIRED");
+  // Decode the current inventorySources layout, not a historical path heuristic.
+  // Original roots may be offline: no filesystem access to their recorded paths.
+  const originalRoots = new Map<string, string>();
+  for (const source of manifest.sourceInventory) {
+    const [namespace, ...relative] = source.role.split("/");
+    if (!/^source-\d{4,}$/.test(namespace) || !relative.length)
+      throw new Error("UNSUPPORTED_BASELINE_SOURCE_LAYOUT");
+    let root = source.absolutePath;
+    for (const _ of relative) root = path.dirname(root);
+    if (path.join(root, ...relative) !== source.absolutePath || root === path.parse(root).root)
+      throw new Error("INVALID_BASELINE_SOURCE_ROOT");
+    const priorRoot = originalRoots.get(namespace);
+    if (priorRoot !== undefined && priorRoot !== root)
+      throw new Error("INCONSISTENT_BASELINE_SOURCE_ROOT");
+    originalRoots.set(namespace, root);
+    assertDisjointPaths([workRoot, root]);
+  }
+  await assertFreshDirectory(workRoot);
+  await fs.mkdir(workRoot, { mode: 0o700 });
+  await syncDirectory(path.dirname(workRoot));
+  for (const artifact of manifest.artifacts)
+    await copyVerifiedFile(
+      path.join(selected, artifact.uri),
+      path.join(workRoot, artifact.uri),
+      artifact,
+    );
+
+  // Full final read-back: a copied manifest or receipt is never a substitute for bytes.
+  const expectedFiles = manifest.artifacts.map((a) => a.uri).sort();
+  if (JSON.stringify(await listFiles(workRoot)) !== JSON.stringify(expectedFiles))
+    throw new Error("BASELINE_SOURCE_CLOSURE_MISMATCH");
+  const sqliteOriginals = new Set<string>();
+  const snapshots = new Set<string>();
+  for (const artifact of manifest.artifacts) {
+    let header: Buffer | undefined;
+    const actual = await inspectRetainedFile(path.join(workRoot, artifact.uri), (chunk) => {
+      header ??= Buffer.from(chunk.subarray(0, 20));
+    });
+    if (actual.sha256 !== artifact.sha256 || actual.bytes !== artifact.bytes)
+      throw new Error("BASELINE_SOURCE_OBJECT_MISMATCH");
+    const sqlite = header?.subarray(0, 16).equals(Buffer.from("SQLite format 3\0")) ?? false;
+    if (artifact.representation === "original") {
+      if (sqlite) sqliteOriginals.add(artifact.sourceRole);
+    } else {
+      // Standalone rollback-journal format, never a WAL main file missing its WAL.
+      // Header validation is NOT domain/schema validation or SQLite quick_check.
+      if (!sqlite || actual.bytes < 100 || header?.[18] !== 1 || header?.[19] !== 1)
+        throw new Error("STANDALONE_BASELINE_SNAPSHOT_REQUIRED");
+      snapshots.add(artifact.sourceRole);
+    }
+  }
+  if (
+    sqliteOriginals.size !== snapshots.size ||
+    [...sqliteOriginals].some((role) => !snapshots.has(role))
+  )
+    throw new Error("BASELINE_SNAPSHOT_COVERAGE_MISMATCH");
+  await syncDirectory(workRoot);
+  return Object.freeze({
+    root: workRoot,
+    manifestSha256: fingerprint,
+    manifest: Object.freeze({
+      ...manifest,
+      sourceInventory: Object.freeze(manifest.sourceInventory.map((entry) => Object.freeze(entry))),
+      artifacts: Object.freeze(manifest.artifacts.map((artifact) => Object.freeze(artifact))),
+    }),
+  });
 }
 export async function verifyReplicas(opts: VerifyReplicasOptions): Promise<PreservationDiagnostic> {
   const violations: PreservationDiagnostic["violations"] = [];

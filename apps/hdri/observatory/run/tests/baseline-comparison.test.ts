@@ -12,7 +12,11 @@ import {
   type BaselineValue,
 } from "../../tools/preservation/baseline-comparison.js";
 import { inventorySources } from "../../tools/preservation/inventory.js";
-import { preserveQ2, verifyReplicas } from "../../tools/preservation/preserve.js";
+import {
+  prepareBaselineSource,
+  preserveQ2,
+  verifyReplicas,
+} from "../../tools/preservation/preserve.js";
 
 const dbs: Database.Database[] = [];
 const roots: string[] = [];
@@ -253,10 +257,28 @@ describe("exact baseline record comparison", () => {
       signingKey,
     });
     expect(preserved.status, JSON.stringify(preserved.violations)).toBe("pass");
-    const snapshot = new Database(
-      path.join(destinations[0].path, "snapshots/source-0000/source.db"),
-      { readonly: true, fileMustExist: true },
+    const prepared = await prepareBaselineSource({
+      destinations,
+      manifestSha256: preserved.inputFingerprint,
+      verificationKeys: new Map([
+        [
+          signingKey.signingKeyId,
+          { signingKeyId: signingKey.signingKeyId, publicKeyPem: signingKey.publicKeyPem },
+        ],
+      ]),
+      sourceDestinationPath: destinations[0].path,
+      workRoot: path.join(root!, "comparison-source"),
+    });
+    const snapshotRef = prepared.manifest.artifacts.find(
+      (artifact) =>
+        artifact.sourceRole === "source-0000/source.db" &&
+        artifact.representation === "sqlite-snapshot",
     );
+    expect(snapshotRef).toBeDefined();
+    const snapshot = new Database(path.join(prepared.root, snapshotRef!.uri), {
+      readonly: true,
+      fileMustExist: true,
+    });
     dbs.push(snapshot);
     expect(
       compareBaselineRecords({
