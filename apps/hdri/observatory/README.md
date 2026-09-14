@@ -214,6 +214,12 @@ and bounds retained failure messages. A successful signature check still does no
 prove quarterly completeness, all SQL/JSON field agreement, or historical signing
 time/device provenance. See [signature verification limits](RUNBOOK.md#5-verify-vault-signatures).
 
+The observation source reader now consumes only process-local verified preparation
+objects. It limits row transfer before JavaScript allocation, rejects SQL/JSON
+contradictions and preserves original payload bytes. This covers the known
+observation table, not complete source provenance, current-format materialization
+or an operational import. See [bounded observation reading](RUNBOOK.md#bounded-observation-source-reader-a1-partial).
+
 ### Befehle
 
 | Befehl | Zweck |

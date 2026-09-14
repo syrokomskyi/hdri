@@ -376,6 +376,13 @@ admission authority. Maintain writer exclusion and stable ancestors throughout
 consumption; immutable metadata does not make the filesystem immutable. Only open
 copied snapshots with SQLite; retained originals remain byte evidence.
 
+Completed preparation objects are now registered in a private process-local
+WeakSet. `assertPreparedBaselineSource` accepts only that exact object, after the
+final checks and directory sync. Copying/freezing/deserializing its fields does not
+reconstruct verified acquisition. This protects internal consumers from accidental
+metadata forgery, not from malicious code in the same process, and does not assert
+that files remain unchanged or that a quarter is admitted.
+
 Cost: one complete read of every declared replica plus a copy, copy read-back and
 final read-back of the selected artifact closure. Working disk needs the entire
 artifact closure, not just DB snapshots; no table or whole artifact is buffered.
@@ -384,6 +391,61 @@ Capacity/inode preflight, enforced writer exclusion and process-death/fsync proo
 remain required by A1 step 6. The new injected disk-full/sync tests demonstrate
 error propagation, not real crash durability. Failed working roots remain for
 diagnosis and cannot be resumed or overwritten; retry with a new root.
+
+### Bounded observation source reader (A1 partial)
+
+`streamPreparedObservations(prepared, snapshotUri)` in
+`tools/preservation/observation-source.ts` accepts the exact live preparation object
+and a single declared `sqlite-snapshot`. No CLI, metadata hydration or resume bypass
+is added. It checks digest/size, standalone rollback header and absent WAL/SHM/journal
+before SQLite access. It uses the existing safe file owner, closes SQLite on normal
+exhaustion, early return and decoding failure, then hashes the complete file again.
+Symlinks and changed bytes fail; original DB/WAL paths are never selected.
+
+The recognized source is the 25-column `observations` table from Observatory
+migrations 1–3: exact column order, declared types, nullability, primary key and
+non-generated columns. Views, additional/missing/generated columns, non-UTF-8
+storage and non-BINARY primary-key ordering fail. SQL is fixed by this source
+contract, never copied from retained DDL. Other tables and source producer/device
+attribution are not certified by recognizing this table.
+
+The reader uses SQLite `octet_length(column)` and lazy `CASE` to cap aggregate row
+content at 8 MiB and ID bytes at 4 KiB **before driver transfer**. Oversized or
+wrong-storage-class rows return only an invalid sentinel and NULL fields; they
+stop the stream, not disappear from it. No OFFSET paging or full-table JS array is
+used. The BINARY primary-key index supplies order without a domain-sized temporary
+sort; a 100-million-row ceiling is defensive, not capacity qualification. SQLite
+3.53.4 on this machine supports the required functions. See the primary references
+for [byte-length metadata](https://www.sqlite.org/lang_corefunc.html#octet_length)
+and [lazy CASE evaluation](https://www.sqlite.org/lang_expr.html#the_case_expression).
+
+Text arrives as bounded bytes and is decoded with fatal UTF-8 checking, preserving
+leading BOM characters inside cells, Unicode and embedded NUL. The original JSON
+string is never reserialized; its exact SHA-256 is returned with the frozen SQL
+columns and flat parsed payload. Duplicate top-level JSON keys, including escaped
+aliases, unknown/nested fields and nonfinite parsed numbers fail. Every mirrored
+SQL value, identity, timestamp, lifecycle/collection status and evidence ref must
+agree exactly. Absent optional collection status means NULL; boolean storage is
+only NULL/0/1. Signing-envelope agreement reuses the signature checker owner.
+
+This is a **source record**, not a semantically validated Observation, a verified
+signature, authenticated evidence descriptor or target record. Unmirrored run,
+ontology and factory metadata remain intact for later provenance joins; no assumed
+mapping to crawl/ruleset fields is made. UUID validity, value/ontology semantics,
+measurement quality, producer/device attribution and source/CAS locator resolution
+remain mandatory before materialization. Missing JSON and unsupported records stop
+this reader while the complete original artifact remains preserved; the complete
+converter still needs explicit incomplete-record reconciliation. No record is
+silently discarded or assigned an invented timestamp.
+
+Each invocation costs two full file hashes plus one indexed row scan and a bounded
+JSON duplicate-key check per row. Rows can be yielded before final file hashing;
+only complete exhaustion checks the whole domain. Empty input yields no records and
+does not establish nonempty-domain success. The transfer cap is not an OS/native
+SQLite heap cap: schema loading, malicious database handling, resource isolation,
+capacity/inodes and enforced writer exclusion remain the operational envelope.
+The 10,000-record WAL/copy/decoder fixtures are tests, not real Q2 conversion or
+200,000-site qualification. Full import remains blocked.
 
 ---
 

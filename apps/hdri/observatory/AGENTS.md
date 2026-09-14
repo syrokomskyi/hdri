@@ -101,3 +101,48 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `yaml` `^2.9.0`
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
+
+## HDRI preservation and conversion safety
+
+Production readiness is not established by terminal RFC statuses. Follow the A1
+cutover in `docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md`
+and the preservation sections of `RUNBOOK.md`. `baseline:import` remains blocked
+before I/O; do not use the old DDL copier or its receipts on real evidence. Existing
+bootstrap collect/publish gates must not be bypassed with fixtures or diagnostics.
+
+Never open retained Q2 original DB/WAL sets with SQLite, even read-only: SHM can
+change. `prepareBaselineSource` authenticates all declared replicas with external
+pins and copies the entire closure into a fresh private root disjoint from originals
+and replicas. It alone registers the resulting deeply frozen object for
+`assertPreparedBaselineSource`; clones, JSON round-trips and caller-built metadata
+are rejected by the observation reader before I/O. This process-local acquisition
+check is neither an admission receipt nor durable resume support. Retry failed
+preparation into a fresh root. Maintain writer exclusion and stable path ancestors.
+
+`tools/preservation/observation-source.ts` exports `streamPreparedObservations` for
+one explicitly selected `sqlite-snapshot`. It hashes bytes before opening SQLite
+and after closing, rejects sidecars and symlinks, and recognizes only the fixed
+25-column Observatory observation-table contract and BINARY primary-key ordering.
+It does not recognize all source domains or establish source producer/device scope.
+The SQL guard limits aggregate row transfer to 8 MiB and keys to 4 KiB; invalid rows
+produce an error, not filtering or silent truncation. Text is decoded as strict
+UTF-8 without normalization; original `obs_json` bytes and all SQL columns survive.
+Unknown/nested payload fields, duplicate top-level JSON keys and mismatched mirrored
+values/statuses/timestamps are rejected. Envelope consistency is shared with
+`run/verify/verify-core.ts`, not reimplemented in another crypto verifier.
+
+The result is a frozen source record, **not** a validated current Observation or a
+converted-evidence descriptor. UUID/ontology/value semantics, timestamp quality,
+run/device provenance, signatures, CAS/source locators and target materialization
+still need their owner checks and independent comparison. Never infer CAS identity
+from NULL refs/hash labels, replace historical times/IDs, or re-sign old JSON.
+Signing metadata is excluded from historical signatures; matching metadata does not
+prove its time/device claims. The signature CLI skips unsigned/NULL-JSON rows and
+can spot-check, so its success is not closure. Full source-stream exhaustion plus
+final hashing is necessary; early return only releases resources, not completeness.
+
+Tests: `run/tests/observation-source.test.ts` uses actual preservation/SQLite/WAL and
+driver-boundary sentinels; `verify-envelope.pbt.test.ts` checks shared consistency.
+The 10,000-row fixture is not a real 200,000-site qualification. Native SQLite/schema
+memory, capacity/inodes, enforced exclusion and crash proofs remain A1 requirements.
+See `RUNBOOK.md` for durable operational details if generated guide sections change.
