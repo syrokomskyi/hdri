@@ -3,12 +3,17 @@
 <purpose>Standalone CLI harness that checks ed25519 signatures on every signed observation in the observatory DB.</purpose>
 <non-goals>
   <item>Does not sign observations — use SignObservationsGogol for that.</item>
-  <item>Does not modify the observatory DB.</item>
+  <item>Does not write application rows; a read-only SQLite connection may touch WAL shared-memory files.</item>
+  <item>Does not prove archive completeness or authenticate unsigned historical signing metadata.</item>
 </non-goals>
+<!-- risk: sign -->
+<!-- risk: crypto -->
+<!-- risk: vault -->
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Add COMPASS scaffolding.</item>
   <item>Replace raw console.log/console.error with structured NDJSON logger from @warpgogol/pipeline-core.</item>
+  <item>Report row/payload inconsistencies and close the database even when streamed verification fails.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -22,7 +27,7 @@ import { parseTrustedKeysManifest } from "@syrokomskyi/observatory-crypto";
 import type { VerificationKey, TrustedKeysManifest } from "@syrokomskyi/observatory-crypto";
 import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { getObservatoryDbPath } from "./db/connection.js";
-import { verifySignedRows, type SignedRow } from "./verify/verify-core.js";
+import { verifySignedRows, type SignedRow, type VerifyTally } from "./verify/verify-core.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..", "..");
@@ -186,18 +191,32 @@ if (!limit) {
 }
 
 // ── Verify (streamed) ──
-// .iterate() yields rows one at a time so obs_json is never fully materialized — bounded memory
-// even at Q3's millions of observations. The verification logic lives in the tested core.
+// .iterate() avoids materializing the entire result set, but each obs_json cell is
+// still allocated by the driver. This diagnostic is not a bounded import reader.
 const stmt = db.prepare(
   `SELECT id, obs_json, signature, signed_at, signing_key_id, collector_id
      FROM observations
     WHERE signature IS NOT NULL AND obs_json IS NOT NULL${limit ? " LIMIT ?" : ""}`,
 );
 const iterator = (limit ? stmt.iterate(limit) : stmt.iterate()) as IterableIterator<SignedRow>;
-const tally = verifySignedRows(iterator, keysByKeyId, trustManifest);
-db.close();
+let tally: VerifyTally;
+try {
+  tally = verifySignedRows(iterator, keysByKeyId, trustManifest);
+} finally {
+  db.close();
+}
 
-const { total, valid, invalid, parseErrors, unknownKey, untrusted, failedIds, failedCount } = tally;
+const {
+  total,
+  valid,
+  invalid,
+  parseErrors,
+  inconsistent,
+  unknownKey,
+  untrusted,
+  failedIds,
+  failedCount,
+} = tally;
 const rate = total > 0 ? ((valid / total) * 100).toFixed(2) : "—";
 
 log.info(
@@ -209,6 +228,7 @@ log.info(
     valid,
     invalid,
     parseErrors,
+    inconsistent,
     unknownKey,
     untrusted,
     rate,

@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import Database from "better-sqlite3";
 import { describe, expect, it } from "vitest";
 import { generateSigningKey, signObservation } from "@syrokomskyi/observatory-crypto";
 import type {
@@ -8,6 +9,8 @@ import type {
 } from "@syrokomskyi/observatory-crypto";
 import type { Observation } from "@syrokomskyi/observatory-core";
 import { verifySignedRows, type SignedRow } from "../verify/verify-core";
+import { migrateObservatory } from "../db/migrate.js";
+import { streamInsertObservations } from "../db/sync-writers.js";
 
 // A minimal signable observation (the crypto layer is structural — it signs whatever fields
 // are present, so a full Observation is not needed to exercise verify).
@@ -121,5 +124,187 @@ describe("verifySignedRows (streaming vault verification)", () => {
     expect(t.failedCount).toBe(10);
     expect(t.failedIds).toHaveLength(3);
     expect(t.invalid).toBe(10);
+  });
+
+  it("rejects a database ID different from the cryptographically signed observation ID", () => {
+    const row = signedRow("signed-id", config);
+    row.id = "different-row-id";
+    expect(verifySignedRows([row], keys, null)).toMatchObject({
+      total: 1,
+      valid: 0,
+      invalid: 1,
+      inconsistent: 1,
+    });
+  });
+
+  it("accepts a retained signed JSON envelope without rewriting its bytes", () => {
+    const row = signedRow("envelope", config);
+    const { id: _id, obs_json, ...metadata } = row;
+    row.obs_json = JSON.stringify({ ...JSON.parse(obs_json), ...metadata }, null, 2) + "\n";
+    const before = structuredClone(row);
+    expect(verifySignedRows([row], keys, null)).toMatchObject({ valid: 1, inconsistent: 0 });
+    expect(row).toEqual(before);
+  });
+
+  it.each(["signature", "signed_at", "signing_key_id", "collector_id"] as const)(
+    "rejects conflicting embedded %s instead of overwriting retained evidence",
+    (field) => {
+      const row = signedRow("conflict", config);
+      const { id: _id, obs_json, ...metadata } = row;
+      row.obs_json = JSON.stringify({ ...JSON.parse(obs_json), ...metadata, [field]: "different" });
+      expect(verifySignedRows([row], keys, null)).toMatchObject({
+        valid: 0,
+        invalid: 1,
+        inconsistent: 1,
+      });
+    },
+  );
+
+  it.each(["signature", "signed_at", "signing_key_id", "collector_id"] as const)(
+    "rejects a partially embedded signing envelope containing only %s",
+    (field) => {
+      const row = signedRow("partial", config);
+      row.obs_json = JSON.stringify({ ...JSON.parse(row.obs_json), [field]: row[field] });
+      expect(verifySignedRows([row], keys, null)).toMatchObject({
+        valid: 0,
+        invalid: 1,
+        inconsistent: 1,
+      });
+    },
+  );
+
+  it.each(["null", "[]", "true", '"text"', "42"])(
+    "counts non-object JSON %s as malformed input",
+    (payload) => {
+      const row = signedRow("shape", config);
+      row.obs_json = payload;
+      expect(verifySignedRows([row], keys, null)).toMatchObject({
+        total: 1,
+        valid: 0,
+        invalid: 1,
+        parseErrors: 1,
+      });
+    },
+  );
+
+  it.each([NaN, Infinity, -1, 0.5, 10_001])(
+    "rejects invalid diagnostic limit %s before consuming rows",
+    (maxFailedIds) => {
+      let consumed = false;
+      function* rows() {
+        consumed = true;
+        yield signedRow("unused", config);
+      }
+      expect(() => verifySignedRows(rows(), keys, null, { maxFailedIds })).toThrow(/maxFailedIds/);
+      expect(consumed).toBe(false);
+    },
+  );
+
+  it("allows zero retained diagnostics without suppressing failure counts", () => {
+    const row = signedRow("mismatch", config);
+    row.id = "other";
+    expect(verifySignedRows([row], keys, null, { maxFailedIds: 0 })).toMatchObject({
+      valid: 0,
+      invalid: 1,
+      inconsistent: 1,
+      failedCount: 1,
+      failedIds: [],
+    });
+  });
+
+  it("continues after an inconsistent row and does not certify an interrupted stream", () => {
+    const row = signedRow("mismatch", config);
+    row.id = "other";
+    expect(verifySignedRows([row, signedRow("good", config)], keys, null)).toMatchObject({
+      total: 2,
+      valid: 1,
+      invalid: 1,
+      inconsistent: 1,
+    });
+    let closed = false;
+    function* interrupted() {
+      try {
+        yield signedRow("good", config);
+        throw new Error("source interrupted");
+      } finally {
+        closed = true;
+      }
+    }
+    expect(() => verifySignedRows(interrupted(), keys, null)).toThrow("source interrupted");
+    expect(closed).toBe(true);
+  });
+
+  it("bounds each diagnostic even when the source contains an oversized ID", () => {
+    const row = signedRow("x".repeat(10_000), config);
+    row.signing_key_id = "unknown";
+    const result = verifySignedRows([row], keys, null);
+    expect(result.failedIds[0]).toHaveLength(512);
+    expect(result.failedCount).toBe(1);
+  });
+
+  it("checks actual migrated database rows produced by the current streaming writer", async () => {
+    const db = new Database(":memory:");
+    try {
+      migrateObservatory(db);
+      const observation: Observation = {
+        observation_id: "0198f000-0000-7000-8000-000000000001",
+        asset_id: "0198f000-0000-7000-8000-000000000002",
+        crawl_id: "retained-crawl",
+        signal_path: "web.presence",
+        value_bool: true,
+        value_num: null,
+        value_str: null,
+        value_json: null,
+        value_type: "bool",
+        observed_at: "2026-05-02T10:00:00+02:00",
+        recorded_at: "2026-05-03T11:00:00Z",
+        collector_version: "1",
+        probe_version: null,
+        ruleset_version: "1",
+        source_hash: null,
+        crawl_hash: "2026-q2-de",
+        evidence_ref: null,
+        confidence: 1,
+        status: "active",
+        superseded_by: null,
+        deprecated_reason: null,
+      };
+      async function* observations() {
+        yield observation;
+      }
+      expect(
+        await streamInsertObservations(db, observations(), {
+          runId: "retained-run",
+          ontologyVersion: "1",
+          period: "2026-q2",
+          factoryRunId: "factory-run",
+        }),
+      ).toEqual({ inserted: 1, seen: 1 });
+      const signed = signObservation(observation, config);
+      db.prepare(
+        "UPDATE observations SET signature=?, signed_at=?, signing_key_id=?, collector_id=?",
+      ).run(signed.signature, signed.signed_at, signed.signing_key_id, signed.collector_id);
+      const rows = () =>
+        db
+          .prepare(
+            "SELECT id, obs_json, signature, signed_at, signing_key_id, collector_id FROM observations",
+          )
+          .iterate() as IterableIterator<SignedRow>;
+      const before = db.prepare("SELECT obs_json FROM observations").pluck().get();
+      expect(verifySignedRows(rows(), keys, null)).toMatchObject({
+        total: 1,
+        valid: 1,
+        inconsistent: 0,
+      });
+      expect(db.prepare("SELECT obs_json FROM observations").pluck().get()).toBe(before);
+      db.prepare("UPDATE observations SET id=?").run("substituted-id");
+      expect(verifySignedRows(rows(), keys, null)).toMatchObject({
+        total: 1,
+        valid: 0,
+        inconsistent: 1,
+      });
+    } finally {
+      db.close();
+    }
   });
 });
