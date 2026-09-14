@@ -144,7 +144,25 @@ pnpm verify:vault                       # current year
 pnpm verify:vault -- --year 2026
 ```
 
-Public keys are auto-discovered from `transparency/keys/*.pem`. Each row's `signing_key_id` (e.g. `monolith-abc123def456789a`) is matched against the fingerprint of the loaded keys. Exit code 0 = all signatures valid.
+Public keys are auto-discovered from `transparency/keys/*.pem`. Each row's
+`signing_key_id` is matched against the fingerprint of the loaded keys. The checker
+also requires exact SQL/JSON observation-ID agreement. Embedded signing metadata
+must contain all four fields and agree with the SQL envelope; it is never silently
+overwritten. The result reports such failures as `inconsistent`.
+
+Exit code 0 means no failure among the selected signed, non-NULL-JSON rows. Empty
+input also exits successfully; `--limit` checks only a subset. Neither result proves
+complete quarterly coverage, agreement of other SQL columns, or recoverability.
+Do not use this diagnostic alone to authorize baseline import or evidence eviction.
+Historical signatures exclude `signed_at`, `signing_key_id`, `collector_id` and
+`signature` from their payload. Matching copies of metadata are not proof of its
+historical time/device claims. Archive authentication and externally grounded
+provenance remain required; snapshot signing alone does not prove historical truth.
+
+The checker preserves JSON bytes but does not bound SQLite cell allocation. It
+opens the working database read-only, which can still touch WAL shared-memory
+files. **Do not run this CLI against Q2 originals or retained archive databases.**
+The future conversion reader must use only authenticated private standalone copies.
 
 ### 6. Rebuild from the vault (disaster recovery)
 

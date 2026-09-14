@@ -208,6 +208,12 @@ standalone snapshot coverage and rejects changed or unexpected bytes. This is an
 internal converter building block, not a new command or completed Q2 import.
 See [verified input preparation](RUNBOOK.md#verified-baseline-input-preparation-a1-partial).
 
+The signed-row diagnostic now rejects substituted observation IDs and conflicting
+or partial signing metadata embedded in retained JSON. It preserves original bytes
+and bounds retained failure messages. A successful signature check still does not
+prove quarterly completeness, all SQL/JSON field agreement, or historical signing
+time/device provenance. See [signature verification limits](RUNBOOK.md#5-verify-vault-signatures).
+
 ### Befehle
 
 | Befehl | Zweck |

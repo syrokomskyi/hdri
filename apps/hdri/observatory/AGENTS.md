@@ -192,6 +192,21 @@ claiming live collection. See the core README. The actual converter must still b
 every descriptor to authenticated source locators, preserved UUIDs and exact target
 payload bytes. No source adapter or operational import is supplied by that schema.
 
+### Signed-row verification boundary
+
+`run/verify/verify-core.ts` checks streamed signed rows without rewriting retained
+JSON. SQL `id` must exactly match `observation_id`. If any signing field is
+embedded in JSON, all four must exist and equal the SQL envelope; conflicts count
+as `inconsistent`, not valid signatures. Current base-payload rows remain valid.
+Diagnostics default to 100 entries, accept an integer cap of 0–10,000, and retain
+at most 512 UTF-16 code units per entry. Input failures propagate; no partial
+tally certifies an interrupted stream. This is not a full Observation validator,
+independent SQL/domain comparison, bounded SQLite reader or archive verifier.
+Historical signing metadata is excluded from the signed payload. Agreement does
+not authenticate its time/device claims: bind retained bytes and provenance to
+external trust before using them for baseline conversion. The diagnostic CLI
+filters out unsigned/NULL-JSON rows and may spot-check, so success is not closure.
+
 ### Scripts
 
 - `preserve:q2 --inventory <file> --destinations <file>` — Consume explicit source roots and exact inventory; retain signed copies. `--dry-run` is read-only, needs no private key and returns `planned`, not preservation success.
