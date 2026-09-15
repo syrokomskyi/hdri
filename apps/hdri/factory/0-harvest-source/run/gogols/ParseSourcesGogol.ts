@@ -35,6 +35,7 @@
   <item>Seal accepted batches and ledger-bound frame manifests with Ed25519 signatures.</item>
   <item>Add empty-quarter fail-fast guard (RFC-0068): check site count before materializeLedgerProjection.</item>
   <item>RFC-0102: per-file SourceFileReceipt with content-hash + parser-identity resume logic.</item>
+  <item>Verify each batch's literal source-folder yield before signing its segment; historical assertions cannot satisfy another batch's yield.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -145,7 +146,6 @@ export class ParseSourcesGogol extends Gogol {
     const outDir = ctx.getGogolOutputDir(this.id);
     const doneAt = new Date().toISOString();
     const allBatchReports: BatchReport[] = [];
-    const allSourceFolders = new Set<string>();
     let pagesProcessed = 0;
 
     const limit = pLimit(concurrency);
@@ -154,8 +154,9 @@ export class ParseSourcesGogol extends Gogol {
       console.log(`[parse-sources] Processing batch: ${batchName} (concurrency: ${concurrency})`);
 
       const allSourceFiles = await listBatchSourceFiles(batchName, brief);
+      const batchSourceFolders = new Set<string>();
       for (const sf of allSourceFiles) {
-        allSourceFolders.add(sf.sourceFolder);
+        batchSourceFolders.add(sf.sourceFolder);
       }
       const sourceManifest = await buildSourceBatchManifest(
         batchName,
@@ -296,7 +297,11 @@ export class ParseSourcesGogol extends Gogol {
               const decision = classifySeedWebsite(item.websiteUrl);
               if (decision.reason !== null) {
                 insertSkippedSeed(db, sf.batchScopedPath, item, decision.reason);
-                const key = { no_url: "noUrl", bad_url: "badUrl", stop_domain: "stopDomain" } as const;
+                const key = {
+                  no_url: "noUrl",
+                  bad_url: "badUrl",
+                  stop_domain: "stopDomain",
+                } as const;
                 fileSkipSummary[key[decision.reason]]++;
                 skippedThisFile++;
                 continue;
@@ -365,6 +370,13 @@ export class ParseSourcesGogol extends Gogol {
 
       const batchOutDir = path.join(outDir, "batches", batchName);
       if (maxPages < 0) {
+        checkPerSourceYield(
+          db,
+          [...batchSourceFolders],
+          brief.sourceDisposition,
+          maxPages,
+          batchName,
+        );
         const sealResult = await sealSourceBatch(
           ledgerDir,
           sourceManifest,
@@ -462,7 +474,6 @@ export class ParseSourcesGogol extends Gogol {
 
     if (maxPages < 0) {
       checkMinSitesGuard(db, brief.minSitesThreshold, maxPages);
-      checkPerSourceYield(db, [...allSourceFolders], brief.sourceDisposition, maxPages);
       await materializeLedgerProjection(
         db,
         path.join(outputRootDir, "data", "source-ledger"),

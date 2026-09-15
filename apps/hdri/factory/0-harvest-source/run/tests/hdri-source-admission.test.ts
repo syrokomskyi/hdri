@@ -222,7 +222,9 @@ describe("RFC-0102 AC-6", () => {
     }
 
     // No site_source_seeds for "new-source.com" — zero yield
-    expect(() => checkPerSourceYield(db, ["new-source.com"], {}, -1)).toThrow(PipelinePauseError);
+    expect(() => checkPerSourceYield(db, ["new-source.com"], {}, -1, "2026-q3-de-01")).toThrow(
+      PipelinePauseError,
+    );
 
     db.close();
   });

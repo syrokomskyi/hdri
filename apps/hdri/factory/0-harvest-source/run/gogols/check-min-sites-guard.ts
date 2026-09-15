@@ -2,13 +2,14 @@
 <MODULE_CONTRACT>
 <purpose>Fail-fast guards that check site counts in core_YYYY.db before sealing a frozen frame.</purpose>
 <non-goals>
-  <item>Does not check per-batch registration counts — individual batch segments are valid provenance records.</item>
+  <item>Does not prove file-digest completeness or replace verified historical source inheritance.</item>
   <item>Does not guard diagnostic runs (maxPages >= 0) — those are intentionally unsealed.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation — extracted from RFC-0068 design for testability.</item>
   <item>RFC-0102: add checkPerSourceYield for per-source yield gating with declared-noise disposition.</item>
+  <item>Scope source yield to an exact batch and top-level source before sealing; preserve historical assertions without counting them as new-batch evidence.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -68,8 +69,31 @@ export function checkPerSourceYield(
   sourceFolders: readonly string[],
   sourceDisposition: Readonly<Record<string, "parsed" | "declared-noise">>,
   maxPages: number,
+  batchId: string,
 ): void {
   if (maxPages >= 0) return;
+
+  const validSegment = (value: string): boolean =>
+    typeof value === "string" &&
+    value.length > 0 &&
+    value !== "." &&
+    value !== ".." &&
+    !/[\\/\u0000]/.test(value);
+  if (!validSegment(batchId) || sourceFolders.some((folder) => !validSegment(folder)))
+    throw new PipelinePauseError(
+      "Source yield requires an exact batch ID and top-level source folders.",
+    );
+
+  // Literal, case-sensitive prefixes: %, _ and quotes in retained names are not SQL syntax.
+  const hasAcceptedSeed = db.prepare(`
+    SELECT EXISTS (
+      SELECT 1 FROM site_source_seeds sss
+      JOIN sites s ON sss.site_id = s.id
+      WHERE instr(sss.source_path, ?) = 1
+        AND length(sss.source_path) > length(?)
+        AND (? = 0 OR instr(substr(sss.source_path, length(?) + 1), '/') = 0)
+    ) AS has_seed
+  `);
 
   const failingSources: string[] = [];
 
@@ -77,18 +101,13 @@ export function checkPerSourceYield(
     const disposition = sourceDisposition[sourceFolder] ?? "parsed";
     if (disposition === "declared-noise") continue;
 
-    const result = db
-      .prepare(
-        `
-        SELECT COUNT(*) AS n
-        FROM site_source_seeds sss
-        JOIN sites s ON sss.site_id = s.id
-        WHERE sss.source_path LIKE '%/${sourceFolder}/%'
-      `,
-      )
-      .get() as { n: number };
+    const atBatchRoot = sourceFolder === "__batch_root__";
+    const prefix = atBatchRoot ? `${batchId}/` : `${batchId}/${sourceFolder}/`;
+    const result = hasAcceptedSeed.get(prefix, prefix, Number(atBatchRoot), prefix) as {
+      has_seed: number;
+    };
 
-    if (result.n === 0) {
+    if (result.has_seed === 0) {
       failingSources.push(sourceFolder);
     }
   }
@@ -97,7 +116,7 @@ export function checkPerSourceYield(
     throw new PipelinePauseError(
       [
         "Pipeline paused before sealing — per-source yield gate failed.",
-        `Source(s) with zero accepted seeds: ${failingSources.join(", ")}`,
+        `Batch ${batchId}: source(s) with zero accepted seeds: ${failingSources.join(", ")}`,
         "These sources are expected to contain businesses but produced no registered sites.",
         "Possible causes:",
         "  1. Parser does not extract website URLs from this source format.",
