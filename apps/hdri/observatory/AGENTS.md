@@ -104,6 +104,8 @@ See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
 
 ## Scientific comparison boundary
 
+Quarterly results do not become obsolete because another quarter or methodology exists. Preserve each result with its original period, methodology, evidence and revision identity. Validity within that scope is distinct from eligibility for reuse in a new operation or direct comparison. Missing proof limits the claim; it must not be fabricated. Corrections and reproducible backcasts need separate, linked revision identities without overwriting the originals. Forward-only runtime changes do not authorize deleting historical scientific results.
+
 `run/score/methodology-comparison.ts` compares complete declared component digests, not version labels or a first-present aggregate hash. `tools/scientific-reports/methodology-compare.ts` checks adjacent periods, capsule scope and consumed snapshot bytes. Missing components fail; old Q2 evidence is preserved, never rewritten to satisfy a new reader. The current snapshot producer is still incomplete and therefore rejected.
 
 `scoreComparable` is a necessary declared-methodology equality check, not authenticated admission. Never derive `panelComparable` or `postStratComparable` from it; independent panel/attrition/population evidence is required. Do not fill absent digests with manual strings or re-enable these products through constants. See [Q3 preparation and remaining work](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-15-16-15-apps-hdri-observatory.md).

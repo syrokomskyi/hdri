@@ -41,7 +41,7 @@ Source admission remains blocked pending the real evidence verifier and Q2 prese
 
 - **Per-file receipts**: Each parsed file stores `content_sha256`, `parser_id`, `parser_version`, and `dependency_fingerprint` in `source_file_stats`. Resume logic skips a file only if all four fields match.
 - **Parser routing**: Nested external-host boundaries route to `UnknownSourceParser` instead of inheriting the parent's parser.
-- **Per-source yield gate**: `checkPerSourceYield` blocks sealing if a source folder produces zero accepted seeds unless declared as `"declared-noise"` in `brief.md` frontmatter `sourceDisposition` map.
+- **Per-source yield gate**: `checkPerSourceYield` runs before each batch is sealed and requires accepted seeds for that exact batch and source folder, unless declared as `"declared-noise"` in `brief.md` frontmatter `sourceDisposition` map. Another batch's records cannot satisfy it; an already known domain with provenance in this batch can. This read-only check does not establish per-file/digest completeness or verified historical inheritance.
 - **Offline audit**: business extraction uses the same parser routing, strict decoding, supported extensions and website acceptance as harvest. The audit additionally inspects every retained file, including technical metadata and unsupported extensions. Production completeness does not yet consume this full inventory. It never opens a database. See the command below.
 
 ## Offline source audit
