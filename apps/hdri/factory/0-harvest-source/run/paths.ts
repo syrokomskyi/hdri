@@ -8,13 +8,13 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Paths now resolve against the shared factory-level .input directory (via config.js).</item>
+  <item>Share supported source extensions with the offline parser audit.</item>
 </CHANGE_SUMMARY>
 */
 
 import path from "node:path";
 import { inputDir, outputRootDir } from "./config.js";
-
-export const supportedSourceExtensions = new Set([".csv", ".html", ".htm", ".mhtml"]);
+import { isSupportedSourceExtension } from "./parsers/source-document.js";
 
 // ---------------------------------------------------------------------------
 // Input directories
@@ -41,7 +41,7 @@ export const getBatchDataDir = (batchName: string): string =>
 // ---------------------------------------------------------------------------
 
 export const isSupportedSourceFile = (filePath: string): boolean =>
-  supportedSourceExtensions.has(path.extname(filePath).toLowerCase());
+  isSupportedSourceExtension(path.extname(filePath));
 
 export const getLogicalSourcePath = (batchName: string, filePath: string): string =>
   path.relative(getBatchInputDir(batchName), filePath).replace(/\\/g, "/");

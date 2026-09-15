@@ -7,6 +7,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Extracted report rendering and source-file reading from ParseSourcesGogol.ts during file-size refactor.</item>
+  <item>Bound source reads to 8 MiB and share strict decoding with offline accounting; never replace invalid bytes silently.</item>
 </CHANGE_SUMMARY>
 */
 

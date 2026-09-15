@@ -10,7 +10,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { assertCanonicalFilePath, inspectRetainedFile } from "@warpgogol/pipeline-node";
 import { decodeSourceBytes, MAX_SOURCE_FILE_BYTES } from "./gogols/parse-sources-report.js";
-import { classifySeedWebsite, parseSourceDocument } from "./parsers/source-document.js";
+import {
+  classifySeedWebsite,
+  isSupportedSourceExtension,
+  parseSourceDocument,
+} from "./parsers/source-document.js";
 
 export interface SourceFileOutcome {
   path: string;
@@ -20,16 +24,21 @@ export interface SourceFileOutcome {
   parserId: string | null;
   parserKind: string | null;
   reasons: string[];
-  occurrences: Array<{ key: string; role: string | null; domain: string | null; reason: string | null }>;
+  occurrences: Array<{
+    key: string;
+    seedSha256: string;
+    role: string | null;
+    domain: string | null;
+    reason: string | null;
+  }>;
 }
-const SUPPORTED = new Set([".html", ".htm", ".mhtml", ".csv"]);
 
 async function* files(root: string, depth = 0): AsyncGenerator<string> {
   if (depth > 64) throw new Error("SOURCE_DEPTH_LIMIT");
   await assertCanonicalFilePath(root);
   const entries = await fs.readdir(root, { withFileTypes: true });
   if (entries.length > 100_000) throw new Error("SOURCE_DIRECTORY_LIMIT");
-  entries.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   for (const entry of entries) {
     const file = path.join(root, entry.name);
     if (entry.isDirectory()) yield* files(file, depth + 1);
@@ -40,7 +49,9 @@ async function* files(root: string, depth = 0): AsyncGenerator<string> {
 
 // Caller must exclude concurrent writers and keep ancestor directories stable.
 // Two complete byte walks detect drift; they are not a filesystem snapshot or admission.
-export async function* auditSourceBatch(batchRoot: string): AsyncGenerator<SourceFileOutcome, { files: number; sourceSha256: string }> {
+export async function* auditSourceBatch(
+  batchRoot: string,
+): AsyncGenerator<SourceFileOutcome, { files: number; sourceSha256: string }> {
   const closure = createHash("sha256");
   let count = 0;
   for await (const file of files(batchRoot)) {
@@ -51,19 +62,36 @@ export async function* auditSourceBatch(batchRoot: string): AsyncGenerator<Sourc
     let size = 0;
     const digest = await inspectRetainedFile(file, (chunk) => {
       size += chunk.length;
-      if (SUPPORTED.has(ext) && size <= MAX_SOURCE_FILE_BYTES) chunks.push(Buffer.from(chunk));
+      if (isSupportedSourceExtension(ext) && size <= MAX_SOURCE_FILE_BYTES)
+        chunks.push(Buffer.from(chunk));
     });
     closure.update(JSON.stringify([logicalPath, digest.sha256, digest.bytes]));
-    const outcome: SourceFileOutcome = { path: logicalPath, ...digest, disposition: "unsupported-extension", parserId: null, parserKind: null, reasons: ["unsupported-extension"], occurrences: [] };
-    if (SUPPORTED.has(ext)) {
+    const outcome: SourceFileOutcome = {
+      path: logicalPath,
+      ...digest,
+      disposition: "unsupported-extension",
+      parserId: null,
+      parserKind: null,
+      reasons: ["unsupported-extension"],
+      occurrences: [],
+    };
+    if (isSupportedSourceExtension(ext)) {
       try {
         if (size > MAX_SOURCE_FILE_BYTES) throw new Error("SOURCE_FILE_TOO_LARGE");
-        const document = parseSourceDocument(logicalPath, decodeSourceBytes(Buffer.concat(chunks), ext));
+        const document = parseSourceDocument(
+          logicalPath,
+          decodeSourceBytes(Buffer.concat(chunks), ext),
+        );
         outcome.disposition = document.disposition;
         outcome.parserId = document.parserId;
         outcome.parserKind = document.result.parserKind;
         outcome.reasons = document.result.warnings;
-        outcome.occurrences = document.result.items.map((item) => ({ key: item.sourceItemKey, role: typeof item.raw.sourceRole === "string" ? item.raw.sourceRole : null, ...classifySeedWebsite(item.websiteUrl) }));
+        outcome.occurrences = document.result.items.map((item) => ({
+          key: item.sourceItemKey,
+          seedSha256: createHash("sha256").update(JSON.stringify(item)).digest("hex"),
+          role: typeof item.raw.sourceRole === "string" ? item.raw.sourceRole : null,
+          ...classifySeedWebsite(item.websiteUrl),
+        }));
       } catch (error) {
         outcome.disposition = "error";
         outcome.reasons = [String(error instanceof Error ? error.message : error).slice(0, 512)];
@@ -77,8 +105,15 @@ export async function* auditSourceBatch(batchRoot: string): AsyncGenerator<Sourc
   for await (const file of files(batchRoot)) {
     if (++verifiedCount > 1_000_000) throw new Error("SOURCE_FILE_COUNT_LIMIT");
     const digest = await inspectRetainedFile(file);
-    verified.update(JSON.stringify([path.relative(batchRoot, file).split(path.sep).join("/"), digest.sha256, digest.bytes]));
+    verified.update(
+      JSON.stringify([
+        path.relative(batchRoot, file).split(path.sep).join("/"),
+        digest.sha256,
+        digest.bytes,
+      ]),
+    );
   }
-  if (verifiedCount !== count || verified.digest("hex") !== first) throw new Error("SOURCE_BATCH_CHANGED");
+  if (verifiedCount !== count || verified.digest("hex") !== first)
+    throw new Error("SOURCE_BATCH_CHANGED");
   return { files: count, sourceSha256: first };
 }

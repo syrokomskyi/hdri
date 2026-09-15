@@ -9,7 +9,7 @@
 <CHANGE_SUMMARY>
   <item>Publish period-scoped frame projections only after their immutable signed guard succeeds.</item>
   <item>Refactor parsing architecture to use catalog-specific independent parsers via a registry.</item>
-  <item>Support skipping files marked as 'ignored' by the parser to reduce log noise.</item>
+  <item>Retain zero-seed file receipts for explicitly ignored pages; reject unrecognized source documents.</item>
   <item>Implement parallel parsing with ConcurrencyGate and batched SQLite transactions for radical speedup.</item>
   <item>Add COMPASS scaffolding to define module responsibilities.</item>
   <item>Add per-batch CSV artifacts: sources.csv, sites-registered.csv, seeds-skipped.csv.</item>
@@ -276,11 +276,7 @@ export class ParseSourcesGogol extends Gogol {
             throw new Error(`UNRECOGNIZED_SOURCE_DOCUMENT: ${sf.batchScopedPath}`);
           const parseResult = document.result;
 
-          if (parseResult.parserKind.endsWith("-ignored")) {
-            filesFinished++;
-            logProgress(this.id, filesFinished, totalFiles, 1000, true);
-            return null;
-          }
+          // Recognized no-seed pages still receive file receipts and enter accounting.
 
           const fileSkipSummary = { noUrl: 0, badUrl: 0, stopDomain: 0 };
           let noUrlInFile = 0;

@@ -10,8 +10,7 @@
   <item>Rewrite getParserForSource with deepest-match routing for nested directory structures (RFC-0069).</item>
   <item>Register HandwerkernetParser for handwerkernet.de.</item>
   <item>Register Work5Parser for work5.de.</item>
-  <item>Split StadtbranchenbuchParser into WwwStadtbranchenbuchComParser
-    and BacknangStadtbranchenbuchComParser (handling stadtbranchenbuch.com subdomains).</item>
+  <item>Route the Stadtbranchenbuch family to one shape-aware mirror parser with explicit occurrence ownership.</item>
   <item>Register BranchenverzeichnisParser for branchenverzeichnis.org.</item>
   <item>RFC-0102: add classifyOrigin to detect external-host boundaries and prevent root parser fallback for nested external origins.</item>
 </CHANGE_SUMMARY>
@@ -22,7 +21,10 @@ import { UnknownSourceParser } from "./UnknownSourceParser.js";
 import { HandwerksradarParser } from "./HandwerksradarParser.js";
 import { GelbeSeitenParser } from "./GelbeSeitenParser.js";
 import { FirmenAbcParser } from "./FirmenAbcParser.js";
-import { StadtbranchenbuchMirrorParser, isStadtbranchenbuchHost } from "./StadtbranchenbuchMirrorParser.js";
+import {
+  StadtbranchenbuchMirrorParser,
+  isStadtbranchenbuchHost,
+} from "./StadtbranchenbuchMirrorParser.js";
 import { HandwerkernetParser } from "./HandwerkernetParser.js";
 import { Work5Parser } from "./Work5Parser.js";
 import { BranchenverzeichnisParser } from "./BranchenverzeichnisParser.js";
@@ -48,7 +50,7 @@ const knownSourceIds = new Set(sourceParsers.map((p) => p.sourceId));
  * source ID is an external-host boundary.
  */
 export function classifyOrigin(segment: string): "known-source" | "external-boundary" | "unknown" {
-  if (knownSourceIds.has(segment)) return "known-source";
+  if (knownSourceIds.has(segment) || isStadtbranchenbuchHost(segment)) return "known-source";
   if (segment.includes(".")) return "external-boundary";
   return "unknown";
 }
@@ -71,7 +73,7 @@ export function getParserForSource(sourceId: string): SourceParser {
     return sourceParsers.find((parser) => parser.sourceId === "stadtbranchenbuch-mirror")!;
 
   if (segments.length === 1) {
-    // Single segment: try exact match, then subdomain pattern
+    // Other source families use exact registered matches.
     const parser = sourceParsers.find((p) => p.sourceId === segments[0]);
     if (parser) return parser;
 
