@@ -10,7 +10,7 @@
 </CHANGE_SUMMARY>
 */
 
-import fs from "node:fs/promises";
+import { readBoundedFile } from "@warpgogol/pipeline-node";
 
 import { markdownTable } from "markdown-table";
 
@@ -32,12 +32,14 @@ export const accumulateFileResult = (report: BatchReport, result: FileResult): v
  * (e.g. "Görlitz" → "Grlitz"). We sniff the <meta charset> declaration in the first
  * 2 KB and decode accordingly. CSV inputs are assumed to be UTF-8.
  */
-export const readSourceFile = async (absolutePath: string, ext: string): Promise<string> => {
+export const MAX_SOURCE_FILE_BYTES = 8 * 1024 * 1024;
+
+export const decodeSourceBytes = (buf: Buffer, ext: string): string => {
+  if (buf.length > MAX_SOURCE_FILE_BYTES) throw new Error("SOURCE_FILE_TOO_LARGE");
   if (ext !== ".html" && ext !== ".htm" && ext !== ".mhtml") {
-    return fs.readFile(absolutePath, "utf-8");
+    return new TextDecoder("utf-8", { fatal: true }).decode(buf);
   }
 
-  const buf = await fs.readFile(absolutePath);
   // Sniff first 2 KB as latin1 (lossless byte-preserving) to find the meta charset.
   const head = buf.slice(0, Math.min(buf.length, 2048)).toString("latin1").toLowerCase();
 
@@ -52,13 +54,11 @@ export const readSourceFile = async (absolutePath: string, ext: string): Promise
     charset = "windows-1252"; // browsers treat 8859-1 as cp1252; matches what scrapers fetched
   }
 
-  try {
-    return new TextDecoder(charset, { fatal: false }).decode(buf);
-  } catch {
-    // Unknown label — fall back to UTF-8.
-    return buf.toString("utf-8");
-  }
+  return new TextDecoder(charset, { fatal: true }).decode(buf);
 };
+
+export const readSourceFile = async (absolutePath: string, ext: string): Promise<string> =>
+  decodeSourceBytes(await readBoundedFile(absolutePath, MAX_SOURCE_FILE_BYTES), ext);
 
 export const renderReportMd = (
   batches: BatchReport[],

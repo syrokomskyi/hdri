@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { WwwStadtbranchenbuchComParser } from "../../parsers/WwwStadtbranchenbuchComParser.js";
+import { StadtbranchenbuchMirrorParser } from "../../parsers/StadtbranchenbuchMirrorParser.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const parser = new WwwStadtbranchenbuchComParser();
+const parser = new StadtbranchenbuchMirrorParser();
 const fixtureDir = join(__dirname, "fixtures", "www.stadtbranchenbuch.com");
 
-describe("WwwStadtbranchenbuchComParser", () => {
+describe("mirror parser: retained detail regression fixtures", () => {
   it("extracts websiteUrl from JSON-LD when present", () => {
     const html = readFileSync(join(fixtureDir, "detail-with-jsonld-url.html"), "utf8");
     const result = parser.parse(html, "detail-with-jsonld-url.html");

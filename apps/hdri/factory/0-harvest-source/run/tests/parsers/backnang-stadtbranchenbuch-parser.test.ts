@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { BacknangStadtbranchenbuchComParser } from "../../parsers/BacknangStadtbranchenbuchComParser.js";
+import { StadtbranchenbuchMirrorParser } from "../../parsers/StadtbranchenbuchMirrorParser.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const parser = new BacknangStadtbranchenbuchComParser();
+const parser = new StadtbranchenbuchMirrorParser();
 const fixtureDir = join(__dirname, "fixtures", "backnang.stadtbranchenbuch.com");
 
-describe("BacknangStadtbranchenbuchComParser", () => {
+describe("mirror parser: retained listing regression fixtures", () => {
   it("parses standard SERP listing page", () => {
     const html = readFileSync(join(fixtureDir, "serp-listing.html"), "utf8");
     const result = parser.parse(html, "serp-listing.html");

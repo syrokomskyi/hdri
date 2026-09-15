@@ -44,7 +44,6 @@ import { createReadStream } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import path from "node:path";
-import { normaliseDomain, isStopDomain } from "@syrokomskyi/business-core/ids";
 import pLimit from "p-limit";
 import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
@@ -70,6 +69,7 @@ import {
 import { deriveAssetId } from "@syrokomskyi/observatory-core";
 import { listBatchSourceFiles } from "../source-files.js";
 import { getParserForSource } from "../parsers/index.js";
+import { classifySeedWebsite, parseSourceDocument } from "../parsers/source-document.js";
 import { openCoreSqlite } from "../db/connection.js";
 import { getDbDir } from "../paths.js";
 import { outputRootDir } from "../config.js";
@@ -271,7 +271,10 @@ export class ParseSourcesGogol extends Gogol {
           const content = await readSourceFile(sf.absolutePath, ext);
           const parser = getParserForSource(sourceId);
 
-          const parseResult = parser.parse(content, sf.logicalPath);
+          const document = parseSourceDocument(sf.logicalPath, content);
+          if (document.disposition === "unrecognized")
+            throw new Error(`UNRECOGNIZED_SOURCE_DOCUMENT: ${sf.batchScopedPath}`);
+          const parseResult = document.result;
 
           if (parseResult.parserKind.endsWith("-ignored")) {
             filesFinished++;
@@ -294,29 +297,15 @@ export class ParseSourcesGogol extends Gogol {
           db.transaction(() => {
             for (const item of parseResult.items) {
               // First: all validation without side effects
-              if (!item.websiteUrl) {
-                insertSkippedSeed(db, sf.batchScopedPath, item, "no_url");
-                fileSkipSummary.noUrl++;
+              const decision = classifySeedWebsite(item.websiteUrl);
+              if (decision.reason !== null) {
+                insertSkippedSeed(db, sf.batchScopedPath, item, decision.reason);
+                const key = { no_url: "noUrl", bad_url: "badUrl", stop_domain: "stopDomain" } as const;
+                fileSkipSummary[key[decision.reason]]++;
                 skippedThisFile++;
                 continue;
               }
-
-              const domain = normaliseDomain(item.websiteUrl);
-              if (!domain) {
-                insertSkippedSeed(db, sf.batchScopedPath, item, "bad_url");
-                fileSkipSummary.badUrl++;
-                skippedThisFile++;
-                continue;
-              }
-
-              if (isStopDomain(domain)) {
-                insertSkippedSeed(db, sf.batchScopedPath, item, "stop_domain");
-                fileSkipSummary.stopDomain++;
-                skippedThisFile++;
-                continue;
-              }
-
-              const siteId = upsertSite(db, domain);
+              const siteId = upsertSite(db, decision.domain);
               upsertSourceSeed(db, siteId, sf.batchScopedPath, item);
 
               countThisFile++;

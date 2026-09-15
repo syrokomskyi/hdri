@@ -22,8 +22,7 @@ import { UnknownSourceParser } from "./UnknownSourceParser.js";
 import { HandwerksradarParser } from "./HandwerksradarParser.js";
 import { GelbeSeitenParser } from "./GelbeSeitenParser.js";
 import { FirmenAbcParser } from "./FirmenAbcParser.js";
-import { WwwStadtbranchenbuchComParser } from "./WwwStadtbranchenbuchComParser.js";
-import { BacknangStadtbranchenbuchComParser } from "./BacknangStadtbranchenbuchComParser.js";
+import { StadtbranchenbuchMirrorParser, isStadtbranchenbuchHost } from "./StadtbranchenbuchMirrorParser.js";
 import { HandwerkernetParser } from "./HandwerkernetParser.js";
 import { Work5Parser } from "./Work5Parser.js";
 import { BranchenverzeichnisParser } from "./BranchenverzeichnisParser.js";
@@ -35,8 +34,7 @@ const sourceParsers: SourceParser[] = [
   new HandwerksradarParser(),
   new GelbeSeitenParser(),
   new FirmenAbcParser(),
-  new WwwStadtbranchenbuchComParser(),
-  new BacknangStadtbranchenbuchComParser(),
+  new StadtbranchenbuchMirrorParser(),
   new HandwerkernetParser(),
   new Work5Parser(),
   new BranchenverzeichnisParser(),
@@ -66,18 +64,16 @@ export function classifyOrigin(segment: string): "known-source" | "external-boun
 export function getParserForSource(sourceId: string): SourceParser {
   const segments = sourceId.split("/");
 
+  // A mirror can contain external hosts: the deepest host is the authority.
+  // Page shape is resolved by the family parser, never inferred from a city host.
+  const hosts = segments.filter((segment) => segment.includes("."));
+  if (hosts.length && isStadtbranchenbuchHost(hosts[hosts.length - 1]!))
+    return sourceParsers.find((parser) => parser.sourceId === "stadtbranchenbuch-mirror")!;
+
   if (segments.length === 1) {
     // Single segment: try exact match, then subdomain pattern
     const parser = sourceParsers.find((p) => p.sourceId === segments[0]);
     if (parser) return parser;
-
-    if (
-      segments[0]!.endsWith(".stadtbranchenbuch.com") &&
-      segments[0] !== "www.stadtbranchenbuch.com"
-    ) {
-      const serpParser = sourceParsers.find((p) => p.sourceId === "backnang.stadtbranchenbuch.com");
-      if (serpParser) return serpParser;
-    }
 
     return new UnknownSourceParser(sourceId);
   }
@@ -98,19 +94,6 @@ export function getParserForSource(sourceId: string): SourceParser {
     const candidate = segments.slice(0, i + 1).join("/");
     const parser = sourceParsers.find((p) => p.sourceId === candidate);
     if (parser) return parser;
-  }
-
-  // Check deeper segments for stadtbranchenbuch subdomain pattern.
-  // This is a known source family pattern, not an external boundary —
-  // always check down to i=1 (skip root only).
-  for (let i = segments.length - 1; i >= 1; i--) {
-    if (
-      segments[i]!.endsWith(".stadtbranchenbuch.com") &&
-      segments[i] !== "www.stadtbranchenbuch.com"
-    ) {
-      const parser = sourceParsers.find((p) => p.sourceId === "backnang.stadtbranchenbuch.com");
-      if (parser) return parser;
-    }
   }
 
   return new UnknownSourceParser(sourceId);

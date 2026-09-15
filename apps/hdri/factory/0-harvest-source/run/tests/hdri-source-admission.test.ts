@@ -132,8 +132,8 @@ describe("RFC-0102 AC-3", () => {
       "www.stadtbranchenbuch.com/backnang.stadtbranchenbuch.com",
     );
 
-    expect(rootParser.sourceId).toBe("backnang.stadtbranchenbuch.com");
-    expect(nestedParser.sourceId).toBe("backnang.stadtbranchenbuch.com");
+    expect(rootParser.sourceId).toBe("stadtbranchenbuch-mirror");
+    expect(nestedParser.sourceId).toBe("stadtbranchenbuch-mirror");
     expect(nestedParser.sourceId).toBe(rootParser.sourceId);
   });
 });
