@@ -42,7 +42,7 @@ Source admission remains blocked pending the real evidence verifier and Q2 prese
 - **Per-file receipts**: Each parsed file stores `content_sha256`, `parser_id`, `parser_version`, and `dependency_fingerprint` in `source_file_stats`. Resume logic skips a file only if all four fields match.
 - **Parser routing**: Nested external-host boundaries route to `UnknownSourceParser` instead of inheriting the parent's parser.
 - **Per-source yield gate**: `checkPerSourceYield` blocks sealing if a source folder produces zero accepted seeds unless declared as `"declared-noise"` in `brief.md` frontmatter `sourceDisposition` map.
-- **Offline audit**: the estimator uses the same parser routing, strict decoding, supported extensions and website acceptance as harvest. It never opens a database. See the command below.
+- **Offline audit**: business extraction uses the same parser routing, strict decoding, supported extensions and website acceptance as harvest. The audit additionally inspects every retained file, including technical metadata and unsupported extensions. Production completeness does not yet consume this full inventory. It never opens a database. See the command below.
 
 ## Offline source audit
 
@@ -56,13 +56,19 @@ pnpm estimate:hdri \
 
 `files.ndjson` accounts for every regular file, including unsupported extensions and unknown external hosts. Each parsed occurrence retains its role, entity key, normalized-domain decision and SHA-256 of the complete extracted seed. `summary.json` reconciles occurrences, exclusion reasons, accepted occurrences, unique domains and duplicates; it binds the NDJSON bytes and the twice-checked input closure. `newDomains` and `baseline` are null: novelty relative to Q2 is unknown.
 
-Exit 1 with a summary means the diagnostic completed but found errors, unrecognized pages or unsupported extensions. An interrupted or unstable-input run has no completion summary; retain it as incomplete and use a new output directory. Inputs must have no concurrent writers, with stable ancestor directories. File reads and DOM parsing are bounded to 8 MiB; malformed encoding is an error rather than silently replaced text.
+Per-file `inspection` records payload kind, compression, decoded byte count/hash and narrowly recognized mirror timestamp hints. `documentKinds` summarizes those classifications. Recognized robots policies and mirror metadata contribute explicit no-seed outcomes; they do not authorize live requests. Empty captures, unexpected robots responses and sensitive cookie jars remain review-required. Cookie values are not emitted. External HTML is never promoted into catalog company evidence merely because it contains links.
+
+`mirrorDateHints` counts files containing each recognized date label. These labels are untrusted retained text, not verified acquisition dates or measurement timestamps. The actual Q3 input includes April 2026 mirror hints; naming the batch Q3 does not make it Q3 observations. Using a historical catalog as a Q3 candidate source requires an explicit source-age/selection policy and independent Q3 measurements.
+
+Exit 1 with a summary means the diagnostic completed but found errors, unrecognized pages or unsupported extensions. An interrupted or unstable-input run has no completion summary; retain it as incomplete and use a new output directory. Inputs must have no concurrent writers, with stable ancestor directories. Raw files and decoded gzip payloads are bounded to 8 MiB; invalid gzip, nested compression and malformed encoding are errors rather than silently replaced text.
 
 `StadtbranchenbuchMirrorParser` is the sole parser for the catalog family. It recognizes primary, listing, mixed and navigation pages by evidence, not by city-host routing or company IDs inferred from filenames. Primary and listing occurrences have distinct keys and roles. Foreign nested hosts and conflicting identities are not accepted through fallback.
 
-The shared standardized CSV parser retains rows without websites so they enter `no_url` accounting. Such rows are not accepted website candidates; empty CSVs remain empty. Other catalog-specific HTML parsers require their own coverage qualification before adding their inputs to a frozen frame.
+The shared standardized CSV parser retains rows without websites so they enter `no_url` accounting. Such rows are not accepted website candidates; blank captures, including CSV, are rejected by the shared harvest entry as unrecognized, not successful empty sources. Other catalog-specific HTML parsers require their own coverage qualification before adding their inputs to a frozen frame.
 
 This report is diagnostic only (`operationallyQualified: false`), not a signed admission receipt or reusable source-frame artifact. Full implementation/dependency lineage, current-batch completeness admission, historical identity reconciliation, independent extraction accuracy checks and operational qualification are still required. Retained Q2 databases must not be used as writable test fixtures.
+
+The [Q3 payload review](../../../../docs/reviews/code/apps-hdri-factory-0-harvest-source/review-2026-09-15-15-45-apps-hdri-factory-0-harvest-source.md) records the final actual-input inventory, unchanged extraction proof, remaining quarantine and sequential launch work.
 
 ## Changelog
 
