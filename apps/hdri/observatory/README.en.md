@@ -17,6 +17,8 @@ and [current review](../../../docs/reviews/code/apps-hdri-observatory/review-202
 before running commands. Existing descriptions are not an operational certificate.
 Original Q2 and existing public data must remain untouched.
 
+The [Q3 preparation update](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-15-16-15-apps-hdri-observatory.md) records the operator-approved bounded source exclusions and sequential launch work. Methodology comparison now rejects incomplete component identities and wrong-quarter snapshots; matching declared methodology never automatically authorizes panel or population-weighted comparisons. The existing snapshot producer remains incomplete, so this correction is not launch certification.
+
 ## Architecture
 
 Four-layer data model:
