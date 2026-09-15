@@ -62,15 +62,15 @@ When reading sibling app briefs (contract ontology, observatory), use `gray-matt
 
 ## Source batch admission (RFC-0102)
 
-Source batches are admitted with verified parsers and measured yield. Three mechanisms enforce this:
+The source-admission design requires verified parsers and measured yield. The current implementation has the following mechanisms, but they are not sufficient launch evidence:
 
 1. **Per-file receipts**: Each parsed file gets a `SourceFileReceipt` stored in `source_file_stats` with `content_sha256`, `parser_id`, `parser_version`, and `dependency_fingerprint`. Resume logic skips a file only if all four fields match the existing row. Pre-migration rows (NULL `content_sha256`) are always re-parsed.
 
 2. **Parser routing**: `getParserForSource` uses deepest-match routing. Nested external-host boundaries route to `UnknownSourceParser` instead of inheriting the parent's parser. Known source family patterns (e.g. `stadtbranchenbuch` subdomains) are always checked down to segment 1.
 
-3. **Per-source yield gate**: `checkPerSourceYield` runs before sealing. Each source folder must produce at least one accepted seed unless declared as `"declared-noise"` in `brief.md` frontmatter `sourceDisposition` map. A large prior registry does not bypass this check.
+3. **Per-source yield gate**: `checkPerSourceYield` requires a source folder to have accepted seeds unless declared as `"declared-noise"`. Its current query is not current-batch/digest-scoped, and partial runs skip it. Do not treat this predicate as completeness evidence or assume prior registry rows cannot satisfy it.
 
-The `batch-estimate` script supports `--mode json` and `--baseline-manifest <path>` for yield comparison against a prior capsule manifest.
+The offline `batch-estimate` command requires `--batch-root <existing-input>` and `--report-dir <fresh-disjoint-directory>`. It uses harvest's parser and website acceptance, records every file outcome and reconciles actual occurrence/domain counts without opening databases. Historical novelty is unknown, and operational qualification remains false. See `0-harvest-source/README.md` for the exact contract. The static production dependency fingerprint is not implementation lineage; replacing it and binding complete per-file outcomes to the current batch remain launch prerequisites.
 
 ## Pipeline structure
 

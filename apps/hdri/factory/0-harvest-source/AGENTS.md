@@ -58,4 +58,14 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `markdown-table` `^3.0.4`
 - `tsx` `^4.23.7`
 
+## Source parsing and offline diagnostics
+
+- `run/parsers/StadtbranchenbuchMirrorParser.ts` is the only Stadtbranchenbuch family implementation. Never restore separate root/city parsers or infer company IDs from retained filenames. Keep primary and listing occurrence provenance separate, including when their entity IDs coincide.
+- `run/parsers/source-document.ts` owns routing invocation, supported source extensions and website acceptance shared by harvest and offline accounting. The decoder in `parse-sources-report.ts` rejects invalid/unknown encodings and bounds reads to 8 MiB.
+- `csv-shared.ts` must retain every nonempty data row, including null websites, for shared exclusion accounting. Do not restore parser-level early dropping of no-URL rows or replace real audit tests with locally constructed counts.
+- `run/source-audit-cli.ts` is app-owned. `scripts/batch-estimate.ts` forwards a child process only; it does not import app code. Require explicit `--batch-root` and fresh, disjoint `--report-dir`; never open Q2 databases to estimate novelty.
+- Every regular file receives an audit outcome; unsupported files are not automatically noise. Preserve partial reports without a success summary after failure. Require stable input ancestors and writer exclusion; two byte walks detect drift but do not create a filesystem snapshot.
+- Audit output is diagnostic, not admissible/reusable pipeline evidence: `operationallyQualified` stays false, historical novelty stays null. Do not weaken launch gates based on parser counts. The production receipt fingerprint/current-batch completeness gaps remain separate launch blockers.
+- Tests use sanitized HTML examples, owned temporary roots and additive `fast-check` filename-invariance properties. Never use retained original databases as test fixtures or modify the actual `.input` batch.
+
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
