@@ -17,6 +17,7 @@ import {
   type ScientificReport,
 } from "../release/release-contract";
 import { computeMethodologyFingerprint, type MethodologyInput } from "../score/methodology-core";
+import { compareMethodologySnapshots } from "../score/methodology-comparison";
 
 const mockScientificInputs: ScientificInputs = {
   schema: "hdri-scientific-inputs@1",
@@ -99,6 +100,9 @@ describe("RFC-0107 AC-3: absent methodology fields fail comparability", () => {
     expect(q2ContentId).toBeUndefined();
     expect(q3ContentId).toBeUndefined();
     expect(Boolean(q2ContentId && q3ContentId)).toBe(false);
+    const actual = compareMethodologySnapshots(q2Snapshot, q3Snapshot);
+    expect(actual.scoreComparable).toBe(false);
+    expect(actual.violations).toContain("current_methodology_invalid_scoringSemanticsSha256");
   });
 });
 
