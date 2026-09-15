@@ -15,14 +15,21 @@ describe("parseStandardizedCsv — empty source handling", () => {
     expect(result.warnings).toEqual(["Empty CSV file"]);
   });
 
-  it("returns empty items when all rows are missing website URL", () => {
+  it("retains every no-URL row for exclusion accounting without creating website candidates", () => {
     const csv = [
       "Name,Straße,PLZ,Stadt,Telefon,Email,Website,Branche,Profil_URL,Seite",
       "Test GmbH,Teststr. 1,10115,Berlin,,,,,,",
       "Foo AG,Muster 2,20095,Hamburg,,,,,,",
     ].join("\n");
     const result = parseStandardizedCsv(csv, "test");
-    expect(result.items).toEqual([]);
+    expect(result.items.filter((item) => item.websiteUrl !== null)).toEqual([]);
+    expect(result.items).toHaveLength(2);
+    expect(
+      result.items.map((item) => [item.sourceItemKey, item.businessName, item.websiteUrl]),
+    ).toEqual([
+      ["test_1", "Test GmbH", null],
+      ["test_2", "Foo AG", null],
+    ]);
     expect(result.warnings.length).toBe(2);
     expect(result.warnings[0]).toContain("no website URL");
     expect(result.warnings[1]).toContain("no website URL");

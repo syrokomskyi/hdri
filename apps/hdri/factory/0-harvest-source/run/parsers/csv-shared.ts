@@ -9,6 +9,7 @@
   <item>Extract shared CSV parsing logic for reuse across multiple source parsers.</item>
   <item>Update terminology from 'catalog' to 'source'.</item>
   <item>Replace hand-rolled CSV parser with csv-parse/sync package.</item>
+  <item>Retain rows without websites so shared acceptance records their no_url disposition.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -63,7 +64,6 @@ export function parseStandardizedCsv(
 
     if (!websiteUrl) {
       warnings.push(`Row ${i + 1}: no website URL found`);
-      continue;
     }
 
     items.push({

@@ -7,6 +7,10 @@ import { checkPerSourceYield, checkMinSitesGuard } from "../gogols/check-min-sit
 import { upsertFileStat } from "../gogols/parse-sources-db.js";
 import type { SourceFileStat, SkipSummary } from "../gogols/parse-sources-types.js";
 import type { SourceFileReceipt } from "@syrokomskyi/factory-core";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { writeSourceAudit } from "../source-audit-report.js";
 
 function makeDb(): Database.Database {
   const db = new Database(":memory:");
@@ -212,45 +216,30 @@ describe("RFC-0102 AC-6", () => {
     const db = makeDb();
 
     // Insert many sites (simulating a large prior registry)
-    const insertSite = db.prepare(
-      "INSERT INTO sites (domain, created_at) VALUES (?, unixepoch())",
-    );
+    const insertSite = db.prepare("INSERT INTO sites (domain, created_at) VALUES (?, unixepoch())");
     for (let i = 0; i < 100; i++) {
       insertSite.run(`prior-site-${i}.example.com`);
     }
 
     // No site_source_seeds for "new-source.com" — zero yield
-    expect(() =>
-      checkPerSourceYield(db, ["new-source.com"], {}, -1),
-    ).toThrow(PipelinePauseError);
+    expect(() => checkPerSourceYield(db, ["new-source.com"], {}, -1)).toThrow(PipelinePauseError);
 
     db.close();
   });
 });
 
 describe("RFC-0102 AC-7", () => {
-  it("estimator SHALL return null baselineBatchId when no baseline is supplied", () => {
-    // AC-7: WHEN no baseline is supplied, THE estimator SHALL return null
-    // for confirmed newCandidateCount.
-    //
-    // The batch-estimate script's computeYieldComparison returns
-    // baselineBatchId: null when no baseline manifest is provided.
-    // We verify this contract at the type level.
-    type YieldComparison = {
-      newFiles: number;
-      changedFiles: number;
-      unchangedFiles: number;
-      baselineBatchId: string | null;
-    };
-
-    // Simulate computeYieldComparison with null baseline
-    const result: YieldComparison = {
-      newFiles: 0,
-      changedFiles: 0,
-      unchangedFiles: 0,
-      baselineBatchId: null,
-    };
-
-    expect(result.baselineBatchId).toBeNull();
+  it("estimator SHALL return unknown baseline and novelty without verified historical evidence", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "hdri-estimator-baseline-test-"));
+    try {
+      const input = path.join(root, "input");
+      await fs.mkdir(input);
+      const result = await writeSourceAudit(input, path.join(root, "report"));
+      expect(result.baseline).toBeNull();
+      expect(result.newDomains).toBeNull();
+      expect(result.operationallyQualified).toBe(false);
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
   });
 });

@@ -15,6 +15,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { normaliseDomain, isStopDomain } from "@syrokomskyi/business-core/ids";
 import { getParserForSource } from "../parsers/index.js";
+import { writeSourceAudit } from "../source-audit-report.js";
 
 const roots: string[] = [];
 afterEach(async () =>
@@ -123,17 +124,14 @@ describe("RFC-0114 AC-2: source inheritance integration", () => {
     await fs.mkdir(batchDir, { recursive: true });
     await fs.writeFile(path.join(batchDir, "test.csv"), FIRMENABC_CSV, "utf-8");
 
-    // Simulate the reconciliation logic from batch-estimate
-    const discovered = 3; // total items parsed
-    const accepted = 2; // unique valid domains
-    const baseline: null = null; // no baseline manifest
-
-    // RFC-0114: missing baseline yields null novelty
-    const novelty = baseline ? 0 : null;
-
-    expect(novelty).toBeNull();
-    expect(discovered).toBe(3);
-    expect(accepted).toBe(2);
+    const result = await writeSourceAudit(
+      path.join(root, "2026-q3-de-01"),
+      path.join(root, "report"),
+    );
+    expect(result.newDomains).toBeNull();
+    expect(result.baseline).toBeNull();
+    expect(result.occurrences).toBe(3);
+    expect(result.uniqueDomains).toBe(2);
   });
 
   it("RFC-0114 AC-2: content-hash change creates new derivation, stale receipts are re-parsed", async () => {
