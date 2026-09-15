@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, test } from "vitest";
@@ -93,6 +94,28 @@ test("invalid encoded source bytes remain an explicit error outcome", async () =
     files: 1,
     status: "needs-review",
   });
+});
+test("audit reconciles technical policies and empty captures without adding domains or exposing cookie values", async () => {
+  const f = await fixture();
+  await fs.writeFile(path.join(f.source, "robots.txt"), gzipSync("User-agent: *\nDisallow: /\n"));
+  await fs.writeFile(path.join(f.source, "1.html"), "");
+  await fs.writeFile(
+    path.join(f.source, "cookies.txt"),
+    "# HTTrack Website Copier Cookie File\nsecret-sentinel",
+  );
+  const result = await writeSourceAudit(f.input, f.report);
+  expect(result).toMatchObject({
+    files: 3,
+    occurrences: 0,
+    uniqueDomains: 0,
+    dispositions: { ignored: 1, unrecognized: 2 },
+    documentKinds: { "robots-policy": 1, "empty-capture": 1, "sensitive-cookie-jar": 1 },
+    operationallyQualified: false,
+    status: "needs-review",
+  });
+  expect(await fs.readFile(path.join(f.report, "files.ndjson"), "utf8")).not.toContain(
+    "secret-sentinel",
+  );
 });
 test("decoding preserves declared Windows-1252 umlauts and rejects unknown encodings", () => {
   expect(

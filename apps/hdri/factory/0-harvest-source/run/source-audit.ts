@@ -3,7 +3,7 @@
   <purpose>Audit every retained source file offline using the harvest parser and acceptance contract.</purpose>
   <non-goals><item>Does not access databases, establish Q2 novelty or authorize quarterly admission.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>Q3 audit: retain per-file outcomes and verify the complete input closure twice.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY><item>Inspect all retained payloads, quarantine missing or sensitive captures, and verify the complete input closure twice.</item></CHANGE_SUMMARY>
 */
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
@@ -15,6 +15,10 @@ import {
   isSupportedSourceExtension,
   parseSourceDocument,
 } from "./parsers/source-document.js";
+import {
+  inspectSourceDocument,
+  type SourceDocumentInspection,
+} from "./source-document-inspection.js";
 
 export interface SourceFileOutcome {
   path: string;
@@ -31,6 +35,7 @@ export interface SourceFileOutcome {
     domain: string | null;
     reason: string | null;
   }>;
+  inspection: SourceDocumentInspection | null;
 }
 
 async function* files(root: string, depth = 0): AsyncGenerator<string> {
@@ -62,8 +67,7 @@ export async function* auditSourceBatch(
     let size = 0;
     const digest = await inspectRetainedFile(file, (chunk) => {
       size += chunk.length;
-      if (isSupportedSourceExtension(ext) && size <= MAX_SOURCE_FILE_BYTES)
-        chunks.push(Buffer.from(chunk));
+      if (size <= MAX_SOURCE_FILE_BYTES) chunks.push(Buffer.from(chunk));
     });
     closure.update(JSON.stringify([logicalPath, digest.sha256, digest.bytes]));
     const outcome: SourceFileOutcome = {
@@ -74,14 +78,29 @@ export async function* auditSourceBatch(
       parserKind: null,
       reasons: ["unsupported-extension"],
       occurrences: [],
+      inspection: null,
     };
-    if (isSupportedSourceExtension(ext)) {
-      try {
-        if (size > MAX_SOURCE_FILE_BYTES) throw new Error("SOURCE_FILE_TOO_LARGE");
-        const document = parseSourceDocument(
-          logicalPath,
-          decodeSourceBytes(Buffer.concat(chunks), ext),
-        );
+    try {
+      if (size > MAX_SOURCE_FILE_BYTES) throw new Error("SOURCE_FILE_TOO_LARGE");
+      const { inspection, payload } = inspectSourceDocument(logicalPath, Buffer.concat(chunks));
+      outcome.inspection = inspection;
+      if (inspection.kind === "robots-policy" || inspection.kind === "mirror-metadata") {
+        outcome.disposition = "ignored";
+        outcome.parserId = "source-document-inspection";
+        outcome.parserKind = `${inspection.kind}-ignored`;
+        outcome.reasons = [inspection.kind];
+      } else if (
+        ["empty-capture", "robots-unavailable", "sensitive-cookie-jar"].includes(inspection.kind)
+      ) {
+        outcome.disposition = "unrecognized";
+        outcome.reasons = [inspection.kind];
+      } else if (!isSupportedSourceExtension(ext)) {
+        if (inspection.kind === "external-html") {
+          outcome.disposition = "unrecognized";
+          outcome.reasons = ["external-html-not-admitted"];
+        }
+      } else {
+        const document = parseSourceDocument(logicalPath, decodeSourceBytes(payload, ext));
         outcome.disposition = document.disposition;
         outcome.parserId = document.parserId;
         outcome.parserKind = document.result.parserKind;
@@ -92,10 +111,10 @@ export async function* auditSourceBatch(
           role: typeof item.raw.sourceRole === "string" ? item.raw.sourceRole : null,
           ...classifySeedWebsite(item.websiteUrl),
         }));
-      } catch (error) {
-        outcome.disposition = "error";
-        outcome.reasons = [String(error instanceof Error ? error.message : error).slice(0, 512)];
       }
+    } catch (error) {
+      outcome.disposition = "error";
+      outcome.reasons = [String(error instanceof Error ? error.message : error).slice(0, 512)];
     }
     yield outcome;
   }

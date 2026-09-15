@@ -8,10 +8,12 @@
 <CHANGE_SUMMARY>
   <item>Extracted report rendering and source-file reading from ParseSourcesGogol.ts during file-size refactor.</item>
   <item>Bound source reads to 8 MiB and share strict decoding with offline accounting; never replace invalid bytes silently.</item>
+  <item>Validate gzip integrity and bound decoded payloads to 8 MiB; reject nested compression.</item>
 </CHANGE_SUMMARY>
 */
 
 import { readBoundedFile } from "@warpgogol/pipeline-node";
+import { gunzipSync } from "node:zlib";
 
 import { markdownTable } from "markdown-table";
 
@@ -35,8 +37,21 @@ export const accumulateFileResult = (report: BatchReport, result: FileResult): v
  */
 export const MAX_SOURCE_FILE_BYTES = 8 * 1024 * 1024;
 
-export const decodeSourceBytes = (buf: Buffer, ext: string): string => {
+export const decodeSourcePayload = (buf: Buffer): Buffer => {
   if (buf.length > MAX_SOURCE_FILE_BYTES) throw new Error("SOURCE_FILE_TOO_LARGE");
+  if (buf[0] !== 0x1f || buf[1] !== 0x8b) return buf;
+  let decoded: Buffer;
+  try {
+    decoded = gunzipSync(buf, { maxOutputLength: MAX_SOURCE_FILE_BYTES });
+  } catch {
+    throw new Error("SOURCE_GZIP_INVALID_OR_OVERSIZED");
+  }
+  if (decoded[0] === 0x1f && decoded[1] === 0x8b) throw new Error("SOURCE_NESTED_COMPRESSION");
+  return decoded;
+};
+
+export const decodeSourceBytes = (bytes: Buffer, ext: string): string => {
+  const buf = decodeSourcePayload(bytes);
   if (ext !== ".html" && ext !== ".htm" && ext !== ".mhtml") {
     return new TextDecoder("utf-8", { fatal: true }).decode(buf);
   }

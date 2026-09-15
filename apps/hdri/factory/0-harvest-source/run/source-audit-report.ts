@@ -1,7 +1,7 @@
 /*
 <MODULE_CONTRACT><purpose>Persist exclusive offline source audit evidence with reconciled file and domain counts.</purpose>
 <non-goals><item>Does not write production artifacts, infer historical novelty or qualify operation.</item></non-goals></MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>Replace approximate raw-link counting with bounded parser-driven file accounting.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY><item>Reconcile parser outcomes with payload classifications and untrusted mirror date hints, never acquisition authority.</item></CHANGE_SUMMARY>
 */
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -27,6 +27,8 @@ export async function writeSourceAudit(
   const handle = await fs.open(outputPath, "wx", 0o600);
   const dispositions: Record<string, number> = {};
   const kinds: Record<string, number> = {};
+  const documentKinds: Record<string, number> = {};
+  const mirrorDateHints: Record<string, number> = {};
   const excluded: Record<string, number> = { no_url: 0, bad_url: 0, stop_domain: 0 };
   const domains = new Set<string>();
   let files = 0,
@@ -48,6 +50,12 @@ export async function writeSourceAudit(
       dispositions[row.disposition] = (dispositions[row.disposition] ?? 0) + 1;
       const kind = row.parserKind ?? "none";
       kinds[kind] = (kinds[kind] ?? 0) + 1;
+      const documentKind = row.inspection?.kind ?? "inspection-error";
+      documentKinds[documentKind] = (documentKinds[documentKind] ?? 0) + 1;
+      const dates = (row.inspection?.mirrorTimestampHints ?? [])
+        .map((hint) => hint.match(/\b[0-9]{1,2} [A-Za-z]{3} [0-9]{4}\b/)?.[0])
+        .filter((date): date is string => date !== undefined);
+      for (const date of new Set(dates)) mirrorDateHints[date] = (mirrorDateHints[date] ?? 0) + 1;
       for (const occurrence of row.occurrences) {
         occurrences++;
         if (occurrence.reason) excluded[occurrence.reason] = (excluded[occurrence.reason] ?? 0) + 1;
@@ -92,6 +100,8 @@ export async function writeSourceAudit(
     files,
     dispositions,
     kinds,
+    documentKinds,
+    mirrorDateHints,
     occurrences,
     excluded,
     acceptedOccurrences: accepted,

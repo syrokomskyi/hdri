@@ -3,7 +3,7 @@
   <purpose>Parse retained Stadtbranchenbuch mirror pages with explicit primary and listing entity ownership.</purpose>
   <non-goals><item>Does not fetch websites, infer entities from filenames or authorize quarterly admission.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>Q3 source correction: recognize detail, listing and mixed pages in one parser without permissive fallback.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY><item>Recognize business and signature-verified informational pages; empty captures are never technical success.</item></CHANGE_SUMMARY>
 */
 // @ai-invariant: A listing embedded in a detail page is never the primary company; unknown shapes must remain explicit.
 import * as cheerio from "cheerio";
@@ -86,26 +86,16 @@ export class StadtbranchenbuchMirrorParser implements SourceParser {
 
   parse(content: string, fileName: string): SourceParseResult {
     if (Buffer.byteLength(content) > MAX_HTML_BYTES) throw new Error("SBB_FILE_TOO_LARGE");
-    if (!content.trim() && /(?:^|\/)(?:favicon\.ico|robots\.txt)(?:\.html)?$/i.test(fileName))
-      return { parserKind: "sbb-technical-ignored", items: [], warnings: ["technical-file"] };
     const $ = cheerio.load(content);
     const warnings: string[] = [];
     const items: SourceBusinessSeed[] = [];
     const segments = fileName.replace(/\\/g, "/").split("/");
     const hostIndex = segments.findLastIndex(isStadtbranchenbuchHost);
     const pageBase = hostIndex < 0 ? undefined : `https://${segments.slice(hostIndex).join("/")}`;
-    const metadata = $('link[rel="canonical"], meta[property="og:url"]')
-      .toArray()
-      .map((node) => {
-        const raw = $(node).attr("href") ?? $(node).attr("content");
-        const url = catalogUrl(raw, pageBase);
-        if (!url) throw new Error("SBB_INVALID_PAGE_URL");
-        return url;
-      });
-    const canonical = single(metadata, "page-url");
     // Only top-level arrays and @graph containers are traversed; arbitrary nested
     // objects (reviews, recommendations, aggregate metadata) are not primary evidence.
     const businesses: JsonObject[] = [];
+    const jsonDocuments: unknown[] = [];
     let jsonNodes = 0;
     const visit = (value: unknown, depth = 0): void => {
       if (++jsonNodes > MAX_ENTITIES || depth > 16) throw new Error("SBB_JSON_LIMIT");
@@ -128,6 +118,7 @@ export class StadtbranchenbuchMirrorParser implements SourceParser {
       } catch {
         throw new Error("SBB_INVALID_JSON_LD");
       }
+      jsonDocuments.push(parsed);
       visit(parsed);
     });
     const idInputs = $('input[name="eintragId"]')
@@ -138,9 +129,41 @@ export class StadtbranchenbuchMirrorParser implements SourceParser {
         return id;
       });
     const primaryId = single(idInputs, "primary-id");
+    const listingNodes = $(LISTINGS).toArray();
+    const informationalOnly =
+      !primaryId &&
+      businesses.length === 0 &&
+      listingNodes.length === 0 &&
+      jsonDocuments.every((doc) => object(doc) && doc["@type"] === "WebSite");
+    const localPath = segments.slice(hostIndex + 1).join("/");
+    if (informationalOnly) {
+      if (
+        /^content\/(?:datenschutz|impressum)\.html$/.test(localPath) &&
+        /^(?:Datenschutz|Impressum)$/.test($("title").text().trim()) &&
+        $("h1").first().text().trim().startsWith("Datenschutzerklärung Stadtbranchenbuch.com")
+      )
+        return { parserKind: "sbb-legal-ignored", items: [], warnings: ["catalog-legal-document"] };
+      if (
+        fileName.endsWith("/index.html") &&
+        $('meta[name="generator"]').attr("content") === "HTTrack Website Copier/3.x" &&
+        $("h1").first().text().trim() === "Index of locally available sites:"
+      )
+        return {
+          parserKind: "sbb-mirror-index-ignored",
+          items: [],
+          warnings: ["mirror-generated-index"],
+        };
+    }
+    const metadata = $('link[rel="canonical"], meta[property="og:url"]')
+      .toArray()
+      .map((node) => {
+        const url = catalogUrl($(node).attr("href") ?? $(node).attr("content"), pageBase);
+        if (!url) throw new Error("SBB_INVALID_PAGE_URL");
+        return url;
+      });
+    const canonical = single(metadata, "page-url");
     if (primaryId && canonical && profileId(canonical) !== primaryId)
       throw new Error("SBB_CONFLICT: primary-profile-id");
-    const listingNodes = $(LISTINGS).toArray();
     if (listingNodes.length > MAX_ENTITIES) throw new Error("SBB_LISTING_LIMIT");
 
     const findBusiness = (id: string, allowAnonymous: boolean): JsonObject | null => {
@@ -285,6 +308,12 @@ export class StadtbranchenbuchMirrorParser implements SourceParser {
         items,
         warnings,
       };
+    if (
+      informationalOnly &&
+      canonical === "https://www.stadtbranchenbuch.com/grossstaedte-deutschland.html" &&
+      $("title").text().trim() === "Stadtbranchenbuch - Alle Orte von Aachen bis Senftenberg"
+    )
+      return { parserKind: "sbb-city-index-ignored", items: [], warnings: ["catalog-city-index"] };
     if (canonical && !profileId(canonical) && $(".no-results").length)
       return { parserKind: "sbb-empty-listing", items: [], warnings: ["explicit-empty-listing"] };
     // Recognized navigation is retained as an explicit no-seed outcome, never a company.

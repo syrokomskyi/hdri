@@ -1,7 +1,7 @@
 /*
 <MODULE_CONTRACT><purpose>Share exact source-file routing and website acceptance between harvesting and offline accounting.</purpose>
 <non-goals><item>Does not read files, mint site identities or grant source admission.</item></non-goals></MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>Q3 correction: use real logical file paths and one website disposition contract.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY><item>Use real logical paths and one website disposition contract; reject blank source captures across all parsers.</item></CHANGE_SUMMARY>
 */
 import path from "node:path";
 import { normaliseDomain, isStopDomain } from "@syrokomskyi/business-core/ids";
@@ -13,6 +13,12 @@ export const isSupportedSourceExtension = (extension: string): boolean =>
 export function parseSourceDocument(logicalPath: string, content: string) {
   const directory = path.posix.dirname(logicalPath.replace(/\\/g, "/"));
   const parser = getParserForSource(directory === "." ? "__batch_root__" : directory);
+  if (!content.trim())
+    return {
+      parserId: parser.sourceId,
+      disposition: "unrecognized" as const,
+      result: { parserKind: "empty-source-unrecognized", items: [], warnings: ["empty-capture"] },
+    };
   const result = parser.parse(content, logicalPath);
   const disposition =
     result.parserKind === "unknown" || result.parserKind.endsWith("-unrecognized")
