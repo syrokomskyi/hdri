@@ -14,6 +14,7 @@
   <item>Remove selectCumulativeBatchNames — prior batch IDs come from sealed manifests.</item>
   <item>RFC-0043: add isFirstQuarter parameter; replace silent ENOENT catch with explicit PipelinePauseError or warning.</item>
   <item>RFC-0102: verify predecessor manifest hashes using discoverPriorCapsules with verification keys.</item>
+  <item>Bind one bounded discovery read to the requested quarter; missing referenced archives never activate first-quarter fallback.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -21,11 +22,17 @@ import fs from "node:fs/promises";
 import { PipelinePauseError } from "@warpgogol/pipeline-core";
 import {
   discoverPriorCapsules,
-  parsePriorCapsulesFile,
+  readPriorCapsulesFile,
+  type PriorCapsulesFile,
+  type HdriPeriod,
   type LedgerDiscoveryResult,
   type PriorCapsuleRef,
 } from "@syrokomskyi/factory-core";
-import { getTransparencyKeysDir, loadVerificationKeys } from "@syrokomskyi/observatory-crypto";
+import {
+  getTransparencyKeysDir,
+  loadVerificationKeys,
+  parseSourceToken,
+} from "@syrokomskyi/observatory-crypto";
 import type { Brief } from "../../brief.js";
 import { getBatchInputDir } from "../../paths.js";
 import { inputDir } from "../../config.js";
@@ -35,20 +42,17 @@ export type BootstrappedBatches = {
   discovery: LedgerDiscoveryResult;
 };
 
-const PRIOR_CAPSULES_PATH = "prior-capsules.json";
-
 export const discoverLedger = async (
   sourceToken: string,
   isFirstQuarter = false,
 ): Promise<LedgerDiscoveryResult> => {
   // Phase 1: Read prior-capsules.json and verify prior sealed capsule segments
-  const priorCapsulesPath = `${inputDir}/${PRIOR_CAPSULES_PATH}`;
+  const { year, quarter } = parseSourceToken(sourceToken);
+  const expectedPeriod = `${year}-q${quarter}` as HdriPeriod;
   let priorRefs: PriorCapsuleRef[] = [];
+  let priorFile: PriorCapsulesFile | undefined;
   try {
-    const raw = await fs.readFile(priorCapsulesPath, "utf8");
-    parsePriorCapsulesFile(raw); // validate structure
-    const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
-    priorRefs = [...(await discoverPriorCapsules(inputDir, verificationKeys))];
+    priorFile = await readPriorCapsulesFile(inputDir);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       throw new PipelinePauseError(
@@ -72,6 +76,20 @@ export const discoverLedger = async (
     console.warn(
       "[bootstrap] WARNING: prior-capsules.json not found. Running in first-quarter mode.",
     );
+  }
+  if (priorFile) {
+    try {
+      if (!isFirstQuarter && priorFile.priorCapsules.length === 0)
+        throw new Error("Empty prior capsule list requires explicit first-quarter mode");
+      const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
+      priorRefs = [
+        ...(await discoverPriorCapsules(priorFile, inputDir, verificationKeys, expectedPeriod)),
+      ];
+    } catch (error) {
+      throw new PipelinePauseError(
+        `Prior capsule verification failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   // Phase 2: Collect batch IDs from prior capsules
