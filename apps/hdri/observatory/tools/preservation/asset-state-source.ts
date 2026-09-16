@@ -9,6 +9,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0115 A1: add bounded source-scoped AssetState projection with canonical identity joins.</item>
+  <item>RFC-0115 A1: retain source mapping timestamps for independently comparable materialization lineage.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: A projected row is not admitted until its identity map, target bytes and comparison closure are independently verified.
@@ -36,6 +37,7 @@ export type RetainedAssetStateProjection = Readonly<{
     localSiteId: string;
     hwoConfidence: number | null;
     createdAt: string | null;
+    mappings: readonly Readonly<{ mappingSystem: string; createdAt: string | null }>[];
   }>;
   source: Readonly<{
     manifestSha256: string;
@@ -147,6 +149,17 @@ export function streamPreparedAssetStates(options: Readonly<{
               typeof site.columns.created_at === "bigint"
                 ? String(site.columns.created_at)
                 : null,
+            mappings: Object.freeze(
+              siteMappings.map((mapping) =>
+                Object.freeze({
+                  mappingSystem: mapping.columns.mapping_system as string,
+                  createdAt:
+                    typeof mapping.columns.created_at === "bigint"
+                      ? String(mapping.columns.created_at)
+                      : null,
+                }),
+              ),
+            ),
           }),
           source: Object.freeze({
             manifestSha256: options.prepared.manifestSha256,

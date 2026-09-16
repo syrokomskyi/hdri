@@ -29,6 +29,7 @@ import {
 import { inspectBaselineScope } from "../../tools/preservation/baseline-scope.js";
 import { inspectBaselineProvenance } from "../../tools/preservation/baseline-provenance.js";
 import { streamPreparedAssetStates } from "../../tools/preservation/asset-state-source.js";
+import { materializeAssetStateBaseline } from "../../tools/preservation/asset-state-materialization.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -290,6 +291,10 @@ describe("complete prepared baseline source declarations", () => {
       localSiteId: "1",
       hwoConfidence: 0.875,
       createdAt: "-7",
+      mappings: [
+        { mappingSystem: "destatis_group", createdAt: "10" },
+        { mappingSystem: "legacy-system", createdAt: null },
+      ],
     });
     expect(rows[0].source.mappingLocators).toEqual([
       { table: "site_hwo_mappings", site_id: "1", mapping_system: "destatis_group" },
@@ -317,6 +322,79 @@ describe("complete prepared baseline source declarations", () => {
         }),
       ),
     ).rejects.toThrow("UNRESOLVED_ASSET_STATE_DOMAIN: unmapped.example");
+  });
+  it("materializes AssetState and HWO mappings with source-only lineage and read-back", async () => {
+    const f = await fixture((db) => {
+      db.prepare(
+        `UPDATE sites SET hwo_uid='A-01',hwo_confidence=0.875,
+        hwo_provenance='retained',bundesland='BE',gemeinde='001',created_at=1779113162`,
+      ).run();
+      db.exec(`INSERT INTO site_hwo_mappings VALUES
+        (1,'destatis_group','01','Group 01','retained-classifier',1779113200),
+        (1,'legacy-system','raw-code',NULL,'legacy-source',NULL)`);
+    });
+    const scopeInventory = await inspectBaselineScope(f.prepared, declaration(f));
+    const targetPath = path.join(path.dirname(f.source), "asset-target", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    const canonicalId = "0198f000-0000-7000-8000-000000000001";
+    const report = await materializeAssetStateBaseline({
+      prepared: f.prepared,
+      scopeInventory,
+      snapshotUri: f.snapshot.uri,
+      targetPath,
+      canonicalByDomain: new Map([["retained.example", canonicalId]]),
+      period: "2026-q2",
+      import: {
+        runId: "baseline-import-fixture",
+        importedAt: "2026-09-16T12:00:00.000Z",
+        implementationFingerprint: "fixture-implementation",
+        ontologyVersion: "fixture-ontology",
+        codebookVersion: "fixture-codebook",
+      },
+    });
+    expect(report).toMatchObject({
+      schema: "hdri-baseline-asset-state-materialization@1",
+      status: "compared-not-admitted",
+      comparisons: {
+        assetStates: { status: "equal", sourceRows: 1, targetRows: 1 },
+        mappings: { status: "equal", sourceRows: 2, targetRows: 2 },
+      },
+    });
+    expect(report.import).toEqual({
+      runId: "baseline-import-fixture",
+      importedAt: "2026-09-16T12:00:00.000Z",
+      implementationFingerprint: "fixture-implementation",
+      ontologyVersion: "fixture-ontology",
+      codebookVersion: "fixture-codebook",
+    });
+    const target = new Database(targetPath, { readonly: true, fileMustExist: true });
+    handles.push(target);
+    expect(target.prepare("SELECT * FROM baseline_asset_state_lineage").get()).toEqual({
+      asset_id: canonicalId,
+      source_local_site_id: 1,
+      hwo_confidence: 0.875,
+      source_created_at: "1779113162",
+    });
+    expect(
+      target
+        .prepare(
+          `SELECT asset_id,domain,gewerk_group,hwo_uid,hwo_provenance,bundesland,gemeinde,
+          valid_from,valid_to,run_id,period FROM asset_states`,
+        )
+        .get(),
+    ).toEqual({
+      asset_id: canonicalId,
+      domain: "retained.example",
+      gewerk_group: "01",
+      hwo_uid: "A-01",
+      hwo_provenance: "retained",
+      bundesland: "BE",
+      gemeinde: "001",
+      valid_from: "2026-09-16T12:00:00.000Z",
+      valid_to: null,
+      run_id: "baseline-import-fixture",
+      period: "2026-q2",
+    });
   });
   it.each([
     "snapshot",
