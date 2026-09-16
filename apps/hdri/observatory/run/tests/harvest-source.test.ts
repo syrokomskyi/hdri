@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { createPrivateKey, sign as cryptoSign } from "node:crypto";
 import Database from "better-sqlite3";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -8,7 +9,7 @@ import {
   type BaselineRecord,
 } from "../../tools/preservation/baseline-comparison.js";
 import { migrateCore } from "@syrokomskyi/business-core/migrate";
-import { generateSigningKey, signSource } from "@syrokomskyi/observatory-crypto";
+import { generateSigningKey } from "@syrokomskyi/observatory-crypto";
 import { inspectRetainedFile } from "@warpgogol/pipeline-node";
 import { inventorySources } from "../../tools/preservation/inventory.js";
 import {
@@ -36,6 +37,34 @@ afterEach(async () => {
   for (const root of roots.splice(0)) await fs.rm(root, { recursive: true, force: true });
 });
 const key = { ...generateSigningKey(), signingKeyId: "seed-test", collectorId: "fixture" };
+type LegacyManifest = Readonly<{
+  device_id: string;
+  signing_key_id: string;
+  source_token: string;
+  app_id: string;
+  app_version: string;
+  content_hash: string;
+  rows_signed: number;
+  signed_at: string;
+  signature: string;
+}>;
+function signLegacySource(contentHash: string): LegacyManifest {
+  const sourceToken = "2026-q2-de";
+  const payload = `${key.signingKeyId}\n${sourceToken}\n${contentHash}`;
+  return {
+    device_id: key.collectorId,
+    signing_key_id: key.signingKeyId,
+    source_token: sourceToken,
+    app_id: "0-harvest-source",
+    app_version: "2.0.0",
+    content_hash: contentHash,
+    rows_signed: 1,
+    signed_at: new Date().toISOString(),
+    signature: cryptoSign(null, Buffer.from(payload), createPrivateKey(key.privateKeyPem)).toString(
+      "base64url",
+    ),
+  };
+}
 const json = ' { "name": "café", "opaque": [1, 2] }\n';
 async function fixture(
   edit?: (db: Database.Database) => void,
@@ -317,19 +346,12 @@ describe("complete prepared baseline source declarations", () => {
     );
   });
   async function signedFixture(
-    mutate?: (manifest: ReturnType<typeof signSource>) => ReturnType<typeof signSource>,
-    encode: (manifest: ReturnType<typeof signSource>) => string = JSON.stringify,
+    mutate?: (manifest: LegacyManifest) => LegacyManifest,
+    encode: (manifest: LegacyManifest) => string = JSON.stringify,
   ) {
     return fixture(undefined, false, async (source) => {
       const original = await inspectRetainedFile(path.join(source, "core.db"));
-      const signed = signSource({
-        signingKey: key,
-        sourceToken: "2026-q2-de",
-        appId: "0-harvest-source",
-        appVersion: "2.0.0",
-        contentHash: original.sha256,
-        rowsSigned: 1,
-      });
+      const signed = signLegacySource(original.sha256);
       const manifest = mutate?.(signed) ?? signed;
       await fs.writeFile(path.join(source, "source-signature.json"), encode(manifest), {
         flag: "wx",

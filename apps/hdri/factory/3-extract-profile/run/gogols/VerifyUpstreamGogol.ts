@@ -1,8 +1,8 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Verifies upstream 2-check-liveness signatures before consuming liveness.db files — this module handles verify upstream operations within the pipeline application.</purpose>
+<purpose>Verifies upstream 2-check-liveness closed snapshot manifests before consuming source data.</purpose>
 <non-goals>
-  <item>Do not modify upstream liveness.db files.</item>
+  <item>Do not modify upstream source snapshots.</item>
   <item>Do not mint new asset IDs.</item>
 </non-goals>
 </MODULE_CONTRACT>
@@ -12,10 +12,9 @@
   <item>Migrate to VerifyUpstreamStep base class from @warpgogol/pipeline-steps — eliminates duplicated verification workflow.</item>
 </CHANGE_SUMMARY>
 */
-// @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
+// @ai-invariant: the complete closed snapshot manifest and bytes are verified before consumption; never reuse or expose the private key
 
 import { VerifyUpstreamStep } from "@syrokomskyi/pipeline-steps-hdri";
-import { periodFromSourceToken } from "@syrokomskyi/observatory-crypto";
 import { toFactoryRelativePath, upstreamLivenessOutputRoot } from "../config.js";
 import type { PipelineContext } from "../pipeline/types.js";
 
@@ -25,17 +24,17 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
   override readonly guide = {
     title: "Verify upstream signatures",
     purpose:
-      "Check ed25519 signatures on every upstream 2-check-liveness liveness.db before ingestion.",
+      "Check every upstream 2-check-liveness closed snapshot manifest and snapshot before ingestion.",
     decisionType: "auto" as const,
     inputs: [
-      "2-check-liveness/.output/<deviceId>/data/db/liveness-YYYY-qN.db",
+      "2-check-liveness/.output/<deviceId>/*-sign-source/source-snapshot.sqlite",
       "2-check-liveness/.output/<deviceId>/*-sign-source/source-signature.json",
       "<repo-root>/transparency/keys/*.pem",
     ],
     outputs: ["verify-upstream-summary.json", "verify-upstream-summary.md"],
     definitionOfDone: [
-      "All discovered liveness.db files have a matching verified signature",
-      "Content hash in each manifest matches the re-computed SHA-256 of liveness.db",
+      "Every discovered source snapshot has a matching verified manifest",
+      "Manifest scope, signature, size, and SHA-256 match the snapshot bytes",
       "Verification summary written",
     ],
   };
@@ -50,10 +49,6 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
 
   protected override getUpstreamRoot(_ctx: PipelineContext): string {
     return upstreamLivenessOutputRoot;
-  }
-
-  protected override getDbFilenames(ctx: PipelineContext): string[] {
-    return [`liveness-${periodFromSourceToken(ctx.state.brief.sourceToken)}.db`];
   }
 
   protected override getYear(ctx: PipelineContext): number {

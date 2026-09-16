@@ -8,14 +8,9 @@
 */
 // @ai-invariant: A valid source signature never authenticates app metadata or the prepared snapshot generation.
 import path from "node:path";
-import { createHash } from "node:crypto";
+import { createHash, createPublicKey, verify } from "node:crypto";
 import { TextDecoder } from "node:util";
-import {
-  parseSourceToken,
-  verifySourceSignature,
-  type SourceSignatureManifest,
-  type VerificationKeyMap,
-} from "@syrokomskyi/observatory-crypto";
+import { parseSourceToken, type VerificationKeyMap } from "@syrokomskyi/observatory-crypto";
 import { inspectRetainedFile, readBoundedFile } from "@warpgogol/pipeline-node";
 import { assertPreparedBaselineSource, type PreparedBaselineSource } from "./preserve.js";
 import { assertBaselineScopeInventory, type BaselineScopeInventory } from "./baseline-scope.js";
@@ -36,6 +31,17 @@ const FIELD_NAMES = [
   "signed_at",
   "signature",
 ] as const;
+type LegacySourceSignatureManifest = Readonly<{
+  device_id: string;
+  signing_key_id: string;
+  source_token: string;
+  app_id: string;
+  app_version: string;
+  content_hash: string;
+  rows_signed: number;
+  signed_at: string;
+  signature: string;
+}>;
 
 type VerifiedClaim = Readonly<{
   status: "signed-token-original-bytes-match-supplied-device-key-snapshot-generation-unbound";
@@ -99,7 +105,7 @@ function jsonMemberNames(json: string): string[] {
   return names;
 }
 
-function parseManifest(bytes: Uint8Array): SourceSignatureManifest {
+function parseManifest(bytes: Uint8Array): LegacySourceSignatureManifest {
   let json: string;
   let value: unknown;
   try {
@@ -143,7 +149,20 @@ function parseManifest(bytes: Uint8Array): SourceSignatureManifest {
     new Date(manifest.signed_at).toISOString() !== manifest.signed_at
   )
     throw new Error("INVALID_BASELINE_SOURCE_SIGNATURE_VALUE");
-  return Object.freeze(manifest) as SourceSignatureManifest;
+  return Object.freeze(manifest) as LegacySourceSignatureManifest;
+}
+
+function verifyLegacySourceSignature(
+  manifest: LegacySourceSignatureManifest,
+  publicKeyPem: string,
+): boolean {
+  const payload = `${manifest.signing_key_id}\n${manifest.source_token}\n${manifest.content_hash}`;
+  return verify(
+    null,
+    Buffer.from(payload, "utf8"),
+    createPublicKey(publicKeyPem),
+    Buffer.from(manifest.signature, "base64url"),
+  );
 }
 
 /** Inspect exactly what the legacy batch signature covered against caller-supplied keys. */
@@ -213,7 +232,7 @@ export async function inspectBaselineProvenance(
       throw new Error("BASELINE_SOURCE_SIGNATURE_KEY_BINDING_MISMATCH");
     let valid = false;
     try {
-      valid = verifySourceSignature(manifest, key.publicKeyPem);
+      valid = verifyLegacySourceSignature(manifest, key.publicKeyPem);
     } catch (error) {
       throw new Error("BASELINE_SOURCE_SIGNATURE_INVALID", { cause: error });
     }

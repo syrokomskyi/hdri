@@ -1,8 +1,8 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Verifies upstream 0-harvest-source signatures before consuming core.db files — this module handles verify upstream operations within the pipeline application.</purpose>
+<purpose>Verifies upstream 0-harvest-source closed snapshot manifests before consuming source data.</purpose>
 <non-goals>
-  <item>Do not modify upstream core.db files.</item>
+  <item>Do not modify upstream source snapshots.</item>
   <item>Do not mint new asset IDs.</item>
 </non-goals>
 </MODULE_CONTRACT>
@@ -16,7 +16,7 @@
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
 </CHANGE_SUMMARY>
 */
-// @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
+// @ai-invariant: the complete closed snapshot manifest and bytes are verified before consumption; never reuse or expose the private key
 
 import { VerifyUpstreamStep } from "@syrokomskyi/pipeline-steps-hdri";
 import { toFactoryRelativePath } from "../config.js";
@@ -28,17 +28,17 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
   override readonly guide = {
     title: "Verify upstream signatures",
     purpose:
-      "Check ed25519 signatures on every upstream 0-harvest-source core.db before ingestion.",
+      "Check every upstream 0-harvest-source closed snapshot manifest and snapshot before ingestion.",
     decisionType: "auto" as const,
     inputs: [
-      "0-harvest-source/.output/<deviceId>/data/db/core_YYYY.db",
+      "0-harvest-source/.output/<deviceId>/*-sign-source/source-snapshot.sqlite",
       "0-harvest-source/.output/<deviceId>/*-sign-source/source-signature.json",
       "<repo-root>/transparency/keys/*.pem",
     ],
     outputs: ["verify-upstream-summary.json", "verify-upstream-summary.md"],
     definitionOfDone: [
-      "All discovered core.db files have a matching verified signature",
-      "Content hash in each manifest matches the re-computed SHA-256 of core.db",
+      "Every discovered source snapshot has a matching verified manifest",
+      "Manifest scope, signature, size, and SHA-256 match the snapshot bytes",
       "Verification summary written",
     ],
   };
@@ -53,10 +53,6 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
 
   protected override getUpstreamRoot(ctx: PipelineContext): string {
     return ctx.state.upstreamHarvestOutputRoot;
-  }
-
-  protected override getDbFilenames(ctx: PipelineContext): string[] {
-    return [`core_${ctx.state.year}.db`];
   }
 
   protected override getYear(ctx: PipelineContext): number {
