@@ -24,6 +24,7 @@ import {
   streamPreparedCohorts,
   streamPreparedStrata,
 } from "../../tools/preservation/cohort-source.js";
+import { inspectBaselineScope } from "../../tools/preservation/baseline-scope.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -97,6 +98,258 @@ async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
   for await (const row of rows) result.push(row);
   return result;
 }
+
+describe("complete prepared baseline source declarations", () => {
+  it("rejects a changed prepared snapshot before inventorying its tables", async () => {
+    const f = await fixture();
+    await fs.appendFile(f.file, "changed");
+    await expect(inspectBaselineScope(f.prepared, declaration(f))).rejects.toThrow(
+      "BASELINE_SNAPSHOT_CHANGED",
+    );
+  });
+  it("bounds total declaration text across snapshots before starting I/O", async () => {
+    const f = await fixture((db) => {
+      for (const name of ["second.db", "third.db"]) {
+        const other = new Database(path.join(path.dirname(db.name), name));
+        try {
+          other.exec("CREATE TABLE other(id INTEGER)");
+        } finally {
+          other.close();
+        }
+      }
+    });
+    const input = {
+      schema: "hdri-baseline-scope@1",
+      manifestSha256: f.prepared.manifestSha256,
+      sources: f.prepared.manifest.artifacts
+        .filter((a) => a.representation === "sqlite-snapshot")
+        .map((a) => ({
+          snapshot: { uri: a.uri, sha256: a.sha256, bytes: a.bytes },
+          profile: "unclassified",
+          scope: { status: "unavailable", reason: "Unknown source scope" },
+          tables: Array.from({ length: 1024 }, (_, n) => ({
+            name: `unclassified-${n}`,
+            disposition: "retained-only",
+            reason: "x".repeat(4096),
+          })),
+        })),
+    };
+    const lstat = vi.spyOn(fs, "lstat");
+    await expect(inspectBaselineScope(f.prepared, input)).rejects.toThrow(
+      "BASELINE_SCOPE_METADATA_LIMIT",
+    );
+    expect(lstat).not.toHaveBeenCalled();
+  });
+  const required = [
+    "sites",
+    "site_source_seeds",
+    "site_hwo_mappings",
+    "site_cohorts",
+    "site_strata",
+  ];
+  const retained = ["_schema_meta", "consent_events", "batch_step_runs", "site_step_runs"];
+  function declaration(f: Awaited<ReturnType<typeof fixture>>) {
+    return {
+      schema: "hdri-baseline-scope@1",
+      manifestSha256: f.prepared.manifestSha256,
+      sources: [
+        {
+          snapshot: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
+          profile: "harvest",
+          scope: { status: "unavailable", reason: "Historical device attribution not established" },
+          tables: [
+            ...required.map((name) => ({
+              name,
+              disposition: "required",
+              reason: null as string | null,
+            })),
+            ...retained.map((name) => ({
+              name,
+              disposition: "retained-only",
+              reason: "Preserved bytes; conversion owner still required" as string | null,
+            })),
+          ],
+        },
+      ],
+    };
+  }
+  it("accounts for every actual table and preserves original/snapshot generation distinction", async () => {
+    const f = await fixture(undefined, true);
+    const before = await inventorySources({ roots: [f.source] });
+    const result = await inspectBaselineScope(f.prepared, declaration(f));
+    expect(result.status).toBe("inventory-checked-not-admitted");
+    expect(result.retainedArtifactCount).toBe(f.prepared.manifest.artifacts.length);
+    expect(result.sources).toHaveLength(1);
+    expect(result.sources[0].objects.map((o) => o.name).sort()).toEqual(
+      [...required, ...retained].sort(),
+    );
+    expect(result.sources[0].declaration.scope).toEqual({
+      status: "unavailable",
+      reason: "Historical device attribution not established",
+    });
+    expect(result.sources[0].original.sha256).not.toBe(f.snapshot.sha256);
+    expect(result.sources[0].declaration.snapshot.sha256).toBe(f.snapshot.sha256);
+    for (const value of [
+      result,
+      result.sources,
+      result.sources[0],
+      result.sources[0].original,
+      result.sources[0].objects,
+      result.sources[0].objects[0],
+      result.sources[0].declaration,
+      result.sources[0].declaration.tables,
+      result.sources[0].declaration.scope,
+    ])
+      expect(Object.isFrozen(value)).toBe(true);
+    expect(await inventorySources({ roots: [f.source] })).toEqual(before);
+    expect((await verifyReplicas(f.options)).status).toBe("pass");
+  });
+  it.each([
+    "snapshot",
+    "required-table",
+    "retained-table",
+    "extra-table",
+    "duplicate-source",
+    "duplicate-table",
+    "wrong-digest",
+    "wrong-bytes",
+    "wrong-manifest",
+  ])("rejects incomplete or mismatched declaration: %s", async (defect) => {
+    const f = await fixture();
+    const input = declaration(f);
+    const source = input.sources[0];
+    if (defect === "snapshot") input.sources = [];
+    if (defect === "required-table")
+      source.tables = source.tables.filter((t) => t.name !== "sites");
+    if (defect === "retained-table")
+      source.tables = source.tables.filter((t) => t.name !== "consent_events");
+    if (defect === "extra-table")
+      source.tables.push({ name: "absent", disposition: "retained-only", reason: "not present" });
+    if (defect === "duplicate-source") input.sources.push(source);
+    if (defect === "duplicate-table") source.tables.push(source.tables[0]);
+    if (defect === "wrong-digest") source.snapshot.sha256 = "0".repeat(64);
+    if (defect === "wrong-bytes") source.snapshot.bytes++;
+    if (defect === "wrong-manifest") input.manifestSha256 = "0".repeat(64);
+    await expect(inspectBaselineScope(f.prepared, input)).rejects.toThrow();
+  });
+  it("requires reasons for retained-only data and forbids hiding a profile-required table", async () => {
+    const f = await fixture();
+    const input = declaration(f);
+    input.sources[0].tables[0] = { name: "sites", disposition: "retained-only", reason: "skip" };
+    await expect(inspectBaselineScope(f.prepared, input)).rejects.toThrow(
+      "REQUIRED_BASELINE_DOMAIN_OMITTED",
+    );
+    const blank = declaration(f);
+    blank.sources[0].tables[5].reason = "";
+    await expect(inspectBaselineScope(f.prepared, blank)).rejects.toThrow(
+      "INVALID_BASELINE_SCOPE_TEXT",
+    );
+  });
+  it("detects a second snapshot omitted from the declaration", async () => {
+    const f = await fixture((db) => {
+      const other = new Database(path.join(path.dirname(db.name), "other.db"));
+      try {
+        other.exec("CREATE TABLE other(id INTEGER)");
+      } finally {
+        other.close();
+      }
+    });
+    await expect(inspectBaselineScope(f.prepared, declaration(f))).rejects.toThrow(
+      "INCOMPLETE_BASELINE_SNAPSHOT_SCOPE",
+    );
+  });
+  it("detects undeclared empty tables and views, and inventories explicit retained-only objects", async () => {
+    const f = await fixture((db) =>
+      db.exec(
+        "CREATE TABLE unknown_table(id INTEGER); CREATE VIEW unknown_view AS SELECT id FROM unknown_table",
+      ),
+    );
+    const input = declaration(f);
+    await expect(inspectBaselineScope(f.prepared, input)).rejects.toThrow(
+      "INCOMPLETE_BASELINE_TABLE_SCOPE",
+    );
+    input.sources[0].tables.push(
+      ...["unknown_table", "unknown_view"].map((name) => ({
+        name,
+        disposition: "retained-only",
+        reason: "Unsupported owner; retained only",
+      })),
+    );
+    const result = await inspectBaselineScope(f.prepared, input);
+    expect(result.sources[0].objects.find((o) => o.name === "unknown_view")?.kind).toBe("view");
+    expect(result.status).toBe("inventory-checked-not-admitted");
+  });
+  it("never upgrades retained producer/device claims into historical authentication", async () => {
+    const f = await fixture();
+    const base = declaration(f);
+    const input = {
+      ...base,
+      sources: [
+        {
+          ...base.sources[0],
+          scope: {
+            status: "retained-claim",
+            producer: "claimed-owner",
+            device: "claimed-device",
+            evidenceUris: [f.snapshot.uri],
+          },
+        },
+      ],
+    };
+    const result = await inspectBaselineScope(f.prepared, input);
+    expect(result.sources[0].declaration.scope).toEqual(input.sources[0].scope);
+    expect(result.status).toBe("inventory-checked-not-admitted");
+    input.sources[0].scope.evidenceUris = ["outside/not-retained.json"];
+    await expect(inspectBaselineScope(f.prepared, input)).rejects.toThrow(
+      "BASELINE_SCOPE_EVIDENCE_UNLISTED",
+    );
+  });
+  it("detaches caller state before I/O and rejects changed retained non-snapshot bytes", async () => {
+    const f = await fixture();
+    const input = declaration(f);
+    const pending = inspectBaselineScope(f.prepared, input);
+    input.sources[0].tables.length = 0;
+    input.sources[0].scope.reason = "changed";
+    const result = await pending;
+    expect(result.sources[0].declaration.tables).toHaveLength(9);
+    expect(result.sources[0].declaration.scope).toMatchObject({
+      reason: "Historical device attribution not established",
+    });
+    await fs.appendFile(path.join(f.prepared.root, result.sources[0].original.uri), "changed");
+    await expect(inspectBaselineScope(f.prepared, declaration(f))).rejects.toThrow(
+      "BASELINE_SCOPE_ARTIFACT_CHANGED",
+    );
+  });
+  it("rejects forged preparation, additional fields, accessors and oversized declarations before I/O", async () => {
+    const f = await fixture();
+    const input = declaration(f);
+    const lstat = vi.spyOn(fs, "lstat");
+    await expect(inspectBaselineScope({ ...f.prepared }, input)).rejects.toThrow(
+      "PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED",
+    );
+    await expect(inspectBaselineScope(f.prepared, { ...input, admitted: true })).rejects.toThrow(
+      "INVALID_BASELINE_SCOPE_SHAPE",
+    );
+    let invoked = false;
+    const getter = { ...input };
+    Object.defineProperty(getter, "sources", {
+      get() {
+        invoked = true;
+        return [];
+      },
+    });
+    await expect(inspectBaselineScope(f.prepared, getter)).rejects.toThrow(
+      "INVALID_BASELINE_SCOPE_SHAPE",
+    );
+    const oversized = declaration(f);
+    oversized.sources[0].scope.reason = "x".repeat(4097);
+    await expect(inspectBaselineScope(f.prepared, oversized)).rejects.toThrow(
+      "INVALID_BASELINE_SCOPE_TEXT",
+    );
+    expect(invoked).toBe(false);
+    expect(lstat).not.toHaveBeenCalled();
+  });
+});
 
 describe("prepared asynchronous source comparison", () => {
   it.each(["equal", "changed-value", "changed-file"] as const)(

@@ -1,10 +1,13 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Share verified private SQLite snapshot consumption across retained observation and harvest readers.</purpose>
+<purpose>Share verified private SQLite snapshot consumption across retained readers and baseline scope inspection.</purpose>
 <non-goals><item>Does not validate domain schemas, grant admission or enforce filesystem writer exclusion.</item></non-goals>
 <!-- risk: crypto, vault -->
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>Extract the existing observation snapshot boundary for reuse by the harvest source reader.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY>
+<item>Extract the existing observation snapshot boundary for reuse by the harvest source reader.</item>
+<item>Use the same byte-verification boundary for complete baseline snapshot scope inspection.</item>
+</CHANGE_SUMMARY>
 */
 // @ai-invariant: Open only process-registered private snapshots; exhaustion and final hashing are necessary for complete consumption.
 import fs from "node:fs/promises";
@@ -18,7 +21,7 @@ export type SnapshotArtifact = Readonly<{ uri: string; sha256: string; bytes: nu
 export function streamPreparedSnapshot<T>(
   prepared: PreparedBaselineSource,
   snapshotUri: string,
-  domain: "OBSERVATION" | "HARVEST",
+  domain: "OBSERVATION" | "HARVEST" | "BASELINE",
   read: (db: Database.Database, artifact: SnapshotArtifact) => Iterable<T>,
 ): AsyncGenerator<T> {
   assertPreparedBaselineSource(prepared);
