@@ -12,6 +12,7 @@
   <item>Require the exact process-local complete Observatory scope inventory before target creation.</item>
   <item>Expose the same bounded source/target record streams to the joined baseline closure comparator.</item>
   <item>Validate every retained row against current Observation semantics before target insertion.</item>
+  <item>Report the bounded set of ontology versions observed across the complete retained stream.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: A successful identity comparison is one partial domain result, never baseline admission.
@@ -69,7 +70,11 @@ export type ObservationMaterializationReport = Readonly<{
     identities: BaselineDomainComparison;
     observations: BaselineDomainComparison;
   }>;
-  semantics: Readonly<{ status: "validated-not-authenticated"; rows: number }>;
+  semantics: Readonly<{
+    status: "validated-not-authenticated";
+    rows: number;
+    ontologyVersions: readonly string[];
+  }>;
 }>;
 
 export const BASELINE_IDENTITY_FIELDS = ["canonical_id", "domain", "first_seen"] as const;
@@ -259,6 +264,7 @@ export async function materializeObservationBaseline(options: Readonly<{
   );
   const target = new Database(targetPath);
   let semanticRows = 0;
+  const ontologyVersions = new Set<string>();
   try {
     migrateObservatory(target);
     stampObservatoryMeta(target, "hdri-baseline-converter", "observation-v1");
@@ -294,6 +300,9 @@ export async function materializeObservationBaseline(options: Readonly<{
       )) {
         assertCurrentObservationSemantics(row.observation);
         semanticRows++;
+        ontologyVersions.add(row.observation.columns.ontology_version as string);
+        if (ontologyVersions.size > 64)
+          throw new Error("BASELINE_OBSERVATION_ONTOLOGY_VERSION_LIMIT");
         observationInsert.run(
           ...RETAINED_OBSERVATION_COLUMN_NAMES.map((name) => row.observation.columns[name]),
         );
@@ -349,6 +358,9 @@ export async function materializeObservationBaseline(options: Readonly<{
     semantics: Object.freeze({
       status: "validated-not-authenticated",
       rows: semanticRows,
+      ontologyVersions: Object.freeze(
+        [...ontologyVersions].sort((left, right) => Buffer.compare(Buffer.from(left), Buffer.from(right))),
+      ),
     }),
   });
 }

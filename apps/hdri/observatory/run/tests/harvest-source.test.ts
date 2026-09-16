@@ -595,14 +595,18 @@ describe("complete prepared baseline source declarations", () => {
         runId: "joined-baseline-fixture",
         importedAt: "2026-09-16T14:00:00.000Z",
         implementationFingerprint: "fixture-closure",
-        ontologyVersion: "fixture-ontology",
+        ontologyVersion: "ontology-1",
         codebookVersion: "fixture-codebook",
       },
     });
     expect(report).toMatchObject({
       schema: "hdri-baseline-closure-materialization@1",
       status: "compared-not-admitted",
-      observationSemantics: { status: "validated-not-authenticated", rows: 1 },
+      observationSemantics: {
+        status: "validated-not-authenticated",
+        rows: 1,
+        ontologyVersions: ["ontology-1"],
+      },
       comparisons: {
         identities: { status: "equal", sourceRows: 1, targetRows: 1 },
         observations: { status: "equal", sourceRows: 1, targetRows: 1 },
@@ -655,11 +659,34 @@ describe("complete prepared baseline source declarations", () => {
           runId: "joined-baseline-fixture",
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
-          ontologyVersion: "fixture-ontology",
+          ontologyVersion: "ontology-1",
           codebookVersion: "fixture-codebook",
         },
       }),
     ).rejects.toThrow(`INVALID_CURRENT_OBSERVATION_${error}`);
+  });
+
+  it("rejects an import ontology label that differs from every retained row", async () => {
+    const f = await closureFixture();
+    const targetPath = path.join(f.root, "ontology-mismatch", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(
+      materializeBaselineClosure({
+        prepared: f.prepared,
+        scopeInventory: f.scopeInventory,
+        observatorySnapshotUri: f.observation.uri,
+        harvestSnapshotUri: f.harvest.uri,
+        targetPath,
+        period: "2026-q2",
+        import: {
+          runId: "joined-baseline-fixture",
+          importedAt: "2026-09-16T14:00:00.000Z",
+          implementationFingerprint: "fixture-closure",
+          ontologyVersion: "caller-invented-ontology",
+          codebookVersion: "fixture-codebook",
+        },
+      }),
+    ).rejects.toThrow("BASELINE_IMPORT_ONTOLOGY_VERSION_MISMATCH");
   });
 
   it("rejects an identity domain absent from the complete harvest domain", async () => {
@@ -678,7 +705,7 @@ describe("complete prepared baseline source declarations", () => {
           runId: "joined-baseline-fixture",
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
-          ontologyVersion: "fixture-ontology",
+          ontologyVersion: "ontology-1",
           codebookVersion: "fixture-codebook",
         },
       }),
@@ -701,7 +728,7 @@ describe("complete prepared baseline source declarations", () => {
           runId: "joined-baseline-fixture",
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
-          ontologyVersion: "fixture-ontology",
+          ontologyVersion: "ontology-1",
           codebookVersion: "fixture-codebook",
         },
       }),
@@ -724,7 +751,7 @@ describe("complete prepared baseline source declarations", () => {
           runId: "joined-baseline-fixture",
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
-          ontologyVersion: "fixture-ontology",
+          ontologyVersion: "ontology-1",
           codebookVersion: "fixture-codebook",
         },
       }),

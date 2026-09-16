@@ -10,6 +10,7 @@
 <CHANGE_SUMMARY>
   <item>RFC-0115 A1: join process-local Observatory identities to Harvest domains and compare four materialized domains in one target.</item>
   <item>Carry explicit current-Observation semantic validation evidence into the joined report.</item>
+  <item>Reject caller import ontology labels that differ from the complete retained observation domain.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: This joined target remains compared-not-admitted until source trust, evidence and operational closure are independently verified.
@@ -59,6 +60,7 @@ export type BaselineClosureMaterializationReport = Readonly<{
   observationSemantics: Readonly<{
     status: "validated-not-authenticated";
     rows: number;
+    ontologyVersions: readonly string[];
   }>;
   comparisons: Readonly<{
     identities: BaselineDomainComparison;
@@ -281,6 +283,11 @@ export async function materializeBaselineClosure(options: Readonly<{
     options.prepared,
     options.observatorySnapshotUri,
   );
+  if (
+    observation.semantics.ontologyVersions.length !== 1 ||
+    observation.semantics.ontologyVersions[0] !== importMetadata.ontologyVersion
+  )
+    throw new Error("BASELINE_IMPORT_ONTOLOGY_VERSION_MISMATCH");
   await appendAssetStates({
     prepared: options.prepared,
     scopeInventory: options.scopeInventory,
