@@ -9,6 +9,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0115 A1: materialize and independently compare the complete retained Observatory identity map.</item>
+  <item>Require the exact process-local complete Observatory scope inventory before target creation.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: A successful identity comparison is one partial domain result, never baseline admission.
@@ -39,12 +40,18 @@ import {
   assertPreparedBaselineSource,
   type PreparedBaselineSource,
 } from "./preserve.js";
+import {
+  assertBaselineScopeInventory,
+  type BaselineScopeInventory,
+  type BaselineSourceClaim,
+} from "./baseline-scope.js";
 
 export type IdentityMaterializationReport = Readonly<{
   schema: "hdri-baseline-identity-materialization@1";
   status: "compared-not-admitted";
   manifestSha256: string;
   sourceSnapshot: Readonly<{ uri: string; sha256: string; bytes: number }>;
+  sourceScope: BaselineSourceClaim;
   target: Readonly<{ sha256: string; bytes: number }>;
   comparison: BaselineDomainComparison;
 }>;
@@ -53,6 +60,7 @@ export type ObservationMaterializationReport = Readonly<{
   status: "compared-not-admitted";
   manifestSha256: string;
   sourceSnapshot: Readonly<{ uri: string; sha256: string; bytes: number }>;
+  sourceScope: BaselineSourceClaim;
   target: Readonly<{ sha256: string; bytes: number }>;
   comparisons: Readonly<{
     identities: BaselineDomainComparison;
@@ -122,10 +130,19 @@ function* targetObservationRecords(db: Database.Database): Generator<BaselineRec
 
 async function resolveFreshTarget(
   prepared: PreparedBaselineSource,
+  scopeInventory: BaselineScopeInventory,
   snapshotUri: string,
   requestedTargetPath: string,
 ) {
   assertPreparedBaselineSource(prepared);
+  assertBaselineScopeInventory(scopeInventory);
+  if (scopeInventory.manifestSha256 !== prepared.manifestSha256)
+    throw new Error("BASELINE_MATERIALIZATION_SCOPE_MISMATCH");
+  const scopedSource = scopeInventory.sources.find(
+    (source) => source.declaration.snapshot.uri === snapshotUri,
+  );
+  if (!scopedSource || scopedSource.declaration.profile !== "observatory")
+    throw new Error("OBSERVATORY_BASELINE_SCOPE_REQUIRED");
   const targetPath = path.resolve(requestedTargetPath);
   await assertCanonicalFilePath(path.dirname(targetPath));
   await assertCanonicalFilePath(targetPath, true);
@@ -140,17 +157,19 @@ async function resolveFreshTarget(
     (artifact) => artifact.uri === snapshotUri && artifact.representation === "sqlite-snapshot",
   );
   if (!sourceSnapshot) throw new Error("BASELINE_IDENTITY_SNAPSHOT_REQUIRED");
-  return { targetPath, sourceSnapshot };
+  return { targetPath, sourceSnapshot, sourceScope: scopedSource.declaration.scope };
 }
 
 /** Writes only into a new file. Failed roots remain for diagnosis and are never receipts. */
 export async function materializeObservationIdentityBaseline(options: Readonly<{
   prepared: PreparedBaselineSource;
+  scopeInventory: BaselineScopeInventory;
   snapshotUri: string;
   targetPath: string;
 }>): Promise<IdentityMaterializationReport> {
-  const { targetPath, sourceSnapshot } = await resolveFreshTarget(
+  const { targetPath, sourceSnapshot, sourceScope } = await resolveFreshTarget(
     options.prepared,
+    options.scopeInventory,
     options.snapshotUri,
     options.targetPath,
   );
@@ -210,6 +229,7 @@ export async function materializeObservationIdentityBaseline(options: Readonly<{
       sha256: sourceSnapshot.sha256,
       bytes: sourceSnapshot.bytes,
     }),
+    sourceScope,
     target: Object.freeze(targetEvidence),
     comparison: Object.freeze(comparison),
   });
@@ -220,14 +240,16 @@ export async function materializeObservationIdentityBaseline(options: Readonly<{
  * projection because rewriting signed source envelopes would be invalid. */
 export async function materializeObservationBaseline(options: Readonly<{
   prepared: PreparedBaselineSource;
+  scopeInventory: BaselineScopeInventory;
   snapshotUri: string;
   targetPath: string;
   assetIdNamespace: "canonical";
 }>): Promise<ObservationMaterializationReport> {
   if (options.assetIdNamespace !== "canonical")
     throw new Error("CANONICAL_OBSERVATION_NAMESPACE_REQUIRED");
-  const { targetPath, sourceSnapshot } = await resolveFreshTarget(
+  const { targetPath, sourceSnapshot, sourceScope } = await resolveFreshTarget(
     options.prepared,
+    options.scopeInventory,
     options.snapshotUri,
     options.targetPath,
   );
@@ -311,6 +333,7 @@ export async function materializeObservationBaseline(options: Readonly<{
       sha256: sourceSnapshot.sha256,
       bytes: sourceSnapshot.bytes,
     }),
+    sourceScope,
     target: Object.freeze(targetEvidence),
     comparisons: Object.freeze({
       identities: Object.freeze(identities),

@@ -25,6 +25,7 @@ import {
   materializeObservationBaseline,
   materializeObservationIdentityBaseline,
 } from "../../tools/preservation/baseline-materialization.js";
+import { inspectBaselineScope } from "../../tools/preservation/baseline-scope.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -92,6 +93,13 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false, enco
     "UPDATE observations SET obs_json=?, signature=?, signed_at=?, signing_key_id=?, collector_id=?",
   ).run(json, signed.signature, signed.signed_at, signed.signing_key_id, signed.collector_id);
   edit?.(db);
+  const tableNames = (
+    db
+      .prepare(
+        "SELECT name FROM pragma_table_list WHERE schema='main' AND substr(name,1,7)<>'sqlite_' ORDER BY name",
+      )
+      .all() as { name: string }[]
+  ).map((row) => row.name);
   if (!wal) db.close();
   const destinations = [0, 1, 2].map((n) => ({
     path: path.join(root, `replica-${n}`),
@@ -128,6 +136,7 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false, enco
     snapshot,
     file,
     json,
+    tableNames,
     rows: () => streamPreparedObservations(prepared, snapshot.uri),
   };
 }
@@ -135,6 +144,28 @@ async function collect<T>(source: AsyncIterable<T>): Promise<T[]> {
   const result: T[] = [];
   for await (const value of source) result.push(value);
   return result;
+}
+async function scope(f: Awaited<ReturnType<typeof fixture>>) {
+  return inspectBaselineScope(f.prepared, {
+    schema: "hdri-baseline-scope@1",
+    manifestSha256: f.prepared.manifestSha256,
+    sources: [
+      {
+        snapshot: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
+        profile: "observatory",
+        scope: { status: "unavailable", reason: "Fixture has no historical device authority" },
+        tables: f.tableNames.map((name) => ({
+          name,
+          disposition:
+            name === "observations" || name === "asset_id_map" ? "required" : "retained-only",
+          reason:
+            name === "observations" || name === "asset_id_map"
+              ? null
+              : "Outside the observation materialization slice",
+        })),
+      },
+    ],
+  });
 }
 
 describe("bounded observation source from private retained snapshots", () => {
@@ -820,6 +851,7 @@ describe("current-schema identity baseline materialization", () => {
     await fs.mkdir(path.dirname(targetPath));
     const report = await materializeObservationIdentityBaseline({
       prepared: f.prepared,
+      scopeInventory: await scope(f),
       snapshotUri: f.snapshot.uri,
       targetPath,
     });
@@ -875,11 +907,27 @@ describe("current-schema identity baseline materialization", () => {
     await expect(
       materializeObservationIdentityBaseline({
         prepared: f.prepared,
+        scopeInventory: await scope(f),
         snapshotUri: f.snapshot.uri,
         targetPath,
       }),
     ).rejects.toThrow("FRESH_BASELINE_TARGET_REQUIRED");
     expect(await fs.readFile(targetPath, "utf8")).toBe("operator-owned");
+  });
+
+  it("rejects reconstructed scope metadata before creating a target", async () => {
+    const f = await fixture();
+    const verifiedScope = await scope(f);
+    const targetPath = path.join(f.root, "forged-scope.db");
+    await expect(
+      materializeObservationIdentityBaseline({
+        prepared: f.prepared,
+        scopeInventory: { ...verifiedScope },
+        snapshotUri: f.snapshot.uri,
+        targetPath,
+      }),
+    ).rejects.toThrow("PROCESS_LOCAL_BASELINE_SCOPE_INVENTORY_REQUIRED");
+    await expect(fs.stat(targetPath)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("materializes and independently compares every observation column", async () => {
@@ -895,6 +943,7 @@ describe("current-schema identity baseline materialization", () => {
     await fs.mkdir(path.dirname(targetPath));
     const report = await materializeObservationBaseline({
       prepared: f.prepared,
+      scopeInventory: await scope(f),
       snapshotUri: f.snapshot.uri,
       targetPath,
       assetIdNamespace: "canonical",
