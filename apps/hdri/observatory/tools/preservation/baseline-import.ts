@@ -29,6 +29,7 @@ import {
   validateBaselineImportReceipt,
 } from "./contracts.js";
 import type { InventoryEntry } from "./inventory.js";
+import { sha256File } from "./inventory.js";
 
 // ---------------------------------------------------------------------------
 // SQLite detection
@@ -59,6 +60,36 @@ type TableInfo = {
   name: string;
   rowCount: number;
   columns: string[];
+};
+
+const canonicalValue = (value: unknown): unknown => {
+  if (Buffer.isBuffer(value)) return { $buffer: value.toString("base64") };
+  if (value instanceof Uint8Array) return { $buffer: Buffer.from(value).toString("base64") };
+  if (typeof value === "bigint") return { $bigint: value.toString() };
+  return value;
+};
+
+const canonicalRow = (row: Record<string, unknown>): string =>
+  JSON.stringify(
+    Object.fromEntries(
+      Object.entries(row)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, value]) => [key, canonicalValue(value)]),
+    ),
+  );
+
+const multisetDifference = (left: string[], right: string[]): number => {
+  const remaining = new Map<string, number>();
+  for (const value of right) remaining.set(value, (remaining.get(value) ?? 0) + 1);
+  let differences = 0;
+  for (const value of left) {
+    const count = remaining.get(value) ?? 0;
+    if (count === 0) differences += 1;
+    else if (count === 1) remaining.delete(value);
+    else remaining.set(value, count - 1);
+  }
+  for (const count of remaining.values()) differences += count;
+  return differences;
 };
 
 const extractTableInfo = (db: Database.Database): TableInfo[] => {
@@ -115,6 +146,8 @@ const convertSqliteDb = async (
           unknown
         >[];
 
+        const expectedRows: string[] = [];
+
         for (const row of rows) {
           const mappedRow: Record<string, unknown> = {};
           for (const [col, value] of Object.entries(row)) {
@@ -135,6 +168,8 @@ const convertSqliteDb = async (
             }
           }
 
+          expectedRows.push(canonicalRow(mappedRow));
+
           const cols = Object.keys(mappedRow);
           const placeholders = cols.map(() => "?").join(", ");
           const colNames = cols.map((c) => `"${c}"`).join(", ");
@@ -148,9 +183,15 @@ const convertSqliteDb = async (
         const targetCount = targetDb
           .prepare(`SELECT COUNT(*) as cnt FROM "${table.name}"`)
           .get() as { cnt: number };
-        if (targetCount.cnt !== table.rowCount) {
-          differences += Math.abs(targetCount.cnt - table.rowCount);
-        }
+        const targetRows = targetDb.prepare(`SELECT * FROM "${table.name}"`).all() as Record<
+          string,
+          unknown
+        >[];
+        differences += multisetDifference(
+          expectedRows.sort(),
+          targetRows.map(canonicalRow).sort(),
+        );
+        if (targetCount.cnt !== table.rowCount) differences += Math.abs(targetCount.cnt - table.rowCount);
       }
 
       return { tableResults: sourceTables, differences };
@@ -279,11 +320,19 @@ export const convertToBaseline = async (
   const tableReports: ComparisonReport["tables"] = [];
   const signalReports: ComparisonReport["signals"] = [];
   let totalDifferences = 0;
-  let unresolvedReferences = 0;
+  const unresolvedReferences = 0;
 
   for (const entry of opts.inventory) {
     const sourcePath = path.join(opts.archivePath, entry.role);
     const targetPath = path.join(opts.targetRoot, entry.role);
+
+    const sourceStat = await fs.lstat(sourcePath);
+    if (!sourceStat.isFile() || sourceStat.isSymbolicLink()) {
+      throw new Error(`INVALID_BASELINE_SOURCE: ${entry.role}`);
+    }
+    if (sourceStat.size !== entry.bytes || (await sha256File(sourcePath)) !== entry.sha256) {
+      throw new Error(`CHANGED_SOURCE_BYTES: ${entry.role}`);
+    }
 
     if (await isSqliteFile(sourcePath)) {
       const { tableResults, differences } = await convertSqliteDb(
@@ -304,6 +353,10 @@ export const convertToBaseline = async (
       // Non-SQLite files: copy verbatim, no identity mapping needed
       await fs.mkdir(path.dirname(targetPath), { recursive: true });
       await fs.copyFile(sourcePath, targetPath);
+      const targetStat = await fs.lstat(targetPath);
+      if (!targetStat.isFile() || targetStat.size !== entry.bytes || (await sha256File(targetPath)) !== entry.sha256) {
+        throw new Error(`CONVERSION_COPY_MISMATCH: ${entry.role}`);
+      }
       signalReports.push({
         path: entry.role,
         sourceCount: 1,

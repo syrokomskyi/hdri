@@ -54,13 +54,16 @@ const createFakeQ2Corpus = (dir: string): string => {
   return dir;
 };
 
-const fakeInventoryEntry = (filePath: string, role: string): InventoryEntry => ({
-  absolutePath: filePath,
-  role,
-  access: "internal",
-  sha256: createHash("sha256").update("fake-content").digest("hex"),
-  bytes: 12,
-});
+const realInventoryEntry = (filePath: string, role: string): InventoryEntry => {
+  const bytes = fs.readFileSync(filePath);
+  return {
+    absolutePath: filePath,
+    role,
+    access: "internal",
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    bytes: bytes.length,
+  };
+};
 
 const validRecord = (overrides: Partial<QuarterRecord> = {}): QuarterRecord => ({
   schema: "hdri-quarter-record@1",
@@ -88,9 +91,9 @@ describe("RFC-0113 AC-1: multi-object fixture preserved to destinations", () => 
       createFakeQ2Corpus(archivePath);
 
       const inventory: InventoryEntry[] = [
-        fakeInventoryEntry(path.join(archivePath, "liveness.db"), "liveness.db"),
-        fakeInventoryEntry(path.join(archivePath, "profile.db"), "profile.db"),
-        fakeInventoryEntry(path.join(archivePath, "observations.ndjson"), "observations.ndjson"),
+        realInventoryEntry(path.join(archivePath, "liveness.db"), "liveness.db"),
+        realInventoryEntry(path.join(archivePath, "profile.db"), "profile.db"),
+        realInventoryEntry(path.join(archivePath, "observations.ndjson"), "observations.ndjson"),
       ];
 
       const identities = resolveIdentities({
@@ -139,8 +142,8 @@ describe("RFC-0113 AC-2: Q2 conversion comparison report matches fixture", () =>
       createFakeQ2Corpus(archivePath);
 
       const inventory: InventoryEntry[] = [
-        fakeInventoryEntry(path.join(archivePath, "liveness.db"), "liveness.db"),
-        fakeInventoryEntry(path.join(archivePath, "observations.ndjson"), "observations.ndjson"),
+        realInventoryEntry(path.join(archivePath, "liveness.db"), "liveness.db"),
+        realInventoryEntry(path.join(archivePath, "observations.ndjson"), "observations.ndjson"),
       ];
 
       const { comparisonReport } = await convertToBaseline({

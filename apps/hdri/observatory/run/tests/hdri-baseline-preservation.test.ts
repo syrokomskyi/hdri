@@ -47,6 +47,17 @@ const fakeInventoryEntry = (filePath: string, role: string): InventoryEntry => (
   bytes: 12,
 });
 
+const realInventoryEntry = (filePath: string, role: string): InventoryEntry => {
+  const bytes = fs.readFileSync(filePath);
+  return {
+    absolutePath: filePath,
+    role,
+    access: "internal",
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    bytes: bytes.length,
+  };
+};
+
 const fakeReceipt = (overrides: Partial<BaselineImportReceipt> = {}): BaselineImportReceipt => ({
   schema: "hdri-baseline-import@1",
   period: "2026-q2",
@@ -314,8 +325,8 @@ describe("RFC-0100 full baseline import", () => {
       createFakeQ2Corpus(archivePath);
 
       const inventory: InventoryEntry[] = [
-        fakeInventoryEntry(path.join(archivePath, "liveness.db"), "liveness.db"),
-        fakeInventoryEntry(path.join(archivePath, "profile.db"), "profile.db"),
+        realInventoryEntry(path.join(archivePath, "liveness.db"), "liveness.db"),
+        realInventoryEntry(path.join(archivePath, "profile.db"), "profile.db"),
       ];
 
       const identities = resolveIdentities({
