@@ -238,3 +238,12 @@ reader alone into Q3: independent complete source/target reconciliation, source
 occurrence joins, classifications under their original derivations and fresh
 generation sealing remain required. `harvest-source.test.ts` covers real fixture
 preservation, WAL, field fidelity, failures and guarded driver transfer.
+
+`compareBaselineRecords` now returns a Promise and consumes independent sync or
+async record streams through the same comparison engine. Always await it: complete
+reader exhaustion and both asynchronous cleanup barriers (including final snapshot
+hashing) precede any report. A final verification error rejects even after every
+yielded row matched. Do not accumulate prepared reader output merely to compare it.
+The existing typed-value digests, ordering checks, row-pair lookahead and bounded
+diagnostics remain unchanged. Equality still proves only the supplied projection;
+full domain/snapshot coverage and independent target reading remain caller duties.

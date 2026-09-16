@@ -317,11 +317,17 @@ record comparison kernel. It does **not** replace the blocked conversion command
 - `validateBaselineImportReceipt` validates a closed shape, lowercase SHA-256 text
   and nonnegative safe-integer reference counts. It does not authenticate the receipt
   or assert that a positive unresolved count is acceptable for admission.
-- `compareBaselineRecords` consumes separate source/target iterators with the same
+- `await compareBaselineRecords(...)` consumes separate synchronous or asynchronous
+  source/target iterators with the same
   explicitly ordered field list. Project all required fields independently from
   verified source and closed/reopened target; do not reuse the writer's output as
   expected data. Streams need unique keys ordered by UTF-8 bytes. Use SQLite
   `safeIntegers()` to avoid rounding 64-bit integers before comparison.
+- The result is always a Promise. Await complete exhaustion and asynchronous cleanup
+  of both readers, including the prepared snapshot's final byte verification.
+  Matching all yielded rows is not success if final verification fails. Cleanup of
+  the target is attempted even when source cleanup fails. Do not buffer a complete
+  source just to adapt it to a synchronous comparator or fire-and-forget comparison.
 - Equality preserves typed NULL/bool/number/integer/text/blob values, timestamps,
   statuses, evidence refs and keys without normalization. JSON text is byte-exact;
   explained format transformations belong to the audited projection contract, not
