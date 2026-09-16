@@ -211,6 +211,24 @@ does not validate site field values, seed closure, cohort membership or historic
 codebook provenance. Run all relevant complete scans and independent reconciliation
 before admission; source strings alone are not proof of methodology.
 
+`tools/preservation/cohort-source.ts` exports `streamPreparedCohorts` (all six
+`site_cohorts` columns, including definitions with no members) and
+`streamPreparedStrata` (all seven `site_strata` columns, across all cohorts).
+Both require exact known schemas and ascending BINARY primary indexes. Strata
+require existing cohort and site keys via indexed LEFT JOINs; dangling links fail
+instead of disappearing. Cohort definitions can be read without site/strata tables.
+Membership reading checks site key shape/existence, not complete site values;
+independent full scans of definitions and sites remain required.
+
+Original owner, codebook version, random seed, geography and null/blank text remain
+unchanged, with frozen snapshot-bound row/reference locators. NULL cohort primary
+keys fail because they cannot supply an unambiguous identity; no replacement IDs
+are minted. The same 8 MiB aggregate transfer bound, 100-million-row ceiling, strict
+UTF-8 and full-exhaustion requirements apply. Neither table has an explicit quarter
+column. Never infer quarter/measurement scope from names, creation times or the
+preservation period, and never treat a seed/version label as authenticated proof of
+selection reproducibility or methodology. No selection is rerun by these readers.
+
 `prepared-snapshot.ts` owns the shared before/after byte and sidecar verification for
 all retained readers. Each reader still owns its schema. Complete exhaustion is required,
 and writer exclusion/stable ancestors remain caller obligations. Do not interpret
