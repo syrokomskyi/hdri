@@ -194,13 +194,25 @@ rather than being silently dropped. The same 8 MiB transfer bound, row ceiling,
 strict UTF-8, immutable snapshot-bound locators and full-exhaustion requirements
 apply. This reader does not require a seed table and does not certify seed closure.
 Reading sites successfully does not make orphan seeds acceptable: the separate
-seed scan must also succeed. `site_hwo_mappings`, cohorts and strata remain outside
-both readers; complete historical classification and population continuity still
-require their own retained evidence. Never infer a missing mapping from today's
+seed scan must also succeed. Cohorts and strata still require separate scans;
+complete historical classification and population continuity still require their
+own retained derivation evidence. Never infer a missing mapping from today's
 codebook or turn a nullable classification into a new calculated result.
 
+`streamPreparedHarvestMappings` scans all six columns of `site_hwo_mappings`, not
+only current Destatis mappings. It checks the exact composite primary-key index
+(site_id, mapping_system), BINARY ascending order, the known site-table schema and
+existence of each referenced site. Missing sites fail; missing mappings are never
+manufactured. Original codes, labels, source strings, null timestamps and unknown
+or blank system names survive unchanged. Each frozen mapping carries its composite
+row locator and site locator bound to the manifest/snapshot. Text is strict UTF-8;
+the same 8 MiB aggregate pre-transfer guard and row ceiling apply. A mapping scan
+does not validate site field values, seed closure, cohort membership or historical
+codebook provenance. Run all relevant complete scans and independent reconciliation
+before admission; source strings alone are not proof of methodology.
+
 `prepared-snapshot.ts` owns the shared before/after byte and sidecar verification for
-both readers. Each reader still owns its schema. Complete exhaustion is required,
+all retained readers. Each reader still owns its schema. Complete exhaustion is required,
 and writer exclusion/stable ancestors remain caller obligations. Do not interpret
 preservation period, seed creation time or local row IDs as measurement time,
 canonical identity or proof of historical producer/device scope. Do not wire this
