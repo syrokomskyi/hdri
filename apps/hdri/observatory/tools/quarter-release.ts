@@ -22,7 +22,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   evaluateProgramGate,
-  createBootstrapAdmission,
+  loadAdmissionInputFromFiles,
   verifyQuarterCapsuleArtifacts,
   type QuarterCapsule,
 } from "@syrokomskyi/factory-core";
@@ -57,6 +57,9 @@ const arg = (name: string): string | undefined => {
 
 const releaseInputPath = arg("--release-input");
 if (!releaseInputPath) throw new Error("--release-input <manifest> is required");
+const admissionInputPath = arg("--admission-input");
+const admissionEvidenceRoot = arg("--admission-evidence-root");
+const admissionTrustedKeysPath = arg("--admission-trusted-keys");
 
 const releaseInput = JSON.parse(
   await fs.readFile(path.resolve(releaseInputPath), "utf8"),
@@ -81,10 +84,16 @@ const sealedCapsule = JSON.parse(await fs.readFile(capsuleManifestPath, "utf8"))
 if (sealedCapsule.state !== "sealed") throw new Error("Release requires a sealed capsule manifest");
 // @ai-invariant: A sealed measurement capsule alone does not authorize publication.
 const gate = evaluateProgramGate(
-  createBootstrapAdmission({
-    period: sealedCapsule.period,
-    capsuleId: sealedCapsule.capsuleId,
-    operation: "publish",
+  await loadAdmissionInputFromFiles({
+    admissionInputPath,
+    evidenceRoot: admissionEvidenceRoot,
+    trustedKeysPath: admissionTrustedKeysPath,
+    requiredEvidenceClass: "operational",
+    expected: {
+      period: sealedCapsule.period,
+      capsuleId: sealedCapsule.capsuleId,
+      operation: "publish",
+    },
   }),
 );
 if (gate.status === "blocked") {

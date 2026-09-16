@@ -16,7 +16,7 @@ afterEach(async () => {
   await fs.rm(root, { recursive: true, force: true });
 });
 
-describe("direct publication commands enforce bootstrap admission", () => {
+describe("direct publication commands enforce explicit signed admission", () => {
   it("cannot certify the empty-directory digest as an independent rebuild", async () => {
     // Write a minimal scientific-inputs manifest so the tool gets past arg parsing
     const manifestPath = path.join(root, "scientific-inputs.json");
@@ -47,13 +47,16 @@ describe("direct publication commands enforce bootstrap admission", () => {
         manifestPath,
         "--report-root",
         reportRoot,
+        "--period",
+        "2026-q3",
+        "--capsule-id",
+        "0198f000-0000-7000-8000-000000000000",
       ],
       { cwd: path.join(root, "observatory"), encoding: "utf8", timeout: 15000 },
     );
     expect(result.error).toBeUndefined();
     expect(result.status).not.toBe(0);
-    // The tool will fail because the ProgramGate blocks bootstrap admission
-    expect(result.stdout + result.stderr).toContain("ProgramGate blocked");
+    expect(result.stdout + result.stderr).toContain("ADMISSION_INPUT_AND_PINNED_ROOTS_REQUIRED");
     expect(await fs.readdir(root)).toEqual(["observatory", "scientific-inputs.json"]);
   });
   it.each([
@@ -111,7 +114,7 @@ describe("direct publication commands enforce bootstrap admission", () => {
     );
     expect(result.error).toBeUndefined();
     expect(result.status).not.toBe(0);
-    expect(result.stdout + result.stderr).toContain("ProgramGate blocked");
+    expect(result.stdout + result.stderr).toContain("ADMISSION_INPUT_AND_PINNED_ROOTS_REQUIRED");
     expect((await fs.readdir(root, { recursive: true })).sort()).toEqual(before);
     expect(await fs.readFile(sentinel, "utf8")).toBe("retained quarter bytes");
   });

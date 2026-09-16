@@ -32,7 +32,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { evaluateProgramGate, createBootstrapAdmission } from "@syrokomskyi/factory-core";
+import { evaluateProgramGate, loadAdmissionInputFromFiles } from "@syrokomskyi/factory-core";
 import { createJsonLogger } from "@warpgogol/pipeline-core";
 import type { ComparisonPoint } from "./comparison-core";
 import { buildPanelTrends } from "./panel-core";
@@ -67,11 +67,25 @@ import {
 
 const log = createJsonLogger({ app: "observatory", pipeline: "dashboard-archive-export" });
 
+const argValue = (flag: string): string | undefined => {
+  const index = process.argv.indexOf(flag);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+};
+
 async function main(): Promise<void> {
   // @ai-invariant: No dashboard writes before verified publication admission.
-  // No authoritative receipt loader is wired yet; an unknown period is not an authorization.
   const gate = evaluateProgramGate(
-    createBootstrapAdmission({ period: "", capsuleId: "unknown", operation: "publish" }),
+    await loadAdmissionInputFromFiles({
+      admissionInputPath: argValue("--admission-input"),
+      evidenceRoot: argValue("--admission-evidence-root"),
+      trustedKeysPath: argValue("--admission-trusted-keys"),
+      requiredEvidenceClass: "operational",
+      expected: {
+        period: argValue("--period") ?? "",
+        capsuleId: argValue("--capsule-id") ?? "",
+        operation: "publish",
+      },
+    }),
   );
   if (gate.status === "blocked") {
     throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);

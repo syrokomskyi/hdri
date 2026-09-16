@@ -18,7 +18,8 @@ import {
   formatPipelineStart,
 } from "@warpgogol/pipeline-core";
 import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
-import { evaluateProgramGate, createBootstrapAdmission } from "@syrokomskyi/factory-core";
+import { evaluateProgramGate, loadAdmissionInputFromFiles } from "@syrokomskyi/factory-core";
+import { periodFromSourceToken } from "@syrokomskyi/observatory-crypto";
 import { inputDir, outputRootDir, localDeviceId } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
@@ -29,12 +30,18 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
 
   const { brief, year, resolvedCoreDbPath, upstreamHarvestOutputRoot } = await bootstrapBrief();
 
-  // RFC-0113: verified admission gate (bootstrap — all evidence refs null)
+  // RFC-0113: verify the explicit signed admission before creating outputs.
   const gate = evaluateProgramGate(
-    createBootstrapAdmission({
-      period: brief.sourceToken,
-      capsuleId: brief.capsuleId,
-      operation: "collect",
+    await loadAdmissionInputFromFiles({
+      admissionInputPath: options.admissionInputPath,
+      evidenceRoot: options.admissionEvidenceRoot,
+      trustedKeysPath: options.admissionTrustedKeysPath,
+      requiredEvidenceClass: "operational",
+      expected: {
+        period: periodFromSourceToken(brief.sourceToken),
+        capsuleId: brief.capsuleId,
+        operation: "collect",
+      },
     }),
   );
   if (gate.status === "blocked") {

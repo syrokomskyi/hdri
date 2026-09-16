@@ -33,8 +33,9 @@ import {
   validateBriefConsistency,
   parsePriorCapsulesFile,
   evaluateProgramGate,
-  createBootstrapAdmission,
+  loadAdmissionInputFromFiles,
 } from "@syrokomskyi/factory-core";
+import { periodFromSourceToken } from "@syrokomskyi/observatory-crypto";
 import { inputDir, outputRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
@@ -116,12 +117,18 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
     priorCapsuleIds,
   });
 
-  // RFC-0113: verified admission gate (bootstrap — all evidence refs null)
+  // RFC-0113: verify the explicit signed admission before creating outputs.
   const gate = evaluateProgramGate(
-    createBootstrapAdmission({
-      period: brief.sourceToken,
-      capsuleId: brief.capsuleId,
-      operation: "collect",
+    await loadAdmissionInputFromFiles({
+      admissionInputPath: options.admissionInputPath,
+      evidenceRoot: options.admissionEvidenceRoot,
+      trustedKeysPath: options.admissionTrustedKeysPath,
+      requiredEvidenceClass: "operational",
+      expected: {
+        period: periodFromSourceToken(brief.sourceToken),
+        capsuleId: brief.capsuleId,
+        operation: "collect",
+      },
     }),
   );
   if (gate.status === "blocked") {

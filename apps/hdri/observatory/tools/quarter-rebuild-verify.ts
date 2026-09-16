@@ -23,7 +23,7 @@ import { parseCodebookOrThrow } from "@syrokomskyi/hdri-codebook";
 import { newId } from "@syrokomskyi/observatory-core";
 import { readEmitBundle, streamAssetStates } from "@syrokomskyi/observatory-emit";
 import type { AssetStateRecord } from "@syrokomskyi/observatory-core";
-import { evaluateProgramGate, createBootstrapAdmission } from "@syrokomskyi/factory-core";
+import { evaluateProgramGate, loadAdmissionInputFromFiles } from "@syrokomskyi/factory-core";
 import { migrateObservatory } from "../run/db/migrate";
 import { writeAssetStatesDeduped, type AssetStateInput } from "../run/db/sync-writers";
 import { scoreAndWriteForRun } from "../run/score/score-core";
@@ -47,9 +47,15 @@ const arg = (name: string): string | undefined => {
 
 const inputManifestPath = arg("--input-manifest");
 const reportRoot = arg("--report-root");
+const admissionInputPath = arg("--admission-input");
+const admissionEvidenceRoot = arg("--admission-evidence-root");
+const admissionTrustedKeysPath = arg("--admission-trusted-keys");
+const periodArg = arg("--period");
+const capsuleIdArg = arg("--capsule-id");
 
 if (!inputManifestPath) throw new Error("--input-manifest <scientific-inputs.json> is required");
 if (!reportRoot) throw new Error("--report-root <dir> is required");
+if (!periodArg || !capsuleIdArg) throw new Error("--period and --capsule-id are required");
 
 const startedAt = new Date().toISOString();
 
@@ -71,10 +77,12 @@ const publicManifestPath = path.resolve(
 
 // ProgramGate check — rebuild is a publish operation
 const gate = evaluateProgramGate(
-  createBootstrapAdmission({
-    period: inputManifest.capsuleManifestSha256,
-    capsuleId: inputManifest.capsuleManifestSha256,
-    operation: "publish",
+  await loadAdmissionInputFromFiles({
+    admissionInputPath,
+    evidenceRoot: admissionEvidenceRoot,
+    trustedKeysPath: admissionTrustedKeysPath,
+    requiredEvidenceClass: "operational",
+    expected: { period: periodArg, capsuleId: capsuleIdArg, operation: "publish" },
   }),
 );
 if (gate.status === "blocked") {

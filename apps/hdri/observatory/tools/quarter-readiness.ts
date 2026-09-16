@@ -11,11 +11,17 @@
 </CHANGE_SUMMARY>
 */
 
-import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { parseAdmissionInput } from "@syrokomskyi/factory-core";
+import {
+  createFileAdmissionVerificationDeps,
+  evaluateProgramGate,
+  parseAdmissionInput,
+  parseAdmissionTrustManifest,
+  verifyAdmissionInput,
+} from "@syrokomskyi/factory-core";
+import { readBoundedFile } from "@warpgogol/pipeline-node";
 
 export async function main(args = process.argv.slice(2)): Promise<void> {
   const { values } = parseArgs({
@@ -26,6 +32,8 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
       period: { type: "string" },
       operation: { type: "string" },
       "evidence-input": { type: "string" },
+      "evidence-root": { type: "string" },
+      "trusted-keys": { type: "string" },
       json: { type: "boolean", default: false },
     },
   });
@@ -34,32 +42,53 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     !/^\d{4}-q[1-4]$/.test(values.period) ||
     !values.operation ||
     !["preserve", "collect", "publish"].includes(values.operation) ||
-    !values["evidence-input"]
+    !values["evidence-input"] ||
+    !values["evidence-root"] ||
+    !values["trusted-keys"]
   ) {
-    throw new Error("EXPLICIT_PERIOD_OPERATION_AND_EVIDENCE_INPUT_REQUIRED");
+    throw new Error("EXPLICIT_PERIOD_OPERATION_EVIDENCE_ROOT_AND_TRUSTED_KEYS_REQUIRED");
   }
   const input = parseAdmissionInput(
-    JSON.parse(await fs.readFile(values["evidence-input"], "utf8")),
+    JSON.parse(
+      (await readBoundedFile(path.resolve(values["evidence-input"]), 4 * 1024 * 1024)).toString(
+        "utf8",
+      ),
+    ),
   );
   if (input.scope.period !== values.period || input.scope.operation !== values.operation)
     throw new Error("ADMISSION_SCOPE_MISMATCH");
-  // There is no production implementation of AdmissionVerificationDeps in this repository yet.
-  // Removing this guard requires pinned keys, bounded closure I/O and verified domain verdicts.
+  const trustedKeys = parseAdmissionTrustManifest(
+    JSON.parse(
+      (await readBoundedFile(path.resolve(values["trusted-keys"]), 4 * 1024 * 1024)).toString(
+        "utf8",
+      ),
+    ),
+  );
+  const verified = await verifyAdmissionInput(
+    input,
+    createFileAdmissionVerificationDeps({
+      evidenceRoot: path.resolve(values["evidence-root"]),
+      trustedKeys,
+    }),
+  );
+  const gate = evaluateProgramGate(verified);
   const report = {
     schema: "hdri-admission-report@1",
     operation: values.operation,
     period: values.period,
-    status: "blocked",
-    inputFingerprint: null,
-    evidenceRefs: [],
-    violations: [{ code: "ADMISSION_VERIFIER_UNAVAILABLE" }],
+    status: gate.status === "allowed" ? "ready" : "blocked",
+    inputFingerprint: gate.inputFingerprint,
+    evidenceRefs: gate.evidenceRefs,
+    violations: gate.blockerCodes.map((code) => ({ code })),
   };
   process.stdout.write(
     values.json
       ? `${JSON.stringify(report)}\n`
-      : "Quarter readiness is blocked: authenticated evidence verification is not wired.\n",
+      : gate.status === "allowed"
+        ? "Quarter readiness is ready: authenticated evidence verification passed.\n"
+        : `Quarter readiness is blocked: ${gate.blockerCodes.join(", ")}\n`,
   );
-  process.exitCode = 1;
+  process.exitCode = gate.status === "allowed" ? 0 : 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

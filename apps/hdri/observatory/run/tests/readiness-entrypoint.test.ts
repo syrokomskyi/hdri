@@ -5,6 +5,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import { generateSigningKey, signAdmissionEvidence } from "@syrokomskyi/observatory-crypto";
 
 let root: string;
 beforeEach(async () => {
@@ -32,6 +33,69 @@ async function invoke(args: string[]) {
   }
 }
 describe("readiness CLI cannot issue authority from unchecked inputs", () => {
+  it("issues ready only through the real signed-evidence loader and gate", async () => {
+    const key = generateSigningKey();
+    const signingKey = { ...key, signingKeyId: "fixture-key", collectorId: "fixture" };
+    const scope = {
+      period: "2026-q3",
+      capsuleId: "0198f000-0000-7000-8000-000000000000",
+      operation: "collect" as const,
+      implementationFingerprint: "implementation-q3",
+      policySha256: "a".repeat(64),
+      evidenceClass: "fixture" as const,
+    };
+    const refs: Record<string, { schema: string; uri: string; bytes: number; sha256: string }> = {};
+    for (const role of ["preservation", "qualification", "predecessor", "capacity"]) {
+      const file = `${role}.json`;
+      const bytes = Buffer.from(
+        JSON.stringify(signAdmissionEvidence({ signingKey, role, scope, signedAt: "2026-09-16T00:00:00.000Z" })),
+      );
+      await fs.writeFile(path.join(root, file), bytes);
+      refs[role] = {
+        schema: "hdri-admission-evidence@1",
+        uri: file,
+        bytes: bytes.length,
+        sha256: (await import("node:crypto")).createHash("sha256").update(bytes).digest("hex"),
+      };
+    }
+    const admission = path.join(root, "admission.json");
+    await fs.writeFile(
+      admission,
+      JSON.stringify({
+        schema: "hdri-admission-input@1",
+        scope,
+        preservation: refs.preservation,
+        qualification: refs.qualification,
+        predecessor: refs.predecessor,
+        capacity: refs.capacity,
+        publication: null,
+      }),
+    );
+    const trustedKeys = path.join(root, "trusted-keys.json");
+    await fs.writeFile(
+      trustedKeys,
+      JSON.stringify({
+        schema: "hdri-admission-trust@1",
+        keys: [{ signingKeyId: signingKey.signingKeyId, publicKeyPem: key.publicKeyPem, keyClass: "fixture" }],
+      }),
+    );
+    const result = await invoke([
+      "--period",
+      "2026-q3",
+      "--operation",
+      "collect",
+      "--evidence-input",
+      admission,
+      "--evidence-root",
+      root,
+      "--trusted-keys",
+      trustedKeys,
+      "--json",
+    ]);
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: "ready", operation: "collect" });
+  });
+
   it("rejects removed digest-directory flags without touching existing evidence", async () => {
     for (const name of ["preservation-gate", "qualification", "predecessor", "capacity-report"])
       await fs.writeFile(path.join(root, `${name}-sha256.txt`), "a".repeat(64));
@@ -76,10 +140,7 @@ describe("readiness CLI cannot issue authority from unchecked inputs", () => {
       "--json",
     ]);
     expect(result.code).not.toBe(0);
-    expect(JSON.parse(result.stdout)).toMatchObject({
-      status: "blocked",
-      violations: [{ code: "ADMISSION_VERIFIER_UNAVAILABLE" }],
-    });
+    expect(result.stderr).toContain("EXPLICIT_PERIOD_OPERATION_EVIDENCE_ROOT_AND_TRUSTED_KEYS_REQUIRED");
     expect(await fs.readFile(file)).toEqual(before);
     expect(await fs.readdir(root)).toEqual(["admission.json"]);
   });
@@ -111,6 +172,10 @@ describe("readiness CLI cannot issue authority from unchecked inputs", () => {
       "collect",
       "--evidence-input",
       file,
+      "--evidence-root",
+      root,
+      "--trusted-keys",
+      path.join(root, "trusted-keys.json"),
       "--json",
     ]);
     expect(result.code).not.toBe(0);
