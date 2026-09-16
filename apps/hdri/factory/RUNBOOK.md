@@ -579,6 +579,8 @@ All eight run-app entry points and the mutating observatory tools now consume `-
 
 `pnpm --dir apps/hdri/observatory admission:evidence` produces the artifacts and envelopes: `keygen` (fresh Ed25519 pair in a fresh directory), `trust` (build `hdri-admission-trust@1` and print its pin digest), `capacity` (measure this machine against explicit minimums), `mint` (sign one envelope over an artifact inside the evidence root) and `input` (author `hdri-admission-input@1` from the minted envelope refs). No operational digest or keyring is provisioned by repository tests; fixture-class envelopes never satisfy operational admission.
 
+A candidate Q3 chain lives in `apps/hdri/.evidence/admission/2026-q3/` (gitignored): a generated keyring, `admission-policy.json`, `trusted-keys.json`, real predecessor and capacity envelopes over the sealed Q2 capsule manifest and a measured report, a partial `admission.json`, a complete `preservation-inventory.json` for the Q2 closure, and an operator README. `quarter:readiness` against it reports `MISSING_PRESERVATION_RECEIPT, MISSING_COLLECTION_READINESS`: preservation still needs a real `preserve:q2` run onto 3+ destinations with distinct failure domains (impossible on this single-filesystem machine), and qualification needs a real `operationallyQualified` rehearsal. The chain activates only when the deployment pins the trust digest in `HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256`.
+
 ---
 
 ## Executable release and recovery evidence (RFC-0115)
