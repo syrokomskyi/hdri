@@ -259,8 +259,9 @@ with a nonblank reason. `unclassified` preserves explicit unsupported accounting
 it is not permission to skip data required for an eventual conversion.
 
 Historical scope is either `unavailable` with a reason or `retained-claim` with
-producer/device strings and 1–64 listed artifact evidence URIs. These are claims,
-not authenticated historical identities. The result only reports
+producer/device/source-token strings, one explicitly selected original
+`signatureUri`, and 1–64 listed artifact evidence URIs including that signature.
+These are claims, not authenticated historical identities. The result only reports
 `inventory-checked-not-admitted`, including when every profile is recognized.
 It verifies snapshot bytes before/after metadata reading and finally rereads all
 prepared artifact bytes, including originals/WAL/CAS as files, never SQLite
@@ -275,3 +276,21 @@ schema validation and complete row decoding belong to the domain readers. This
 diagnostic does not inventory triggers/index definitions, verify profile choice,
 resolve source/device identity or establish complete scientific domain coverage.
 Do not convert `retained-only` reasons into approved scientific exclusions.
+
+`tools/preservation/baseline-provenance.ts` supplies
+`inspectBaselineProvenance(prepared, inventory, verificationKeys)` for a second,
+still non-admitting diagnostic. It accepts only the process-local scope inventory,
+parses one closed and bounded historical source-signature manifest, rejects duplicate
+JSON fields, and checks the signed source token and original main-file digest. The
+declared device must match the collector identity on the supplied key. The result is
+`cryptography-checked-not-admitted` and explicitly records
+`keyAuthority: caller-supplied-not-authenticated`: this function does not establish
+the authority of the supplied key map.
+
+Legacy batch signatures do not sign `device_id`, `app_id`, `app_version`,
+`rows_signed`, or `signed_at`; device agreement comes only from the supplied key map,
+while producer/version/count/time remain `unsignedMetadata`. A main-file digest also
+does not bind WAL state or the standalone snapshot generation. Never evaluate a key
+validity window from the unsigned historical `signed_at`, promote this diagnostic to
+admission, or re-sign Q2 to fabricate missing history. Q3 producers require the
+forward-only complete-generation signature described in the RFC-0115 plan.

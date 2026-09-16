@@ -61,7 +61,24 @@ When blocked, the gate reports stable codes: `MISSING_PRESERVATION_RECEIPT`, `MI
 
 ## Chain of Trust (Signature Verification)
 
-Every pipeline in the factory chain cryptographically seals its primary output before the next pipeline is allowed to consume it.
+The current mechanism verifies a narrow legacy batch signature. It is not sufficient
+for Q3 admission: the signed payload contains only `signing_key_id`, `source_token`
+and `content_hash`, and that hash covers the primary main file rather than a closed
+SQLite generation. `device_id`, `app_id`, `app_version`, `rows_signed` and
+`signed_at` are present but unsigned. Do not evaluate key-validity windows from that
+time or claim producer/snapshot authority from this format.
+
+Before Q3 collection, replace this format forward-only in every numeric factory
+producer and consumer. The signed canonical payload must bind schema/digest domain,
+device/key, token, application/version, row and required-domain counts, attributed
+time, and the exact closed standalone snapshot-generation closure including
+committed WAL state. Admission must also bind an externally pinned operational
+trust-registry identity and separate fixture keys. Do not add a runtime fallback to
+the old format; only the dedicated Q2 preservation diagnostic may interpret it,
+without re-signing or upgrading its historical claims.
+
+The steps below describe the currently implemented legacy mechanism for diagnosis
+and migration only. Passing them does not authorize Q3 collection.
 
 ### How it works
 

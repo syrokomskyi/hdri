@@ -210,6 +210,13 @@ standalone snapshot coverage and rejects changed or unexpected bytes. This is an
 internal converter building block, not a new command or completed Q2 import.
 See [verified input preparation](RUNBOOK.md#verified-baseline-input-preparation-a1-partial).
 
+The baseline scope diagnostic now accounts for every prepared snapshot and table.
+Its separate historical-signature diagnostic verifies the Q2 token and original
+main-file hash only against a caller-supplied key map. It explicitly leaves key-map
+authority, unsigned producer metadata and the WAL/snapshot generation unproven, so
+neither result admits an import. See
+[baseline provenance limits](RUNBOOK.md#baseline-scope-and-historical-signature-diagnostics-a1-partial).
+
 The signed-row diagnostic now rejects substituted observation IDs and conflicting
 or partial signing metadata embedded in retained JSON. It preserves original bytes
 and bounds retained failure messages. A successful signature check still does not

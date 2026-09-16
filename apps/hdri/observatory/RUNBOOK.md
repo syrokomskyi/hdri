@@ -398,6 +398,40 @@ remain required by A1 step 6. The new injected disk-full/sync tests demonstrate
 error propagation, not real crash durability. Failed working roots remain for
 diagnosis and cannot be resumed or overwritten; retry with a new root.
 
+### Baseline scope and historical signature diagnostics (A1 partial)
+
+`inspectBaselineScope` requires a closed declaration for every prepared SQLite
+snapshot and every main-schema table/view. A retained historical claim names its
+producer, device, source token, one exact original signature artifact and all
+supporting evidence URIs. Inventory success is `inventory-checked-not-admitted`;
+profile selection and retained strings are still declarations.
+
+`inspectBaselineProvenance` accepts only that process-local inventory. It reads the
+bounded retained `source-signature.json`, rejects extra or duplicate fields, checks
+the Ed25519 signature against the supplied key map, requires its signed token to be
+Q2, and matches the signed content hash to the preserved original main DB file. It
+then rereads the complete prepared byte closure. Its result is deliberately
+`cryptography-checked-not-admitted` with
+`keyAuthority: caller-supplied-not-authenticated`; the caller still needs the
+externally pinned operational trust root required by RFC-0113.
+
+Historical source signatures cover only
+`signing_key_id + source_token + content_hash`. `device_id` is matched to the
+collector identity carried by the supplied key; `app_id`, `app_version`,
+`rows_signed` and `signed_at` remain unsigned metadata. Do not use `signed_at` for
+historical key-window admission. The content hash covers the original main file,
+not a committed WAL generation or the standalone preservation snapshot. Therefore
+the positive per-source status ends in `snapshot-generation-unbound` and cannot
+authorize conversion.
+
+Preserve this limitation for Q2; never rewrite or re-sign historical evidence. For
+Q3, replace the producer format forward-only before collection: sign the closed
+snapshot-generation closure plus schema, device, token, application, version,
+row/domain counts, digest-domain identifier and attributed timestamp. Pin the trust
+registry outside caller-controlled input and include its immutable identity in the
+eventual admission evidence. A Q2-only preservation reader is not runtime backward
+compatibility.
+
 ### Bounded observation source reader (A1 partial)
 
 `streamPreparedObservations(prepared, snapshotUri)` in

@@ -12,6 +12,16 @@ The new offline rehearsal controller verifies adapter output bytes and resume,
 but always reports `operationallyQualified: false`. This machine is approved for
 offline qualification work; no 200k run or live activation has been certified.
 
+Q3 collection is additionally blocked on the forward-only batch-signature cutover.
+The current source signature signs only key ID, source token and a primary main-file
+hash. It does not sign application/device/version/count/time metadata and does not
+bind a closed SQLite generation with committed WAL state. Do not treat it as
+producer or snapshot authority. Before Q3, replace the shared producer/consumer
+format once across every numeric factory app; do not add a dual reader. Keep the
+old format only inside the dedicated Q2 preservation diagnostic, where its limited
+meaning is explicit. The exact payload and evidence requirements are recorded in
+the RFC-0115 implementation plan.
+
 ## Locality invariant (hard rule)
 
 Every app under `apps/hdri/factory/<N>-<name>/` **writes only to its own `.output/`**. Reading from a sibling app's `.output/` is allowed in read-only mode via an explicit path declared in `brief.md`. Writes into another app's folder are bugs — fix them immediately.
