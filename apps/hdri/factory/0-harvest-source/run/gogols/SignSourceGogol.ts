@@ -1,8 +1,8 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Signs the core.db file hash with the device signing key.</purpose>
+<purpose>Creates and signs a closed core SQLite snapshot with the device signing key.</purpose>
 <non-goals>
-  <item>Do not modify core.db after signing.</item>
+  <item>Do not modify the source snapshot after signing.</item>
   <item>Do not classify or parse source data.</item>
 </non-goals>
 </MODULE_CONTRACT>
@@ -14,7 +14,7 @@
   <item>Update path references to reflect the move of HDRI apps into apps/hdri/.</item>
 </CHANGE_SUMMARY>
 */
-// @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
+// @ai-invariant: the complete closed snapshot manifest and bytes are covered by Ed25519; never reuse or expose the private key
 
 import { SignSourceStep } from "@syrokomskyi/pipeline-steps-hdri";
 import { parseSourceToken } from "@syrokomskyi/observatory-crypto";
@@ -28,7 +28,7 @@ export class SignSourceGogol extends SignSourceStep<PipelineContext> {
   override readonly guide = {
     title: "Sign source",
     purpose:
-      "Create cryptographic signature over core.db file hash for downstream verification and traceability.",
+      "Create a closed source-snapshot.sqlite and cryptographically seal its complete manifest for downstream verification.",
     decisionType: "auto" as const,
     inputs: ["core.db (final, fully populated)"],
     outputs: [
@@ -37,9 +37,8 @@ export class SignSourceGogol extends SignSourceStep<PipelineContext> {
       "sign-source-summary.md",
     ],
     definitionOfDone: [
-      "SHA-256 of core.db computed",
-      "ed25519 signature created with device signing key",
-      "Signature manifest written with key ID and timestamp",
+      "Closed source-snapshot.sqlite passes integrity and size/hash checks",
+      "Complete v2 manifest signed with device signing key",
     ],
   };
 

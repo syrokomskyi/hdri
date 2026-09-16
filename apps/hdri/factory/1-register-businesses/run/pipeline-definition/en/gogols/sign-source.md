@@ -1,16 +1,17 @@
 ---
 factory: sign-source
 title: Sign Source
-purpose: Cryptographically sign the final registry_YYYY.db for downstream integrity verification.
+purpose: Create and cryptographically seal a closed registry SQLite snapshot for downstream verification.
 details: >-
-  Computes SHA-256 hash of the registry_YYYY.db, creates an ed25519 signature
-  using the device signing key, and writes source-signature.json with the
-  content hash, signing key ID, and signature. Seals the pipeline output.
+  Copies the final registry_YYYY.db generation to source-snapshot.sqlite,
+  validates the closed copy, and writes an hdri-source-signature@2 manifest
+  covering scope, snapshot size and SHA-256, domain counts, and signature.
 inputs:
   - registry_YYYY.db.
   - Device signing key from environment variable.
 outputs:
-  - source-signature.json with content_hash, signing_key_id, and signature.
+  - source-snapshot.sqlite.
+  - source-signature.json with the v2 closed-snapshot manifest.
 definitionOfDone:
-  - source-signature.json exists with valid signature.
+  - source-signature.json and its adjacent snapshot pass v2 verification.
 ---

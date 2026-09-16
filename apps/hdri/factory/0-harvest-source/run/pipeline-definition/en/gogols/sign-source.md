@@ -2,18 +2,18 @@
 factory: sign-source
 title: Sign Source
 purpose: >-
-  Cryptographically sign the final core.db file hash to establish a
-  verifiable data lineage chain for downstream pipelines.
+  Create and cryptographically seal a closed source SQLite snapshot for
+  downstream pipelines.
 details: >-
-  Computes SHA-256 of core.db, creates an ed25519 detached signature
-  over `${signing_key_id}\n${source_token}\n${content_hash}`, and writes
-  a `source-signature.json` manifest. Downstream pipelines (e.g.
-  1-register-businesses) must verify this signature before consuming
-  the database.
+  Copies the final core.db generation to an adjacent source-snapshot.sqlite,
+  validates the closed copy, and writes an hdri-source-signature@2 manifest
+  covering the complete canonical metadata, snapshot size, SHA-256, and row
+  counts. Downstream pipelines must verify the manifest and snapshot before use.
 inputs:
   - core.db (final, fully populated).
 outputs:
-  - source-signature.json — ed25519 signature manifest.
+  - source-snapshot.sqlite — immutable closed SQLite snapshot.
+  - source-signature.json — v2 Ed25519 signature manifest.
   - sign-source-summary.json — machine-readable signing metadata.
   - sign-source-summary.md — human-readable signing report.
 definitionOfDone:

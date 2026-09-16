@@ -2,20 +2,21 @@
 factory: sign-source
 title: Sign source
 purpose: >-
-  Create cryptographic signature over lighthouse-YYYY-qN.db file hash for downstream
-  verification and traceability.
+  Create and cryptographically seal a closed Lighthouse SQLite snapshot for
+  downstream verification and traceability.
 details: >-
-  Computes SHA-256 hash of the final lighthouse-YYYY-qN.db file. Creates ed25519
-  signature manifest with source metadata. Writes source-signature.json manifest,
+  Copies the final lighthouse-YYYY-qN.db generation to source-snapshot.sqlite,
+  validates the closed copy, and writes an hdri-source-signature@2 manifest with
+  scope, snapshot metadata, domain counts, and Ed25519 signature,
   sign-source-summary.json, and sign-source-summary.md.
 inputs:
   - lighthouse-YYYY-qN.db (final, fully populated)
 outputs:
-  - source-signature.json (ed25519 signature manifest)
+  - source-snapshot.sqlite
+  - source-signature.json (v2 Ed25519 signature manifest)
   - sign-source-summary.json
   - sign-source-summary.md
 definitionOfDone:
-  - SHA-256 of lighthouse-YYYY-qN.db computed
-  - ed25519 signature created with device signing key
-  - Signature manifest written with key ID and timestamp
+  - Closed snapshot passes integrity and size/hash checks
+  - Complete v2 manifest is signed with the device signing key
 ---

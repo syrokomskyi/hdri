@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Signs the pages.db file hash with the device signing key.</purpose>
+<purpose>Creates and signs a closed pages SQLite snapshot with the device signing key.</purpose>
 <non-goals>
   <item>Do not modify pages.db after signing.</item>
   <item>Do not classify or parse source data.</item>
@@ -11,7 +11,7 @@
   <item>Migrate to SignSourceStep base class from @warpgogol/pipeline-steps — eliminates duplicated signing workflow.</item>
 </CHANGE_SUMMARY>
 */
-// @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
+// @ai-invariant: the complete closed snapshot manifest and bytes are covered by Ed25519; never reuse or expose the private key
 
 import { SignSourceStep } from "@syrokomskyi/pipeline-steps-hdri";
 import { toFactoryRelativePath } from "../config.js";
@@ -24,7 +24,7 @@ export class SignSourceGogol extends SignSourceStep<PipelineContext> {
   override readonly guide = {
     title: "Sign source",
     purpose:
-      "Create cryptographic signature over pages.db file hash for downstream verification and traceability.",
+      "Create a closed source-snapshot.sqlite and cryptographically seal its complete manifest for downstream verification.",
     decisionType: "auto" as const,
     inputs: ["pages.db (final, fully populated)"],
     outputs: [

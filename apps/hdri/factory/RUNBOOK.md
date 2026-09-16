@@ -61,39 +61,43 @@ When blocked, the gate reports stable codes: `MISSING_PRESERVATION_RECEIPT`, `MI
 
 ## Chain of Trust (Signature Verification)
 
-The current mechanism verifies a narrow legacy batch signature. It is not sufficient
-for Q3 admission: the signed payload contains only `signing_key_id`, `source_token`
-and `content_hash`, and that hash covers the primary main file rather than a closed
-SQLite generation. `device_id`, `app_id`, `app_version`, `rows_signed` and
-`signed_at` are present but unsigned. Do not evaluate key-validity windows from that
-time or claim producer/snapshot authority from this format.
+Q3 production uses the forward-only `hdri-source-signature@2` contract. Each numeric
+factory producer copies its final SQLite generation to an immutable
+`source-snapshot.sqlite`, verifies the closed copy, records its byte length and
+SHA-256 plus deterministic per-domain row counts, and signs the complete canonical
+manifest. The manifest binds schema/digest domain, device/key, source token,
+application/version, counts, signing time, and snapshot metadata.
 
-Before Q3 collection, replace this format forward-only in every numeric factory
-producer and consumer. The signed canonical payload must bind schema/digest domain,
-device/key, token, application/version, row and required-domain counts, attributed
-time, and the exact closed standalone snapshot-generation closure including
-committed WAL state. Admission must also bind an externally pinned operational
-trust-registry identity and separate fixture keys. Do not add a runtime fallback to
-the old format; only the dedicated Q2 preservation diagnostic may interpret it,
-without re-signing or upgrading its historical claims.
-
-The steps below describe the currently implemented legacy mechanism for diagnosis
-and migration only. Passing them does not authorize Q3 collection.
+Every downstream consumer discovers exactly one matching manifest per device, loads
+the device key from `transparency/keys/`, verifies scope and the Ed25519 signature,
+then checks that the adjacent snapshot is a regular file with the signed size and
+SHA-256. A v1/hash-only manifest or a producer output without the adjacent snapshot
+is rejected; no runtime compatibility reader exists. The old format is interpreted
+only by the dedicated Q2 preservation diagnostic, without re-signing or upgrading
+its historical claims.
 
 ### How it works
 
-1. **Signing:** The final gogol in each pipeline (`SignSourceGogol`) computes a SHA-256 hash of the primary artifact (e.g. `core.db` or `registry_YYYY.db`), creates an ed25519 signature, and writes a `source-signature.json` manifest containing:
-   - `app_id` — the pipeline that produced the data (e.g. `0-harvest-source`)
-   - `content_hash` — the canonical SHA-256 of the artifact
-   - `signing_key_id` — `<deviceId>-<pubkey-fingerprint>`
-   - `signature` — Base64url ed25519 signature
+1. **Signing:** The final gogol in each pipeline (`SignSourceGogol`) creates the adjacent closed `source-snapshot.sqlite` and writes a `source-signature.json` manifest containing:
+   - `schema` and `digest_domain` — the v2 contract identifiers
+   - `app_id`, `app_version`, `device_id`, `source_token` — producer scope
+   - `snapshot` — fixed URI, byte length, and canonical SHA-256
+   - `domain_counts` and `rows_signed` — deterministic completeness evidence
+   - `signed_at` and `signature` — attributed time and Base64url Ed25519 signature
 
 2. **Verification:** The first gogol in every downstream pipeline (`VerifyUpstreamGogol`) automatically:
-   - Discovers all `source-signature.json` manifests from the previous pipeline's `.output/<deviceId>/`
+   - Discovers exactly one matching `source-signature.json` manifest from the previous pipeline's `.output/<deviceId>/`
    - Loads the matching public key from `transparency/keys/<deviceId>.pem`
    - Verifies the ed25519 signature
-   - Re-computes the SHA-256 of the actual artifact and compares it to the manifest's `content_hash`
+   - Resolves only the manifest's fixed adjacent `source-snapshot.sqlite`, checks its regular-file type and signed byte length, then re-computes its SHA-256
    - **Throws an error and stops the pipeline if any check fails**
+
+### Q3 rollout boundary
+
+Before activating a Q3 run, regenerate or remove every pre-cutover producer output
+under the participating upstream roots and verify that each numeric factory emits
+the v2 manifest and adjacent snapshot. Do not mix v1 and v2 outputs in one upstream
+root, and do not treat a legacy manifest as evidence that can be upgraded in place.
 
 ### Key locations
 

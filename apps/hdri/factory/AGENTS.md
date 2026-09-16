@@ -12,15 +12,15 @@ The new offline rehearsal controller verifies adapter output bytes and resume,
 but always reports `operationallyQualified: false`. This machine is approved for
 offline qualification work; no 200k run or live activation has been certified.
 
-Q3 collection is additionally blocked on the forward-only batch-signature cutover.
-The current source signature signs only key ID, source token and a primary main-file
-hash. It does not sign application/device/version/count/time metadata and does not
-bind a closed SQLite generation with committed WAL state. Do not treat it as
-producer or snapshot authority. Before Q3, replace the shared producer/consumer
-format once across every numeric factory app; do not add a dual reader. Keep the
-old format only inside the dedicated Q2 preservation diagnostic, where its limited
-meaning is explicit. The exact payload and evidence requirements are recorded in
-the RFC-0115 implementation plan.
+Q3 collection uses the forward-only `hdri-source-signature@2` contract. The source
+signature binds application/device/version/count/time metadata and the complete
+closed SQLite generation through the adjacent immutable `source-snapshot.sqlite`.
+All numeric factory producers and consumers use this format atomically; do not add
+a dual reader or mix v1 and v2 outputs in one upstream root. Keep the old format
+only inside the dedicated Q2 preservation diagnostic, where its limited meaning is
+explicit. Before activation, regenerate or remove pre-cutover outputs and confirm
+each producer emits both the v2 manifest and adjacent snapshot. The exact payload
+and evidence requirements are recorded in the RFC-0115 implementation plan.
 
 ## Locality invariant (hard rule)
 
