@@ -168,3 +168,28 @@ driver-boundary sentinels; `verify-envelope.pbt.test.ts` checks shared consisten
 The 10,000-row fixture is not a real 200,000-site qualification. Native SQLite/schema
 memory, capacity/inodes, enforced exclusion and crash proofs remain A1 requirements.
 See `RUNBOOK.md` for durable operational details if generated guide sections change.
+
+`tools/preservation/harvest-source.ts` exports `streamPreparedHarvestSeeds` for a
+prepared harvest snapshot. It preserves all 15 `site_source_seeds` columns and the
+joined `sites.domain`, with exact bigint local IDs, nullable integer timestamps and
+strict UTF-8 text (including opaque original `raw_json`, without JSON validation).
+Manifest/snapshot hashes and exact seed/site row locators accompany each frozen row.
+The seed schema must match the known columns/types/nullability/primary key; sites
+validation covers only id/domain. Both tables require rowid-alias integer primary
+keys. Extra site classification fields are neither exported nor certified here.
+An orphan seed, unsupported schema, invalid cell or aggregate row over 8 MiB fails;
+no silent filtering, truncation or domain deduplication. Transfer guards run in SQL
+before driver transfer; iteration has a 100-million-row safety ceiling. The ceiling
+is not a throughput claim or a license to omit remaining rows. Original path/item
+strings are data, never filesystem instructions. Unreferenced sites need a separate
+complete scan; this is not a complete harvest database export.
+
+`prepared-snapshot.ts` owns the shared before/after byte and sidecar verification for
+both readers. Each reader still owns its schema. Complete exhaustion is required,
+and writer exclusion/stable ancestors remain caller obligations. Do not interpret
+preservation period, seed creation time or local row IDs as measurement time,
+canonical identity or proof of historical producer/device scope. Do not wire this
+reader alone into Q3: independent complete source/target reconciliation, source
+occurrence joins, classifications under their original derivations and fresh
+generation sealing remain required. `harvest-source.test.ts` covers real fixture
+preservation, WAL, field fidelity, failures and guarded driver transfer.
