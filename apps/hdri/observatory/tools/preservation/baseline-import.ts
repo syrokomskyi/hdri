@@ -62,6 +62,8 @@ type TableInfo = {
   columns: string[];
 };
 
+type TableConversionResult = TableInfo & { differences: number };
+
 const canonicalValue = (value: unknown): unknown => {
   if (Buffer.isBuffer(value)) return { $buffer: value.toString("base64") };
   if (value instanceof Uint8Array) return { $buffer: Buffer.from(value).toString("base64") };
@@ -122,12 +124,13 @@ const convertSqliteDb = async (
   sourcePath: string,
   targetPath: string,
   identityMap: Map<string, string>,
-): Promise<{ tableResults: TableInfo[]; differences: number }> => {
+): Promise<{ tableResults: TableConversionResult[]; differences: number }> => {
   const sourceDb = new Database(sourcePath, { readonly: true });
   let differences = 0;
 
   try {
     const sourceTables = extractTableInfo(sourceDb);
+    const tableResults: TableConversionResult[] = [];
 
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
     const targetDb = new Database(targetPath);
@@ -187,14 +190,16 @@ const convertSqliteDb = async (
           string,
           unknown
         >[];
-        differences += multisetDifference(
+        const tableDifferences = multisetDifference(
           expectedRows.sort(),
           targetRows.map(canonicalRow).sort(),
         );
-        if (targetCount.cnt !== table.rowCount) differences += Math.abs(targetCount.cnt - table.rowCount);
+        const countDifference = Math.abs(targetCount.cnt - table.rowCount);
+        differences += tableDifferences + countDifference;
+        tableResults.push({ ...table, differences: tableDifferences + countDifference });
       }
 
-      return { tableResults: sourceTables, differences };
+      return { tableResults, differences };
     } finally {
       targetDb.close();
     }
@@ -342,12 +347,7 @@ export const convertToBaseline = async (
       );
       totalDifferences += differences;
       for (const t of tableResults) {
-        tableReports.push({
-          name: t.name,
-          sourceRows: t.rowCount,
-          targetRows: t.rowCount,
-          differences: 0,
-        });
+        tableReports.push({ name: t.name, sourceRows: t.rowCount, targetRows: t.rowCount, differences: t.differences });
       }
     } else {
       // Non-SQLite files: copy verbatim, no identity mapping needed
