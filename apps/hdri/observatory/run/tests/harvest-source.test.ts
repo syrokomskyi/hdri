@@ -16,6 +16,10 @@ import {
   streamPreparedHarvestSites,
   streamPreparedHarvestMappings,
 } from "../../tools/preservation/harvest-source.js";
+import {
+  streamPreparedCohorts,
+  streamPreparedStrata,
+} from "../../tools/preservation/cohort-source.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -80,6 +84,8 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false) {
     rows: () => streamPreparedHarvestSeeds(prepared, snapshot.uri),
     sites: () => streamPreparedHarvestSites(prepared, snapshot.uri),
     mappings: () => streamPreparedHarvestMappings(prepared, snapshot.uri),
+    cohorts: () => streamPreparedCohorts(prepared, snapshot.uri),
+    strata: () => streamPreparedStrata(prepared, snapshot.uri),
   };
 }
 async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
@@ -87,6 +93,260 @@ async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
   for await (const row of rows) result.push(row);
   return result;
 }
+
+describe("retained cohort definitions and memberships", () => {
+  it("streams 10000 definitions and memberships without a whole-population set", async () => {
+    const f = await fixture((db) => {
+      const cohort = db.prepare("INSERT INTO site_cohorts VALUES(?,NULL,'owner',NULL,'seed',NULL)");
+      const member = db.prepare("INSERT INTO site_strata VALUES(?,1,'system','01',NULL,NULL,NULL)");
+      db.transaction(() => {
+        for (let n = 0; n < 10000; n++) {
+          const id = `cohort-${String(n).padStart(5, "0")}`;
+          cohort.run(id);
+          member.run(id);
+        }
+      })();
+    });
+    let count = 0;
+    for await (const row of f.cohorts())
+      expect(row.columns.id).toBe(`cohort-${String(count++).padStart(5, "0")}`);
+    expect(count).toBe(10000);
+    count = 0;
+    for await (const row of f.strata())
+      expect(row.columns.cohort_id).toBe(`cohort-${String(count++).padStart(5, "0")}`);
+    expect(count).toBe(10000);
+  });
+  const selection = (db: Database.Database) =>
+    db.exec(`
+    INSERT INTO site_cohorts VALUES('cohort-a',NULL,'original-owner','v-old','seed-001',NULL);
+    INSERT INTO site_strata VALUES('cohort-a',1,'original-system','01',NULL,NULL,NULL)`);
+  it("preserves WAL definitions, unreferenced cohorts and every membership without quarter inference", async () => {
+    const f = await fixture((db) => {
+      selection(db);
+      db.prepare("UPDATE site_cohorts SET description=?,created_at=-9").run(
+        "\uFEFFdescription\0é🙂",
+      );
+      db.exec(`INSERT INTO site_cohorts VALUES('empty',NULL,'owner',NULL,'',NULL);
+        INSERT INTO site_cohorts VALUES('second','other','owner',NULL,'seed-002',0);
+        INSERT INTO sites(id,domain) VALUES(9007199254740993,'other.example');
+        INSERT INTO site_strata VALUES('cohort-a',9007199254740993,'unknown','009','BE','rural','001');
+        INSERT INTO site_strata VALUES('second',1,'different','x','','','')`);
+    }, true);
+    const before = await inventorySources({ roots: [f.source] });
+    const cohorts = await collect(f.cohorts());
+    expect(cohorts.map((r) => r.columns)).toEqual([
+      {
+        id: "cohort-a",
+        description: "\uFEFFdescription\0é🙂",
+        owner_app: "original-owner",
+        codebook_version: "v-old",
+        random_seed: "seed-001",
+        created_at: -9n,
+      },
+      {
+        id: "empty",
+        description: null,
+        owner_app: "owner",
+        codebook_version: null,
+        random_seed: "",
+        created_at: null,
+      },
+      {
+        id: "second",
+        description: "other",
+        owner_app: "owner",
+        codebook_version: null,
+        random_seed: "seed-002",
+        created_at: 0n,
+      },
+    ]);
+    const rows = await collect(f.strata());
+    expect(rows.map((r) => r.columns)).toEqual([
+      {
+        cohort_id: "cohort-a",
+        site_id: 1n,
+        strata_system: "original-system",
+        strata_code: "01",
+        bundesland: null,
+        settlement_type: null,
+        gemeinde: null,
+      },
+      {
+        cohort_id: "cohort-a",
+        site_id: 9007199254740993n,
+        strata_system: "unknown",
+        strata_code: "009",
+        bundesland: "BE",
+        settlement_type: "rural",
+        gemeinde: "001",
+      },
+      {
+        cohort_id: "second",
+        site_id: 1n,
+        strata_system: "different",
+        strata_code: "x",
+        bundesland: "",
+        settlement_type: "",
+        gemeinde: "",
+      },
+    ]);
+    expect(rows[1].source).toEqual({
+      manifestSha256: f.prepared.manifestSha256,
+      artifact: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
+      stratumLocator: { table: "site_strata", cohort_id: "cohort-a", site_id: "9007199254740993" },
+      cohortLocator: { table: "site_cohorts", id: "cohort-a" },
+      siteLocator: { table: "sites", id: "9007199254740993" },
+    });
+    expect(cohorts[0].source.cohortLocator).toEqual({ table: "site_cohorts", id: "cohort-a" });
+    for (const value of [
+      rows[1],
+      rows[1].columns,
+      rows[1].source,
+      rows[1].source.artifact,
+      rows[1].source.stratumLocator,
+      rows[1].source.siteLocator,
+      rows[1].source.cohortLocator,
+      cohorts[0],
+      cohorts[0].columns,
+      cohorts[0].source,
+      cohorts[0].source.cohortLocator,
+    ])
+      expect(Object.isFrozen(value)).toBe(true);
+    expect(await inventorySources({ roots: [f.source] })).toEqual(before);
+    expect((await verifyReplicas(f.options)).status).toBe("pass");
+  });
+  it.each([
+    ["cohorts", "UPDATE site_cohorts SET id=NULL", "INVALID_OR_OVERSIZED"],
+    ["cohorts", "UPDATE site_cohorts SET random_seed=X'80'", "INVALID_OR_OVERSIZED"],
+    ["cohorts", "UPDATE site_cohorts SET description=CAST(X'80' AS TEXT)", "encoded data"],
+    ["cohorts", "UPDATE site_cohorts SET created_at=1.5", "INVALID_OR_OVERSIZED"],
+    [
+      "cohorts",
+      "ALTER TABLE site_cohorts ADD COLUMN unknown TEXT",
+      "UNSUPPORTED_COHORT_SOURCE_SCHEMA",
+    ],
+    [
+      "cohorts",
+      "ALTER TABLE site_cohorts RENAME TO old; CREATE VIEW site_cohorts AS SELECT * FROM old",
+      "UNSUPPORTED_COHORT_SOURCE_SCHEMA",
+    ],
+    ["strata", "DELETE FROM site_cohorts", "INVALID_OR_OVERSIZED"],
+    ["strata", "UPDATE site_strata SET cohort_id='COHORT-A'", "INVALID_OR_OVERSIZED"],
+    ["strata", "DELETE FROM sites", "INVALID_OR_OVERSIZED"],
+    ["strata", "UPDATE site_strata SET site_id=1.5", "INVALID_OR_OVERSIZED"],
+    ["strata", "UPDATE site_strata SET gemeinde=CAST(X'80' AS TEXT)", "encoded data"],
+    ["strata", "UPDATE site_strata SET strata_code=X'80'", "INVALID_OR_OVERSIZED"],
+    [
+      "strata",
+      "ALTER TABLE site_strata ADD COLUMN unknown TEXT",
+      "UNSUPPORTED_COHORT_SOURCE_SCHEMA",
+    ],
+    ["strata", "DROP TABLE site_strata", "UNSUPPORTED_COHORT_SOURCE_SCHEMA"],
+    [
+      "strata",
+      "ALTER TABLE sites RENAME TO old; CREATE VIEW sites AS SELECT * FROM old",
+      "UNSUPPORTED_COHORT_SITE_SCHEMA",
+    ],
+  ] as const)("rejects invalid %s data: %s", async (reader, sql, error) => {
+    const f = await fixture((db) => {
+      selection(db);
+      db.exec(sql);
+    });
+    await expect(collect<unknown>(f[reader]())).rejects.toThrow(error);
+  });
+  it.each(["COLLATE NOCASE", "DESC"])("rejects noncanonical cohort index %s", async (order) => {
+    const f = await fixture((db) =>
+      db.exec(`DROP TABLE site_cohorts; CREATE TABLE site_cohorts(
+      id TEXT PRIMARY KEY ${order},description TEXT,owner_app TEXT NOT NULL,
+      codebook_version TEXT,random_seed TEXT NOT NULL,created_at INTEGER)`),
+    );
+    await expect(collect(f.cohorts())).rejects.toThrow("UNSUPPORTED_COHORT_SOURCE_INDEX");
+    await expect(collect(f.strata())).rejects.toThrow("UNSUPPORTED_COHORT_SOURCE_INDEX");
+  });
+  it.each(["COLLATE NOCASE", "DESC"])("rejects noncanonical membership index %s", async (order) => {
+    const f = await fixture((db) =>
+      db.exec(`DROP TABLE site_strata; CREATE TABLE site_strata(
+      cohort_id TEXT NOT NULL,site_id INTEGER NOT NULL,strata_system TEXT NOT NULL,
+      strata_code TEXT NOT NULL,bundesland TEXT,settlement_type TEXT,gemeinde TEXT,
+      PRIMARY KEY(cohort_id ${order},site_id))`),
+    );
+    await expect(collect(f.strata())).rejects.toThrow("UNSUPPORTED_COHORT_SOURCE_INDEX");
+  });
+  it("preserves empty tables and reads definitions independently of membership or sites", async () => {
+    const empty = await fixture();
+    expect(await collect(empty.cohorts())).toEqual([]);
+    expect(await collect(empty.strata())).toEqual([]);
+    const f = await fixture((db) => {
+      selection(db);
+      db.exec("DROP TABLE site_strata; DROP TABLE sites");
+    });
+    expect(await collect(f.cohorts())).toHaveLength(1);
+  });
+  it.each(["cohorts", "strata"] as const)(
+    "bounds aggregate %s text before driver transfer",
+    async (reader) => {
+      const f = await fixture((db) => {
+        selection(db);
+        db.exec(
+          reader === "cohorts"
+            ? "UPDATE site_cohorts SET description=CAST(zeroblob(5000000) AS TEXT),random_seed=CAST(zeroblob(5000000) AS TEXT)"
+            : "UPDATE site_strata SET gemeinde=CAST(zeroblob(5000000) AS TEXT),settlement_type=CAST(zeroblob(5000000) AS TEXT)",
+        );
+      });
+      const prepare = Database.prototype.prepare;
+      let seen = false;
+      vi.spyOn(Database.prototype, "prepare").mockImplementation(function (
+        this: Database.Database,
+        sql: string,
+      ) {
+        const statement = prepare.call(this, sql);
+        if (sql.startsWith("SELECT CASE WHEN")) {
+          const iterate = statement.iterate.bind(statement);
+          vi.spyOn(statement, "iterate").mockImplementation(function* () {
+            for (const row of Reflect.apply(iterate, statement, []) as Iterable<
+              Record<string, unknown>
+            >) {
+              expect(row.admissible).toBe(0n);
+              expect(
+                Object.entries(row)
+                  .filter(([name]) => name !== "admissible")
+                  .every(([, value]) => value === null),
+              ).toBe(true);
+              seen = true;
+              yield row;
+            }
+          });
+        }
+        return statement;
+      });
+      await expect(collect<unknown>(f[reader]())).rejects.toThrow(
+        "INVALID_OR_OVERSIZED_COHORT_SOURCE_ROW",
+      );
+      expect(seen).toBe(true);
+    },
+  );
+  it.each(["cohorts", "strata"] as const)("requires prepared authority for %s", async (reader) => {
+    const f = await fixture(selection);
+    const read = reader === "cohorts" ? streamPreparedCohorts : streamPreparedStrata;
+    expect(() => read({ ...f.prepared }, f.snapshot.uri)).toThrow(
+      "PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED",
+    );
+    const original = f.prepared.manifest.artifacts.find((a) => a.representation === "original")!;
+    expect(() => read(f.prepared, original.uri)).toThrow("DECLARED_HARVEST_SNAPSHOT_REQUIRED");
+  });
+  it.each(["cohorts", "strata"] as const)(
+    "rehashes %s after early return and releases SQLite",
+    async (reader) => {
+      const f = await fixture(selection);
+      const close = vi.spyOn(Database.prototype, "close");
+      const rows = f[reader]();
+      await rows.next();
+      await fs.appendFile(f.file, "changed");
+      await expect(rows.return(undefined)).rejects.toThrow("HARVEST_SNAPSHOT_CHANGED");
+      expect(close).toHaveBeenCalledTimes(1);
+    },
+  );
+});
 
 describe("complete retained mapping records", () => {
   it("bounds aggregate driver transfer before decoding mapping text", async () => {
