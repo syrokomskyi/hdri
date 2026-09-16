@@ -113,7 +113,7 @@ function checkSchema(db: Database.Database): void {
     throw new Error("UNSUPPORTED_RUN_SOURCE_ENCODING");
 }
 
-function readRows(db: Database.Database): Generator<RetainedPipelineRunRow["columns"]> {
+function* readRows(db: Database.Database): Generator<RetainedPipelineRunRow["columns"]> {
   // octet_length(column) reads stored length metadata without loading TEXT/BLOB.
   // CASE is lazy. Never filter invalid rows out: emit a tiny sentinel and fail.
   // No SQL identifier or expression comes from caller input or the source DDL.
@@ -132,32 +132,30 @@ function readRows(db: Database.Database): Generator<RetainedPipelineRunRow["colu
     FROM pipeline_runs INDEXED BY sqlite_autoindex_pipeline_runs_1 ORDER BY run_id COLLATE BINARY`,
     )
     .safeIntegers();
-  return (function* () {
-    let count = 0;
-    let previous: Buffer | undefined;
-    for (const raw of statement.iterate() as Iterable<Record<string, unknown>>) {
-      if (++count > MAX_ROWS) throw new Error("RUN_SOURCE_ROW_LIMIT");
-      if (raw.admissible !== 1n) throw new Error("INVALID_OR_OVERSIZED_RUN_SOURCE_ROW");
-      const row = Object.fromEntries(
-        COLUMNS.map(([name]) => {
-          const value = raw[name];
-          if (value === null) return [name, null];
-          if (!(value instanceof Uint8Array)) throw new Error("INVALID_RUN_SOURCE_CELL");
-          return [name, utf8.decode(value)];
-        }),
-      ) as Record<Column, string | null>;
-      const runId = row.run_id as string;
-      const key = Buffer.from(runId);
-      if (
-        !runId.trim() ||
-        hasControlCharacter(runId) ||
-        (previous && Buffer.compare(previous, key) >= 0)
-      )
-        throw new Error("INVALID_RUN_SOURCE_KEY");
-      previous = key;
-      yield Object.freeze(row);
-    }
-  })();
+  let count = 0;
+  let previous: Buffer | undefined;
+  for (const raw of statement.iterate() as Iterable<Record<string, unknown>>) {
+    if (++count > MAX_ROWS) throw new Error("RUN_SOURCE_ROW_LIMIT");
+    if (raw.admissible !== 1n) throw new Error("INVALID_OR_OVERSIZED_RUN_SOURCE_ROW");
+    const row = Object.fromEntries(
+      COLUMNS.map(([name]) => {
+        const value = raw[name];
+        if (value === null) return [name, null];
+        if (!(value instanceof Uint8Array)) throw new Error("INVALID_RUN_SOURCE_CELL");
+        return [name, utf8.decode(value)];
+      }),
+    ) as Record<Column, string | null>;
+    const runId = row.run_id as string;
+    const key = Buffer.from(runId);
+    if (
+      !runId.trim() ||
+      hasControlCharacter(runId) ||
+      (previous && Buffer.compare(previous, key) >= 0)
+    )
+      throw new Error("INVALID_RUN_SOURCE_KEY");
+    previous = key;
+    yield Object.freeze(row);
+  }
 }
 
 /** Complete retained run scan, not a complete observatory export. Every retained
