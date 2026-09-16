@@ -28,6 +28,7 @@ import {
 } from "../../tools/preservation/cohort-source.js";
 import { inspectBaselineScope } from "../../tools/preservation/baseline-scope.js";
 import { inspectBaselineProvenance } from "../../tools/preservation/baseline-provenance.js";
+import { streamPreparedAssetStates } from "../../tools/preservation/asset-state-source.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -239,6 +240,83 @@ describe("complete prepared baseline source declarations", () => {
       expect(Object.isFrozen(value)).toBe(true);
     expect(await inventorySources({ roots: [f.source] })).toEqual(before);
     expect((await verifyReplicas(f.options)).status).toBe("pass");
+  });
+  it("projects every site and mapping through an explicit canonical domain join", async () => {
+    const provenance = '{"classifier":"retained-v1"}';
+    const f = await fixture((db) => {
+      db.prepare(
+        `UPDATE sites SET hwo_uid='A-01',hwo_confidence=0.875,hwo_provenance=?,
+        bundesland='BE',gemeinde='001',created_at=-7 WHERE id=1`,
+      ).run(provenance);
+      db.exec(`INSERT INTO site_hwo_mappings VALUES
+        (1,'destatis_group','01','Group 01','retained-classifier',10),
+        (1,'legacy-system','raw-code',NULL,'legacy-source',NULL)`);
+    });
+    const scopeInventory = await inspectBaselineScope(f.prepared, declaration(f));
+    const canonicalId = "0198f000-0000-7000-8000-000000000001";
+    const rows = await collect(
+      streamPreparedAssetStates({
+        prepared: f.prepared,
+        scopeInventory,
+        snapshotUri: f.snapshot.uri,
+        canonicalByDomain: new Map([["retained.example", canonicalId]]),
+      }),
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].record).toEqual({
+      asset_id: canonicalId,
+      domain: "retained.example",
+      gewerk_group: "01",
+      hwo_uid: "A-01",
+      hwo_provenance: provenance,
+      bundesland: "BE",
+      gemeinde: "001",
+      mappings: [
+        {
+          mapping_system: "destatis_group",
+          target_code: "01",
+          target_label: "Group 01",
+          source: "retained-classifier",
+        },
+        {
+          mapping_system: "legacy-system",
+          target_code: "raw-code",
+          target_label: null,
+          source: "legacy-source",
+        },
+      ],
+    });
+    expect(rows[0].retained).toEqual({
+      localSiteId: "1",
+      hwoConfidence: 0.875,
+      createdAt: "-7",
+    });
+    expect(rows[0].source.mappingLocators).toEqual([
+      { table: "site_hwo_mappings", site_id: "1", mapping_system: "destatis_group" },
+      { table: "site_hwo_mappings", site_id: "1", mapping_system: "legacy-system" },
+    ]);
+    expect(rows[0].source.scope).toEqual({
+      status: "unavailable",
+      reason: "Historical device attribution not established",
+    });
+  });
+  it("blocks the complete projection when a site lacks a canonical domain binding", async () => {
+    const f = await fixture((db) =>
+      db.exec("INSERT INTO sites(id,domain) VALUES(2,'unmapped.example')"),
+    );
+    const scopeInventory = await inspectBaselineScope(f.prepared, declaration(f));
+    await expect(
+      collect(
+        streamPreparedAssetStates({
+          prepared: f.prepared,
+          scopeInventory,
+          snapshotUri: f.snapshot.uri,
+          canonicalByDomain: new Map([
+            ["retained.example", "0198f000-0000-7000-8000-000000000001"],
+          ]),
+        }),
+      ),
+    ).rejects.toThrow("UNRESOLVED_ASSET_STATE_DOMAIN: unmapped.example");
   });
   it.each([
     "snapshot",
