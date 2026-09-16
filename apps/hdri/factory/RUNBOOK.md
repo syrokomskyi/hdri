@@ -595,7 +595,9 @@ All factory and observatory entry points use `VerifiedAdmissionInput` from `@syr
 `quarter:readiness` requires `--period`, `--operation`, `--evidence-input`,
 `--evidence-root` and `--trusted-keys`. It uses the bounded file verifier,
 the strict `hdri-admission-evidence@1` Ed25519 envelope and the pinned trust
-manifest before evaluating the gate. Digest files and the old `--input`
+manifest before evaluating the gate. Every envelope binds one domain-evidence
+object by schema, contained URI, size and digest; those bytes are reread before
+the role-specific verifier runs. Digest files and the old `--input`
 fallback have been removed. Do not fill admission refs with unchecked objects
 or treat fixture-key readiness as operational qualification. Operational keys
 also require a role-specific domain/closure verifier; until those verifiers are
