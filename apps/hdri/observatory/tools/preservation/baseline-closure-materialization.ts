@@ -13,6 +13,7 @@
   <item>Reject caller import ontology labels that differ from the complete retained observation domain.</item>
   <item>Require exact retained ontology/codebook artifacts and validate every observation against their parsed contract.</item>
   <item>Materialize every retained pipeline run, join observations to runs and compare the run domain.</item>
+  <item>Report exact bounded row counts for every declared retained-only table.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: This joined target remains compared-not-admitted until source trust, evidence and operational closure are independently verified.
@@ -50,6 +51,7 @@ import {
 } from "./observation-source.js";
 import type { BaselineScopeInventory, BaselineSourceClaim } from "./baseline-scope.js";
 import type { PreparedBaselineSource } from "./preserve.js";
+import { streamPreparedSnapshot } from "./prepared-snapshot.js";
 import {
   inspectBaselineMethodology,
   type BaselineMethodologyInspection,
@@ -77,6 +79,11 @@ export type BaselineClosureMaterializationReport = Readonly<{
     status: "joined-not-authenticated";
     codebookIdProjection: "retained-column-absent-target-null-compared";
   }>;
+  retainedOnlyDomains: readonly Readonly<{
+    snapshotUri: string;
+    table: string;
+    rows: number;
+  }>[];
   comparisons: Readonly<{
     identities: BaselineDomainComparison;
     pipelineRuns: BaselineDomainComparison;
@@ -132,6 +139,50 @@ async function* retainedEvidenceReferenceRecords(
     const evidenceRef = row.columns.evidence_ref;
     if (evidenceRef !== null) yield { key: row.columns.id as string, values: [evidenceRef] };
   }
+}
+
+// Every declared retained-only table is counted inside the verified snapshot
+// boundary so unmaterialized domains cannot hide rows behind a caller reason.
+// Counts are accounting evidence, not a judgment that the rows may be skipped.
+async function retainedOnlyDomainCounts(
+  prepared: PreparedBaselineSource,
+  scopeInventory: BaselineScopeInventory,
+): Promise<BaselineClosureMaterializationReport["retainedOnlyDomains"]> {
+  const result: BaselineClosureMaterializationReport["retainedOnlyDomains"][number][] = [];
+  for (const source of scopeInventory.sources) {
+    const retainedOnly = source.declaration.tables.filter(
+      (table) => table.disposition === "retained-only",
+    );
+    if (!retainedOnly.length) continue;
+    const snapshotUri = source.declaration.snapshot.uri;
+    for await (const entry of streamPreparedSnapshot(
+      prepared,
+      snapshotUri,
+      "BASELINE",
+      function* (db) {
+        for (const table of retainedOnly) {
+          const escaped = `"${table.name.replaceAll('"', '""')}"`;
+          const rows = db
+            .prepare(`SELECT count(*) FROM ${escaped}`)
+            .safeIntegers()
+            .pluck()
+            .get() as bigint;
+          if (rows > BigInt(Number.MAX_SAFE_INTEGER))
+            throw new Error("RETAINED_ONLY_DOMAIN_COUNT_LIMIT");
+          yield Object.freeze({ table: table.name, rows: Number(rows) });
+        }
+      },
+    ))
+      result.push(Object.freeze({ snapshotUri, table: entry.table, rows: entry.rows }));
+  }
+  return Object.freeze(
+    result.sort((left, right) =>
+      Buffer.compare(
+        Buffer.from(`${left.snapshotUri}\0${left.table}`),
+        Buffer.from(`${right.snapshotUri}\0${right.table}`),
+      ),
+    ),
+  );
 }
 
 function harvestSource(
@@ -403,6 +454,10 @@ export async function materializeBaselineClosure(
     throw new Error("UNRESOLVED_BASELINE_EVIDENCE_REFERENCE");
   if (assetStates.sourceRows !== canonicalByDomain.size)
     throw new Error("BASELINE_IDENTITY_ASSET_DOMAIN_MISMATCH");
+  const retainedOnlyDomains = await retainedOnlyDomainCounts(
+    options.prepared,
+    options.scopeInventory,
+  );
   const targetEvidence = await inspectRetainedFile(options.targetPath);
   return Object.freeze({
     schema: "hdri-baseline-closure-materialization@1",
@@ -425,6 +480,7 @@ export async function materializeBaselineClosure(
     methodology,
     observationSemantics: observation.semantics,
     runProvenance: observation.runProvenance,
+    retainedOnlyDomains,
     comparisons: Object.freeze({
       identities: Object.freeze(identities),
       pipelineRuns: Object.freeze(pipelineRuns),

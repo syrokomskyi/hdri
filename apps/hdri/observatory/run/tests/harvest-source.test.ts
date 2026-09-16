@@ -738,6 +738,45 @@ describe("complete prepared baseline source declarations", () => {
       codebook_id: null,
     });
     expect(target.prepare("SELECT asset_id FROM asset_states").pluck().get()).toBe(f.canonicalId);
+    const declaredRetainedOnly = f.scopeInventory.sources.flatMap((source) =>
+      source.declaration.tables
+        .filter((table) => table.disposition === "retained-only")
+        .map((table) => ({ snapshotUri: source.declaration.snapshot.uri, table: table.name })),
+    );
+    expect(report.retainedOnlyDomains).toHaveLength(declaredRetainedOnly.length);
+    expect(
+      report.retainedOnlyDomains.map((d) => ({ snapshotUri: d.snapshotUri, table: d.table })),
+    ).toEqual(
+      expect.arrayContaining(
+        declaredRetainedOnly.map((d) => ({ snapshotUri: d.snapshotUri, table: d.table })),
+      ),
+    );
+    const nonempty = report.retainedOnlyDomains.filter((d) => d.rows !== 0);
+    expect(nonempty.map((d) => d.table)).toEqual(["applied_migrations"]);
+    expect(nonempty[0].rows).toBeGreaterThan(0);
+    expect(report.retainedOnlyDomains.find((d) => d.table === "synced_bundles")).toMatchObject({
+      rows: 0,
+    });
+  });
+
+  it("reports exact retained-only row counts without blocking unmaterialized domains", async () => {
+    const f = await closureFixture({
+      runEdit: (db) =>
+        db.exec(`INSERT INTO synced_bundles
+          (run_id,app_id,period,emitted_at,obs_count,synced_at,observatory_run_id,bundle_hash,asset_state_count)
+          VALUES ('factory-run','factory','2026-q2','2026-05-03T12:30:00Z',1,
+                  '2026-05-03T12:35:00Z','retained-run','bundle-hash-1',1)`),
+    });
+    const targetPath = path.join(f.root, "retained-only-counts", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    const report = await closureImport(f, "retained-only-counts");
+    expect(report.status).toBe("compared-not-admitted");
+    expect(report.retainedOnlyDomains.find((d) => d.table === "synced_bundles")).toMatchObject({
+      rows: 1,
+    });
+    expect(
+      new Set(report.retainedOnlyDomains.filter((d) => d.rows !== 0).map((d) => d.table)),
+    ).toEqual(new Set(["applied_migrations", "synced_bundles"]));
   });
 
   it.each([
