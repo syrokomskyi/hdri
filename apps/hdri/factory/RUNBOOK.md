@@ -592,7 +592,14 @@ All factory and observatory entry points use `VerifiedAdmissionInput` from `@syr
 
 ### Quarter readiness from verified evidence
 
-`quarter:readiness` requires `--period`, `--operation` and `--evidence-input`. It parses typed JSON and rejects a scope mismatch, then returns `ADMISSION_VERIFIER_UNAVAILABLE` and nonzero exit without writing anything. Digest files and the old `--input` fallback have been removed. Do not fill bootstrap refs with unchecked objects to bypass this diagnostic.
+`quarter:readiness` requires `--period`, `--operation`, `--evidence-input`,
+`--evidence-root` and `--trusted-keys`. It uses the bounded file verifier,
+the strict `hdri-admission-evidence@1` Ed25519 envelope and the pinned trust
+manifest before evaluating the gate. Digest files and the old `--input`
+fallback have been removed. Do not fill admission refs with unchecked objects
+or treat fixture-key readiness as operational qualification. Operational keys
+also require a role-specific domain/closure verifier; until those verifiers are
+wired, mutating commands stop with `ADMISSION_DOMAIN_VERIFIER_REQUIRED`.
 
 ---
 

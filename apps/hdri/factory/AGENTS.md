@@ -332,8 +332,8 @@ All factory entry points use `createBootstrapAdmission()` from `@syrokomskyi/fac
 - Bootstrap state (all refs `null`) blocks all mutating operations with `MISSING_PRESERVATION_RECEIPT`, `MISSING_COLLECTION_READINESS`, `MISSING_PUBLICATION_READINESS`.
 - A collection receipt alone does not authorize publication — the gate distinguishes `collect` from `publish`.
 - Environment flags cannot turn mutating pipelines into diagnostics.
-- `createBootstrapAdmission` is the only way to construct the initial admission state.
-- Verified authority belongs to the frozen instance issued by the verifier; spread/cast/JSON copies are rejected. Every evidence result must authenticate the exact requested scope. The actual filesystem/signature/domain verifier remains unimplemented; `quarter:readiness --period ... --operation ... --evidence-input ...` is a blocked diagnostic, not an activation route.
+- `createBootstrapAdmission` remains a blocked test/bootstrap constructor only; production entry points load an explicit admission input and pinned trust roots through `loadAdmissionInputFromFiles`.
+- Verified authority belongs to the frozen instance issued by the verifier; spread/cast/JSON copies are rejected. Every evidence result must authenticate the exact requested scope. The file/signature verifier now exists, but operational evidence fails closed with `ADMISSION_DOMAIN_VERIFIER_REQUIRED` until domain-specific closure verification and operational trust-root provisioning are wired.
 
 ### Append-only quarter ledger
 
