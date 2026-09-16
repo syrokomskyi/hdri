@@ -224,21 +224,42 @@ describe("RFC-0100 AC-5: missing CAS references block gate", () => {
 // ---------------------------------------------------------------------------
 
 describe("RFC-0100 AC-6: comparison report zero differences", () => {
-  it("produces zero-difference comparison report from conversion", async () => {
+  it("does not treat an empty comparison domain as successful conversion", async () => {
     const dir = mkdtemp("hdri-ac6-");
     try {
       const archivePath = path.join(dir, "archive");
       const targetRoot = path.join(dir, "target");
       fs.mkdirSync(archivePath, { recursive: true });
 
-      const { comparisonReport } = await convertToBaseline({
-        archivePath,
-        targetRoot,
-        identities: [],
-        inventory: [],
-      });
+      await expect(
+        convertToBaseline({
+          archivePath,
+          targetRoot,
+          identities: [],
+          inventory: [],
+        }),
+      ).rejects.toThrow("NONEMPTY_INVENTORY_REQUIRED");
+      expect(fs.existsSync(targetRoot)).toBe(false);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
 
-      expect(comparisonReport.totalDifferences).toBe(0);
+  it("checks the full declared source set before creating conversion output", async () => {
+    const dir = mkdtemp("hdri-ac6-preflight-");
+    try {
+      const archivePath = createFakeQ2Corpus(path.join(dir, "archive"));
+      const targetRoot = path.join(dir, "target");
+      const inventory = [
+        realInventoryEntry(path.join(archivePath, "liveness.db"), "liveness.db"),
+        realInventoryEntry(path.join(archivePath, "profile.db"), "profile.db"),
+      ];
+      fs.writeFileSync(path.join(archivePath, "profile.db"), "changed-profile-db");
+
+      await expect(
+        convertToBaseline({ archivePath, targetRoot, identities: [], inventory }),
+      ).rejects.toThrow("CHANGED_SOURCE_BYTES: profile.db");
+      expect(fs.existsSync(targetRoot)).toBe(false);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

@@ -12,6 +12,7 @@
   <item>RFC-0100 review fix: DNA-8 — hash actual converter source instead of constant string.</item>
   <item>Reject unresolved historical identity instead of synthesizing a new canonical identifier.</item>
   <item>Reject ambiguous cross-device/DB scopes and alias overlap before copier effects; validate retained UUIDs and detach identity input.</item>
+  <item>Reject empty/malformed inventories and preflight every declared source before creating conversion output.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: The copier below is not a validated conversion path; never call it on real retained archives or admit its receipts (RFC-0115 A1/Q17).
@@ -21,6 +22,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import Database from "better-sqlite3";
+import {
+  assertCanonicalFilePath,
+  assertDisjointPaths,
+  assertFreshDirectory,
+} from "@warpgogol/pipeline-node";
 
 import type { BaselineIdentity, BaselineImportReceipt } from "./contracts.js";
 import {
@@ -30,6 +36,7 @@ import {
 } from "./contracts.js";
 import type { InventoryEntry } from "./inventory.js";
 import { sha256File } from "./inventory.js";
+import { parsePreservationInventory } from "./preserve.js";
 
 // ---------------------------------------------------------------------------
 // SQLite detection
@@ -301,6 +308,28 @@ export const convertToBaseline = async (
       identityMap.set(key, id.canonicalId);
     }
   }
+  // A zero-row comparison proves nothing. Validate the complete declared source
+  // set before creating output so malformed/empty input cannot mint a receipt.
+  const inventory = parsePreservationInventory([...opts.inventory]);
+  await assertCanonicalFilePath(opts.archivePath);
+  if (!(await fs.lstat(opts.archivePath)).isDirectory())
+    throw new Error("INVALID_BASELINE_ARCHIVE_ROOT");
+  await assertFreshDirectory(opts.targetRoot);
+  assertDisjointPaths([opts.archivePath, opts.targetRoot]);
+  // Verify the complete declared set before the first output write. Every file is
+  // checked again immediately before conversion to catch later replacement.
+  for (const entry of inventory) {
+    const sourcePath = path.join(opts.archivePath, entry.role);
+    await assertCanonicalFilePath(sourcePath);
+    const sourceStat = await fs.lstat(sourcePath);
+    if (
+      !sourceStat.isFile() ||
+      sourceStat.isSymbolicLink() ||
+      sourceStat.size !== entry.bytes ||
+      (await sha256File(sourcePath)) !== entry.sha256
+    )
+      throw new Error(`CHANGED_SOURCE_BYTES: ${entry.role}`);
+  }
   await fs.mkdir(opts.targetRoot, { recursive: true });
 
   // Write identity map
@@ -311,7 +340,7 @@ export const convertToBaseline = async (
 
   // Write source inventory reference
   const sourceInventorySha256 = createHash("sha256")
-    .update(opts.inventory.map((e) => e.sha256).join("\n"))
+    .update(inventory.map((e) => e.sha256).join("\n"))
     .digest("hex");
 
   // Conversion implementation hash — digest of the converter module source
@@ -327,7 +356,7 @@ export const convertToBaseline = async (
   let totalDifferences = 0;
   const unresolvedReferences = 0;
 
-  for (const entry of opts.inventory) {
+  for (const entry of inventory) {
     const sourcePath = path.join(opts.archivePath, entry.role);
     const targetPath = path.join(opts.targetRoot, entry.role);
 
@@ -372,7 +401,7 @@ export const convertToBaseline = async (
     period: "2026-q2",
     origin: "converted-evidence",
     identities: identities.length,
-    artifacts: opts.inventory.map((e) => ({ role: e.role, sha256: e.sha256, bytes: e.bytes })),
+    artifacts: inventory.map((e) => ({ role: e.role, sha256: e.sha256, bytes: e.bytes })),
   };
   const manifestPath = path.join(opts.targetRoot, "baseline-manifest.json");
   const manifestBytes = JSON.stringify(baselineManifest, null, 2);
