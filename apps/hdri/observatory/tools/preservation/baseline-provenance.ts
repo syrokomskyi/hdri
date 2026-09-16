@@ -1,7 +1,7 @@
 /*
 <MODULE_CONTRACT>
 <purpose>Verify the limited cryptographic provenance retained for declared baseline source files.</purpose>
-<non-goals><item>Does not authenticate unsigned producer metadata, bind WAL state to a snapshot, validate rows, or grant import admission.</item></non-goals>
+<non-goals><item>Does not authenticate the supplied key authority or unsigned producer metadata, bind WAL state to a snapshot, validate rows, or grant import admission.</item></non-goals>
 <!-- risk: crypto, vault -->
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY><item>Separate signed original-file claims from unsigned application metadata and unbound SQLite snapshot generations.</item></CHANGE_SUMMARY>
@@ -38,7 +38,7 @@ const FIELD_NAMES = [
 ] as const;
 
 type VerifiedClaim = Readonly<{
-  status: "device-token-original-bytes-verified-snapshot-generation-unbound";
+  status: "signed-token-original-bytes-match-supplied-device-key-snapshot-generation-unbound";
   snapshotUri: string;
   originalUri: string;
   signatureUri: string;
@@ -61,8 +61,9 @@ type UnavailableClaim = Readonly<{
 export type BaselineProvenanceReport = Readonly<{
   schema: "hdri-baseline-provenance@1";
   manifestSha256: string;
-  status: "provenance-checked-not-admitted";
-  signedByteClaimsVerified: number;
+  status: "cryptography-checked-not-admitted";
+  keyAuthority: "caller-supplied-not-authenticated";
+  signaturesVerifiedAgainstSuppliedKeys: number;
   unavailableClaims: number;
   sources: readonly (VerifiedClaim | UnavailableClaim)[];
 }>;
@@ -145,8 +146,8 @@ function parseManifest(bytes: Uint8Array): SourceSignatureManifest {
   return Object.freeze(manifest) as SourceSignatureManifest;
 }
 
-/** Verify exactly what the legacy batch signature covered, and make every uncovered claim explicit. */
-export async function verifyBaselineProvenance(
+/** Inspect exactly what the legacy batch signature covered against caller-supplied keys. */
+export async function inspectBaselineProvenance(
   prepared: PreparedBaselineSource,
   inventory: BaselineScopeInventory,
   verificationKeys: VerificationKeyMap,
@@ -220,7 +221,7 @@ export async function verifyBaselineProvenance(
     verified++;
     sources.push(
       Object.freeze({
-        status: "device-token-original-bytes-verified-snapshot-generation-unbound",
+        status: "signed-token-original-bytes-match-supplied-device-key-snapshot-generation-unbound",
         snapshotUri: source.declaration.snapshot.uri,
         originalUri: source.original.uri,
         signatureUri: claim.signatureUri,
@@ -246,8 +247,9 @@ export async function verifyBaselineProvenance(
   return Object.freeze({
     schema: "hdri-baseline-provenance@1",
     manifestSha256: prepared.manifestSha256,
-    status: "provenance-checked-not-admitted",
-    signedByteClaimsVerified: verified,
+    status: "cryptography-checked-not-admitted",
+    keyAuthority: "caller-supplied-not-authenticated",
+    signaturesVerifiedAgainstSuppliedKeys: verified,
     unavailableClaims: unavailable,
     sources: Object.freeze(sources),
   });

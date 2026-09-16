@@ -26,7 +26,7 @@ import {
   streamPreparedStrata,
 } from "../../tools/preservation/cohort-source.js";
 import { inspectBaselineScope } from "../../tools/preservation/baseline-scope.js";
-import { verifyBaselineProvenance } from "../../tools/preservation/baseline-provenance.js";
+import { inspectBaselineProvenance } from "../../tools/preservation/baseline-provenance.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -372,14 +372,15 @@ describe("complete prepared baseline source declarations", () => {
     const input = signedDeclaration(f);
     input.sources[0].scope.producer = "retained-app-claim";
     const inventory = await inspectBaselineScope(f.prepared, input);
-    const report = await verifyBaselineProvenance(f.prepared, inventory, provenanceKeys());
+    const report = await inspectBaselineProvenance(f.prepared, inventory, provenanceKeys());
     expect(report).toMatchObject({
-      status: "provenance-checked-not-admitted",
-      signedByteClaimsVerified: 1,
+      status: "cryptography-checked-not-admitted",
+      keyAuthority: "caller-supplied-not-authenticated",
+      signaturesVerifiedAgainstSuppliedKeys: 1,
       unavailableClaims: 0,
     });
     expect(report.sources[0]).toMatchObject({
-      status: "device-token-original-bytes-verified-snapshot-generation-unbound",
+      status: "signed-token-original-bytes-match-supplied-device-key-snapshot-generation-unbound",
       device: "fixture",
       sourceToken: "2026-q2-de",
       originalSha256: inventory.sources[0].original.sha256,
@@ -416,7 +417,7 @@ describe("complete prepared baseline source declarations", () => {
     const keys = provenanceKeys();
     if (defect === "unknown-key") keys.clear();
     await expect(
-      verifyBaselineProvenance(
+      inspectBaselineProvenance(
         f.prepared,
         defect === "forged-inventory" ? { ...inventory } : inventory,
         keys,
@@ -432,9 +433,9 @@ describe("complete prepared baseline source declarations", () => {
       );
     });
     const inventory = await inspectBaselineScope(f.prepared, signedDeclaration(f));
-    await expect(verifyBaselineProvenance(f.prepared, inventory, provenanceKeys())).rejects.toThrow(
-      "INVALID_BASELINE_SOURCE_SIGNATURE_SHAPE",
-    );
+    await expect(
+      inspectBaselineProvenance(f.prepared, inventory, provenanceKeys()),
+    ).rejects.toThrow("INVALID_BASELINE_SOURCE_SIGNATURE_SHAPE");
   });
   it("detaches caller state before I/O and rejects changed retained non-snapshot bytes", async () => {
     const f = await fixture();
