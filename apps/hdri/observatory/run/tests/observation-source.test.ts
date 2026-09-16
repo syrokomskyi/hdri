@@ -19,7 +19,12 @@ import {
 import {
   streamPreparedObservations,
   streamPreparedObservationIdentities,
+  streamPreparedObservationIdentityMap,
 } from "../../tools/preservation/observation-source.js";
+import {
+  materializeObservationBaseline,
+  materializeObservationIdentityBaseline,
+} from "../../tools/preservation/baseline-materialization.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -522,6 +527,32 @@ describe("bounded observation source from private retained snapshots", () => {
 });
 
 describe("snapshot-bound observation identity references", () => {
+  it("streams the complete identity map including mappings unused by observations", async () => {
+    const f = await fixture((db) =>
+      db.prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)").run(
+        "zz-unreferenced",
+        "0198f000-0000-7000-8000-000000000099",
+        "unused.example",
+        "2026-05-01T00:00:00Z",
+      ),
+    );
+    const rows = await collect(
+      streamPreparedObservationIdentityMap(f.prepared, f.snapshot.uri),
+    );
+    expect(rows.map((row) => row.identity.provisional_id)).toEqual([
+      "da-retained-site",
+      "zz-unreferenced",
+    ]);
+    expect(rows[1].source).toEqual({
+      manifestSha256: f.prepared.manifestSha256,
+      artifact: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
+      identityLocator: { table: "asset_id_map", provisional_id: "zz-unreferenced" },
+    });
+    expect(Object.isFrozen(rows[1])).toBe(true);
+    expect(Object.isFrozen(rows[1].identity)).toBe(true);
+    expect(Object.isFrozen(rows[1].source.identityLocator)).toBe(true);
+  });
+
   it.each(["provisional", "canonical"] as const)(
     "resolves explicitly declared %s IDs without changing signed source bytes",
     async (namespace) => {
@@ -766,5 +797,156 @@ describe("snapshot-bound observation identity references", () => {
     expect(
       await collect(streamPreparedObservationIdentities(f.prepared, f.snapshot.uri, "canonical")),
     ).toEqual([]);
+    expect(
+      (await collect(streamPreparedObservationIdentityMap(f.prepared, f.snapshot.uri))).map(
+        (row) => row.identity.provisional_id,
+      ),
+    ).toEqual(["da-retained-site"]);
+  });
+});
+
+describe("current-schema identity baseline materialization", () => {
+  it("writes every retained mapping and independently compares the closed target", async () => {
+    const f = await fixture((db) =>
+      db.prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)").run(
+        "zz-unreferenced",
+        "0198f000-0000-7000-8000-000000000099",
+        "unused.example",
+        "2026-05-01T00:00:00Z",
+      ),
+    );
+    const before = await inventorySources({ roots: [f.source] });
+    const targetPath = path.join(f.root, "baseline", "identity.db");
+    await fs.mkdir(path.dirname(targetPath));
+    const report = await materializeObservationIdentityBaseline({
+      prepared: f.prepared,
+      snapshotUri: f.snapshot.uri,
+      targetPath,
+    });
+    expect(report).toMatchObject({
+      schema: "hdri-baseline-identity-materialization@1",
+      status: "compared-not-admitted",
+      manifestSha256: f.prepared.manifestSha256,
+      sourceSnapshot: {
+        uri: f.snapshot.uri,
+        sha256: f.snapshot.sha256,
+        bytes: f.snapshot.bytes,
+      },
+      comparison: {
+        domain: "asset_id_map",
+        status: "equal",
+        sourceRows: 2,
+        targetRows: 2,
+        matchedRows: 2,
+        differingRows: 0,
+      },
+    });
+    expect(report.target.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(report.target.bytes).toBeGreaterThan(0);
+    const target = new Database(targetPath, { readonly: true, fileMustExist: true });
+    handles.push(target);
+    expect(
+      target
+        .prepare(
+          "SELECT provisional_id,canonical_id,domain,first_seen FROM asset_id_map ORDER BY provisional_id",
+        )
+        .all(),
+    ).toEqual([
+      {
+        provisional_id: "da-retained-site",
+        canonical_id: observation.asset_id,
+        domain: "retained.example",
+        first_seen: "2026-05-03T11:00:00Z",
+      },
+      {
+        provisional_id: "zz-unreferenced",
+        canonical_id: "0198f000-0000-7000-8000-000000000099",
+        domain: "unused.example",
+        first_seen: "2026-05-01T00:00:00Z",
+      },
+    ]);
+    expect(await inventorySources({ roots: [f.source] })).toEqual(before);
+  });
+
+  it("refuses an existing target before reading or writing source rows", async () => {
+    const f = await fixture();
+    const targetPath = path.join(f.root, "existing.db");
+    await fs.writeFile(targetPath, "operator-owned");
+    await expect(
+      materializeObservationIdentityBaseline({
+        prepared: f.prepared,
+        snapshotUri: f.snapshot.uri,
+        targetPath,
+      }),
+    ).rejects.toThrow("FRESH_BASELINE_TARGET_REQUIRED");
+    expect(await fs.readFile(targetPath, "utf8")).toBe("operator-owned");
+  });
+
+  it("materializes and independently compares every observation column", async () => {
+    const f = await fixture((db) =>
+      db.prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)").run(
+        "zz-unreferenced",
+        "0198f000-0000-7000-8000-000000000099",
+        "unused.example",
+        "2026-05-01T00:00:00Z",
+      ),
+    );
+    const targetPath = path.join(f.root, "baseline-observation", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    const report = await materializeObservationBaseline({
+      prepared: f.prepared,
+      snapshotUri: f.snapshot.uri,
+      targetPath,
+      assetIdNamespace: "canonical",
+    });
+    expect(report).toMatchObject({
+      schema: "hdri-baseline-observation-materialization@1",
+      status: "compared-not-admitted",
+      comparisons: {
+        identities: { status: "equal", sourceRows: 2, targetRows: 2 },
+        observations: {
+          status: "equal",
+          sourceRows: 1,
+          targetRows: 1,
+          matchedRows: 1,
+          differingRows: 0,
+        },
+      },
+    });
+    expect(report.comparisons.observations.fieldDifferences).toEqual(
+      Object.fromEntries(
+        [
+          "asset_id",
+          "signal_path",
+          "ontology_version",
+          "value_bool",
+          "value_num",
+          "value_str",
+          "value_json",
+          "value_type",
+          "observed_at",
+          "recorded_at",
+          "run_id",
+          "evidence_ref",
+          "extractor_version",
+          "confidence",
+          "status",
+          "obs_json",
+          "signature",
+          "signed_at",
+          "signing_key_id",
+          "collector_id",
+          "collection_status",
+          "period",
+          "factory_run_id",
+          "crawl_hash",
+        ].map((field) => [field, 0]),
+      ),
+    );
+    const target = new Database(targetPath, { readonly: true, fileMustExist: true });
+    handles.push(target);
+    expect(target.prepare("SELECT obs_json FROM observations WHERE id=?").pluck().get(id)).toBe(
+      f.json,
+    );
   });
 });
