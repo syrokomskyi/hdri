@@ -47,8 +47,27 @@ describe("readiness CLI cannot issue authority from unchecked inputs", () => {
     const refs: Record<string, { schema: string; uri: string; bytes: number; sha256: string }> = {};
     for (const role of ["preservation", "qualification", "predecessor", "capacity"]) {
       const file = `${role}.json`;
+      const domainFile = `${role}-domain.json`;
+      const domainBytes = Buffer.from(JSON.stringify({ schema: `fixture-${role}@1`, status: "pass" }));
+      await fs.writeFile(path.join(root, domainFile), domainBytes);
       const bytes = Buffer.from(
-        JSON.stringify(signAdmissionEvidence({ signingKey, role, scope, signedAt: "2026-09-16T00:00:00.000Z" })),
+        JSON.stringify(
+          signAdmissionEvidence({
+            signingKey,
+            role,
+            scope,
+            evidence: {
+              schema: `fixture-${role}@1`,
+              uri: domainFile,
+              bytes: domainBytes.length,
+              sha256: (await import("node:crypto"))
+                .createHash("sha256")
+                .update(domainBytes)
+                .digest("hex"),
+            },
+            signedAt: "2026-09-16T00:00:00.000Z",
+          }),
+        ),
       );
       await fs.writeFile(path.join(root, file), bytes);
       refs[role] = {
