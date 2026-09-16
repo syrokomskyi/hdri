@@ -3,6 +3,10 @@ import path from "node:path";
 import os from "node:os";
 import Database from "better-sqlite3";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  compareBaselineRecords,
+  type BaselineRecord,
+} from "../../tools/preservation/baseline-comparison.js";
 import { migrateCore } from "@syrokomskyi/business-core/migrate";
 import { generateSigningKey } from "@syrokomskyi/observatory-crypto";
 import { inventorySources } from "../../tools/preservation/inventory.js";
@@ -93,6 +97,65 @@ async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
   for await (const row of rows) result.push(row);
   return result;
 }
+
+describe("prepared asynchronous source comparison", () => {
+  it.each(["equal", "changed-value", "changed-file"] as const)(
+    "compares complete site fields with an independent target: %s",
+    async (scenario) => {
+      const f = await fixture((db) => db.exec("UPDATE sites SET created_at=42"), true);
+      const fields = [
+        "id",
+        "domain",
+        "hwo_uid",
+        "hwo_confidence",
+        "hwo_provenance",
+        "bundesland",
+        "gemeinde",
+        "created_at",
+      ] as const;
+      async function* source(): AsyncGenerator<BaselineRecord> {
+        for await (const row of f.sites())
+          yield {
+            key: row.source.siteLocator.id,
+            values: fields.map((field) => row.columns[field]),
+          };
+      }
+      async function* target(): AsyncGenerator<BaselineRecord> {
+        if (scenario === "changed-file") await fs.appendFile(f.file, "changed after source row");
+        yield {
+          key: "1",
+          values: [
+            1n,
+            scenario === "changed-value" ? "other.example" : "retained.example",
+            null,
+            null,
+            null,
+            null,
+            null,
+            42n,
+          ],
+        };
+      }
+      const result = compareBaselineRecords({
+        domain: "fixture-sites",
+        fields,
+        source: source(),
+        target: target(),
+      });
+      if (scenario === "changed-file")
+        await expect(result).rejects.toThrow("HARVEST_SNAPSHOT_CHANGED");
+      else {
+        const report = await result;
+        expect(report).toMatchObject({
+          status: scenario === "equal" ? "equal" : "different",
+          sourceRows: 1,
+          targetRows: 1,
+        });
+        expect(report.fieldDifferences.domain).toBe(scenario === "equal" ? 0 : 1);
+      }
+    },
+  );
+});
 
 describe("retained cohort definitions and memberships", () => {
   it("streams 10000 definitions and memberships without a whole-population set", async () => {

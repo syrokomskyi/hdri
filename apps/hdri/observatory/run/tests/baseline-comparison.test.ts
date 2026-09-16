@@ -10,6 +10,7 @@ import {
   compareBaselineRecords,
   type BaselineRecord,
   type BaselineValue,
+  type BaselineRecordStream,
 } from "../../tools/preservation/baseline-comparison.js";
 import { inventorySources } from "../../tools/preservation/inventory.js";
 import {
@@ -113,13 +114,135 @@ const record = (key: string, value: BaselineValue = 1): BaselineRecord => ({
   key,
   values: [value],
 });
-const compare = (source: Iterable<BaselineRecord>, target: Iterable<BaselineRecord>) =>
+const compare = (source: BaselineRecordStream, target: BaselineRecordStream) =>
   compareBaselineRecords({ domain: "test-domain", fields: ["value"], source, target });
 
 describe("exact baseline record comparison", () => {
-  it("compares an independently specified current-schema SQLite observation", () => {
+  it("awaits both asynchronous completion barriers before resolving equality", async () => {
+    const completed: string[] = [];
+    async function* rows(side: string) {
+      try {
+        await Promise.resolve();
+        yield record("a");
+      } finally {
+        await Promise.resolve();
+        completed.push(side);
+      }
+    }
+    expect((await compare(rows("source"), rows("target"))).status).toBe("equal");
+    expect(completed).toEqual(["source", "target"]);
+  });
+  it.each(["source", "target"])(
+    "rejects a %s final-verification failure after matching every row",
+    async (side) => {
+      const completed: string[] = [];
+      async function* rows(name: string) {
+        try {
+          yield record("a");
+        } finally {
+          await Promise.resolve();
+          completed.push(name);
+          if (name === side) throw new Error("FIXTURE_FINAL_VERIFICATION_FAILED");
+        }
+      }
+      await expect(compare(rows("source"), rows("target"))).rejects.toThrow(
+        "FIXTURE_FINAL_VERIFICATION_FAILED",
+      );
+      expect(completed.sort()).toEqual(["source", "target"]);
+    },
+  );
+  it("awaits target cleanup even when source cleanup rejects", async () => {
+    const completed: string[] = [];
+    const source: AsyncIterable<BaselineRecord> = {
+      [Symbol.asyncIterator]() {
+        return {
+          async next() {
+            throw new Error("FIXTURE_READ_FAILED");
+          },
+          async return() {
+            await Promise.resolve();
+            completed.push("source");
+            throw new Error("FIXTURE_CLOSE_FAILED");
+          },
+        };
+      },
+    };
+    const target: AsyncIterable<BaselineRecord> = {
+      [Symbol.asyncIterator]() {
+        return {
+          async next() {
+            return { done: true, value: undefined };
+          },
+          async return() {
+            await Promise.resolve();
+            completed.push("target");
+            return { done: true, value: undefined };
+          },
+        };
+      },
+    };
+    await expect(compare(source, target)).rejects.toThrow("FIXTURE_CLOSE_FAILED");
+    expect(completed).toEqual(["source", "target"]);
+  });
+  it("closes an acquired source when acquiring the target iterator fails", async () => {
+    let closed = false;
+    const source: AsyncIterable<BaselineRecord> = {
+      [Symbol.asyncIterator]() {
+        return {
+          async next() {
+            return { done: true, value: undefined };
+          },
+          async return() {
+            await Promise.resolve();
+            closed = true;
+            return { done: true, value: undefined };
+          },
+        };
+      },
+    };
+    const target: AsyncIterable<BaselineRecord> = {
+      [Symbol.asyncIterator]() {
+        throw new Error("FIXTURE_ACQUIRE_FAILED");
+      },
+    };
+    await expect(compare(source, target)).rejects.toThrow("FIXTURE_ACQUIRE_FAILED");
+    expect(closed).toBe(true);
+  });
+  it("rejects a shared async iterator without consuming alternating records", async () => {
+    async function* rows() {
+      yield record("a");
+    }
+    const iterator = rows();
+    await expect(compare(iterator, iterator)).rejects.toThrow(
+      "INDEPENDENT_BASELINE_READERS_REQUIRED",
+    );
+  });
+  it("keeps asynchronous readers within one-row lookahead over 10000 records", async () => {
+    let sourceRead = 0,
+      targetRead = 0;
+    async function* source() {
+      for (let n = 0; n < 10000; n++) {
+        await Promise.resolve();
+        sourceRead++;
+        expect(sourceRead - targetRead).toBeLessThanOrEqual(1);
+        yield record(String(n).padStart(5, "0"), n);
+      }
+    }
+    async function* target() {
+      for (let n = 0; n < 10000; n++) {
+        await Promise.resolve();
+        targetRead++;
+        yield record(String(n).padStart(5, "0"), n);
+      }
+    }
+    expect(await compare(source(), target())).toMatchObject({
+      status: "equal",
+      matchedRows: 10000,
+    });
+  });
+  it("compares an independently specified current-schema SQLite observation", async () => {
     const { compare } = fixture();
-    const report = compare();
+    const report = await compare();
     expect(report).toMatchObject({
       status: "equal",
       sourceRows: 1,
@@ -143,10 +266,10 @@ describe("exact baseline record comparison", () => {
     ["recorded_at", "2026-09-14T00:00:00Z"],
     ["collection_status", "unreachable"],
     ["evidence_ref", "cas/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
-  ])("detects a same-count change in %s", (field, replacement) => {
+  ])("detects a same-count change in %s", async (field, replacement) => {
     const { target, compare } = fixture();
     target.prepare(`UPDATE observations SET "${field}" = ?`).run(replacement);
-    const result = compare();
+    const result = await compare();
     expect(result).toMatchObject({
       status: "different",
       sourceRows: 1,
@@ -161,10 +284,10 @@ describe("exact baseline record comparison", () => {
     expect(result.sourceSha256).not.toBe(result.targetSha256);
   });
 
-  it("detects a same-count key replacement as one missing and one unexpected observation", () => {
+  it("detects a same-count key replacement as one missing and one unexpected observation", async () => {
     const { target, compare } = fixture();
     target.exec("UPDATE observations SET id='obs-2'");
-    expect(compare()).toMatchObject({
+    expect(await compare()).toMatchObject({
       status: "different",
       sourceRows: 1,
       targetRows: 1,
@@ -178,10 +301,13 @@ describe("exact baseline record comparison", () => {
     });
   });
 
-  it("does not call an empty comparison domain equal", () => {
-    expect(compare([], [])).toMatchObject({ status: "empty", sourceRows: 0, targetRows: 0 });
-    expect(compare([], [record("a")])).toMatchObject({ status: "different", unexpectedRows: 1 });
-    expect(compare([record("a")], [])).toMatchObject({ status: "different", missingRows: 1 });
+  it("does not call an empty comparison domain equal", async () => {
+    expect(await compare([], [])).toMatchObject({ status: "empty", sourceRows: 0, targetRows: 0 });
+    expect(await compare([], [record("a")])).toMatchObject({
+      status: "different",
+      unexpectedRows: 1,
+    });
+    expect(await compare([record("a")], [])).toMatchObject({ status: "different", missingRows: 1 });
   });
 
   it.each([
@@ -194,15 +320,15 @@ describe("exact baseline record comparison", () => {
     ['{"a":1,"b":2}', '{"b":2,"a":1}'],
   ] as [BaselineValue, BaselineValue][])(
     "does not silently normalize distinct typed values: %s / %s",
-    (left, right) => {
-      expect(compare([record("a", left)], [record("a", right)])).toMatchObject({
+    async (left, right) => {
+      expect(await compare([record("a", left)], [record("a", right)])).toMatchObject({
         status: "different",
         differingRows: 1,
       });
     },
   );
 
-  it("preserves SQLite 64-bit integers and binary values in real row iterators", () => {
+  it("preserves SQLite 64-bit integers and binary values in real row iterators", async () => {
     const source = database(),
       target = database();
     source.exec(
@@ -216,9 +342,9 @@ describe("exact baseline record comparison", () => {
         project(source.prepare("SELECT id,value FROM cells ORDER BY id")),
         project(target.prepare("SELECT id,value FROM cells ORDER BY id")),
       );
-    expect(run().status).toBe("equal");
+    expect((await run()).status).toBe("equal");
     target.exec("UPDATE cells SET value=9223372036854775806 WHERE id='a'");
-    expect(run()).toMatchObject({ status: "different", differingRows: 1 });
+    expect(await run()).toMatchObject({ status: "different", differingRows: 1 });
   });
 
   it("compares a preserved WAL-backed snapshot without changing any original or archive bytes", async () => {
@@ -281,16 +407,18 @@ describe("exact baseline record comparison", () => {
     });
     dbs.push(snapshot);
     expect(
-      compareBaselineRecords({
-        domain: "observations",
-        fields,
-        source: project(
-          snapshot.prepare(
-            "SELECT observation_id, canonical_id, signal, measured, measured_at, recorded, collection, evidence FROM retained ORDER BY observation_id COLLATE BINARY",
+      (
+        await compareBaselineRecords({
+          domain: "observations",
+          fields,
+          source: project(
+            snapshot.prepare(
+              "SELECT observation_id, canonical_id, signal, measured, measured_at, recorded, collection, evidence FROM retained ORDER BY observation_id COLLATE BINARY",
+            ),
           ),
-        ),
-        target: targetRows(),
-      }).status,
+          target: targetRows(),
+        })
+      ).status,
     ).toBe("equal");
     snapshot.close();
     expect(inventory()).toEqual(before);
@@ -310,9 +438,9 @@ describe("exact baseline record comparison", () => {
     ).toBe("pass");
   });
 
-  it("fails on duplicate or out-of-order keys from either reader", () => {
+  it("fails on duplicate or out-of-order keys from either reader", async () => {
     for (const side of ["source", "target"]) {
-      expect(() =>
+      await expect(
         compareBaselineRecords({
           domain: "test",
           fields: ["value"],
@@ -320,8 +448,8 @@ describe("exact baseline record comparison", () => {
           target: [],
           [side]: [record("a"), record("a")],
         }),
-      ).toThrow(/DUPLICATE_BASELINE_KEY/);
-      expect(() =>
+      ).rejects.toThrow(/DUPLICATE_BASELINE_KEY/);
+      await expect(
         compareBaselineRecords({
           domain: "test",
           fields: ["value"],
@@ -329,16 +457,16 @@ describe("exact baseline record comparison", () => {
           target: [],
           [side]: [record("b"), record("a")],
         }),
-      ).toThrow(/UNSORTED_BASELINE_INPUT/);
+      ).rejects.toThrow(/UNSORTED_BASELINE_INPUT/);
     }
   });
 
-  it("uses UTF-8 byte ordering, including non-BMP keys", () => {
+  it("uses UTF-8 byte ordering, including non-BMP keys", async () => {
     const rows = [record("\uE000"), record("\u{10000}")];
-    expect(compare(rows, rows).status).toBe("equal");
+    expect((await compare(rows, rows)).status).toBe("equal");
   });
 
-  it("closes both readers and cannot return success when a source read fails mid-stream", () => {
+  it("closes both readers and cannot return success when a source read fails mid-stream", async () => {
     let sourceClosed = false,
       targetClosed = false;
     function* source() {
@@ -357,11 +485,11 @@ describe("exact baseline record comparison", () => {
         targetClosed = true;
       }
     }
-    expect(() => compare(source(), target())).toThrow(/FIXTURE_IO_INTERRUPTED/);
+    await expect(compare(source(), target())).rejects.toThrow(/FIXTURE_IO_INTERRUPTED/);
     expect([sourceClosed, targetClosed]).toEqual([true, true]);
   });
 
-  it("closes a target SQLite cursor even if the first source read fails", () => {
+  it("closes a target SQLite cursor even if the first source read fails", async () => {
     const target = database();
     target.exec("CREATE TABLE cells(id TEXT, value); INSERT INTO cells VALUES ('a', 1)");
     const cursor = target
@@ -387,16 +515,18 @@ describe("exact baseline record comparison", () => {
         throw new Error("FIXTURE_FIRST_READ_FAILED");
       },
     };
-    expect(() => compare(source, targetReader)).toThrow(/FIXTURE_FIRST_READ_FAILED/);
+    await expect(compare(source, targetReader)).rejects.toThrow(/FIXTURE_FIRST_READ_FAILED/);
     expect(() => target.close()).not.toThrow();
   });
 
-  it("rejects a shared one-shot iterator instead of comparing alternating records", () => {
+  it("rejects a shared one-shot iterator instead of comparing alternating records", async () => {
     const iterator = [record("a")][Symbol.iterator]();
-    expect(() => compare(iterator, iterator)).toThrow(/INDEPENDENT_BASELINE_READERS_REQUIRED/);
+    await expect(compare(iterator, iterator)).rejects.toThrow(
+      /INDEPENDENT_BASELINE_READERS_REQUIRED/,
+    );
   });
 
-  it("keeps bounded reader lookahead and diagnostic samples over 25000 rows", () => {
+  it("keeps bounded reader lookahead and diagnostic samples over 25000 rows", async () => {
     let sourceRead = 0,
       targetRead = 0;
     function* source() {
@@ -412,7 +542,7 @@ describe("exact baseline record comparison", () => {
         yield record(String(i).padStart(5, "0"), -1);
       }
     }
-    expect(compare(source(), target())).toMatchObject({
+    expect(await compare(source(), target())).toMatchObject({
       status: "different",
       sourceRows: 25000,
       targetRows: 25000,
@@ -422,34 +552,38 @@ describe("exact baseline record comparison", () => {
     });
   });
 
-  it("binds domain and field order in the projection digests", () => {
+  it("binds domain and field order in the projection digests", async () => {
     const rows = [{ key: "a", values: [1, 2] }];
     const base = { domain: "observations", fields: ["one", "two"], source: rows, target: rows };
-    const original = compareBaselineRecords(base).sourceSha256;
-    expect(compareBaselineRecords({ ...base, domain: "assets" }).sourceSha256).not.toBe(original);
-    expect(compareBaselineRecords({ ...base, fields: ["two", "one"] }).sourceSha256).not.toBe(
+    const original = (await compareBaselineRecords(base)).sourceSha256;
+    expect((await compareBaselineRecords({ ...base, domain: "assets" })).sourceSha256).not.toBe(
       original,
     );
+    expect(
+      (await compareBaselineRecords({ ...base, fields: ["two", "one"] })).sourceSha256,
+    ).not.toBe(original);
   });
 
   it.each([undefined, NaN, Infinity, {}, 1n << 64n])(
     "rejects an unrepresentable value rather than serializing it as null: %s",
-    (value) => {
-      expect(() => compare([{ key: "a", values: [value as BaselineValue] }], [])).toThrow(
+    async (value) => {
+      await expect(compare([{ key: "a", values: [value as BaselineValue] }], [])).rejects.toThrow(
         /INVALID_BASELINE_COMPARISON_VALUE/,
       );
     },
   );
 
-  it("rejects missing fields, duplicate columns, oversized rows and ill-formed Unicode keys", () => {
-    expect(() => compare([{ key: "a", values: [] }], [])).toThrow(/RECORD_WIDTH/);
-    expect(() => compare([{ key: "a", values: new Array(1) }], [])).toThrow(
+  it("rejects missing fields, duplicate columns, oversized rows and ill-formed Unicode keys", async () => {
+    await expect(compare([{ key: "a", values: [] }], [])).rejects.toThrow(/RECORD_WIDTH/);
+    await expect(compare([{ key: "a", values: new Array(1) }], [])).rejects.toThrow(
       /INVALID_BASELINE_COMPARISON_VALUE/,
     );
-    expect(() =>
+    await expect(
       compareBaselineRecords({ domain: "test", fields: ["a", "a"], source: [], target: [] }),
-    ).toThrow(/DUPLICATE_BASELINE_COMPARISON_FIELD/);
-    expect(() => compare([record("a", "x".repeat(8 * 1024 * 1024))], [])).toThrow(/RECORD_LIMIT/);
-    expect(() => compare([record("\ud800")], [])).toThrow(/COMPARISON_TEXT/);
+    ).rejects.toThrow(/DUPLICATE_BASELINE_COMPARISON_FIELD/);
+    await expect(compare([record("a", "x".repeat(8 * 1024 * 1024))], [])).rejects.toThrow(
+      /RECORD_LIMIT/,
+    );
+    await expect(compare([record("\ud800")], [])).rejects.toThrow(/COMPARISON_TEXT/);
   });
 });

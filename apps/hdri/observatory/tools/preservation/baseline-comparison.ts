@@ -7,13 +7,18 @@
   </non-goals>
   <!-- risk: crypto -->
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>RFC-0115 A1: compare exact typed values, keys and content digests without count-only or empty-domain success.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY>
+<item>RFC-0115 A1: compare exact typed values, keys and content digests without count-only or empty-domain success.</item>
+<item>Await retained readers and their final byte verification without buffering complete domains.</item>
+</CHANGE_SUMMARY>
 */
 // @ai-invariant: Equal means both complete, nonempty streams matched exactly; callers must independently establish domain/projection completeness.
 import { createHash } from "node:crypto";
 
 export type BaselineValue = string | number | bigint | boolean | Uint8Array | null;
 export type BaselineRecord = Readonly<{ key: string; values: readonly BaselineValue[] }>;
+export type BaselineRecordStream = Iterable<BaselineRecord> | AsyncIterable<BaselineRecord>;
+type RecordIterator = Iterator<BaselineRecord> | AsyncIterator<BaselineRecord>;
 export type BaselineDifference = Readonly<{
   kind: "missing" | "unexpected" | "value";
   key: string;
@@ -74,12 +79,12 @@ function encodeValue(value: BaselineValue): readonly [string, string] {
  * is not proof of source completeness: I/O readers must establish that separately
  * and enforce cell limits before allocation.
  */
-export function compareBaselineRecords(opts: {
+export async function compareBaselineRecords(opts: {
   domain: string;
   fields: readonly string[];
-  source: Iterable<BaselineRecord>;
-  target: Iterable<BaselineRecord>;
-}): BaselineDomainComparison {
+  source: BaselineRecordStream;
+  target: BaselineRecordStream;
+}): Promise<BaselineDomainComparison> {
   boundedText(opts.domain, 256);
   if (!Array.isArray(opts.fields) || !opts.fields.length || opts.fields.length > MAX_FIELDS)
     throw new Error("INVALID_BASELINE_COMPARISON_FIELDS");
@@ -109,11 +114,11 @@ export function compareBaselineRecords(opts: {
     else omittedDifferences++;
   }
 
-  function* checked(records: Iterator<BaselineRecord>, side: "sourceRows" | "targetRows") {
+  async function* checked(records: RecordIterator, side: "sourceRows" | "targetRows") {
     let previous: Buffer | undefined;
     const hash = side === "sourceRows" ? sourceHash : targetHash;
     while (true) {
-      const next = records.next();
+      const next = await records.next();
       if (next.done) return;
       const record = next.value;
       if (
@@ -153,16 +158,18 @@ export function compareBaselineRecords(opts: {
     }
   }
 
-  let sourceInput: Iterator<BaselineRecord> | undefined;
-  let targetInput: Iterator<BaselineRecord> | undefined;
+  const iterator = (stream: BaselineRecordStream): RecordIterator =>
+    Symbol.asyncIterator in stream ? stream[Symbol.asyncIterator]() : stream[Symbol.iterator]();
+  let sourceInput: RecordIterator | undefined;
+  let targetInput: RecordIterator | undefined;
   try {
-    sourceInput = opts.source[Symbol.iterator]();
-    targetInput = opts.target[Symbol.iterator]();
+    sourceInput = iterator(opts.source);
+    targetInput = iterator(opts.target);
     if (sourceInput === targetInput) throw new Error("INDEPENDENT_BASELINE_READERS_REQUIRED");
     const source = checked(sourceInput, "sourceRows");
     const target = checked(targetInput, "targetRows");
-    let left = source.next(),
-      right = target.next();
+    let left = await source.next(),
+      right = await target.next();
     while (!left.done || !right.done) {
       const order = left.done
         ? 1
@@ -172,11 +179,11 @@ export function compareBaselineRecords(opts: {
       if (!left.done && order < 0) {
         missingRows++;
         recordDifference("missing", left.value.key, []);
-        left = source.next();
+        left = await source.next();
       } else if (!right.done && order > 0) {
         unexpectedRows++;
         recordDifference("unexpected", right.value.key, []);
-        right = target.next();
+        right = await target.next();
       } else if (!left.done && !right.done) {
         matchedRows++;
         const changed: string[] = [];
@@ -193,15 +200,15 @@ export function compareBaselineRecords(opts: {
           differingRows++;
           recordDifference("value", left.value.key, changed);
         }
-        left = source.next();
-        right = target.next();
+        left = await source.next();
+        right = await target.next();
       }
     }
   } finally {
     try {
-      sourceInput?.return?.();
+      await sourceInput?.return?.();
     } finally {
-      targetInput?.return?.();
+      await targetInput?.return?.();
     }
   }
   return {
