@@ -23,7 +23,11 @@ import { parseCodebookOrThrow } from "@syrokomskyi/hdri-codebook";
 import { newId } from "@syrokomskyi/observatory-core";
 import { readEmitBundle, streamAssetStates } from "@syrokomskyi/observatory-emit";
 import type { AssetStateRecord } from "@syrokomskyi/observatory-core";
-import { evaluateProgramGate, loadAdmissionInputFromFiles } from "@syrokomskyi/factory-core";
+import {
+  evaluateProgramGate,
+  loadAdmissionInputFromFiles,
+  verifyAdmissionDomainEvidence,
+} from "@syrokomskyi/factory-core";
 import { migrateObservatory } from "../run/db/migrate";
 import { writeAssetStatesDeduped, type AssetStateInput } from "../run/db/sync-writers";
 import { scoreAndWriteForRun } from "../run/score/score-core";
@@ -83,6 +87,7 @@ const gate = evaluateProgramGate(
     trustedKeysPath: admissionTrustedKeysPath,
     trustedKeysSha256: process.env.HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256,
     requiredEvidenceClass: "operational",
+    verifyDomainEvidence: verifyAdmissionDomainEvidence,
     expected: { period: periodArg, capsuleId: capsuleIdArg, operation: "publish" },
   }),
 );

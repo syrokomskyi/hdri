@@ -19,7 +19,11 @@ import {
   formatPipelineStart,
 } from "@warpgogol/pipeline-core";
 import { ensureOutputDir } from "@warpgogol/pipeline-node/context";
-import { evaluateProgramGate, loadAdmissionInputFromFiles } from "@syrokomskyi/factory-core";
+import {
+  evaluateProgramGate,
+  loadAdmissionInputFromFiles,
+  verifyAdmissionDomainEvidence,
+} from "@syrokomskyi/factory-core";
 import { inputDir, outputRootDir } from "../config.js";
 import { createPipeline } from "../pipeline.js";
 import { type PipelineRunOptions, runPipelineEngine } from "../pipeline/engine.js";
@@ -38,6 +42,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
       trustedKeysPath: options.admissionTrustedKeysPath,
       trustedKeysSha256: options.admissionTrustedKeysSha256,
       requiredEvidenceClass: "operational",
+      verifyDomainEvidence: verifyAdmissionDomainEvidence,
       expected: {
         period: brief.period,
         capsuleId: brief.capsuleId,

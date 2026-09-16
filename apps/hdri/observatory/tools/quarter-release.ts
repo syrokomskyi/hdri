@@ -23,6 +23,7 @@ import path from "node:path";
 import {
   evaluateProgramGate,
   loadAdmissionInputFromFiles,
+  verifyAdmissionDomainEvidence,
   verifyQuarterCapsuleArtifacts,
   type QuarterCapsule,
 } from "@syrokomskyi/factory-core";
@@ -90,6 +91,7 @@ const gate = evaluateProgramGate(
     trustedKeysPath: admissionTrustedKeysPath,
     trustedKeysSha256: process.env.HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256,
     requiredEvidenceClass: "operational",
+    verifyDomainEvidence: verifyAdmissionDomainEvidence,
     expected: {
       period: sealedCapsule.period,
       capsuleId: sealedCapsule.capsuleId,

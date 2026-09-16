@@ -20,6 +20,7 @@ import {
   evaluateProgramGate,
   parseAdmissionInput,
   parseAdmissionTrustManifest,
+  verifyAdmissionDomainEvidence,
   verifyAdmissionInput,
 } from "@syrokomskyi/factory-core";
 import { readBoundedFile } from "@warpgogol/pipeline-node";
@@ -70,6 +71,7 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     createFileAdmissionVerificationDeps({
       evidenceRoot: path.resolve(values["evidence-root"]),
       trustedKeys,
+      verifyDomainEvidence: verifyAdmissionDomainEvidence,
     }),
   );
   const gate = evaluateProgramGate(verified);

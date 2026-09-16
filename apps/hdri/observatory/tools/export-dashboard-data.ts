@@ -18,7 +18,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { evaluateProgramGate, loadAdmissionInputFromFiles } from "@syrokomskyi/factory-core";
+import {
+  evaluateProgramGate,
+  loadAdmissionInputFromFiles,
+  verifyAdmissionDomainEvidence,
+} from "@syrokomskyi/factory-core";
 import { createJsonLogger } from "@warpgogol/pipeline-core";
 import { loadKAnonPolicy, type KAnonPolicy } from "./k-anon-policy";
 
@@ -132,6 +136,7 @@ async function main(): Promise<void> {
       trustedKeysPath: argValue("--admission-trusted-keys"),
       trustedKeysSha256: process.env.HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256,
       requiredEvidenceClass: "operational",
+      verifyDomainEvidence: verifyAdmissionDomainEvidence,
       expected: {
         period: argValue("--period") ?? "",
         capsuleId: argValue("--capsule-id") ?? "",

@@ -11,6 +11,11 @@
 */
 
 import "@syrokomskyi/observatory-crypto/auto-env";
+import { parseRunOptions } from "@warpgogol/pipeline-node/cli";
 import { runApp } from "./app/run-app.js";
 
-await runApp();
+// --first-quarter is consumed by run-app's process.argv check; the shared
+// parser is strict and must not see it.
+const options = parseRunOptions(process.argv.slice(2).filter((arg) => arg !== "--first-quarter"));
+options.admissionTrustedKeysSha256 ??= process.env.HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256;
+await runApp(options);

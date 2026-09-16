@@ -51,7 +51,8 @@
     "baseline:import": "tsx -C @syrokomskyi/source tools/preservation/cli.ts baseline:import",
     "quarter:status": "tsx -C @syrokomskyi/source tools/quarter-status.ts",
     "quarter:readiness": "tsx -C @syrokomskyi/source tools/quarter-readiness.ts",
-    "preservation:check": "tsx -C @syrokomskyi/source tools/preservation-check.ts"
+    "preservation:check": "tsx -C @syrokomskyi/source tools/preservation-check.ts",
+    "admission:evidence": "tsx -C @syrokomskyi/source tools/admission-evidence.ts"
   },
   "dependencies": {
     "@syrokomskyi/business-core": "workspace:*",

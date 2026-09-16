@@ -11,6 +11,9 @@
 */
 
 import "@syrokomskyi/observatory-crypto/auto-env";
+import { parseRunOptions } from "@warpgogol/pipeline-node/cli";
 import { runApp } from "./app/run-app.js";
 
-await runApp();
+const options = parseRunOptions(process.argv.slice(2));
+options.admissionTrustedKeysSha256 ??= process.env.HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256;
+await runApp(options);

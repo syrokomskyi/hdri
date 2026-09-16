@@ -29,6 +29,7 @@ import {
   resolveQuarterScopedUpstreamDbPath,
   evaluateProgramGate,
   loadAdmissionInputFromFiles,
+  verifyAdmissionDomainEvidence,
 } from "@syrokomskyi/factory-core";
 import { inputDir, briefInputDir, outputRootDir, factoryRootDir } from "../config.js";
 import { getPagesDbName } from "../paths.js";
@@ -58,6 +59,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
       trustedKeysPath: options.admissionTrustedKeysPath,
       trustedKeysSha256: options.admissionTrustedKeysSha256,
       requiredEvidenceClass: "operational",
+      verifyDomainEvidence: verifyAdmissionDomainEvidence,
       expected: {
         period: periodFromSourceToken(brief.sourceToken),
         capsuleId: brief.capsuleId,

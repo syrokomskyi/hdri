@@ -12,6 +12,7 @@
 */
 
 import "@syrokomskyi/observatory-crypto/auto-env";
+import { parseRunOptions } from "@warpgogol/pipeline-node/cli";
 import { runApp } from "./app/run-app.js";
 import { verifyInputs } from "./app/verify-inputs.js";
 
@@ -19,5 +20,7 @@ const args = process.argv.slice(2);
 if (args.includes("--verify-inputs")) {
   await verifyInputs(args);
 } else {
-  await runApp();
+  const options = parseRunOptions(args);
+  options.admissionTrustedKeysSha256 ??= process.env.HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256;
+  await runApp(options);
 }
