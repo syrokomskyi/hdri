@@ -468,12 +468,15 @@ SQL value, identity, timestamp, lifecycle/collection status and evidence ref mus
 agree exactly. Absent optional collection status means NULL; boolean storage is
 only NULL/0/1. Signing-envelope agreement reuses the signature checker owner.
 
-This is a **source record**, not a semantically validated Observation, a verified
-signature, authenticated evidence descriptor or target record. Unmirrored run,
+This is a **source record**, not by itself a semantically validated Observation, a
+verified signature, authenticated evidence descriptor or target record. The joined
+converter now applies separate current-semantic and exact retained-ontology
+boundaries before insertion; callers of the reader alone receive no such verdict.
+Unmirrored run,
 ontology and factory metadata remain intact for later provenance joins; no assumed
-mapping to crawl/ruleset fields is made. UUID validity, value/ontology semantics,
-measurement quality, producer/device attribution and source/CAS locator resolution
-remain mandatory before materialization. Missing JSON and unsupported records stop
+mapping to crawl/ruleset fields is made. Measurement quality, producer/device
+attribution and source/CAS locator resolution remain mandatory before admission.
+Missing JSON and unsupported records stop
 this reader while the complete original artifact remains preserved; the complete
 converter still needs explicit incomplete-record reconciliation. No record is
 silently discarded or assigned an invented timestamp.
@@ -524,8 +527,10 @@ an authenticated historical device claim, target payload digest or success recei
 Prepared roots do not contain a copied manifest file: do not invent its URI to fill
 the generic descriptor. The converter must retain and verify an actual manifest
 object in the final reference closure. NULL evidence refs remain NULL; source/crawl
-hash labels do not establish CAS links. Complete factory/local-ID joins, run/ontology
-provenance, CAS verification and target materialization/comparison remain required.
+hash labels do not establish CAS links. The joined converter now closes the complete
+Observatory identity domain against Harvest sites and materializes/compares identity,
+observations, AssetState and HWO in one target. Historical run/producer attribution,
+nonempty CAS verification and admission remain required.
 
 Cost: two full snapshot hashes, one observation scan and one indexed identity lookup
 per observation, without a table-wide map/cache. Identity transfer is at most 16 KiB
@@ -533,6 +538,28 @@ per matched row in addition to the observation bound. This is not a native SQLit
 memory or corruption-proof index-integrity guarantee. Unreferenced identity rows are
 not scanned by this join and need their own domain projection/reconciliation; empty
 observations are not identity-domain success. A joined row can precede final hashing.
+
+### Joined baseline methodology and target closure (A1 partial)
+
+`materializeBaselineClosure` requires one process-local prepared manifest and scope
+inventory for both Observatory and Harvest snapshots. It derives canonical domain
+bindings from the complete retained identity map, writes identity, all 25 observation
+columns, AssetState and HWO mappings into one fresh current-schema database, retains
+source-only lineage separately, closes the file and independently rereads all four
+domains through the bounded comparator. Empty Q2 cohort, strata and evidence-reference
+domains are explicit report entries; any retained row/reference in those currently
+unmaterialized domains fails instead of disappearing.
+
+Before target creation, exact retained ontology and codebook originals are bounded,
+matched to the prepared-manifest hashes, parsed through their ordinary owners and
+rehash-checked. Import versions, codebook `ontologyRef`, referenced signals and every
+observation's current value/lifecycle semantics must agree with that process-local
+ontology. The methodology status is
+`parsed-source-bytes-not-producer-authenticated`: these checks prove which preserved
+bytes conversion consumed, not that the historical producer/device consumed them.
+The complete result remains `compared-not-admitted`; producer/run attribution,
+runtime dependency closure, resource/crash proof, CLI cutover, final authenticated
+receipt and operational Q2 custody run are still required.
 Exhaustion, failure and early return share the existing close/read-back behavior.
 
 Regression coverage adds 28 integration cases and a 200-case UUID property. The
