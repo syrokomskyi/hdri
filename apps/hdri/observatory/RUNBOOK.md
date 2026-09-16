@@ -144,25 +144,11 @@ pnpm verify:vault                       # current year
 pnpm verify:vault -- --year 2026
 ```
 
-Public keys are auto-discovered from `transparency/keys/*.pem`. Each row's
-`signing_key_id` is matched against the fingerprint of the loaded keys. The checker
-also requires exact SQL/JSON observation-ID agreement. Embedded signing metadata
-must contain all four fields and agree with the SQL envelope; it is never silently
-overwritten. The result reports such failures as `inconsistent`.
+Public keys are auto-discovered from `transparency/keys/*.pem`. Each row's `signing_key_id` is matched against the fingerprint of the loaded keys. The checker also requires exact SQL/JSON observation-ID agreement. Embedded signing metadata must contain all four fields and agree with the SQL envelope; it is never silently overwritten. The result reports such failures as `inconsistent`.
 
-Exit code 0 means no failure among the selected signed, non-NULL-JSON rows. Empty
-input also exits successfully; `--limit` checks only a subset. Neither result proves
-complete quarterly coverage, agreement of other SQL columns, or recoverability.
-Do not use this diagnostic alone to authorize baseline import or evidence eviction.
-Historical signatures exclude `signed_at`, `signing_key_id`, `collector_id` and
-`signature` from their payload. Matching copies of metadata are not proof of its
-historical time/device claims. Archive authentication and externally grounded
-provenance remain required; snapshot signing alone does not prove historical truth.
+Exit code 0 means no failure among the selected signed, non-NULL-JSON rows. Empty input also exits successfully; `--limit` checks only a subset. Neither result proves complete quarterly coverage, agreement of other SQL columns, or recoverability. Do not use this diagnostic alone to authorize baseline import or evidence eviction. Historical signatures exclude `signed_at`, `signing_key_id`, `collector_id` and `signature` from their payload. Matching copies of metadata are not proof of its historical time/device claims. Archive authentication and externally grounded provenance remain required; snapshot signing alone does not prove historical truth.
 
-The checker preserves JSON bytes but does not bound SQLite cell allocation. It
-opens the working database read-only, which can still touch WAL shared-memory
-files. **Do not run this CLI against Q2 originals or retained archive databases.**
-The future conversion reader must use only authenticated private standalone copies.
+The checker preserves JSON bytes but does not bound SQLite cell allocation. It opens the working database read-only, which can still touch WAL shared-memory files. **Do not run this CLI against Q2 originals or retained archive databases.** The future conversion reader must use only authenticated private standalone copies.
 
 ### 6. Rebuild from the vault (disaster recovery)
 
@@ -222,11 +208,7 @@ mv .output/old-laptop .output/-old-laptop   # leading dash → ignored
 
 ## Q2 preservation boundary
 
-The 2026-09-14 correction verifies actual complete copies; A1 is still incomplete.
-No operational Q2 run has been performed by these tests. Keep production admission
-blocked until baseline conversion, capacity/fault proofs and authenticated physical
-custody are complete. Three local fixture directories do not prove three independent
-media or custodians. Approval of this qualification machine does not supply those facts.
+The 2026-09-14 correction verifies actual complete copies; A1 is still incomplete. No operational Q2 run has been performed by these tests. Keep production admission blocked until baseline conversion, capacity/fault proofs and authenticated physical custody are complete. Three local fixture directories do not prove three independent media or custodians. Approval of this qualification machine does not supply those facts.
 
 ### Explicit inputs
 
@@ -245,20 +227,9 @@ type PreservationInput = {
   }>;
 ```
 
-Use `inventorySources` from `tools/preservation/inventory.ts` for acquisition after
-stopping source writers. It walks all declared roots, including SQLite sidecars;
-missing/unreadable roots, symlinks and detected secret markers fail. Roles emitted
-by this producer are `source-0000/<relative-path>`, etc., ordered by source root.
-Review and retain that input; the CLI compares it to actual files, not substitutes
-a new inventory. The 64 MiB input/manifest limit and one-million-source-file cap
-are bounds, not a proven capacity profile.
+Use `inventorySources` from `tools/preservation/inventory.ts` for acquisition after stopping source writers. It walks all declared roots, including SQLite sidecars; missing/unreadable roots, symlinks and detected secret markers fail. Roles emitted by this producer are `source-0000/<relative-path>`, etc., ordered by source root. Review and retain that input; the CLI compares it to actual files, not substitutes a new inventory. The 64 MiB input/manifest limit and one-million-source-file cap are bounds, not a proven capacity profile.
 
-The destinations file is a JSON array of at least three and at most 32 exact
-`{ path, failureDomain, medium, credentialBoundary }` objects. Supply real approved
-metadata, never invented labels. Paths must be absolute, canonical, fresh
-(nonexistent, with existing parents), pairwise disjoint and outside all sources.
-Stop other writers and keep all ancestor directories stable. Directory fsync must
-be supported; this mechanism is not an OS snapshot or an adversarial-writer sandbox.
+The destinations file is a JSON array of at least three and at most 32 exact `{ path, failureDomain, medium, credentialBoundary }` objects. Supply real approved metadata, never invented labels. Paths must be absolute, canonical, fresh (nonexistent, with existing parents), pairwise disjoint and outside all sources. Stop other writers and keep all ancestor directories stable. Directory fsync must be supported; this mechanism is not an OS snapshot or an adversarial-writer sandbox.
 
 ### Commands and proof domains
 
@@ -270,333 +241,102 @@ pnpm --filter @syrokomskyi/observatory preserve:q2 --inventory /absolute/invento
 pnpm --filter @syrokomskyi/observatory preserve:verify --destinations /absolute/destinations.json --manifest-sha256 <retained-manifest-file-sha256> --verification-key /absolute/trusted-public.pem --key-id <trusted-key-id> --json
 ```
 
-Only the writing command requires explicit `DEVICE_ID` and `DEVICE_SIGNING_KEY`
-in its environment; no implicit `.env` is loaded. Dry-run and verification need
-no private key. Pin the verification key independently of the copy's bundled PEM.
-Retain the expected manifest file digest outside the copies; recomputing it from
-an untrusted replacement is not an independent pin.
+Only the writing command requires explicit `DEVICE_ID` and `DEVICE_SIGNING_KEY` in its environment; no implicit `.env` is loaded. Dry-run and verification need no private key. Pin the verification key independently of the copy's bundled PEM. Retain the expected manifest file digest outside the copies; recomputing it from an untrusted replacement is not an independent pin.
 
-Each destination contains exact `originals/<role>` bytes, separate
-`snapshots/<role>` for SQLite databases, and `content-manifest.json`,
-`content-manifest.sig`, `verification-key.pem`, `destination-receipt.json`.
-SQLite opens only private scratch copies of the retained DB/WAL/journal; originals
-and their SHM bytes are never opened by SQLite. Snapshots use standalone DELETE
-journal mode before their final digest is recorded. Original and snapshot digests
-are distinct identities. The Ed25519 signature covers the SHA-256 of canonical
-manifest JSON; the external pin hashes exact stored manifest bytes. A receipt
-counts the complete artifact set at one destination, never individual files as
-independent replicas. It is consistency metadata, not a signed custodian statement.
+Each destination contains exact `originals/<role>` bytes, separate `snapshots/<role>` for SQLite databases, and `content-manifest.json`, `content-manifest.sig`, `verification-key.pem`, `destination-receipt.json`. SQLite opens only private scratch copies of the retained DB/WAL/journal; originals and their SHM bytes are never opened by SQLite. Snapshots use standalone DELETE journal mode before their final digest is recorded. Original and snapshot digests are distinct identities. The Ed25519 signature covers the SHA-256 of canonical manifest JSON; the external pin hashes exact stored manifest bytes. A receipt counts the complete artifact set at one destination, never individual files as independent replicas. It is consistency metadata, not a signed custodian statement.
 
-Verification always reads every file, checks the exact listed set, hashes, sizes,
-signature, external key and destination receipt. Unexpected files and symlinks
-fail. Keep diagnostic logs outside the closure. Copy/read-back is O(total bytes)
-with several passes, O(file count) inventory memory and bounded streaming buffers;
-it is not the 200k qualification run.
+Verification always reads every file, checks the exact listed set, hashes, sizes, signature, external key and destination receipt. Unexpected files and symlinks fail. Keep diagnostic logs outside the closure. Copy/read-back is O(total bytes) with several passes, O(file count) inventory memory and bounded streaming buffers; it is not the 200k qualification run.
 
-`planned` with zero exit means read-only validation only. `pass` with zero exit
-means all declared copies passed byte/signature checks, not operational admission.
-Errors/interruptions can leave partial output; never delete originals or overwrite
-an attempted destination to retry. Keep partial roots and select new destinations.
-The `baseline:import` CLI currently fails before I/O with
-`BASELINE_CONVERSION_UNVERIFIED`; do not bypass it using internal converter helpers.
-Follow the [A1 correction sequence](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
+`planned` with zero exit means read-only validation only. `pass` with zero exit means all declared copies passed byte/signature checks, not operational admission. Errors/interruptions can leave partial output; never delete originals or overwrite an attempted destination to retry. Keep partial roots and select new destinations. The `baseline:import` CLI currently fails before I/O with `BASELINE_CONVERSION_UNVERIFIED`; do not bypass it using internal converter helpers. Follow the [A1 correction sequence](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
 
 ### Baseline comparison building blocks (A1 partial)
 
-Code checkpoint `947b5f9` adds structural identity validation and a bounded exact
-record comparison kernel. It does **not** replace the blocked conversion command.
+Code checkpoint `947b5f9` adds structural identity validation and a bounded exact record comparison kernel. It does **not** replace the blocked conversion command.
 
-- Identity input has exactly `producer`, `device`, `databaseSha256`, `localSiteId`,
-  `provisionalId`, `canonicalId`, `evidenceRefs`. Keep producer/device provenance
-  explicit; do not derive it from a convenient directory name. Evidence refs must
-  be unique safe relative object paths; this parser does not prove their existence.
-- Scope local IDs by the complete producer/device/database generation. UUIDs are
-  retained byte-for-byte. Duplicate scoped rows and conflicting provisional aliases
-  fail, including duplicates with the same UUID. Known aliases in different scopes
-  can refer to the same canonical UUID. Empty resolution does not count as import.
-- `validateBaselineImportReceipt` validates a closed shape, lowercase SHA-256 text
-  and nonnegative safe-integer reference counts. It does not authenticate the receipt
-  or assert that a positive unresolved count is acceptable for admission.
-- `await compareBaselineRecords(...)` consumes separate synchronous or asynchronous
-  source/target iterators with the same
-  explicitly ordered field list. Project all required fields independently from
-  verified source and closed/reopened target; do not reuse the writer's output as
-  expected data. Streams need unique keys ordered by UTF-8 bytes. Use SQLite
-  `safeIntegers()` to avoid rounding 64-bit integers before comparison.
-- The result is always a Promise. Await complete exhaustion and asynchronous cleanup
-  of both readers, including the prepared snapshot's final byte verification.
-  Matching all yielded rows is not success if final verification fails. Cleanup of
-  the target is attempted even when source cleanup fails. Do not buffer a complete
-  source just to adapt it to a synchronous comparator or fire-and-forget comparison.
-- Equality preserves typed NULL/bool/number/integer/text/blob values, timestamps,
-  statuses, evidence refs and keys without normalization. JSON text is byte-exact;
-  explained format transformations belong to the audited projection contract, not
-  an implicit equivalence rule. Empty domains return `empty`, never `equal`.
-- The kernel retains a row pair, at most 100 sampled differences and fixed per-field
-  counters. Limits are 256 fields, 4 KiB keys, 8 MiB encoded records and 100 million
-  rows per side. These defensive caps are not a measured capacity qualification.
-  I/O readers must bound cells before allocation and prove complete domain coverage;
-  the kernel cannot detect a caller that silently supplies only a matching subset.
-- Projection hashes bind domain, field order, typed values and keys. They are not
-  hashes of final SQLite/CAS files. Final-file hashing after DB close, authenticated
-  runtime/schema dependency closure and receipt creation are still pending.
+- Identity input has exactly `producer`, `device`, `databaseSha256`, `localSiteId`, `provisionalId`, `canonicalId`, `evidenceRefs`. Keep producer/device provenance explicit; do not derive it from a convenient directory name. Evidence refs must be unique safe relative object paths; this parser does not prove their existence.
+- Scope local IDs by the complete producer/device/database generation. UUIDs are retained byte-for-byte. Duplicate scoped rows and conflicting provisional aliases fail, including duplicates with the same UUID. Known aliases in different scopes can refer to the same canonical UUID. Empty resolution does not count as import.
+- `validateBaselineImportReceipt` validates a closed shape, lowercase SHA-256 text and nonnegative safe-integer reference counts. It does not authenticate the receipt or assert that a positive unresolved count is acceptable for admission.
+- `await compareBaselineRecords(...)` consumes separate synchronous or asynchronous source/target iterators with the same explicitly ordered field list. Project all required fields independently from verified source and closed/reopened target; do not reuse the writer's output as expected data. Streams need unique keys ordered by UTF-8 bytes. Use SQLite `safeIntegers()` to avoid rounding 64-bit integers before comparison.
+- The result is always a Promise. Await complete exhaustion and asynchronous cleanup of both readers, including the prepared snapshot's final byte verification. Matching all yielded rows is not success if final verification fails. Cleanup of the target is attempted even when source cleanup fails. Do not buffer a complete source just to adapt it to a synchronous comparator or fire-and-forget comparison.
+- Equality preserves typed NULL/bool/number/integer/text/blob values, timestamps, statuses, evidence refs and keys without normalization. JSON text is byte-exact; explained format transformations belong to the audited projection contract, not an implicit equivalence rule. Empty domains return `empty`, never `equal`.
+- The kernel retains a row pair, at most 100 sampled differences and fixed per-field counters. Limits are 256 fields, 4 KiB keys, 8 MiB encoded records and 100 million rows per side. These defensive caps are not a measured capacity qualification. I/O readers must bound cells before allocation and prove complete domain coverage; the kernel cannot detect a caller that silently supplies only a matching subset.
+- Projection hashes bind domain, field order, typed values and keys. They are not hashes of final SQLite/CAS files. Final-file hashing after DB close, authenticated runtime/schema dependency closure and receipt creation are still pending.
 
-The WAL integration fixture uses the actual preservation coordinator and verified
-input preparation to obtain a private standalone snapshot; it verifies all replica
-bytes again after comparison. A first
-direct-source SELECT fixture changed SHM; the retained assertion was kept and the
-fixture now follows the safe snapshot path. Real Q2 sources were inspected only
-through `sqlite3` immutable read-only URI access for schema/aggregate diagnostics
-after checking that the inspected WAL files were empty; they were not converted.
-Immutable mode ignores WAL and must not be used to read uncheckpointed raw evidence.
+The WAL integration fixture uses the actual preservation coordinator and verified input preparation to obtain a private standalone snapshot; it verifies all replica bytes again after comparison. A first direct-source SELECT fixture changed SHM; the retained assertion was kept and the fixture now follows the safe snapshot path. Real Q2 sources were inspected only through `sqlite3` immutable read-only URI access for schema/aggregate diagnostics after checking that the inspected WAL files were empty; they were not converted. Immutable mode ignores WAL and must not be used to read uncheckpointed raw evidence.
 
 ### Verified baseline input preparation (A1 partial)
 
-Code checkpoint `ac6a4e2` adds `prepareBaselineSource` to the existing preservation
-owner. It accepts `destinations`, `manifestSha256`, `verificationKeys`, an exact
-`sourceDestinationPath` selecting one declared copy, and a new absolute `workRoot`.
-There is no CLI command for this intermediate step; `baseline:import` stays blocked.
+Code checkpoint `ac6a4e2` adds `prepareBaselineSource` to the existing preservation owner. It accepts `destinations`, `manifestSha256`, `verificationKeys`, an exact `sourceDestinationPath` selecting one declared copy, and a new absolute `workRoot`. There is no CLI command for this intermediate step; `baseline:import` stays blocked.
 
-The function verifies signatures, receipts and every object in all declared copies
-before creating work files. Trust comes from the externally supplied digest/key,
-never the bundled key or a caller-supplied manifest. Caller-owned metadata is
-detached before asynchronous work. The existing current `source-NNNN/<relative>`
-inventory layout identifies original roots solely to prevent filesystem overlap;
-it does not establish producer/device attribution. Unknown/inconsistent layouts
-fail before working output. Recorded original paths are not opened or required to
-exist, but the work root must be disjoint from them and every replica.
+The function verifies signatures, receipts and every object in all declared copies before creating work files. Trust comes from the externally supplied digest/key, never the bundled key or a caller-supplied manifest. Caller-owned metadata is detached before asynchronous work. The existing current `source-NNNN/<relative>` inventory layout identifies original roots solely to prevent filesystem overlap; it does not establish producer/device attribution. Unknown/inconsistent layouts fail before working output. Recorded original paths are not opened or required to exist, but the work root must be disjoint from them and every replica.
 
-It copies all listed artifacts with exclusive creation, held bounded reads,
-digest/size verification and file/directory synchronization, then checks the exact
-working file set and independently hashes every copied object. Each SQLite original
-must have a snapshot with SQLite magic and rollback-format read/write header bytes.
-A correctly signed archive with a missing snapshot, WAL main file or non-SQLite
-snapshot still fails. This is not SQLite integrity checking or schema recognition:
-the converter must perform those on the private snapshots before domain decoding.
+It copies all listed artifacts with exclusive creation, held bounded reads, digest/size verification and file/directory synchronization, then checks the exact working file set and independently hashes every copied object. Each SQLite original must have a snapshot with SQLite magic and rollback-format read/write header bytes. A correctly signed archive with a missing snapshot, WAL main file or non-SQLite snapshot still fails. This is not SQLite integrity checking or schema recognition: the converter must perform those on the private snapshots before domain decoding.
 
-The result contains only the work root, pinned manifest digest and deeply frozen
-manifest metadata. It creates no receipt, resume checkpoint or second baseline
-format. Work contains artifact paths only (`originals/`, `snapshots/` as applicable),
-not copied destination attestations. Never treat its structural TypeScript type as
-admission authority. Maintain writer exclusion and stable ancestors throughout
-consumption; immutable metadata does not make the filesystem immutable. Only open
-copied snapshots with SQLite; retained originals remain byte evidence.
+The result contains only the work root, pinned manifest digest and deeply frozen manifest metadata. It creates no receipt, resume checkpoint or second baseline format. Work contains artifact paths only (`originals/`, `snapshots/` as applicable), not copied destination attestations. Never treat its structural TypeScript type as admission authority. Maintain writer exclusion and stable ancestors throughout consumption; immutable metadata does not make the filesystem immutable. Only open copied snapshots with SQLite; retained originals remain byte evidence.
 
-Completed preparation objects are now registered in a private process-local
-WeakSet. `assertPreparedBaselineSource` accepts only that exact object, after the
-final checks and directory sync. Copying/freezing/deserializing its fields does not
-reconstruct verified acquisition. This protects internal consumers from accidental
-metadata forgery, not from malicious code in the same process, and does not assert
-that files remain unchanged or that a quarter is admitted.
+Completed preparation objects are now registered in a private process-local WeakSet. `assertPreparedBaselineSource` accepts only that exact object, after the final checks and directory sync. Copying/freezing/deserializing its fields does not reconstruct verified acquisition. This protects internal consumers from accidental metadata forgery, not from malicious code in the same process, and does not assert that files remain unchanged or that a quarter is admitted.
 
-Cost: one complete read of every declared replica plus a copy, copy read-back and
-final read-back of the selected artifact closure. Working disk needs the entire
-artifact closure, not just DB snapshots; no table or whole artifact is buffered.
-Metadata inherits the preservation limits (64 MiB manifest, bounded object count).
-Capacity/inode preflight, enforced writer exclusion and process-death/fsync proofs
-remain required by A1 step 6. The new injected disk-full/sync tests demonstrate
-error propagation, not real crash durability. Failed working roots remain for
-diagnosis and cannot be resumed or overwritten; retry with a new root.
+Cost: one complete read of every declared replica plus a copy, copy read-back and final read-back of the selected artifact closure. Working disk needs the entire artifact closure, not just DB snapshots; no table or whole artifact is buffered. Metadata inherits the preservation limits (64 MiB manifest, bounded object count). Capacity/inode preflight, enforced writer exclusion and process-death/fsync proofs remain required by A1 step 6. The new injected disk-full/sync tests demonstrate error propagation, not real crash durability. Failed working roots remain for diagnosis and cannot be resumed or overwritten; retry with a new root.
 
 ### Baseline scope and historical signature diagnostics (A1 partial)
 
-`inspectBaselineScope` requires a closed declaration for every prepared SQLite
-snapshot and every main-schema table/view. A retained historical claim names its
-producer, device, source token, one exact original signature artifact and all
-supporting evidence URIs. Inventory success is `inventory-checked-not-admitted`;
-profile selection and retained strings are still declarations.
+`inspectBaselineScope` requires a closed declaration for every prepared SQLite snapshot and every main-schema table/view. A retained historical claim names its producer, device, source token, one exact original signature artifact and all supporting evidence URIs. Inventory success is `inventory-checked-not-admitted`; profile selection and retained strings are still declarations.
 
-`inspectBaselineProvenance` accepts only that process-local inventory. It reads the
-bounded retained `source-signature.json`, rejects extra or duplicate fields, checks
-the Ed25519 signature against the supplied key map, requires its signed token to be
-Q2, and matches the signed content hash to the preserved original main DB file. It
-then rereads the complete prepared byte closure. Its result is deliberately
-`cryptography-checked-not-admitted` with
-`keyAuthority: caller-supplied-not-authenticated`; the caller still needs the
-externally pinned operational trust root required by RFC-0113.
+`inspectBaselineProvenance` accepts only that process-local inventory. It reads the bounded retained `source-signature.json`, rejects extra or duplicate fields, checks the Ed25519 signature against the supplied key map, requires its signed token to be Q2, and matches the signed content hash to the preserved original main DB file. It then rereads the complete prepared byte closure. Its result is deliberately `cryptography-checked-not-admitted` with `keyAuthority: caller-supplied-not-authenticated`; the caller still needs the externally pinned operational trust root required by RFC-0113.
 
-Historical source signatures cover only
-`signing_key_id + source_token + content_hash`. `device_id` is matched to the
-collector identity carried by the supplied key; `app_id`, `app_version`,
-`rows_signed` and `signed_at` remain unsigned metadata. Do not use `signed_at` for
-historical key-window admission. The content hash covers the original main file,
-not a committed WAL generation or the standalone preservation snapshot. Therefore
-the positive per-source status ends in `snapshot-generation-unbound` and cannot
-authorize conversion.
+Historical source signatures cover only `signing_key_id + source_token + content_hash`. `device_id` is matched to the collector identity carried by the supplied key; `app_id`, `app_version`, `rows_signed` and `signed_at` remain unsigned metadata. Do not use `signed_at` for historical key-window admission. The content hash covers the original main file, not a committed WAL generation or the standalone preservation snapshot. Therefore the positive per-source status ends in `snapshot-generation-unbound` and cannot authorize conversion.
 
-Preserve this limitation for Q2; never rewrite or re-sign historical evidence. For
-Q3, replace the producer format forward-only before collection: sign the closed
-snapshot-generation closure plus schema, device, token, application, version,
-row/domain counts, digest-domain identifier and attributed timestamp. Pin the trust
-registry outside caller-controlled input and include its immutable identity in the
-eventual admission evidence. A Q2-only preservation reader is not runtime backward
-compatibility.
+Preserve this limitation for Q2; never rewrite or re-sign historical evidence. For Q3, replace the producer format forward-only before collection: sign the closed snapshot-generation closure plus schema, device, token, application, version, row/domain counts, digest-domain identifier and attributed timestamp. Pin the trust registry outside caller-controlled input and include its immutable identity in the eventual admission evidence. A Q2-only preservation reader is not runtime backward compatibility.
 
 ### Bounded observation source reader (A1 partial)
 
-`streamPreparedObservations(prepared, snapshotUri)` in
-`tools/preservation/observation-source.ts` accepts the exact live preparation object
-and a single declared `sqlite-snapshot`. No CLI, metadata hydration or resume bypass
-is added. It checks digest/size, standalone rollback header and absent WAL/SHM/journal
-before SQLite access. It uses the existing safe file owner, closes SQLite on normal
-exhaustion, early return and decoding failure, then hashes the complete file again.
-Symlinks and changed bytes fail; original DB/WAL paths are never selected.
+`streamPreparedObservations(prepared, snapshotUri)` in `tools/preservation/observation-source.ts` accepts the exact live preparation object and a single declared `sqlite-snapshot`. No CLI, metadata hydration or resume bypass is added. It checks digest/size, standalone rollback header and absent WAL/SHM/journal before SQLite access. It uses the existing safe file owner, closes SQLite on normal exhaustion, early return and decoding failure, then hashes the complete file again. Symlinks and changed bytes fail; original DB/WAL paths are never selected.
 
-The recognized source is the 25-column `observations` table from Observatory
-migrations 1–3: exact column order, declared types, nullability, primary key and
-non-generated columns. Views, additional/missing/generated columns, non-UTF-8
-storage and non-BINARY primary-key ordering fail. SQL is fixed by this source
-contract, never copied from retained DDL. Other tables and source producer/device
-attribution are not certified by recognizing this table.
+The recognized source is the 25-column `observations` table from Observatory migrations 1–3: exact column order, declared types, nullability, primary key and non-generated columns. Views, additional/missing/generated columns, non-UTF-8 storage and non-BINARY primary-key ordering fail. SQL is fixed by this source contract, never copied from retained DDL. Other tables and source producer/device attribution are not certified by recognizing this table.
 
-The reader uses SQLite `octet_length(column)` and lazy `CASE` to cap aggregate row
-content at 8 MiB and ID bytes at 4 KiB **before driver transfer**. Oversized or
-wrong-storage-class rows return only an invalid sentinel and NULL fields; they
-stop the stream, not disappear from it. No OFFSET paging or full-table JS array is
-used. The BINARY primary-key index supplies order without a domain-sized temporary
-sort; a 100-million-row ceiling is defensive, not capacity qualification. SQLite
-3.53.4 on this machine supports the required functions. See the primary references
-for [byte-length metadata](https://www.sqlite.org/lang_corefunc.html#octet_length)
-and [lazy CASE evaluation](https://www.sqlite.org/lang_expr.html#the_case_expression).
+The reader uses SQLite `octet_length(column)` and lazy `CASE` to cap aggregate row content at 8 MiB and ID bytes at 4 KiB **before driver transfer**. Oversized or wrong-storage-class rows return only an invalid sentinel and NULL fields; they stop the stream, not disappear from it. No OFFSET paging or full-table JS array is used. The BINARY primary-key index supplies order without a domain-sized temporary sort; a 100-million-row ceiling is defensive, not capacity qualification. SQLite 3.53.4 on this machine supports the required functions. See the primary references for [byte-length metadata](https://www.sqlite.org/lang_corefunc.html#octet_length) and [lazy CASE evaluation](https://www.sqlite.org/lang_expr.html#the_case_expression).
 
-Text arrives as bounded bytes and is decoded with fatal UTF-8 checking, preserving
-leading BOM characters inside cells, Unicode and embedded NUL. The original JSON
-string is never reserialized; its exact SHA-256 is returned with the frozen SQL
-columns and flat parsed payload. Duplicate top-level JSON keys, including escaped
-aliases, unknown/nested fields and nonfinite parsed numbers fail. Every mirrored
-SQL value, identity, timestamp, lifecycle/collection status and evidence ref must
-agree exactly. Absent optional collection status means NULL; boolean storage is
-only NULL/0/1. Signing-envelope agreement reuses the signature checker owner.
+Text arrives as bounded bytes and is decoded with fatal UTF-8 checking, preserving leading BOM characters inside cells, Unicode and embedded NUL. The original JSON string is never reserialized; its exact SHA-256 is returned with the frozen SQL columns and flat parsed payload. Duplicate top-level JSON keys, including escaped aliases, unknown/nested fields and nonfinite parsed numbers fail. Every mirrored SQL value, identity, timestamp, lifecycle/collection status and evidence ref must agree exactly. Absent optional collection status means NULL; boolean storage is only NULL/0/1. Signing-envelope agreement reuses the signature checker owner.
 
-This is a **source record**, not by itself a semantically validated Observation, a
-verified signature, authenticated evidence descriptor or target record. The joined
-converter now applies separate current-semantic and exact retained-ontology
-boundaries before insertion; callers of the reader alone receive no such verdict.
-Unmirrored run,
-ontology and factory metadata remain intact for later provenance joins; no assumed
-mapping to crawl/ruleset fields is made. Measurement quality, producer/device
-attribution and source/CAS locator resolution remain mandatory before admission.
-Missing JSON and unsupported records stop
-this reader while the complete original artifact remains preserved; the complete
-converter still needs explicit incomplete-record reconciliation. No record is
-silently discarded or assigned an invented timestamp.
+This is a **source record**, not by itself a semantically validated Observation, a verified signature, authenticated evidence descriptor or target record. The joined converter now applies separate current-semantic and exact retained-ontology boundaries before insertion; callers of the reader alone receive no such verdict. Unmirrored run, ontology and factory metadata remain intact for later provenance joins; no assumed mapping to crawl/ruleset fields is made. Measurement quality, producer/device attribution and source/CAS locator resolution remain mandatory before admission. Missing JSON and unsupported records stop this reader while the complete original artifact remains preserved; the complete converter still needs explicit incomplete-record reconciliation. No record is silently discarded or assigned an invented timestamp.
 
-Each invocation costs two full file hashes plus one indexed row scan and a bounded
-JSON duplicate-key check per row. Rows can be yielded before final file hashing;
-only complete exhaustion checks the whole domain. Empty input yields no records and
-does not establish nonempty-domain success. The transfer cap is not an OS/native
-SQLite heap cap: schema loading, malicious database handling, resource isolation,
-capacity/inodes and enforced writer exclusion remain the operational envelope.
-The 10,000-record WAL/copy/decoder fixtures are tests, not real Q2 conversion or
-200,000-site qualification. Full import remains blocked.
+Each invocation costs two full file hashes plus one indexed row scan and a bounded JSON duplicate-key check per row. Rows can be yielded before final file hashing; only complete exhaustion checks the whole domain. Empty input yields no records and does not establish nonempty-domain success. The transfer cap is not an OS/native SQLite heap cap: schema loading, malicious database handling, resource isolation, capacity/inodes and enforced writer exclusion remain the operational envelope. The 10,000-record WAL/copy/decoder fixtures are tests, not real Q2 conversion or 200,000-site qualification. Full import remains blocked.
 
 ### Snapshot-bound observation identity joins (A1 partial)
 
-`streamPreparedObservationIdentities(prepared, snapshotUri, assetIdNamespace)` uses
-the same acquisition, file hashing, private SQLite lifecycle and bounded observation
-decoder. It additionally recognizes the exact `asset_id_map` table from the retained
-Observatory schema: `provisional_id`, `canonical_id`, `domain`, `first_seen`.
-Both the provisional primary key and `aim_canonical_idx` must be single-column,
-unique, nonpartial, ascending BINARY indexes. Views, schema additions, missing keys
-and changed index contracts fail. No retained DDL is executed or migrated.
+`streamPreparedObservationIdentities(prepared, snapshotUri, assetIdNamespace)` uses the same acquisition, file hashing, private SQLite lifecycle and bounded observation decoder. It additionally recognizes the exact `asset_id_map` table from the retained Observatory schema: `provisional_id`, `canonical_id`, `domain`, `first_seen`. Both the provisional primary key and `aim_canonical_idx` must be single-column, unique, nonpartial, ascending BINARY indexes. Views, schema additions, missing keys and changed index contracts fail. No retained DDL is executed or migrated.
 
-The caller must declare `provisional` or `canonical`. These namespaces can overlap:
-the same string may be one row's provisional ID and another row's canonical ID.
-Never guess from the string's shape, try both columns or choose the first match.
-The complete converter must authenticate this declaration with the source schema
-and provenance contract; successful lookup alone does not establish its correctness.
-Current `MintAssetIdsGogol` persists mappings without rewriting observation payloads,
-which is why a canonical-only implicit join would lose valid provisional references.
+The caller must declare `provisional` or `canonical`. These namespaces can overlap: the same string may be one row's provisional ID and another row's canonical ID. Never guess from the string's shape, try both columns or choose the first match. The complete converter must authenticate this declaration with the source schema and provenance contract; successful lookup alone does not establish its correctness. Current `MintAssetIdsGogol` persists mappings without rewriting observation payloads, which is why a canonical-only implicit join would lose valid provisional references.
 
-For every observation, one indexed lookup must find a retained mapping. All four
-cells must be TEXT and at most 4 KiB each before driver transfer; invalid matched
-rows emit a NULL sentinel and stop the stream. Fatal UTF-8 decoding, nonblank/control-
-free provisional keys and shared canonical UUID syntax validation follow. UUID case,
-raw `domain` and `first_seen` are preserved. Blank metadata is not replaced by the
-domain derived from another record or by the current/measurement timestamp.
+For every observation, one indexed lookup must find a retained mapping. All four cells must be TEXT and at most 4 KiB each before driver transfer; invalid matched rows emit a NULL sentinel and stop the stream. Fatal UTF-8 decoding, nonblank/control- free provisional keys and shared canonical UUID syntax validation follow. UUID case, raw `domain` and `first_seen` are preserved. Blank metadata is not replaced by the domain derived from another record or by the current/measurement timestamp.
 
-Each frozen result contains the original observation (including exact signed JSON),
-the mapping, and a source reference with manifest SHA-256, snapshot URI/SHA-256/bytes,
-explicit namespace, and structured locators `{table:'observations', id}` and
-`{table:'asset_id_map', provisional_id}`. Locator keys are data, not executable SQL.
-They locate rows in this exact snapshot, not a factory database or a physical device.
-The map's canonical UUID is separate from the immutable observation asset ID.
+Each frozen result contains the original observation (including exact signed JSON), the mapping, and a source reference with manifest SHA-256, snapshot URI/SHA-256/bytes, explicit namespace, and structured locators `{table:'observations', id}` and `{table:'asset_id_map', provisional_id}`. Locator keys are data, not executable SQL. They locate rows in this exact snapshot, not a factory database or a physical device. The map's canonical UUID is separate from the immutable observation asset ID.
 
-This output is internal source attribution, **not** an imported-evidence descriptor,
-an authenticated historical device claim, target payload digest or success receipt.
-Prepared roots do not contain a copied manifest file: do not invent its URI to fill
-the generic descriptor. The converter must retain and verify an actual manifest
-object in the final reference closure. NULL evidence refs remain NULL; source/crawl
-hash labels do not establish CAS links. The joined converter now closes the complete
-Observatory identity domain against Harvest sites and materializes/compares identity,
-observations, AssetState and HWO in one target. Historical run/producer attribution,
-nonempty CAS verification and admission remain required.
+This output is internal source attribution, **not** an imported-evidence descriptor, an authenticated historical device claim, target payload digest or success receipt. Prepared roots do not contain a copied manifest file: do not invent its URI to fill the generic descriptor. The converter must retain and verify an actual manifest object in the final reference closure. NULL evidence refs remain NULL; source/crawl hash labels do not establish CAS links. The joined converter now closes the complete Observatory identity domain against Harvest sites and materializes/compares identity, observations, AssetState and HWO in one target. Historical run/producer attribution, nonempty CAS verification and admission remain required.
 
-Cost: two full snapshot hashes, one observation scan and one indexed identity lookup
-per observation, without a table-wide map/cache. Identity transfer is at most 16 KiB
-per matched row in addition to the observation bound. This is not a native SQLite
-memory or corruption-proof index-integrity guarantee. Unreferenced identity rows are
-not scanned by this join and need their own domain projection/reconciliation; empty
-observations are not identity-domain success. A joined row can precede final hashing.
+Cost: two full snapshot hashes, one observation scan and one indexed identity lookup per observation, without a table-wide map/cache. Identity transfer is at most 16 KiB per matched row in addition to the observation bound. This is not a native SQLite memory or corruption-proof index-integrity guarantee. Unreferenced identity rows are not scanned by this join and need their own domain projection/reconciliation; empty observations are not identity-domain success. A joined row can precede final hashing.
 
 ### Joined baseline methodology and target closure (A1 partial)
 
-`materializeBaselineClosure` requires one process-local prepared manifest and scope
-inventory for both Observatory and Harvest snapshots. It derives canonical domain
-bindings from the complete retained identity map, writes identity, all 25 observation
-columns, AssetState and HWO mappings into one fresh current-schema database, retains
-source-only lineage separately, closes the file and independently rereads all four
-domains through the bounded comparator. Empty Q2 cohort, strata and evidence-reference
-domains are explicit report entries; any retained row/reference in those currently
-unmaterialized domains fails instead of disappearing.
+`materializeBaselineClosure` requires one process-local prepared manifest and scope inventory for both Observatory and Harvest snapshots. It derives canonical domain bindings from the complete retained identity map, writes identity, every retained `pipeline_runs` row, all 25 observation columns, AssetState and HWO mappings into one fresh current-schema database, retains source-only lineage separately, closes the file and independently rereads all five domains through the bounded comparator. Each observation must join its retained run on `run_id` with equal period, ontology version and `factory_run_id`, and the run `codebook_version` must equal the parsed retained codebook version; unreferenced runs are preserved, not filtered. The absent retained `codebook_id` column is compared as an explicit NULL projection and run provenance is reported `joined-not-authenticated`. Empty Q2 cohort, strata and evidence-reference domains are explicit report entries; any retained row/reference in those currently unmaterialized domains fails instead of disappearing.
 
-Before target creation, exact retained ontology and codebook originals are bounded,
-matched to the prepared-manifest hashes, parsed through their ordinary owners and
-rehash-checked. Import versions, codebook `ontologyRef`, referenced signals and every
-observation's current value/lifecycle semantics must agree with that process-local
-ontology. The methodology status is
-`parsed-source-bytes-not-producer-authenticated`: these checks prove which preserved
-bytes conversion consumed, not that the historical producer/device consumed them.
-The complete result remains `compared-not-admitted`; producer/run attribution,
-runtime dependency closure, resource/crash proof, CLI cutover, final authenticated
-receipt and operational Q2 custody run are still required.
-Exhaustion, failure and early return share the existing close/read-back behavior.
+Before target creation, exact retained ontology and codebook originals are bounded, matched to the prepared-manifest hashes, parsed through their ordinary owners and rehash-checked. Import versions, codebook `ontologyRef`, referenced signals and every observation's current value/lifecycle semantics must agree with that process-local ontology. The methodology status is `parsed-source-bytes-not-producer-authenticated`: these checks prove which preserved bytes conversion consumed, not that the historical producer/device consumed them. The complete result remains `compared-not-admitted`; producer/run attribution, runtime dependency closure, resource/crash proof, CLI cutover, final authenticated receipt and operational Q2 custody run are still required. Exhaustion, failure and early return share the existing close/read-back behavior.
 
-Regression coverage adds 28 integration cases and a 200-case UUID property. The
-10,000-observation fixture now also exercises indexed joins. All 634 Observatory
-tests / 57 files and scoped typecheck pass. These are temporary fixtures, not real
-Q2 conversion, independent custody or 200,000-site qualification.
+Regression coverage adds 28 integration cases and a 200-case UUID property. The 10,000-observation fixture now also exercises indexed joins. All 634 Observatory tests / 57 files and scoped typecheck pass. These are temporary fixtures, not real Q2 conversion, independent custody or 200,000-site qualification.
 
 ---
 
 ## Qualification harness (RFC-0111)
 
-The current `quarter:rehearse` controller is executable offline infrastructure,
-not production-path qualification. Every run manifest says
-`operationallyQualified: false`. No signed qualification receipt is produced.
-Actual production adapters, operation-level fault barriers and complete resource/
-runtime evidence are still required by RFC-0115.
+The current `quarter:rehearse` controller is executable offline infrastructure, not production-path qualification. Every run manifest says `operationallyQualified: false`. No signed qualification receipt is produced. Actual production adapters, operation-level fault barriers and complete resource/ runtime evidence are still required by RFC-0115.
 
 ### Profile and isolation
 
-A profile is closed JSON with schema `hdri-rehearsal-profile@1`, absolute canonical
-`runtimeRoot` and `fixtureRoot`, ordered `stages`, `comparisonFiles` and positive
-`stageTimeoutMs` (at most 12 hours). The thirteen stage names come from
-`QUALIFICATION_STAGES` in observatory-emit. Each stage declares relative
-`producer` and `verifier` JavaScript entry points under runtimeRoot, plus unique
-nonempty `outputs` paths under `work/`. Comparison files must be declared outputs.
+A profile is closed JSON with schema `hdri-rehearsal-profile@1`, absolute canonical `runtimeRoot` and `fixtureRoot`, ordered `stages`, `comparisonFiles` and positive `stageTimeoutMs` (at most 12 hours). The thirteen stage names come from `QUALIFICATION_STAGES` in observatory-emit. Each stage declares relative `producer` and `verifier` JavaScript entry points under runtimeRoot, plus unique nonempty `outputs` paths under `work/`. Comparison files must be declared outputs.
 
-The controller launches each adapter in Linux bubblewrap with no host network,
-read-only runtime/fixture mounts and only stage work scratch writable. Inherited
-credentials are absent. A separate verifier must return matching
-`hdri-stage-verification@1` output hashes and input identity. Zero exit alone fails.
-See `run/tests/rehearsal-controller.test.ts` for mechanism fixtures; these are not
-substitutes for the production adapters.
+The controller launches each adapter in Linux bubblewrap with no host network, read-only runtime/fixture mounts and only stage work scratch writable. Inherited credentials are absent. A separate verifier must return matching `hdri-stage-verification@1` output hashes and input identity. Zero exit alone fails. See `run/tests/rehearsal-controller.test.ts` for mechanism fixtures; these are not substitutes for the production adapters.
 
-This [machine profile](../../../docs/rfcs/verification/rfc-0115-approved-local-runner-2026-09-13.json)
-records operator approval and observed hardware, not runnable adapters or a reserved
-resource budget. Unsupported OS isolation blocks execution; never fall back to
-unisolated execution or relax global host security policy.
+This [machine profile](../../../docs/rfcs/verification/rfc-0115-approved-local-runner-2026-09-13.json) records operator approval and observed hardware, not runnable adapters or a reserved resource budget. Unsupported OS isolation blocks execution; never fall back to unisolated execution or relax global host security policy.
 
 ### Fresh, interrupted and resumed runs
 
@@ -608,26 +348,13 @@ pnpm --filter @syrokomskyi/observatory quarter:rehearse --profile /absolute/prof
 pnpm --filter @syrokomskyi/observatory quarter:rehearse --profile /absolute/profile.json --targets 1000 --evidence-root /absolute/new-resume-root --resume /absolute/new-resume-root/run-manifest.json --compare /absolute/new-clean-root/run-manifest.json --json
 ```
 
-Fresh roots must be empty/new; resume must point to that root's own manifest.
-Keep `run-manifest.json`, `receipts/`, `work/` and the SQLite lock together.
-Input/runtime/fixture identity, retained receipts, measurements and output hashes
-are checked before reuse. Comparison checks actual files in both runs. A changed
-source, missing output, false verifier or conflicting run fails closed.
+Fresh roots must be empty/new; resume must point to that root's own manifest. Keep `run-manifest.json`, `receipts/`, `work/` and the SQLite lock together. Input/runtime/fixture identity, retained receipts, measurements and output hashes are checked before reuse. Comparison checks actual files in both runs. A changed source, missing output, false verifier or conflicting run fails closed.
 
-`--interrupt-after-stage` exercises controller recovery only. It does not inject
-a crash at CAS, event transaction, selected-result publication, extraction,
-scientific report, replica or public-pointer boundaries.
+`--interrupt-after-stage` exercises controller recovery only. It does not inject a crash at CAS, event transaction, selected-result publication, extraction, scientific report, replica or public-pointer boundaries.
 
 ### Qualification still required
 
-CI now selects every collector and the shared authority/process boundaries.
-The small controller tests are not the required 1k whole-chain CI fixture.
-There is no verified scheduled 10k run or completed 50k/200k qualification.
-Before scale-up, close the [ordered corrective plan](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md),
-retain measured disk/inode peaks and whole-tree RSS, freeze complete runtime
-identity, execute the actual fault schedule and independently verify signed proof.
-Limits remain 2 GiB coordinator RSS, 12 GiB whole-tree RSS, four browser slots and
-12 hours. Store lasting run evidence on durable storage, never only in `/tmp`.
+CI now selects every collector and the shared authority/process boundaries. The small controller tests are not the required 1k whole-chain CI fixture. There is no verified scheduled 10k run or completed 50k/200k qualification. Before scale-up, close the [ordered corrective plan](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md), retain measured disk/inode peaks and whole-tree RSS, freeze complete runtime identity, execute the actual fault schedule and independently verify signed proof. Limits remain 2 GiB coordinator RSS, 12 GiB whole-tree RSS, four browser slots and 12 hours. Store lasting run evidence on durable storage, never only in `/tmp`.
 
 ---
 
