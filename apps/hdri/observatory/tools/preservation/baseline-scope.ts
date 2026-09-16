@@ -15,7 +15,7 @@ import { streamPreparedSnapshot, type SnapshotArtifact } from "./prepared-snapsh
 
 const PROFILES = {
   harvest: ["sites", "site_source_seeds", "site_hwo_mappings", "site_cohorts", "site_strata"],
-  observatory: ["observations", "asset_id_map"],
+  observatory: ["observations", "asset_id_map", "pipeline_runs"],
   unclassified: [],
 } as const;
 type Profile = keyof typeof PROFILES;
@@ -95,7 +95,10 @@ function text(value: unknown): string {
     typeof value !== "string" ||
     !value.trim() ||
     Buffer.byteLength(value) > MAX_TEXT_BYTES ||
-    /[\u0000-\u001f\u007f]/.test(value) ||
+    Array.from(value).some((character) => {
+      const code = character.codePointAt(0)!;
+      return code <= 0x1f || code === 0x7f;
+    }) ||
     Buffer.from(value).toString("utf8") !== value
   )
     throw new Error("INVALID_BASELINE_SCOPE_TEXT");

@@ -12,6 +12,7 @@
   <item>Carry explicit current-Observation semantic validation evidence into the joined report.</item>
   <item>Reject caller import ontology labels that differ from the complete retained observation domain.</item>
   <item>Require exact retained ontology/codebook artifacts and validate every observation against their parsed contract.</item>
+  <item>Materialize every retained pipeline run, join observations to runs and compare the run domain.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: This joined target remains compared-not-admitted until source trust, evidence and operational closure are independently verified.
@@ -21,11 +22,14 @@ import { inspectRetainedFile } from "@warpgogol/pipeline-node";
 import {
   BASELINE_IDENTITY_FIELDS,
   BASELINE_OBSERVATION_FIELDS,
+  BASELINE_RUN_FIELDS,
   materializeObservationBaseline,
   sourceIdentityRecords,
   sourceObservationRecords,
+  sourceRunRecords,
   targetIdentityRecords,
   targetObservationRecords,
+  targetRunRecords,
 } from "./baseline-materialization.js";
 import {
   BASELINE_ASSET_MAPPING_FIELDS,
@@ -69,8 +73,13 @@ export type BaselineClosureMaterializationReport = Readonly<{
     ontologyVersions: readonly string[];
     ontologyArtifactValidated: boolean;
   }>;
+  runProvenance: Readonly<{
+    status: "joined-not-authenticated";
+    codebookIdProjection: "retained-column-absent-target-null-compared";
+  }>;
   comparisons: Readonly<{
     identities: BaselineDomainComparison;
+    pipelineRuns: BaselineDomainComparison;
     observations: BaselineDomainComparison;
     assetStates: BaselineDomainComparison;
     mappings: BaselineDomainComparison;
@@ -97,10 +106,7 @@ const STRATA_FIELDS = [
   "gemeinde",
 ] as const;
 
-async function* retainedCohortRecords(
-  prepared: PreparedBaselineSource,
-  snapshotUri: string,
-) {
+async function* retainedCohortRecords(prepared: PreparedBaselineSource, snapshotUri: string) {
   let index = 0;
   for await (const row of streamPreparedCohorts(prepared, snapshotUri))
     yield {
@@ -109,10 +115,7 @@ async function* retainedCohortRecords(
     };
 }
 
-async function* retainedStrataRecords(
-  prepared: PreparedBaselineSource,
-  snapshotUri: string,
-) {
+async function* retainedStrataRecords(prepared: PreparedBaselineSource, snapshotUri: string) {
   let index = 0;
   for await (const row of streamPreparedStrata(prepared, snapshotUri))
     yield {
@@ -127,16 +130,17 @@ async function* retainedEvidenceReferenceRecords(
 ) {
   for await (const row of streamPreparedObservations(prepared, snapshotUri)) {
     const evidenceRef = row.columns.evidence_ref;
-    if (evidenceRef !== null)
-      yield { key: row.columns.id as string, values: [evidenceRef] };
+    if (evidenceRef !== null) yield { key: row.columns.id as string, values: [evidenceRef] };
   }
 }
 
-function harvestSource(options: Readonly<{
-  prepared: PreparedBaselineSource;
-  scopeInventory: BaselineScopeInventory;
-  harvestSnapshotUri: string;
-}>) {
+function harvestSource(
+  options: Readonly<{
+    prepared: PreparedBaselineSource;
+    scopeInventory: BaselineScopeInventory;
+    harvestSnapshotUri: string;
+  }>,
+) {
   const scoped = options.scopeInventory.sources.find(
     (source) => source.declaration.snapshot.uri === options.harvestSnapshotUri,
   );
@@ -155,10 +159,7 @@ async function canonicalDomains(
   observatorySnapshotUri: string,
 ): Promise<Map<string, string>> {
   const result = new Map<string, string>();
-  for await (const row of streamPreparedObservationIdentityMap(
-    prepared,
-    observatorySnapshotUri,
-  )) {
+  for await (const row of streamPreparedObservationIdentityMap(prepared, observatorySnapshotUri)) {
     if (result.has(row.identity.domain))
       throw new Error(`DUPLICATE_BASELINE_IDENTITY_DOMAIN: ${row.identity.domain}`);
     result.set(row.identity.domain, row.identity.canonical_id);
@@ -167,15 +168,17 @@ async function canonicalDomains(
   return result;
 }
 
-async function appendAssetStates(options: Readonly<{
-  prepared: PreparedBaselineSource;
-  scopeInventory: BaselineScopeInventory;
-  harvestSnapshotUri: string;
-  targetPath: string;
-  canonicalByDomain: ReadonlyMap<string, string>;
-  period: string;
-  import: BaselineImportMetadata;
-}>): Promise<void> {
+async function appendAssetStates(
+  options: Readonly<{
+    prepared: PreparedBaselineSource;
+    scopeInventory: BaselineScopeInventory;
+    harvestSnapshotUri: string;
+    targetPath: string;
+    canonicalByDomain: ReadonlyMap<string, string>;
+    period: string;
+    import: BaselineImportMetadata;
+  }>,
+): Promise<void> {
   const target = new Database(options.targetPath, { fileMustExist: true });
   try {
     target.exec(`
@@ -266,17 +269,19 @@ async function appendAssetStates(options: Readonly<{
   }
 }
 
-export async function materializeBaselineClosure(options: Readonly<{
-  prepared: PreparedBaselineSource;
-  scopeInventory: BaselineScopeInventory;
-  observatorySnapshotUri: string;
-  harvestSnapshotUri: string;
-  ontologyArtifactUri: string;
-  codebookArtifactUri: string;
-  targetPath: string;
-  period: string;
-  import: BaselineImportMetadata;
-}>): Promise<BaselineClosureMaterializationReport> {
+export async function materializeBaselineClosure(
+  options: Readonly<{
+    prepared: PreparedBaselineSource;
+    scopeInventory: BaselineScopeInventory;
+    observatorySnapshotUri: string;
+    harvestSnapshotUri: string;
+    ontologyArtifactUri: string;
+    codebookArtifactUri: string;
+    targetPath: string;
+    period: string;
+    import: BaselineImportMetadata;
+  }>,
+): Promise<BaselineClosureMaterializationReport> {
   if (options.period !== options.prepared.manifest.period)
     throw new Error("BASELINE_CLOSURE_PERIOD_MISMATCH");
   const importMetadata = validateBaselineImportMetadata(options.import);
@@ -325,6 +330,7 @@ export async function materializeBaselineClosure(options: Readonly<{
   };
   const target = new Database(options.targetPath, { readonly: true, fileMustExist: true });
   let identities: BaselineDomainComparison;
+  let pipelineRuns: BaselineDomainComparison;
   let observations: BaselineDomainComparison;
   let assetStates: BaselineDomainComparison;
   let mappings: BaselineDomainComparison;
@@ -337,6 +343,12 @@ export async function materializeBaselineClosure(options: Readonly<{
       fields: BASELINE_IDENTITY_FIELDS,
       source: sourceIdentityRecords(options.prepared, options.observatorySnapshotUri),
       target: targetIdentityRecords(target),
+    });
+    pipelineRuns = await compareBaselineRecords({
+      domain: "pipeline_runs",
+      fields: BASELINE_RUN_FIELDS,
+      source: sourceRunRecords(options.prepared, options.observatorySnapshotUri),
+      target: targetRunRecords(target),
     });
     observations = await compareBaselineRecords({
       domain: "observations",
@@ -371,10 +383,7 @@ export async function materializeBaselineClosure(options: Readonly<{
     evidenceReferences = await compareBaselineRecords({
       domain: "observation_evidence_refs_retained_empty",
       fields: ["evidence_ref"],
-      source: retainedEvidenceReferenceRecords(
-        options.prepared,
-        options.observatorySnapshotUri,
-      ),
+      source: retainedEvidenceReferenceRecords(options.prepared, options.observatorySnapshotUri),
       target: [],
     });
   } finally {
@@ -382,6 +391,7 @@ export async function materializeBaselineClosure(options: Readonly<{
   }
   if (
     identities.status !== "equal" ||
+    pipelineRuns.status !== "equal" ||
     observations.status !== "equal" ||
     assetStates.status !== "equal" ||
     mappings.status === "different"
@@ -414,8 +424,10 @@ export async function materializeBaselineClosure(options: Readonly<{
     import: importMetadata,
     methodology,
     observationSemantics: observation.semantics,
+    runProvenance: observation.runProvenance,
     comparisons: Object.freeze({
       identities: Object.freeze(identities),
+      pipelineRuns: Object.freeze(pipelineRuns),
       observations: Object.freeze(observations),
       assetStates: Object.freeze(assetStates),
       mappings: Object.freeze(mappings),

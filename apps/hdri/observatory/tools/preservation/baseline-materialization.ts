@@ -13,7 +13,8 @@
   <item>Expose the same bounded source/target record streams to the joined baseline closure comparator.</item>
   <item>Validate every retained row against current Observation semantics before target insertion.</item>
   <item>Report the bounded set of ontology versions observed across the complete retained stream.</item>
-  <item>Optionally require a process-local exact-byte methodology inspection for ontology validation.</item>
+  <item>Require a process-local exact-byte methodology inspection for ontology and run joins.</item>
+  <item>Materialize every retained pipeline run before observations and join each observation to its run.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: A successful identity comparison is one partial domain result, never baseline admission.
@@ -41,9 +42,11 @@ import {
   type RetainedObservationSourceRow,
 } from "./observation-source.js";
 import {
-  assertPreparedBaselineSource,
-  type PreparedBaselineSource,
-} from "./preserve.js";
+  RETAINED_RUN_COLUMN_NAMES,
+  streamPreparedPipelineRuns,
+  type RetainedPipelineRunRow,
+} from "./pipeline-run-source.js";
+import { assertPreparedBaselineSource, type PreparedBaselineSource } from "./preserve.js";
 import {
   assertBaselineScopeInventory,
   type BaselineScopeInventory,
@@ -54,6 +57,8 @@ import {
   assertObservationMatchesBaselineMethodology,
   type BaselineMethodologyInspection,
 } from "./baseline-methodology.js";
+
+const MAX_BASELINE_RUNS = 1_000_000;
 
 export type IdentityMaterializationReport = Readonly<{
   schema: "hdri-baseline-identity-materialization@1";
@@ -73,6 +78,7 @@ export type ObservationMaterializationReport = Readonly<{
   target: Readonly<{ sha256: string; bytes: number }>;
   comparisons: Readonly<{
     identities: BaselineDomainComparison;
+    pipelineRuns: BaselineDomainComparison;
     observations: BaselineDomainComparison;
   }>;
   semantics: Readonly<{
@@ -80,6 +86,10 @@ export type ObservationMaterializationReport = Readonly<{
     rows: number;
     ontologyVersions: readonly string[];
     ontologyArtifactValidated: boolean;
+  }>;
+  runProvenance: Readonly<{
+    status: "joined-not-authenticated";
+    codebookIdProjection: "retained-column-absent-target-null-compared";
   }>;
 }>;
 
@@ -143,6 +153,39 @@ export function* targetObservationRecords(db: Database.Database): Generator<Base
     yield { key: row[0] as string, values: row.slice(1) as BaselineRecord["values"] };
 }
 
+// The current-only codebook_id column is compared explicitly: the retained
+// schema has no such column, so the source side projects NULL and any
+// materialized non-NULL value surfaces as a field difference.
+export const BASELINE_RUN_FIELDS = [...RETAINED_RUN_COLUMN_NAMES.slice(1), "codebook_id"] as const;
+
+function runRecord(row: RetainedPipelineRunRow): BaselineRecord {
+  return {
+    key: row.columns.run_id as string,
+    values: [...RETAINED_RUN_COLUMN_NAMES.slice(1).map((field) => row.columns[field]), null],
+  };
+}
+
+export async function* sourceRunRecords(
+  prepared: PreparedBaselineSource,
+  snapshotUri: string,
+): AsyncGenerator<BaselineRecord> {
+  for await (const row of streamPreparedPipelineRuns(prepared, snapshotUri)) yield runRecord(row);
+}
+
+export function* targetRunRecords(db: Database.Database): Generator<BaselineRecord> {
+  const selected = [...RETAINED_RUN_COLUMN_NAMES.map((name) => `"${name}"`), '"codebook_id"'].join(
+    ",",
+  );
+  const rows = db
+    .prepare(
+      `SELECT ${selected} FROM pipeline_runs INDEXED BY sqlite_autoindex_pipeline_runs_1
+      ORDER BY run_id COLLATE BINARY`,
+    )
+    .raw();
+  for (const row of rows.iterate() as Iterable<unknown[]>)
+    yield { key: row[0] as string, values: row.slice(1) as BaselineRecord["values"] };
+}
+
 async function resolveFreshTarget(
   prepared: PreparedBaselineSource,
   scopeInventory: BaselineScopeInventory,
@@ -176,12 +219,14 @@ async function resolveFreshTarget(
 }
 
 /** Writes only into a new file. Failed roots remain for diagnosis and are never receipts. */
-export async function materializeObservationIdentityBaseline(options: Readonly<{
-  prepared: PreparedBaselineSource;
-  scopeInventory: BaselineScopeInventory;
-  snapshotUri: string;
-  targetPath: string;
-}>): Promise<IdentityMaterializationReport> {
+export async function materializeObservationIdentityBaseline(
+  options: Readonly<{
+    prepared: PreparedBaselineSource;
+    scopeInventory: BaselineScopeInventory;
+    snapshotUri: string;
+    targetPath: string;
+  }>,
+): Promise<IdentityMaterializationReport> {
   const { targetPath, sourceSnapshot, sourceScope } = await resolveFreshTarget(
     options.prepared,
     options.scopeInventory,
@@ -253,16 +298,20 @@ export async function materializeObservationIdentityBaseline(options: Readonly<{
 /** Materialize the complete retained Observatory identity and observation domains.
  * Canonical namespace is explicit: provisional IDs require a separate forward-only
  * projection because rewriting signed source envelopes would be invalid. */
-export async function materializeObservationBaseline(options: Readonly<{
-  prepared: PreparedBaselineSource;
-  scopeInventory: BaselineScopeInventory;
-  snapshotUri: string;
-  targetPath: string;
-  assetIdNamespace: "canonical";
-  methodology?: BaselineMethodologyInspection;
-}>): Promise<ObservationMaterializationReport> {
+export async function materializeObservationBaseline(
+  options: Readonly<{
+    prepared: PreparedBaselineSource;
+    scopeInventory: BaselineScopeInventory;
+    snapshotUri: string;
+    targetPath: string;
+    assetIdNamespace: "canonical";
+    methodology: BaselineMethodologyInspection;
+  }>,
+): Promise<ObservationMaterializationReport> {
   if (options.assetIdNamespace !== "canonical")
     throw new Error("CANONICAL_OBSERVATION_NAMESPACE_REQUIRED");
+  if (options.methodology.manifestSha256 !== options.prepared.manifestSha256)
+    throw new Error("PROCESS_LOCAL_BASELINE_METHODOLOGY_REQUIRED");
   const { targetPath, sourceSnapshot, sourceScope } = await resolveFreshTarget(
     options.prepared,
     options.scopeInventory,
@@ -277,6 +326,10 @@ export async function materializeObservationBaseline(options: Readonly<{
     stampObservatoryMeta(target, "hdri-baseline-converter", "observation-v1");
     const identityInsert = target.prepare(
       "INSERT INTO asset_id_map (provisional_id,canonical_id,domain,first_seen) VALUES (?, ?, ?, ?)",
+    );
+    const runColumnSql = RETAINED_RUN_COLUMN_NAMES.map((name) => `"${name}"`).join(",");
+    const runInsert = target.prepare(
+      `INSERT INTO pipeline_runs (${runColumnSql},codebook_id) VALUES (${RETAINED_RUN_COLUMN_NAMES.map(() => "?").join(",")},NULL)`,
     );
     const columnSql = RETAINED_OBSERVATION_COLUMN_NAMES.map((name) => `"${name}"`).join(",");
     const placeholders = RETAINED_OBSERVATION_COLUMN_NAMES.map(() => "?").join(",");
@@ -299,6 +352,15 @@ export async function materializeObservationBaseline(options: Readonly<{
         identities++;
       }
       if (!identities) throw new Error("NONEMPTY_IDENTITY_DOMAIN_REQUIRED");
+      // Every retained run is materialized before observations so each
+      // observation can be joined to its exact run row. The process-local map
+      // is hard-capped; unreferenced runs are preserved, not filtered.
+      const runs = new Map<string, RetainedPipelineRunRow["columns"]>();
+      for await (const run of streamPreparedPipelineRuns(options.prepared, options.snapshotUri)) {
+        if (runs.size >= MAX_BASELINE_RUNS) throw new Error("BASELINE_RUN_LIMIT");
+        runs.set(run.columns.run_id as string, run.columns);
+        runInsert.run(...RETAINED_RUN_COLUMN_NAMES.map((name) => run.columns[name]));
+      }
       let observations = 0;
       for await (const row of streamPreparedObservationIdentities(
         options.prepared,
@@ -306,12 +368,22 @@ export async function materializeObservationBaseline(options: Readonly<{
         options.assetIdNamespace,
       )) {
         assertCurrentObservationSemantics(row.observation);
-        if (options.methodology)
-          assertObservationMatchesBaselineMethodology(
-            options.prepared,
-            options.methodology,
-            row.observation,
-          );
+        assertObservationMatchesBaselineMethodology(
+          options.prepared,
+          options.methodology,
+          row.observation,
+        );
+        const columns = row.observation.columns;
+        const run = runs.get(columns.run_id as string);
+        if (!run) throw new Error("UNRESOLVED_OBSERVATION_RUN");
+        if (columns.period !== run.period)
+          throw new Error("BASELINE_OBSERVATION_RUN_PERIOD_MISMATCH");
+        if (columns.ontology_version !== run.ontology_version)
+          throw new Error("BASELINE_OBSERVATION_RUN_ONTOLOGY_MISMATCH");
+        if (columns.factory_run_id !== run.factory_run_id)
+          throw new Error("BASELINE_OBSERVATION_RUN_FACTORY_MISMATCH");
+        if (run.codebook_version !== options.methodology.codebook.version)
+          throw new Error("BASELINE_RUN_CODEBOOK_VERSION_MISMATCH");
         semanticRows++;
         ontologyVersions.add(row.observation.columns.ontology_version as string);
         if (ontologyVersions.size > 64)
@@ -333,6 +405,7 @@ export async function materializeObservationBaseline(options: Readonly<{
 
   const verify = new Database(targetPath, { readonly: true, fileMustExist: true });
   let identities: BaselineDomainComparison;
+  let pipelineRuns: BaselineDomainComparison;
   let observations: BaselineDomainComparison;
   try {
     identities = await compareBaselineRecords({
@@ -340,6 +413,12 @@ export async function materializeObservationBaseline(options: Readonly<{
       fields: BASELINE_IDENTITY_FIELDS,
       source: sourceIdentityRecords(options.prepared, options.snapshotUri),
       target: targetIdentityRecords(verify),
+    });
+    pipelineRuns = await compareBaselineRecords({
+      domain: "pipeline_runs",
+      fields: BASELINE_RUN_FIELDS,
+      source: sourceRunRecords(options.prepared, options.snapshotUri),
+      target: targetRunRecords(verify),
     });
     observations = await compareBaselineRecords({
       domain: "observations",
@@ -350,7 +429,11 @@ export async function materializeObservationBaseline(options: Readonly<{
   } finally {
     verify.close();
   }
-  if (identities.status !== "equal" || observations.status !== "equal")
+  if (
+    identities.status !== "equal" ||
+    pipelineRuns.status !== "equal" ||
+    observations.status !== "equal"
+  )
     throw new Error("BASELINE_OBSERVATION_COMPARISON_FAILED");
   const targetEvidence = await inspectRetainedFile(targetPath);
   return Object.freeze({
@@ -366,15 +449,22 @@ export async function materializeObservationBaseline(options: Readonly<{
     target: Object.freeze(targetEvidence),
     comparisons: Object.freeze({
       identities: Object.freeze(identities),
+      pipelineRuns: Object.freeze(pipelineRuns),
       observations: Object.freeze(observations),
     }),
     semantics: Object.freeze({
       status: "validated-not-authenticated",
       rows: semanticRows,
       ontologyVersions: Object.freeze(
-        [...ontologyVersions].sort((left, right) => Buffer.compare(Buffer.from(left), Buffer.from(right))),
+        [...ontologyVersions].sort((left, right) =>
+          Buffer.compare(Buffer.from(left), Buffer.from(right)),
+        ),
       ),
-      ontologyArtifactValidated: options.methodology !== undefined,
+      ontologyArtifactValidated: true,
+    }),
+    runProvenance: Object.freeze({
+      status: "joined-not-authenticated",
+      codebookIdProjection: "retained-column-absent-target-null-compared",
     }),
   });
 }

@@ -21,11 +21,13 @@ import {
   streamPreparedObservationIdentities,
   streamPreparedObservationIdentityMap,
 } from "../../tools/preservation/observation-source.js";
+import { streamPreparedPipelineRuns } from "../../tools/preservation/pipeline-run-source.js";
 import {
   materializeObservationBaseline,
   materializeObservationIdentityBaseline,
 } from "../../tools/preservation/baseline-materialization.js";
 import { inspectBaselineScope } from "../../tools/preservation/baseline-scope.js";
+import { inspectBaselineMethodology } from "../../tools/preservation/baseline-methodology.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -64,6 +66,35 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false, enco
   roots.push(root);
   const source = path.join(root, "source");
   await fs.mkdir(source);
+  const input = path.join(source, "input");
+  await fs.mkdir(input);
+  await fs.writeFile(
+    path.join(input, "ontology.yaml"),
+    `version: ontology-1
+signals:
+  web.presence:
+    label: Web presence
+    value_type: bool
+    introduced_in: ontology-1
+    deprecated_in: null
+    stability: high
+`,
+  );
+  await fs.writeFile(
+    path.join(input, "codebook.yaml"),
+    `id: fixture-codebook
+version: 1.0.0
+ontologyRef: ontology.yaml
+dimensions:
+  - id: presence
+    weight: 1
+    indicators:
+      - id: web-presence
+        inputKey: web.presence
+        weight: 1
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+`,
+  );
   const db = new Database(path.join(source, "observatory.db"));
   handles.push(db);
   db.pragma(`encoding='${encoding}'`);
@@ -72,6 +103,24 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false, enco
     db.pragma("wal_autocheckpoint=0");
   }
   migrateObservatory(db);
+  // The retained Q2 schema has no codebook_id column; the current schema adds it.
+  db.exec("ALTER TABLE pipeline_runs DROP COLUMN codebook_id");
+  db.prepare("INSERT INTO pipeline_runs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(
+    "retained-run",
+    "observatory",
+    "1.0.0",
+    "2026-q2",
+    "ontology-1",
+    "1.0.0",
+    "2026-05-03T10:00:00Z",
+    "2026-05-03T12:00:00Z",
+    "finished",
+    "published",
+    "2026-05-04T00:00:00Z",
+    null,
+    "factory-run",
+    "bundle-hash-1",
+  );
   db.prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)").run(
     "da-retained-site",
     observation.asset_id,
@@ -127,6 +176,12 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false, enco
   const prepared = await prepareBaselineSource(options);
   const snapshot = prepared.manifest.artifacts.find((a) => a.representation === "sqlite-snapshot")!;
   const file = path.join(prepared.root, snapshot.uri);
+  const ontology = prepared.manifest.artifacts.find(
+    (a) => a.representation === "original" && a.uri.endsWith("input/ontology.yaml"),
+  )!;
+  const codebook = prepared.manifest.artifacts.find(
+    (a) => a.representation === "original" && a.uri.endsWith("input/codebook.yaml"),
+  )!;
   return {
     root,
     source,
@@ -137,7 +192,18 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false, enco
     file,
     json,
     tableNames,
+    ontology,
+    codebook,
+    methodology: () =>
+      inspectBaselineMethodology({
+        prepared,
+        ontologyArtifactUri: ontology.uri,
+        codebookArtifactUri: codebook.uri,
+        ontologyVersion: "ontology-1",
+        codebookVersion: "1.0.0",
+      }),
     rows: () => streamPreparedObservations(prepared, snapshot.uri),
+    runs: () => streamPreparedPipelineRuns(prepared, snapshot.uri),
   };
 }
 async function collect<T>(source: AsyncIterable<T>): Promise<T[]> {
@@ -156,12 +222,12 @@ async function scope(f: Awaited<ReturnType<typeof fixture>>) {
         scope: { status: "unavailable", reason: "Fixture has no historical device authority" },
         tables: f.tableNames.map((name) => ({
           name,
-          disposition:
-            name === "observations" || name === "asset_id_map" ? "required" : "retained-only",
-          reason:
-            name === "observations" || name === "asset_id_map"
-              ? null
-              : "Outside the observation materialization slice",
+          disposition: ["observations", "asset_id_map", "pipeline_runs"].includes(name)
+            ? "required"
+            : "retained-only",
+          reason: ["observations", "asset_id_map", "pipeline_runs"].includes(name)
+            ? null
+            : "Outside the observation materialization slice",
         })),
       },
     ],
@@ -560,16 +626,16 @@ describe("bounded observation source from private retained snapshots", () => {
 describe("snapshot-bound observation identity references", () => {
   it("streams the complete identity map including mappings unused by observations", async () => {
     const f = await fixture((db) =>
-      db.prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)").run(
-        "zz-unreferenced",
-        "0198f000-0000-7000-8000-000000000099",
-        "unused.example",
-        "2026-05-01T00:00:00Z",
-      ),
+      db
+        .prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)")
+        .run(
+          "zz-unreferenced",
+          "0198f000-0000-7000-8000-000000000099",
+          "unused.example",
+          "2026-05-01T00:00:00Z",
+        ),
     );
-    const rows = await collect(
-      streamPreparedObservationIdentityMap(f.prepared, f.snapshot.uri),
-    );
+    const rows = await collect(streamPreparedObservationIdentityMap(f.prepared, f.snapshot.uri));
     expect(rows.map((row) => row.identity.provisional_id)).toEqual([
       "da-retained-site",
       "zz-unreferenced",
@@ -839,12 +905,14 @@ describe("snapshot-bound observation identity references", () => {
 describe("current-schema identity baseline materialization", () => {
   it("writes every retained mapping and independently compares the closed target", async () => {
     const f = await fixture((db) =>
-      db.prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)").run(
-        "zz-unreferenced",
-        "0198f000-0000-7000-8000-000000000099",
-        "unused.example",
-        "2026-05-01T00:00:00Z",
-      ),
+      db
+        .prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)")
+        .run(
+          "zz-unreferenced",
+          "0198f000-0000-7000-8000-000000000099",
+          "unused.example",
+          "2026-05-01T00:00:00Z",
+        ),
     );
     const before = await inventorySources({ roots: [f.source] });
     const targetPath = path.join(f.root, "baseline", "identity.db");
@@ -932,12 +1000,14 @@ describe("current-schema identity baseline materialization", () => {
 
   it("materializes and independently compares every observation column", async () => {
     const f = await fixture((db) =>
-      db.prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)").run(
-        "zz-unreferenced",
-        "0198f000-0000-7000-8000-000000000099",
-        "unused.example",
-        "2026-05-01T00:00:00Z",
-      ),
+      db
+        .prepare("INSERT INTO asset_id_map VALUES (?, ?, ?, ?)")
+        .run(
+          "zz-unreferenced",
+          "0198f000-0000-7000-8000-000000000099",
+          "unused.example",
+          "2026-05-01T00:00:00Z",
+        ),
     );
     const targetPath = path.join(f.root, "baseline-observation", "observatory.db");
     await fs.mkdir(path.dirname(targetPath));
@@ -947,12 +1017,14 @@ describe("current-schema identity baseline materialization", () => {
       snapshotUri: f.snapshot.uri,
       targetPath,
       assetIdNamespace: "canonical",
+      methodology: await f.methodology(),
     });
     expect(report).toMatchObject({
       schema: "hdri-baseline-observation-materialization@1",
       status: "compared-not-admitted",
       comparisons: {
         identities: { status: "equal", sourceRows: 2, targetRows: 2 },
+        pipelineRuns: { status: "equal", sourceRows: 1, targetRows: 1 },
         observations: {
           status: "equal",
           sourceRows: 1,
@@ -960,6 +1032,10 @@ describe("current-schema identity baseline materialization", () => {
           matchedRows: 1,
           differingRows: 0,
         },
+      },
+      runProvenance: {
+        status: "joined-not-authenticated",
+        codebookIdProjection: "retained-column-absent-target-null-compared",
       },
     });
     expect(report.comparisons.observations.fieldDifferences).toEqual(
@@ -996,6 +1072,225 @@ describe("current-schema identity baseline materialization", () => {
     handles.push(target);
     expect(target.prepare("SELECT obs_json FROM observations WHERE id=?").pluck().get(id)).toBe(
       f.json,
+    );
+  });
+});
+
+describe("retained pipeline run domain", () => {
+  it("streams every retained run with exact columns, locators and frozen rows", async () => {
+    const f = await fixture(undefined, true);
+    const before = await inventorySources({ roots: [f.source] });
+    const rows = await collect(f.runs());
+    expect(rows).toHaveLength(1);
+    expect(rows[0].columns).toEqual({
+      run_id: "retained-run",
+      pipeline_app: "observatory",
+      pipeline_version: "1.0.0",
+      period: "2026-q2",
+      ontology_version: "ontology-1",
+      codebook_version: "1.0.0",
+      started_at: "2026-05-03T10:00:00Z",
+      finished_at: "2026-05-03T12:00:00Z",
+      status: "finished",
+      publication_status: "published",
+      published_at: "2026-05-04T00:00:00Z",
+      supersedes_run_id: null,
+      factory_run_id: "factory-run",
+      bundle_hash: "bundle-hash-1",
+    });
+    expect(rows[0].source).toEqual({
+      manifestSha256: f.prepared.manifestSha256,
+      artifact: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
+      runLocator: { table: "pipeline_runs", run_id: "retained-run" },
+    });
+    for (const value of [
+      rows[0],
+      rows[0].columns,
+      rows[0].source,
+      rows[0].source.artifact,
+      rows[0].source.runLocator,
+    ])
+      expect(Object.isFrozen(value)).toBe(true);
+    expect(await inventorySources({ roots: [f.source] })).toEqual(before);
+    expect((await verifyReplicas(f.options)).status).toBe("pass");
+  });
+
+  it("includes retained runs no observation references, including other periods", async () => {
+    const f = await fixture((db) =>
+      db
+        .prepare("INSERT INTO pipeline_runs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+        .run(
+          "earlier-run",
+          "observatory",
+          "0.9.0",
+          "2026-q1",
+          "ontology-0",
+          "0.9.0",
+          "2026-02-01T10:00:00Z",
+          "2026-02-01T12:00:00Z",
+          "finished",
+          "superseded",
+          null,
+          null,
+          null,
+          null,
+        ),
+    );
+    const rows = await collect(f.runs());
+    expect(rows.map((row) => row.columns.run_id)).toEqual(["earlier-run", "retained-run"]);
+    const targetPath = path.join(f.root, "baseline-runs", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    const report = await materializeObservationBaseline({
+      prepared: f.prepared,
+      scopeInventory: await scope(f),
+      snapshotUri: f.snapshot.uri,
+      targetPath,
+      assetIdNamespace: "canonical",
+      methodology: await f.methodology(),
+    });
+    expect(report.comparisons.pipelineRuns).toMatchObject({
+      status: "equal",
+      sourceRows: 2,
+      targetRows: 2,
+    });
+    const target = new Database(targetPath, { readonly: true, fileMustExist: true });
+    handles.push(target);
+    expect(
+      target.prepare("SELECT run_id,period,codebook_id FROM pipeline_runs ORDER BY run_id").all(),
+    ).toEqual([
+      { run_id: "earlier-run", period: "2026-q1", codebook_id: null },
+      { run_id: "retained-run", period: "2026-q2", codebook_id: null },
+    ]);
+  });
+
+  it.each([
+    [
+      "current-only column",
+      "ALTER TABLE pipeline_runs ADD COLUMN codebook_id TEXT",
+      "UNSUPPORTED_RUN_SOURCE_SCHEMA",
+    ],
+    [
+      "missing column",
+      "ALTER TABLE pipeline_runs DROP COLUMN bundle_hash",
+      "UNSUPPORTED_RUN_SOURCE_SCHEMA",
+    ],
+    [
+      "extra column",
+      "ALTER TABLE pipeline_runs ADD COLUMN unknown TEXT",
+      "UNSUPPORTED_RUN_SOURCE_SCHEMA",
+    ],
+    [
+      "view",
+      "ALTER TABLE pipeline_runs RENAME TO retained_runs; CREATE VIEW pipeline_runs AS SELECT * FROM retained_runs",
+      "UNSUPPORTED_RUN_SOURCE_SCHEMA",
+    ],
+    ["missing table", "DROP TABLE pipeline_runs", "UNSUPPORTED_RUN_SOURCE_SCHEMA"],
+  ])("rejects unsupported run schema: %s", async (_label, sql, error) => {
+    const f = await fixture((db) => db.exec(sql));
+    await expect(collect(f.runs())).rejects.toThrow(error);
+  });
+
+  it.each(["COLLATE NOCASE", "DESC"])(
+    "rejects a noncanonical run primary-key ordering %s",
+    async (ordering) => {
+      const f = await fixture((db) => {
+        db.exec(`DROP TABLE pipeline_runs; CREATE TABLE pipeline_runs(
+        run_id TEXT PRIMARY KEY ${ordering},pipeline_app TEXT NOT NULL,
+        pipeline_version TEXT NOT NULL,period TEXT NOT NULL,ontology_version TEXT NOT NULL,
+        codebook_version TEXT NOT NULL,started_at TEXT NOT NULL,finished_at TEXT,
+        status TEXT NOT NULL,publication_status TEXT,published_at TEXT,
+        supersedes_run_id TEXT,factory_run_id TEXT,bundle_hash TEXT)`);
+      });
+      await expect(collect(f.runs())).rejects.toThrow("UNSUPPORTED_RUN_SOURCE_INDEX");
+    },
+  );
+
+  it.each([
+    [
+      "null run id",
+      "INSERT INTO pipeline_runs VALUES (NULL,'a','b','c','d','e','f',NULL,'g',NULL,NULL,NULL,NULL,NULL)",
+      "INVALID_OR_OVERSIZED_RUN_SOURCE_ROW",
+    ],
+    ["binary text", "UPDATE pipeline_runs SET status=X'80'", "INVALID_OR_OVERSIZED_RUN_SOURCE_ROW"],
+    ["invalid UTF-8", "UPDATE pipeline_runs SET period=CAST(X'80' AS TEXT)", "encoded data"],
+    [
+      "oversized text",
+      "UPDATE pipeline_runs SET bundle_hash=CAST(zeroblob(8388609) AS TEXT)",
+      "INVALID_OR_OVERSIZED_RUN_SOURCE_ROW",
+    ],
+    ["blank run id", "UPDATE pipeline_runs SET run_id=' '", "INVALID_RUN_SOURCE_KEY"],
+    ["control run id", "UPDATE pipeline_runs SET run_id=char(0)||'run'", "INVALID_RUN_SOURCE_KEY"],
+  ])("rejects invalid run data: %s", async (_label, sql, error) => {
+    const f = await fixture((db) => db.exec(sql));
+    await expect(collect(f.runs())).rejects.toThrow(error);
+  });
+
+  it("requires a process-prepared snapshot, not cloned metadata or an original", async () => {
+    const f = await fixture();
+    expect(() => streamPreparedPipelineRuns({ ...f.prepared }, f.snapshot.uri)).toThrow(
+      "PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED",
+    );
+    const original = f.prepared.manifest.artifacts.find(
+      (a) => a.representation === "original" && a.uri.endsWith("observatory.db"),
+    )!;
+    expect(() => streamPreparedPipelineRuns(f.prepared, original.uri)).toThrow(
+      "DECLARED_OBSERVATION_SNAPSHOT_REQUIRED",
+    );
+  });
+
+  it.each(["before", "exhaustion", "return"])(
+    "detects run snapshot changes on %s",
+    async (when) => {
+      const f = await fixture();
+      const rows = f.runs();
+      if (when !== "before") expect((await rows.next()).done).toBe(false);
+      await fs.appendFile(f.file, "changed");
+      await expect(when === "return" ? rows.return(undefined) : rows.next()).rejects.toThrow(
+        "OBSERVATION_SNAPSHOT_CHANGED",
+      );
+    },
+  );
+
+  async function materialize(f: Awaited<ReturnType<typeof fixture>>, label: string) {
+    const targetPath = path.join(f.root, label, "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    return materializeObservationBaseline({
+      prepared: f.prepared,
+      scopeInventory: await scope(f),
+      snapshotUri: f.snapshot.uri,
+      targetPath,
+      assetIdNamespace: "canonical",
+      methodology: await f.methodology(),
+    });
+  }
+
+  it("rejects an observation whose retained run is absent", async () => {
+    const f = await fixture((db) => db.exec("DELETE FROM pipeline_runs"));
+    await expect(materialize(f, "missing-run")).rejects.toThrow("UNRESOLVED_OBSERVATION_RUN");
+  });
+
+  it.each([
+    ["period", "period='2026-q3'", "BASELINE_OBSERVATION_RUN_PERIOD_MISMATCH"],
+    [
+      "ontology version",
+      "ontology_version='other-ontology'",
+      "BASELINE_OBSERVATION_RUN_ONTOLOGY_MISMATCH",
+    ],
+    [
+      "factory run",
+      "factory_run_id='other-factory-run'",
+      "BASELINE_OBSERVATION_RUN_FACTORY_MISMATCH",
+    ],
+    ["codebook version", "codebook_version='9.9.9'", "BASELINE_RUN_CODEBOOK_VERSION_MISMATCH"],
+  ])("rejects a run join mismatch on %s", async (_label, set, error) => {
+    const f = await fixture((db) => db.exec(`UPDATE pipeline_runs SET ${set}`));
+    await expect(materialize(f, `join-${_label.replaceAll(" ", "-")}`)).rejects.toThrow(error);
+  });
+
+  it("rejects a null factory run join instead of matching loosely", async () => {
+    const f = await fixture((db) => db.exec("UPDATE pipeline_runs SET factory_run_id=NULL"));
+    await expect(materialize(f, "null-factory-run")).rejects.toThrow(
+      "BASELINE_OBSERVATION_RUN_FACTORY_MISMATCH",
     );
   });
 });

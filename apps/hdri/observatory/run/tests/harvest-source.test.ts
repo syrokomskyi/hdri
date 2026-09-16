@@ -141,6 +141,7 @@ async function closureFixture(
     cohort?: boolean;
     evidenceRef?: string;
     observationPatch?: Partial<Observation>;
+    runEdit?: (db: Database.Database) => void;
   }> = {},
 ) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "hdri-baseline-closure-"));
@@ -187,14 +188,16 @@ dimensions:
       (1,'destatis_group','01','Group 01','retained-classifier',1779113200);
   `);
   if (options.cohort)
-    core.prepare("INSERT INTO site_cohorts VALUES (?,?,?,?,?,?)").run(
-      "retained-cohort",
-      "Must not disappear",
-      "retained-owner",
-      "retained-codebook",
-      "retained-seed",
-      1779113300,
-    );
+    core
+      .prepare("INSERT INTO site_cohorts VALUES (?,?,?,?,?,?)")
+      .run(
+        "retained-cohort",
+        "Must not disappear",
+        "retained-owner",
+        "retained-codebook",
+        "retained-seed",
+        1779113300,
+      );
   const coreTables = (
     core
       .prepare(
@@ -206,19 +209,39 @@ dimensions:
 
   const observatory = new Database(path.join(source, "observatory.db"));
   migrateObservatory(observatory);
-  observatory.prepare("INSERT INTO asset_id_map VALUES (?,?,?,?)").run(
-    "da-retained-site",
-    canonicalId,
-    "retained.example",
-    "2026-05-03T11:00:00Z",
-  );
-  if (options.extraIdentity)
-    observatory.prepare("INSERT INTO asset_id_map VALUES (?,?,?,?)").run(
-      "da-extra-site",
-      "0198f000-0000-7000-8000-000000000099",
-      "extra.example",
-      "2026-05-03T11:00:00Z",
+  // The retained Q2 schema has no codebook_id column; the current schema adds it.
+  observatory.exec("ALTER TABLE pipeline_runs DROP COLUMN codebook_id");
+  observatory
+    .prepare("INSERT INTO pipeline_runs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+    .run(
+      "retained-run",
+      "observatory",
+      "1.0.0",
+      "2026-q2",
+      "ontology-1",
+      "1.0.0",
+      "2026-05-03T10:00:00Z",
+      "2026-05-03T12:00:00Z",
+      "finished",
+      "published",
+      "2026-05-04T00:00:00Z",
+      null,
+      "factory-run",
+      "bundle-hash-1",
     );
+  options.runEdit?.(observatory);
+  observatory
+    .prepare("INSERT INTO asset_id_map VALUES (?,?,?,?)")
+    .run("da-retained-site", canonicalId, "retained.example", "2026-05-03T11:00:00Z");
+  if (options.extraIdentity)
+    observatory
+      .prepare("INSERT INTO asset_id_map VALUES (?,?,?,?)")
+      .run(
+        "da-extra-site",
+        "0198f000-0000-7000-8000-000000000099",
+        "extra.example",
+        "2026-05-03T11:00:00Z",
+      );
   const retainedObservation: Observation = {
     observation_id: "0198f000-0000-7000-8000-000000000001",
     asset_id: canonicalId,
@@ -340,12 +363,12 @@ dimensions:
         scope: { status: "unavailable", reason: "Fixture historical authority unavailable" },
         tables: observatoryTables.map((name) => ({
           name,
-          disposition:
-            name === "observations" || name === "asset_id_map" ? "required" : "retained-only",
-          reason:
-            name === "observations" || name === "asset_id_map"
-              ? null
-              : "Outside joined materialization",
+          disposition: ["observations", "asset_id_map", "pipeline_runs"].includes(name)
+            ? "required"
+            : "retained-only",
+          reason: ["observations", "asset_id_map", "pipeline_runs"].includes(name)
+            ? null
+            : "Outside joined materialization",
         })),
       },
     ],
@@ -671,8 +694,13 @@ describe("complete prepared baseline source declarations", () => {
         ontologyVersions: ["ontology-1"],
         ontologyArtifactValidated: true,
       },
+      runProvenance: {
+        status: "joined-not-authenticated",
+        codebookIdProjection: "retained-column-absent-target-null-compared",
+      },
       comparisons: {
         identities: { status: "equal", sourceRows: 1, targetRows: 1 },
+        pipelineRuns: { status: "equal", sourceRows: 1, targetRows: 1 },
         observations: { status: "equal", sourceRows: 1, targetRows: 1 },
         assetStates: { status: "equal", sourceRows: 1, targetRows: 1 },
         mappings: { status: "equal", sourceRows: 1, targetRows: 1 },
@@ -688,12 +716,27 @@ describe("complete prepared baseline source declarations", () => {
         .prepare(
           `SELECT
           (SELECT COUNT(*) FROM asset_id_map) AS identities,
+          (SELECT COUNT(*) FROM pipeline_runs) AS pipeline_runs,
           (SELECT COUNT(*) FROM observations) AS observations,
           (SELECT COUNT(*) FROM asset_states) AS asset_states,
           (SELECT COUNT(*) FROM asset_hwo_mappings) AS mappings`,
         )
         .get(),
-    ).toEqual({ identities: 1, observations: 1, asset_states: 1, mappings: 1 });
+    ).toEqual({ identities: 1, pipeline_runs: 1, observations: 1, asset_states: 1, mappings: 1 });
+    expect(
+      target
+        .prepare(
+          "SELECT run_id,period,ontology_version,codebook_version,factory_run_id,codebook_id FROM pipeline_runs",
+        )
+        .get(),
+    ).toEqual({
+      run_id: "retained-run",
+      period: "2026-q2",
+      ontology_version: "ontology-1",
+      codebook_version: "1.0.0",
+      factory_run_id: "factory-run",
+      codebook_id: null,
+    });
     expect(target.prepare("SELECT asset_id FROM asset_states").pluck().get()).toBe(f.canonicalId);
   });
 
@@ -702,35 +745,38 @@ describe("complete prepared baseline source declarations", () => {
     ["confidence", { confidence: 2 }, "CONFIDENCE"],
     ["measurement time", { observed_at: "not-a-time" }, "OBSERVED_AT"],
     ["lifecycle", { deprecated_reason: "invalid-active-state" }, "LIFECYCLE"],
-    [
-      "JSON value",
-      { value_bool: null, value_json: "{", value_type: "json" },
-      "JSON",
-    ],
-  ] as const)("rejects retained %s that is not a current Observation", async (label, patch, error) => {
-    const f = await closureFixture({ observationPatch: patch });
-    const targetPath = path.join(f.root, `semantic-${label.replaceAll(" ", "-")}`, "observatory.db");
-    await fs.mkdir(path.dirname(targetPath));
-    await expect(
-      materializeBaselineClosure({
-        prepared: f.prepared,
-        scopeInventory: f.scopeInventory,
-        observatorySnapshotUri: f.observation.uri,
-        harvestSnapshotUri: f.harvest.uri,
-        ontologyArtifactUri: f.ontology.uri,
-        codebookArtifactUri: f.codebook.uri,
-        targetPath,
-        period: "2026-q2",
-        import: {
-          runId: "joined-baseline-fixture",
-          importedAt: "2026-09-16T14:00:00.000Z",
-          implementationFingerprint: "fixture-closure",
-          ontologyVersion: "ontology-1",
-          codebookVersion: "1.0.0",
-        },
-      }),
-    ).rejects.toThrow(`INVALID_CURRENT_OBSERVATION_${error}`);
-  });
+    ["JSON value", { value_bool: null, value_json: "{", value_type: "json" }, "JSON"],
+  ] as const)(
+    "rejects retained %s that is not a current Observation",
+    async (label, patch, error) => {
+      const f = await closureFixture({ observationPatch: patch });
+      const targetPath = path.join(
+        f.root,
+        `semantic-${label.replaceAll(" ", "-")}`,
+        "observatory.db",
+      );
+      await fs.mkdir(path.dirname(targetPath));
+      await expect(
+        materializeBaselineClosure({
+          prepared: f.prepared,
+          scopeInventory: f.scopeInventory,
+          observatorySnapshotUri: f.observation.uri,
+          harvestSnapshotUri: f.harvest.uri,
+          ontologyArtifactUri: f.ontology.uri,
+          codebookArtifactUri: f.codebook.uri,
+          targetPath,
+          period: "2026-q2",
+          import: {
+            runId: "joined-baseline-fixture",
+            importedAt: "2026-09-16T14:00:00.000Z",
+            implementationFingerprint: "fixture-closure",
+            ontologyVersion: "ontology-1",
+            codebookVersion: "1.0.0",
+          },
+        }),
+      ).rejects.toThrow(`INVALID_CURRENT_OBSERVATION_${error}`);
+    },
+  );
 
   it("rejects an import ontology label that differs from every retained row", async () => {
     const f = await closureFixture();
@@ -882,6 +928,102 @@ describe("complete prepared baseline source declarations", () => {
         },
       }),
     ).rejects.toThrow("UNRESOLVED_BASELINE_EVIDENCE_REFERENCE");
+  });
+
+  const closureImport = (f: Awaited<ReturnType<typeof closureFixture>>, label: string) =>
+    materializeBaselineClosure({
+      prepared: f.prepared,
+      scopeInventory: f.scopeInventory,
+      observatorySnapshotUri: f.observation.uri,
+      harvestSnapshotUri: f.harvest.uri,
+      ontologyArtifactUri: f.ontology.uri,
+      codebookArtifactUri: f.codebook.uri,
+      targetPath: path.join(f.root, label, "observatory.db"),
+      period: "2026-q2",
+      import: {
+        runId: "joined-baseline-fixture",
+        importedAt: "2026-09-16T14:00:00.000Z",
+        implementationFingerprint: "fixture-closure",
+        ontologyVersion: "ontology-1",
+        codebookVersion: "1.0.0",
+      },
+    });
+
+  it("rejects an observation whose retained run is absent", async () => {
+    const f = await closureFixture({ runEdit: (db) => db.exec("DELETE FROM pipeline_runs") });
+    const targetPath = path.join(f.root, "missing-run", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(closureImport(f, "missing-run")).rejects.toThrow("UNRESOLVED_OBSERVATION_RUN");
+  });
+
+  it.each([
+    ["period", "period='2026-q3'", "BASELINE_OBSERVATION_RUN_PERIOD_MISMATCH"],
+    [
+      "ontology version",
+      "ontology_version='other-ontology'",
+      "BASELINE_OBSERVATION_RUN_ONTOLOGY_MISMATCH",
+    ],
+    [
+      "factory run",
+      "factory_run_id='other-factory-run'",
+      "BASELINE_OBSERVATION_RUN_FACTORY_MISMATCH",
+    ],
+    ["codebook version", "codebook_version='9.9.9'", "BASELINE_RUN_CODEBOOK_VERSION_MISMATCH"],
+  ])("rejects a retained run join mismatch on %s", async (_label, set, error) => {
+    const f = await closureFixture({
+      runEdit: (db) => db.exec(`UPDATE pipeline_runs SET ${set}`),
+    });
+    const targetPath = path.join(f.root, `run-${_label.replaceAll(" ", "-")}`, "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(closureImport(f, `run-${_label.replaceAll(" ", "-")}`)).rejects.toThrow(error);
+  });
+
+  it("materializes unreferenced retained runs and compares the complete run domain", async () => {
+    const f = await closureFixture({
+      runEdit: (db) =>
+        db
+          .prepare("INSERT INTO pipeline_runs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+          .run(
+            "earlier-run",
+            "observatory",
+            "0.9.0",
+            "2026-q1",
+            "ontology-0",
+            "0.9.0",
+            "2026-02-01T10:00:00Z",
+            "2026-02-01T12:00:00Z",
+            "finished",
+            "superseded",
+            null,
+            null,
+            null,
+            null,
+          ),
+    });
+    const targetPath = path.join(f.root, "unreferenced-run", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    const report = await closureImport(f, "unreferenced-run");
+    expect(report.comparisons.pipelineRuns).toMatchObject({
+      status: "equal",
+      sourceRows: 2,
+      targetRows: 2,
+    });
+    const target = new Database(targetPath, { readonly: true, fileMustExist: true });
+    handles.push(target);
+    expect(
+      target.prepare("SELECT run_id FROM pipeline_runs ORDER BY run_id").pluck().all(),
+    ).toEqual(["earlier-run", "retained-run"]);
+  });
+
+  it("rejects a retained run schema with the current-only codebook_id column", async () => {
+    const f = await closureFixture({
+      runEdit: (db) => db.exec("ALTER TABLE pipeline_runs ADD COLUMN codebook_id TEXT"),
+    });
+    const targetPath = path.join(f.root, "current-run-schema", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(closureImport(f, "current-run-schema")).rejects.toThrow(
+      "UNSUPPORTED_RUN_SOURCE_SCHEMA",
+    );
   });
 
   it.each([
