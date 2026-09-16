@@ -136,7 +136,7 @@ async function fixture(
   };
 }
 async function closureFixture(
-  options: Readonly<{ extraIdentity?: boolean; cohort?: boolean }> = {},
+  options: Readonly<{ extraIdentity?: boolean; cohort?: boolean; evidenceRef?: string }> = {},
 ) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "hdri-baseline-closure-"));
   roots.push(root);
@@ -202,7 +202,7 @@ async function closureFixture(
     ruleset_version: "1",
     source_hash: null,
     crawl_hash: "2026-q2-de",
-    evidence_ref: null,
+    evidence_ref: options.evidenceRef ?? null,
     confidence: 0.75,
     status: "active",
     superseded_by: null,
@@ -603,6 +603,7 @@ describe("complete prepared baseline source declarations", () => {
         mappings: { status: "equal", sourceRows: 1, targetRows: 1 },
         cohorts: { status: "empty", sourceRows: 0, targetRows: 0 },
         strata: { status: "empty", sourceRows: 0, targetRows: 0 },
+        evidenceReferences: { status: "empty", sourceRows: 0, targetRows: 0 },
       },
     });
     const target = new Database(targetPath, { readonly: true, fileMustExist: true });
@@ -665,6 +666,29 @@ describe("complete prepared baseline source declarations", () => {
         },
       }),
     ).rejects.toThrow("UNMATERIALIZED_BASELINE_SELECTION_DOMAIN");
+  });
+
+  it("rejects a retained evidence reference without resolved CAS closure", async () => {
+    const f = await closureFixture({ evidenceRef: "cas/retained-object" });
+    const targetPath = path.join(f.root, "evidence-target", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(
+      materializeBaselineClosure({
+        prepared: f.prepared,
+        scopeInventory: f.scopeInventory,
+        observatorySnapshotUri: f.observation.uri,
+        harvestSnapshotUri: f.harvest.uri,
+        targetPath,
+        period: "2026-q2",
+        import: {
+          runId: "joined-baseline-fixture",
+          importedAt: "2026-09-16T14:00:00.000Z",
+          implementationFingerprint: "fixture-closure",
+          ontologyVersion: "fixture-ontology",
+          codebookVersion: "fixture-codebook",
+        },
+      }),
+    ).rejects.toThrow("UNRESOLVED_BASELINE_EVIDENCE_REFERENCE");
   });
 
   it.each([

@@ -2,7 +2,7 @@
 <MODULE_CONTRACT>
 <purpose>Materialize retained Observatory identity/observations and Harvest AssetState/HWO domains into one fresh current-schema database and compare the complete joined projection.</purpose>
 <non-goals>
-  <item>Does not authenticate historical provenance, evidence/CAS closure or implementation dependencies.</item>
+  <item>Does not authenticate historical provenance, nonempty evidence/CAS closure or implementation dependencies.</item>
   <item>Does not issue baseline admission or make the blocked import CLI operational.</item>
 </non-goals>
 <!-- risk: crypto, fs-write -->
@@ -37,7 +37,10 @@ import {
 import { compareBaselineRecords, type BaselineDomainComparison } from "./baseline-comparison.js";
 import { streamPreparedAssetStates } from "./asset-state-source.js";
 import { streamPreparedCohorts, streamPreparedStrata } from "./cohort-source.js";
-import { streamPreparedObservationIdentityMap } from "./observation-source.js";
+import {
+  streamPreparedObservationIdentityMap,
+  streamPreparedObservations,
+} from "./observation-source.js";
 import type { BaselineScopeInventory, BaselineSourceClaim } from "./baseline-scope.js";
 import type { PreparedBaselineSource } from "./preserve.js";
 
@@ -59,6 +62,7 @@ export type BaselineClosureMaterializationReport = Readonly<{
     mappings: BaselineDomainComparison;
     cohorts: BaselineDomainComparison;
     strata: BaselineDomainComparison;
+    evidenceReferences: BaselineDomainComparison;
   }>;
 }>;
 
@@ -101,6 +105,17 @@ async function* retainedStrataRecords(
       key: String(++index).padStart(20, "0"),
       values: STRATA_FIELDS.map((field) => row.columns[field]),
     };
+}
+
+async function* retainedEvidenceReferenceRecords(
+  prepared: PreparedBaselineSource,
+  snapshotUri: string,
+) {
+  for await (const row of streamPreparedObservations(prepared, snapshotUri)) {
+    const evidenceRef = row.columns.evidence_ref;
+    if (evidenceRef !== null)
+      yield { key: row.columns.id as string, values: [evidenceRef] };
+  }
 }
 
 function harvestSource(options: Readonly<{
@@ -286,6 +301,7 @@ export async function materializeBaselineClosure(options: Readonly<{
   let mappings: BaselineDomainComparison;
   let cohorts: BaselineDomainComparison;
   let strata: BaselineDomainComparison;
+  let evidenceReferences: BaselineDomainComparison;
   try {
     identities = await compareBaselineRecords({
       domain: "asset_id_map",
@@ -323,6 +339,15 @@ export async function materializeBaselineClosure(options: Readonly<{
       source: retainedStrataRecords(options.prepared, options.harvestSnapshotUri),
       target: [],
     });
+    evidenceReferences = await compareBaselineRecords({
+      domain: "observation_evidence_refs_retained_empty",
+      fields: ["evidence_ref"],
+      source: retainedEvidenceReferenceRecords(
+        options.prepared,
+        options.observatorySnapshotUri,
+      ),
+      target: [],
+    });
   } finally {
     target.close();
   }
@@ -335,6 +360,8 @@ export async function materializeBaselineClosure(options: Readonly<{
     throw new Error("BASELINE_CLOSURE_COMPARISON_FAILED");
   if (cohorts.status !== "empty" || strata.status !== "empty")
     throw new Error("UNMATERIALIZED_BASELINE_SELECTION_DOMAIN");
+  if (evidenceReferences.status !== "empty")
+    throw new Error("UNRESOLVED_BASELINE_EVIDENCE_REFERENCE");
   if (assetStates.sourceRows !== canonicalByDomain.size)
     throw new Error("BASELINE_IDENTITY_ASSET_DOMAIN_MISMATCH");
   const targetEvidence = await inspectRetainedFile(options.targetPath);
@@ -363,6 +390,7 @@ export async function materializeBaselineClosure(options: Readonly<{
       mappings: Object.freeze(mappings),
       cohorts: Object.freeze(cohorts),
       strata: Object.freeze(strata),
+      evidenceReferences: Object.freeze(evidenceReferences),
     }),
   });
 }
