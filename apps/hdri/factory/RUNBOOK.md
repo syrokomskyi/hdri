@@ -580,7 +580,7 @@ All factory and observatory entry points use `VerifiedAdmissionInput` from `@syr
 
 `preserve:q2` retains exact original files and separate SQLite snapshots in three or more fresh signed destination closures. `preserve:verify` always reads the full file set with an external manifest digest and trusted key. Destination labels are not physical custody evidence; operational A1 is not complete. Formats, key provisioning and fresh-root constraints are in the [observatory runbook](../observatory/RUNBOOK.md#q2-preservation-boundary).
 
-`baseline:import` is blocked before I/O with `BASELINE_CONVERSION_UNVERIFIED`. Its internal converter still collapses local identity scope and compares counts rather than values. Do not call those helpers on real data or admit their receipts. Complete the A1 corrective plan before wiring operational admission.
+`baseline:import` is blocked before I/O with `BASELINE_CONVERSION_UNVERIFIED`. Its internal converter still requires a source-scoped identity map and is not an authenticated current-format conversion path, but it now verifies inventory bytes and compares converted SQLite values. Do not call those helpers on real data or admit their receipts. Complete the A1 corrective plan before wiring operational admission.
 
 ### Append-only quarter ledger (A3)
 
