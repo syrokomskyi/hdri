@@ -135,7 +135,9 @@ async function fixture(
     strata: () => streamPreparedStrata(prepared, snapshot.uri),
   };
 }
-async function closureFixture(extraIdentity = false) {
+async function closureFixture(
+  options: Readonly<{ extraIdentity?: boolean; cohort?: boolean }> = {},
+) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "hdri-baseline-closure-"));
   roots.push(root);
   const source = path.join(root, "source");
@@ -150,6 +152,15 @@ async function closureFixture(extraIdentity = false) {
     INSERT INTO site_hwo_mappings VALUES
       (1,'destatis_group','01','Group 01','retained-classifier',1779113200);
   `);
+  if (options.cohort)
+    core.prepare("INSERT INTO site_cohorts VALUES (?,?,?,?,?,?)").run(
+      "retained-cohort",
+      "Must not disappear",
+      "retained-owner",
+      "retained-codebook",
+      "retained-seed",
+      1779113300,
+    );
   const coreTables = (
     core
       .prepare(
@@ -167,7 +178,7 @@ async function closureFixture(extraIdentity = false) {
     "retained.example",
     "2026-05-03T11:00:00Z",
   );
-  if (extraIdentity)
+  if (options.extraIdentity)
     observatory.prepare("INSERT INTO asset_id_map VALUES (?,?,?,?)").run(
       "da-extra-site",
       "0198f000-0000-7000-8000-000000000099",
@@ -590,6 +601,8 @@ describe("complete prepared baseline source declarations", () => {
         observations: { status: "equal", sourceRows: 1, targetRows: 1 },
         assetStates: { status: "equal", sourceRows: 1, targetRows: 1 },
         mappings: { status: "equal", sourceRows: 1, targetRows: 1 },
+        cohorts: { status: "empty", sourceRows: 0, targetRows: 0 },
+        strata: { status: "empty", sourceRows: 0, targetRows: 0 },
       },
     });
     const target = new Database(targetPath, { readonly: true, fileMustExist: true });
@@ -609,7 +622,7 @@ describe("complete prepared baseline source declarations", () => {
   });
 
   it("rejects an identity domain absent from the complete harvest domain", async () => {
-    const f = await closureFixture(true);
+    const f = await closureFixture({ extraIdentity: true });
     const targetPath = path.join(f.root, "mismatched-target", "observatory.db");
     await fs.mkdir(path.dirname(targetPath));
     await expect(
@@ -629,6 +642,29 @@ describe("complete prepared baseline source declarations", () => {
         },
       }),
     ).rejects.toThrow("BASELINE_IDENTITY_ASSET_DOMAIN_MISMATCH");
+  });
+
+  it("rejects retained cohort content until it has a current target projection", async () => {
+    const f = await closureFixture({ cohort: true });
+    const targetPath = path.join(f.root, "cohort-target", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(
+      materializeBaselineClosure({
+        prepared: f.prepared,
+        scopeInventory: f.scopeInventory,
+        observatorySnapshotUri: f.observation.uri,
+        harvestSnapshotUri: f.harvest.uri,
+        targetPath,
+        period: "2026-q2",
+        import: {
+          runId: "joined-baseline-fixture",
+          importedAt: "2026-09-16T14:00:00.000Z",
+          implementationFingerprint: "fixture-closure",
+          ontologyVersion: "fixture-ontology",
+          codebookVersion: "fixture-codebook",
+        },
+      }),
+    ).rejects.toThrow("UNMATERIALIZED_BASELINE_SELECTION_DOMAIN");
   });
 
   it.each([

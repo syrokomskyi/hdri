@@ -36,6 +36,7 @@ import {
 } from "./asset-state-materialization.js";
 import { compareBaselineRecords, type BaselineDomainComparison } from "./baseline-comparison.js";
 import { streamPreparedAssetStates } from "./asset-state-source.js";
+import { streamPreparedCohorts, streamPreparedStrata } from "./cohort-source.js";
 import { streamPreparedObservationIdentityMap } from "./observation-source.js";
 import type { BaselineScopeInventory, BaselineSourceClaim } from "./baseline-scope.js";
 import type { PreparedBaselineSource } from "./preserve.js";
@@ -56,8 +57,51 @@ export type BaselineClosureMaterializationReport = Readonly<{
     observations: BaselineDomainComparison;
     assetStates: BaselineDomainComparison;
     mappings: BaselineDomainComparison;
+    cohorts: BaselineDomainComparison;
+    strata: BaselineDomainComparison;
   }>;
 }>;
+
+const COHORT_FIELDS = [
+  "description",
+  "owner_app",
+  "codebook_version",
+  "random_seed",
+  "created_at",
+] as const;
+const STRATA_FIELDS = [
+  "cohort_id",
+  "site_id",
+  "strata_system",
+  "strata_code",
+  "bundesland",
+  "settlement_type",
+  "gemeinde",
+] as const;
+
+async function* retainedCohortRecords(
+  prepared: PreparedBaselineSource,
+  snapshotUri: string,
+) {
+  let index = 0;
+  for await (const row of streamPreparedCohorts(prepared, snapshotUri))
+    yield {
+      key: String(++index).padStart(20, "0"),
+      values: COHORT_FIELDS.map((field) => row.columns[field]),
+    };
+}
+
+async function* retainedStrataRecords(
+  prepared: PreparedBaselineSource,
+  snapshotUri: string,
+) {
+  let index = 0;
+  for await (const row of streamPreparedStrata(prepared, snapshotUri))
+    yield {
+      key: String(++index).padStart(20, "0"),
+      values: STRATA_FIELDS.map((field) => row.columns[field]),
+    };
+}
 
 function harvestSource(options: Readonly<{
   prepared: PreparedBaselineSource;
@@ -240,6 +284,8 @@ export async function materializeBaselineClosure(options: Readonly<{
   let observations: BaselineDomainComparison;
   let assetStates: BaselineDomainComparison;
   let mappings: BaselineDomainComparison;
+  let cohorts: BaselineDomainComparison;
+  let strata: BaselineDomainComparison;
   try {
     identities = await compareBaselineRecords({
       domain: "asset_id_map",
@@ -265,6 +311,18 @@ export async function materializeBaselineClosure(options: Readonly<{
       source: sourceAssetMappingRecords(sourceOptions),
       target: targetAssetMappingRecords(target),
     });
+    cohorts = await compareBaselineRecords({
+      domain: "site_cohorts_retained_empty",
+      fields: COHORT_FIELDS,
+      source: retainedCohortRecords(options.prepared, options.harvestSnapshotUri),
+      target: [],
+    });
+    strata = await compareBaselineRecords({
+      domain: "site_strata_retained_empty",
+      fields: STRATA_FIELDS,
+      source: retainedStrataRecords(options.prepared, options.harvestSnapshotUri),
+      target: [],
+    });
   } finally {
     target.close();
   }
@@ -275,6 +333,8 @@ export async function materializeBaselineClosure(options: Readonly<{
     mappings.status === "different"
   )
     throw new Error("BASELINE_CLOSURE_COMPARISON_FAILED");
+  if (cohorts.status !== "empty" || strata.status !== "empty")
+    throw new Error("UNMATERIALIZED_BASELINE_SELECTION_DOMAIN");
   if (assetStates.sourceRows !== canonicalByDomain.size)
     throw new Error("BASELINE_IDENTITY_ASSET_DOMAIN_MISMATCH");
   const targetEvidence = await inspectRetainedFile(options.targetPath);
@@ -301,6 +361,8 @@ export async function materializeBaselineClosure(options: Readonly<{
       observations: Object.freeze(observations),
       assetStates: Object.freeze(assetStates),
       mappings: Object.freeze(mappings),
+      cohorts: Object.freeze(cohorts),
+      strata: Object.freeze(strata),
     }),
   });
 }
