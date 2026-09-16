@@ -130,6 +130,7 @@ async function main(): Promise<void> {
       admissionInputPath: argValue("--admission-input"),
       evidenceRoot: argValue("--admission-evidence-root"),
       trustedKeysPath: argValue("--admission-trusted-keys"),
+      trustedKeysSha256: process.env.HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256,
       requiredEvidenceClass: "operational",
       expected: {
         period: argValue("--period") ?? "",

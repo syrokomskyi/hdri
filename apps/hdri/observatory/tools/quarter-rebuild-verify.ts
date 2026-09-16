@@ -81,6 +81,7 @@ const gate = evaluateProgramGate(
     admissionInputPath,
     evidenceRoot: admissionEvidenceRoot,
     trustedKeysPath: admissionTrustedKeysPath,
+    trustedKeysSha256: process.env.HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256,
     requiredEvidenceClass: "operational",
     expected: { period: periodArg, capsuleId: capsuleIdArg, operation: "publish" },
   }),

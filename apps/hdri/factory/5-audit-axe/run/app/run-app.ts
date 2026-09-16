@@ -52,6 +52,7 @@ export const runApp = async (options: PipelineRunOptions = {}): Promise<void> =>
       admissionInputPath: options.admissionInputPath,
       evidenceRoot: options.admissionEvidenceRoot,
       trustedKeysPath: options.admissionTrustedKeysPath,
+      trustedKeysSha256: options.admissionTrustedKeysSha256,
       requiredEvidenceClass: "operational",
       expected: {
         period: periodFromSourceToken(brief.sourceToken),
