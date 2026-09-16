@@ -1,12 +1,13 @@
 /*
 <MODULE_CONTRACT>
 <purpose>Stream exact retained business seeds and site records from a verified private snapshot.</purpose>
-<non-goals><item>Does not export mapping or cohort tables, reinterpret classifications, infer canonical identities or authorize inheritance.</item></non-goals>
+<non-goals><item>Does not export cohort tables, reinterpret classifications, infer canonical identities or authorize inheritance.</item></non-goals>
 <!-- risk: vault -->
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
 <item>Add bounded lossless seed reading for the preserved baseline conversion boundary.</item>
 <item>Read every retained site, including unreferenced sites and original classification fields.</item>
+<item>Preserve every retained HWO mapping with composite identity and checked site references.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: Rows are provisional until full exhaustion and final snapshot verification; never read original databases.
@@ -56,6 +57,28 @@ const SITE_COLUMNS = [
   ["gemeinde", "TEXT", 0, 0],
   ["created_at", "INTEGER", 0, 0],
 ] as const;
+const MAPPING_COLUMNS = [
+  ["site_id", "INTEGER", 1, 1],
+  ["mapping_system", "TEXT", 1, 2],
+  ["target_code", "TEXT", 1, 0],
+  ["target_label", "TEXT", 0, 0],
+  ["source", "TEXT", 1, 0],
+  ["created_at", "INTEGER", 0, 0],
+] as const;
+type MappingColumn = (typeof MAPPING_COLUMNS)[number][0];
+export type RetainedHarvestMapping = Readonly<{
+  columns: Readonly<Record<MappingColumn, string | bigint | null>>;
+  source: Readonly<{
+    manifestSha256: string;
+    artifact: SnapshotArtifact;
+    mappingLocator: Readonly<{
+      table: "site_hwo_mappings";
+      site_id: string;
+      mapping_system: string;
+    }>;
+    siteLocator: Readonly<{ table: "sites"; id: string }>;
+  }>;
+}>;
 type SiteColumn = (typeof SITE_COLUMNS)[number][0];
 export type RetainedHarvestSite = Readonly<{
   columns: Readonly<Record<SiteColumn, string | bigint | number | null>>;
@@ -228,6 +251,125 @@ export function streamPreparedHarvestSeeds(
           artifact,
           seedLocator: Object.freeze({ table: "site_source_seeds" as const, id: String(id) }),
           siteLocator: Object.freeze({ table: "sites" as const, id: String(columns.site_id) }),
+        }),
+      });
+    }
+  });
+}
+
+/** Preserve every mapping system, not just today's Destatis interpretation.
+ * Referenced sites must exist; their field values require the separate full site scan.
+ * Missing mappings are not synthesized. Full exhaustion and independent reconciliation
+ * remain required before any candidate generation can be admitted.
+ */
+export function streamPreparedHarvestMappings(
+  prepared: PreparedBaselineSource,
+  snapshotUri: string,
+): AsyncGenerator<RetainedHarvestMapping> {
+  return streamPreparedSnapshot(prepared, snapshotUri, "HARVEST", function* (db, artifact) {
+    checkSchema(db, true);
+    const table = db
+      .prepare(
+        `SELECT count(*) FROM pragma_table_list WHERE schema='main'
+      AND name='site_hwo_mappings' AND type='table' AND ncol=6 AND wr=0`,
+      )
+      .pluck()
+      .get();
+    if (table !== 1) throw new Error("UNSUPPORTED_HARVEST_MAPPING_SCHEMA");
+    for (const [name, type, required, pk] of MAPPING_COLUMNS) {
+      if (
+        db
+          .prepare(
+            `SELECT count(*) FROM pragma_table_xinfo('site_hwo_mappings')
+        WHERE name=? AND type=? AND "notnull"=? AND pk=? AND hidden=0`,
+          )
+          .pluck()
+          .get(name, type, required, pk) !== 1
+      )
+        throw new Error("UNSUPPORTED_HARVEST_MAPPING_SCHEMA");
+    }
+    // Authored index name and shape: bounded ordered iteration, no retained SQL execution.
+    const index = "sqlite_autoindex_site_hwo_mappings_1";
+    if (
+      db
+        .prepare(
+          `SELECT count(*) FROM pragma_index_list('site_hwo_mappings')
+      WHERE name=? AND origin='pk' AND "unique"=1 AND partial=0`,
+        )
+        .pluck()
+        .get(index) !== 1 ||
+      db.prepare("SELECT count(*) FROM pragma_index_xinfo(?) WHERE key=1").pluck().get(index) !== 2
+    )
+      throw new Error("UNSUPPORTED_HARVEST_MAPPING_INDEX");
+    for (const [seqno, name] of [
+      [0, "site_id"],
+      [1, "mapping_system"],
+    ] as const) {
+      if (
+        db
+          .prepare(
+            `SELECT count(*) FROM pragma_index_xinfo(?) WHERE key=1
+        AND seqno=? AND name=? AND coll='BINARY' AND "desc"=0`,
+          )
+          .pluck()
+          .get(index, seqno, name) !== 1
+      )
+        throw new Error("UNSUPPORTED_HARVEST_MAPPING_INDEX");
+    }
+    const bytes = MAPPING_COLUMNS.map(([name]) => `coalesce(octet_length(m."${name}"),0)`).join(
+      "+",
+    );
+    const types = MAPPING_COLUMNS.map(
+      ([name, type, required]) =>
+        `typeof(m."${name}") IN ('${type === "TEXT" ? "text" : "integer"}'${required ? "" : ",'null'"})`,
+    ).join(" AND ");
+    const guard = `(${bytes})<=${MAX_ROW_BYTES} AND ${types} AND typeof(p.id)='integer'`;
+    const selected = MAPPING_COLUMNS.map(
+      ([name, type]) =>
+        `CASE WHEN ${guard} THEN ${type === "TEXT" ? `CAST(m."${name}" AS BLOB)` : `m."${name}"`} END AS "${name}"`,
+    ).join(",");
+    const statement = db
+      .prepare(
+        `SELECT CASE WHEN ${guard} THEN 1 ELSE 0 END AS admissible,
+      ${selected} FROM site_hwo_mappings AS m INDEXED BY ${index}
+      LEFT JOIN sites AS p ON p.id=m.site_id ORDER BY m.site_id,m.mapping_system COLLATE BINARY`,
+      )
+      .safeIntegers();
+    let count = 0;
+    let previous: { site: bigint; system: Buffer } | undefined;
+    for (const raw of statement.iterate() as Iterable<Record<string, unknown>>) {
+      if (++count > MAX_ROWS) throw new Error("HARVEST_MAPPING_ROW_LIMIT");
+      if (raw.admissible !== 1n) throw new Error("INVALID_OR_OVERSIZED_HARVEST_MAPPING_ROW");
+      const columns = Object.fromEntries(
+        MAPPING_COLUMNS.map(([name, type]) => {
+          const value = raw[name];
+          if (value === null) return [name, null];
+          if (type === "TEXT" && value instanceof Uint8Array) return [name, utf8.decode(value)];
+          if (type === "INTEGER" && typeof value === "bigint") return [name, value];
+          throw new Error("INVALID_HARVEST_MAPPING_CELL");
+        }),
+      ) as Record<MappingColumn, string | bigint | null>;
+      const site = columns.site_id as bigint;
+      const system = columns.mapping_system as string;
+      const key = Buffer.from(system);
+      if (
+        previous &&
+        (site < previous.site ||
+          (site === previous.site && Buffer.compare(previous.system, key) >= 0))
+      )
+        throw new Error("INVALID_HARVEST_MAPPING_ORDER");
+      previous = { site, system: key };
+      yield Object.freeze({
+        columns: Object.freeze(columns),
+        source: Object.freeze({
+          manifestSha256: prepared.manifestSha256,
+          artifact,
+          mappingLocator: Object.freeze({
+            table: "site_hwo_mappings" as const,
+            site_id: String(site),
+            mapping_system: system,
+          }),
+          siteLocator: Object.freeze({ table: "sites" as const, id: String(site) }),
         }),
       });
     }

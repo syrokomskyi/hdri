@@ -14,6 +14,7 @@ import {
 import {
   streamPreparedHarvestSeeds,
   streamPreparedHarvestSites,
+  streamPreparedHarvestMappings,
 } from "../../tools/preservation/harvest-source.js";
 
 const roots: string[] = [];
@@ -78,6 +79,7 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false) {
     file: path.join(prepared.root, snapshot.uri),
     rows: () => streamPreparedHarvestSeeds(prepared, snapshot.uri),
     sites: () => streamPreparedHarvestSites(prepared, snapshot.uri),
+    mappings: () => streamPreparedHarvestMappings(prepared, snapshot.uri),
   };
 }
 async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
@@ -85,6 +87,212 @@ async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
   for await (const row of rows) result.push(row);
   return result;
 }
+
+describe("complete retained mapping records", () => {
+  it("bounds aggregate driver transfer before decoding mapping text", async () => {
+    const f = await fixture((db) =>
+      db.exec(`INSERT INTO site_hwo_mappings VALUES
+      (1,'group','code',CAST(zeroblob(5000000) AS TEXT),CAST(zeroblob(5000000) AS TEXT),NULL)`),
+    );
+    const prepare = Database.prototype.prepare;
+    let seen = false;
+    vi.spyOn(Database.prototype, "prepare").mockImplementation(function (
+      this: Database.Database,
+      sql: string,
+    ) {
+      const statement = prepare.call(this, sql);
+      if (sql.includes("FROM site_hwo_mappings AS m")) {
+        const iterate = statement.iterate.bind(statement);
+        vi.spyOn(statement, "iterate").mockImplementation(function* () {
+          for (const row of Reflect.apply(iterate, statement, []) as Iterable<
+            Record<string, unknown>
+          >) {
+            expect(row).toEqual({
+              admissible: 0n,
+              site_id: null,
+              mapping_system: null,
+              target_code: null,
+              target_label: null,
+              source: null,
+              created_at: null,
+            });
+            seen = true;
+            yield row;
+          }
+        });
+      }
+      return statement;
+    });
+    await expect(collect(f.mappings())).rejects.toThrow("INVALID_OR_OVERSIZED_HARVEST_MAPPING_ROW");
+    expect(seen).toBe(true);
+  });
+  it("streams 10000 mappings and releases the reader after early return", async () => {
+    const f = await fixture((db) => {
+      const insert = db.prepare(
+        "INSERT INTO site_hwo_mappings VALUES(1,?,'code',NULL,'source',NULL)",
+      );
+      db.transaction(() => {
+        for (let n = 0; n < 10000; n++) insert.run(`system-${String(n).padStart(5, "0")}`);
+      })();
+    });
+    let count = 0;
+    for await (const row of f.mappings())
+      expect(row.columns.mapping_system).toBe(`system-${String(count++).padStart(5, "0")}`);
+    expect(count).toBe(10000);
+    const close = vi.spyOn(Database.prototype, "close");
+    const rows = f.mappings();
+    await rows.next();
+    await rows.return(undefined);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+  const insertMapping = (db: Database.Database) =>
+    db.exec(`INSERT INTO site_hwo_mappings
+    VALUES(1,'destatis_group','01',NULL,'retained-source',NULL)`);
+  it("retains all systems and exact composite locators from WAL without reclassification", async () => {
+    const f = await fixture((db) => {
+      insertMapping(db);
+      db.exec("INSERT INTO sites(id,domain) VALUES(9007199254740993,'unseeded.example')");
+      db.prepare("INSERT INTO site_hwo_mappings VALUES(9007199254740993,?,?,?,?,?)").run(
+        "\uFEFFunknown\0system",
+        "001",
+        "café🙂",
+        "old-codebook",
+        -9,
+      );
+      db.exec("INSERT INTO site_hwo_mappings VALUES(1,'Other','unchanged','label','raw',0)");
+    }, true);
+    const before = await inventorySources({ roots: [f.source] });
+    const rows = await collect(f.mappings());
+    expect(rows.map((r) => r.columns)).toEqual([
+      {
+        site_id: 1n,
+        mapping_system: "Other",
+        target_code: "unchanged",
+        target_label: "label",
+        source: "raw",
+        created_at: 0n,
+      },
+      {
+        site_id: 1n,
+        mapping_system: "destatis_group",
+        target_code: "01",
+        target_label: null,
+        source: "retained-source",
+        created_at: null,
+      },
+      {
+        site_id: 9007199254740993n,
+        mapping_system: "\uFEFFunknown\0system",
+        target_code: "001",
+        target_label: "café🙂",
+        source: "old-codebook",
+        created_at: -9n,
+      },
+    ]);
+    expect(rows[2].source).toEqual({
+      manifestSha256: f.prepared.manifestSha256,
+      artifact: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
+      mappingLocator: {
+        table: "site_hwo_mappings",
+        site_id: "9007199254740993",
+        mapping_system: "\uFEFFunknown\0system",
+      },
+      siteLocator: { table: "sites", id: "9007199254740993" },
+    });
+    for (const value of [
+      rows[2],
+      rows[2].columns,
+      rows[2].source,
+      rows[2].source.artifact,
+      rows[2].source.mappingLocator,
+      rows[2].source.siteLocator,
+    ])
+      expect(Object.isFrozen(value)).toBe(true);
+    expect(await inventorySources({ roots: [f.source] })).toEqual(before);
+    expect((await verifyReplicas(f.options)).status).toBe("pass");
+  });
+  it.each([
+    ["orphan", "DELETE FROM sites", "INVALID_OR_OVERSIZED_HARVEST_MAPPING_ROW"],
+    ["missing table", "DROP TABLE site_hwo_mappings", "UNSUPPORTED_HARVEST_MAPPING_SCHEMA"],
+    [
+      "extra column",
+      "ALTER TABLE site_hwo_mappings ADD COLUMN unknown TEXT",
+      "UNSUPPORTED_HARVEST_MAPPING_SCHEMA",
+    ],
+    [
+      "view",
+      "ALTER TABLE site_hwo_mappings RENAME TO retained_map; CREATE VIEW site_hwo_mappings AS SELECT * FROM retained_map",
+      "UNSUPPORTED_HARVEST_MAPPING_SCHEMA",
+    ],
+    [
+      "binary code",
+      "UPDATE site_hwo_mappings SET target_code=X'80'",
+      "INVALID_OR_OVERSIZED_HARVEST_MAPPING_ROW",
+    ],
+    [
+      "invalid UTF8",
+      "UPDATE site_hwo_mappings SET mapping_system=CAST(X'80' AS TEXT)",
+      "encoded data",
+    ],
+    [
+      "fractional timestamp",
+      "UPDATE site_hwo_mappings SET created_at=1.5",
+      "INVALID_OR_OVERSIZED_HARVEST_MAPPING_ROW",
+    ],
+    [
+      "oversized text",
+      "UPDATE site_hwo_mappings SET source=CAST(zeroblob(8388609) AS TEXT)",
+      "INVALID_OR_OVERSIZED_HARVEST_MAPPING_ROW",
+    ],
+  ])("rejects %s rather than dropping a mapping", async (_label, sql, error) => {
+    const f = await fixture((db) => {
+      insertMapping(db);
+      db.exec(sql);
+    });
+    await expect(collect(f.mappings())).rejects.toThrow(error);
+  });
+  it.each(["COLLATE NOCASE", "DESC"])("rejects incompatible primary index %s", async (ordering) => {
+    const f = await fixture((db) => {
+      db.exec(`DROP TABLE site_hwo_mappings; CREATE TABLE site_hwo_mappings(
+        site_id INTEGER NOT NULL,mapping_system TEXT NOT NULL,target_code TEXT NOT NULL,
+        target_label TEXT,source TEXT NOT NULL,created_at INTEGER,
+        PRIMARY KEY(site_id,mapping_system ${ordering}))`);
+    });
+    await expect(collect(f.mappings())).rejects.toThrow("UNSUPPORTED_HARVEST_MAPPING_INDEX");
+  });
+  it("does not synthesize absent mappings or reject blank historical text", async () => {
+    const empty = await fixture();
+    expect(await collect(empty.mappings())).toEqual([]);
+    const f = await fixture((db) => {
+      insertMapping(db);
+      db.exec("UPDATE site_hwo_mappings SET mapping_system='',source='',target_code='' ");
+    });
+    expect((await collect(f.mappings()))[0].columns).toMatchObject({
+      mapping_system: "",
+      source: "",
+      target_code: "",
+    });
+  });
+  it("requires prepared snapshot authority", async () => {
+    const f = await fixture(insertMapping);
+    expect(() => streamPreparedHarvestMappings({ ...f.prepared }, f.snapshot.uri)).toThrow(
+      "PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED",
+    );
+    const original = f.prepared.manifest.artifacts.find((a) => a.representation === "original")!;
+    expect(() => streamPreparedHarvestMappings(f.prepared, original.uri)).toThrow(
+      "DECLARED_HARVEST_SNAPSHOT_REQUIRED",
+    );
+  });
+  it.each(["before", "exhaustion", "return"])("detects snapshot changes on %s", async (when) => {
+    const f = await fixture(insertMapping);
+    const rows = f.mappings();
+    if (when !== "before") expect((await rows.next()).done).toBe(false);
+    await fs.appendFile(f.file, "changed");
+    await expect(when === "return" ? rows.return(undefined) : rows.next()).rejects.toThrow(
+      "HARVEST_SNAPSHOT_CHANGED",
+    );
+  });
+});
 
 describe("complete retained site records", () => {
   it("guards aggregate size before transferring site text to the driver", async () => {
