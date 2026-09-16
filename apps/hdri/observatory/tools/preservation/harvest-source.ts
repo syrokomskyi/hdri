@@ -1,10 +1,13 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Stream exact retained business seeds and their site locators from a verified private snapshot.</purpose>
-<non-goals><item>Does not export site classifications, reinterpret JSON, infer canonical identities or authorize inheritance.</item></non-goals>
+<purpose>Stream exact retained business seeds and site records from a verified private snapshot.</purpose>
+<non-goals><item>Does not export mapping or cohort tables, reinterpret classifications, infer canonical identities or authorize inheritance.</item></non-goals>
 <!-- risk: vault -->
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY><item>Add bounded lossless seed reading for the preserved baseline conversion boundary.</item></CHANGE_SUMMARY>
+<CHANGE_SUMMARY>
+<item>Add bounded lossless seed reading for the preserved baseline conversion boundary.</item>
+<item>Read every retained site, including unreferenced sites and original classification fields.</item>
+</CHANGE_SUMMARY>
 */
 // @ai-invariant: Rows are provisional until full exhaustion and final snapshot verification; never read original databases.
 import type Database from "better-sqlite3";
@@ -43,9 +46,30 @@ export type RetainedHarvestSeed = Readonly<{
 const utf8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 const MAX_ROW_BYTES = 8 * 1024 * 1024;
 const MAX_ROWS = 100_000_000;
+const SITE_COLUMNS = [
+  ["id", "INTEGER", 0, 1],
+  ["domain", "TEXT", 1, 0],
+  ["hwo_uid", "TEXT", 0, 0],
+  ["hwo_confidence", "REAL", 0, 0],
+  ["hwo_provenance", "TEXT", 0, 0],
+  ["bundesland", "TEXT", 0, 0],
+  ["gemeinde", "TEXT", 0, 0],
+  ["created_at", "INTEGER", 0, 0],
+] as const;
+type SiteColumn = (typeof SITE_COLUMNS)[number][0];
+export type RetainedHarvestSite = Readonly<{
+  columns: Readonly<Record<SiteColumn, string | bigint | number | null>>;
+  source: Readonly<{
+    manifestSha256: string;
+    artifact: SnapshotArtifact;
+    siteLocator: Readonly<{ table: "sites"; id: string }>;
+  }>;
+}>;
 
-function checkSchema(db: Database.Database): void {
-  for (const name of ["site_source_seeds", "sites"] as const) {
+function checkSchema(db: Database.Database, completeSites = false): void {
+  for (const name of completeSites
+    ? (["sites"] as const)
+    : (["site_source_seeds", "sites"] as const)) {
     const table = db
       .prepare("SELECT type, ncol, wr FROM pragma_table_list WHERE schema='main' AND name=?")
       .get(name) as { type: string; ncol: number; wr: number } | undefined;
@@ -53,16 +77,19 @@ function checkSchema(db: Database.Database): void {
       !table ||
       table.type !== "table" ||
       table.wr !== 0 ||
-      (name === "site_source_seeds" && table.ncol !== COLUMNS.length)
+      (name === "site_source_seeds" && table.ncol !== COLUMNS.length) ||
+      (completeSites && table.ncol !== SITE_COLUMNS.length)
     )
       throw new Error("UNSUPPORTED_HARVEST_SOURCE_SCHEMA");
     const expected =
       name === "site_source_seeds"
         ? COLUMNS
-        : ([
-            ["id", "INTEGER", 0, 1],
-            ["domain", "TEXT", 1, 0],
-          ] as const);
+        : completeSites
+          ? SITE_COLUMNS
+          : ([
+              ["id", "INTEGER", 0, 1],
+              ["domain", "TEXT", 1, 0],
+            ] as const);
     for (const [column, type, required, pk] of expected) {
       const valid = db
         .prepare(
@@ -84,6 +111,64 @@ function checkSchema(db: Database.Database): void {
   }
   if (db.pragma("encoding", { simple: true }) !== "UTF-8")
     throw new Error("UNSUPPORTED_HARVEST_SOURCE_ENCODING");
+}
+
+/** Complete sites-table scan, not a complete harvest export. Historical classification
+ * values are retained claims, not authenticated derivations. Missingness stays null.
+ * Sites without seeds are included; seeds and normalized mappings need separate scans.
+ */
+export function streamPreparedHarvestSites(
+  prepared: PreparedBaselineSource,
+  snapshotUri: string,
+): AsyncGenerator<RetainedHarvestSite> {
+  return streamPreparedSnapshot(prepared, snapshotUri, "HARVEST", function* (db, artifact) {
+    checkSchema(db, true);
+    const bytes = SITE_COLUMNS.map(([name]) => `coalesce(octet_length("${name}"),0)`).join("+");
+    const types = SITE_COLUMNS.map(([name, type, required, pk]) => {
+      const accepted =
+        type === "TEXT" ? "'text'" : type === "REAL" ? "'real','integer'" : "'integer'";
+      return `typeof("${name}") IN (${accepted}${required || pk ? "" : ",'null'"})`;
+    }).join(" AND ");
+    const guard = `(${bytes})<=${MAX_ROW_BYTES} AND ${types}`;
+    const selected = SITE_COLUMNS.map(
+      ([name, type]) =>
+        `CASE WHEN ${guard} THEN ${type === "TEXT" ? `CAST("${name}" AS BLOB)` : `"${name}"`} END AS "${name}"`,
+    ).join(",");
+    const statement = db
+      .prepare(
+        `SELECT CASE WHEN ${guard} THEN 1 ELSE 0 END AS admissible,
+      ${selected} FROM sites NOT INDEXED ORDER BY id`,
+      )
+      .safeIntegers();
+    let count = 0;
+    let previous: bigint | undefined;
+    for (const raw of statement.iterate() as Iterable<Record<string, unknown>>) {
+      if (++count > MAX_ROWS) throw new Error("HARVEST_SITE_ROW_LIMIT");
+      if (raw.admissible !== 1n) throw new Error("INVALID_OR_OVERSIZED_HARVEST_SITE_ROW");
+      const columns = Object.fromEntries(
+        SITE_COLUMNS.map(([name, type]) => {
+          const value = raw[name];
+          if (value === null) return [name, null];
+          if (type === "TEXT" && value instanceof Uint8Array) return [name, utf8.decode(value)];
+          if (type === "INTEGER" && typeof value === "bigint") return [name, value];
+          if (type === "REAL" && typeof value === "number" && Number.isFinite(value))
+            return [name, value];
+          throw new Error("INVALID_HARVEST_SITE_CELL");
+        }),
+      ) as Record<SiteColumn, string | number | bigint | null>;
+      const id = columns.id as bigint;
+      if (previous !== undefined && id <= previous) throw new Error("INVALID_HARVEST_SITE_ORDER");
+      previous = id;
+      yield Object.freeze({
+        columns: Object.freeze(columns),
+        source: Object.freeze({
+          manifestSha256: prepared.manifestSha256,
+          artifact,
+          siteLocator: Object.freeze({ table: "sites" as const, id: String(id) }),
+        }),
+      });
+    }
+  });
 }
 
 /** Only the seed table plus joined domain is exported, not the complete sites table.

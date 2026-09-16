@@ -11,7 +11,10 @@ import {
   prepareBaselineSource,
   verifyReplicas,
 } from "../../tools/preservation/preserve.js";
-import { streamPreparedHarvestSeeds } from "../../tools/preservation/harvest-source.js";
+import {
+  streamPreparedHarvestSeeds,
+  streamPreparedHarvestSites,
+} from "../../tools/preservation/harvest-source.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -74,6 +77,7 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false) {
     snapshot,
     file: path.join(prepared.root, snapshot.uri),
     rows: () => streamPreparedHarvestSeeds(prepared, snapshot.uri),
+    sites: () => streamPreparedHarvestSites(prepared, snapshot.uri),
   };
 }
 async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
@@ -81,6 +85,188 @@ async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
   for await (const row of rows) result.push(row);
   return result;
 }
+
+describe("complete retained site records", () => {
+  it("guards aggregate size before transferring site text to the driver", async () => {
+    const f = await fixture((db) =>
+      db.exec(`UPDATE sites SET hwo_provenance=CAST(zeroblob(5000000) AS TEXT),
+      gemeinde=CAST(zeroblob(5000000) AS TEXT)`),
+    );
+    const prepare = Database.prototype.prepare;
+    let seen = false;
+    vi.spyOn(Database.prototype, "prepare").mockImplementation(function (
+      this: Database.Database,
+      sql: string,
+    ) {
+      const statement = prepare.call(this, sql);
+      if (sql.includes("FROM sites NOT INDEXED")) {
+        const iterate = statement.iterate.bind(statement);
+        vi.spyOn(statement, "iterate").mockImplementation(function* () {
+          for (const row of Reflect.apply(iterate, statement, []) as Iterable<
+            Record<string, unknown>
+          >) {
+            expect(row).toEqual({
+              admissible: 0n,
+              id: null,
+              domain: null,
+              hwo_uid: null,
+              hwo_confidence: null,
+              hwo_provenance: null,
+              bundesland: null,
+              gemeinde: null,
+              created_at: null,
+            });
+            seen = true;
+            yield row;
+          }
+        });
+      }
+      return statement;
+    });
+    await expect(collect(f.sites())).rejects.toThrow("INVALID_OR_OVERSIZED_HARVEST_SITE_ROW");
+    expect(seen).toBe(true);
+  });
+  it("streams all 10000 sites without requiring seeds or retaining a domain set", async () => {
+    const f = await fixture((db) => {
+      db.exec("DELETE FROM site_source_seeds; DELETE FROM sites");
+      const insert = db.prepare("INSERT INTO sites(id,domain,created_at) VALUES(?,?,NULL)");
+      db.transaction(() => {
+        for (let id = 1; id <= 10000; id++) insert.run(id, `site-${id}.example`);
+      })();
+    });
+    let count = 0;
+    for await (const row of f.sites()) expect(row.columns.id).toBe(BigInt(++count));
+    expect(count).toBe(10000);
+    const close = vi.spyOn(Database.prototype, "close");
+    const rows = f.sites();
+    await rows.next();
+    await rows.return(undefined);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+  it("preserves all site fields from WAL, including sites without seeds and missing classification", async () => {
+    const provenance = "\uFEFFhistorical\0é🙂";
+    const f = await fixture((db) => {
+      db.prepare(
+        `UPDATE sites SET hwo_uid='A-01',hwo_confidence=0.875,hwo_provenance=?,
+        bundesland='BE',gemeinde='001',created_at=-7`,
+      ).run(provenance);
+      db.exec(
+        `INSERT INTO sites(id,domain,created_at) VALUES(9007199254740993,'unseeded.example',NULL)`,
+      );
+    }, true);
+    const before = await inventorySources({ roots: [f.source] });
+    const rows = await collect(f.sites());
+    expect(rows.map((row) => row.columns)).toEqual([
+      {
+        id: 1n,
+        domain: "retained.example",
+        hwo_uid: "A-01",
+        hwo_confidence: 0.875,
+        hwo_provenance: provenance,
+        bundesland: "BE",
+        gemeinde: "001",
+        created_at: -7n,
+      },
+      {
+        id: 9007199254740993n,
+        domain: "unseeded.example",
+        hwo_uid: null,
+        hwo_confidence: null,
+        hwo_provenance: null,
+        bundesland: null,
+        gemeinde: null,
+        created_at: null,
+      },
+    ]);
+    expect(rows[1].source).toEqual({
+      manifestSha256: f.prepared.manifestSha256,
+      artifact: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
+      siteLocator: { table: "sites", id: "9007199254740993" },
+    });
+    for (const value of [
+      rows[1],
+      rows[1].columns,
+      rows[1].source,
+      rows[1].source.artifact,
+      rows[1].source.siteLocator,
+    ])
+      expect(Object.isFrozen(value)).toBe(true);
+    expect(await inventorySources({ roots: [f.source] })).toEqual(before);
+    expect((await verifyReplicas(f.options)).status).toBe("pass");
+  });
+  it.each([
+    [
+      "extra column",
+      "ALTER TABLE sites ADD COLUMN unknown TEXT",
+      "UNSUPPORTED_HARVEST_SOURCE_SCHEMA",
+    ],
+    [
+      "missing classification column",
+      "ALTER TABLE sites DROP COLUMN hwo_provenance",
+      "UNSUPPORTED_HARVEST_SOURCE_SCHEMA",
+    ],
+    [
+      "view",
+      "ALTER TABLE sites RENAME TO hidden_sites; CREATE VIEW sites AS SELECT * FROM hidden_sites",
+      "UNSUPPORTED_HARVEST_SOURCE_SCHEMA",
+    ],
+    ["binary text", "UPDATE sites SET hwo_uid=X'80'", "INVALID_OR_OVERSIZED_HARVEST_SITE_ROW"],
+    ["invalid UTF8", "UPDATE sites SET hwo_provenance=CAST(X'80' AS TEXT)", "encoded data"],
+    [
+      "non-numeric confidence",
+      "UPDATE sites SET hwo_confidence='unknown'",
+      "INVALID_OR_OVERSIZED_HARVEST_SITE_ROW",
+    ],
+    ["infinite confidence", "UPDATE sites SET hwo_confidence=1e999", "INVALID_HARVEST_SITE_CELL"],
+    ["fractional time", "UPDATE sites SET created_at=1.5", "INVALID_OR_OVERSIZED_HARVEST_SITE_ROW"],
+    [
+      "oversized provenance",
+      "UPDATE sites SET hwo_provenance=CAST(zeroblob(8388609) AS TEXT)",
+      "INVALID_OR_OVERSIZED_HARVEST_SITE_ROW",
+    ],
+  ])("rejects %s without silently substituting historical values", async (_label, sql, error) => {
+    const f = await fixture((db) => db.exec(sql));
+    await expect(collect(f.sites())).rejects.toThrow(error);
+  });
+  it("does not impose new classification semantics on finite historical values", async () => {
+    const f = await fixture((db) =>
+      db.exec("UPDATE sites SET domain='',hwo_uid='',hwo_provenance='not JSON',hwo_confidence=2"),
+    );
+    const [row] = await collect(f.sites());
+    expect(row.columns).toMatchObject({
+      domain: "",
+      hwo_uid: "",
+      hwo_provenance: "not JSON",
+      hwo_confidence: 2,
+    });
+  });
+  it("reads sites independently of seed availability and preserves empty tables", async () => {
+    const f = await fixture((db) => db.exec("DROP TABLE site_source_seeds"));
+    expect(await collect(f.sites())).toHaveLength(1);
+    const empty = await fixture((db) => db.exec("DELETE FROM sites"));
+    expect(await collect(empty.sites())).toEqual([]);
+    await expect(collect(empty.rows())).rejects.toThrow("INVALID_OR_OVERSIZED_HARVEST_SOURCE_ROW");
+  });
+  it("requires a process-prepared snapshot, not cloned metadata or an original", async () => {
+    const f = await fixture();
+    expect(() => streamPreparedHarvestSites({ ...f.prepared }, f.snapshot.uri)).toThrow(
+      "PROCESS_LOCAL_PREPARED_SOURCE_REQUIRED",
+    );
+    const original = f.prepared.manifest.artifacts.find((a) => a.representation === "original")!;
+    expect(() => streamPreparedHarvestSites(f.prepared, original.uri)).toThrow(
+      "DECLARED_HARVEST_SNAPSHOT_REQUIRED",
+    );
+  });
+  it.each(["before", "exhaustion", "return"])("rehashes the site snapshot on %s", async (when) => {
+    const f = await fixture();
+    const rows = f.sites();
+    if (when !== "before") expect((await rows.next()).done).toBe(false);
+    await fs.appendFile(f.file, "changed");
+    await expect(when === "return" ? rows.return(undefined) : rows.next()).rejects.toThrow(
+      "HARVEST_SNAPSHOT_CHANGED",
+    );
+  });
+});
 
 describe("retained harvest seeds", () => {
   it("rejects indexed INTEGER PRIMARY KEY DESC rather than assuming a rowid alias", async () => {
