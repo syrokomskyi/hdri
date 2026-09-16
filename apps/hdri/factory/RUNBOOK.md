@@ -600,8 +600,12 @@ object by schema, contained URI, size and digest; those bytes are reread before
 the role-specific verifier runs. Digest files and the old `--input`
 fallback have been removed. Do not fill admission refs with unchecked objects
 or treat fixture-key readiness as operational qualification. Operational keys
-also require a role-specific domain/closure verifier; until those verifiers are
-wired, mutating commands stop with `ADMISSION_DOMAIN_VERIFIER_REQUIRED`.
+require the exact trust-manifest byte digest in the deployment variable
+`HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256`; a missing or mismatched pin blocks
+before the keyring is parsed. They also require a role-specific domain/closure
+verifier; until those verifiers are wired, mutating commands stop with
+`ADMISSION_DOMAIN_VERIFIER_REQUIRED`. No operational digest or keyring has been
+provisioned by repository tests.
 
 ---
 

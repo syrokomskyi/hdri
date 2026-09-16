@@ -325,7 +325,7 @@ The `--verify-inputs` CLI flag runs `validateManifestSet` in read-only diagnosti
 
 ### Typed admission boundary
 
-All factory entry points use `createBootstrapAdmission()` from `@syrokomskyi/factory-core` to construct a `VerifiedAdmissionInput` before calling `evaluateProgramGate()`. The old string-based `ProgramGateInput` is removed. Evidence refs are typed `EvidenceRef` objects with `schema`, `uri`, `bytes`, and `sha256` — not arbitrary strings.
+All factory entry points load explicit signed evidence through `loadAdmissionInputFromFiles()` before calling `evaluateProgramGate()`. The old string-based `ProgramGateInput` is removed. Evidence refs are typed `EvidenceRef` objects with `schema`, `uri`, `bytes`, and `sha256` — not arbitrary strings.
 
 ### Fail-closed contract
 
@@ -333,7 +333,7 @@ All factory entry points use `createBootstrapAdmission()` from `@syrokomskyi/fac
 - A collection receipt alone does not authorize publication — the gate distinguishes `collect` from `publish`.
 - Environment flags cannot turn mutating pipelines into diagnostics.
 - `createBootstrapAdmission` remains a blocked test/bootstrap constructor only; production entry points load an explicit admission input and pinned trust roots through `loadAdmissionInputFromFiles`.
-- Verified authority belongs to the frozen instance issued by the verifier; spread/cast/JSON copies are rejected. Every evidence result must authenticate the exact requested scope. The file/signature verifier now exists, but operational evidence fails closed with `ADMISSION_DOMAIN_VERIFIER_REQUIRED` until domain-specific closure verification and operational trust-root provisioning are wired.
+- Verified authority belongs to the frozen instance issued by the verifier; spread/cast/JSON copies are rejected. Every evidence result must authenticate the exact requested scope. Operational keyrings must match `HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256`; no repository fixture provisions that deployment pin. Operational evidence still fails closed with `ADMISSION_DOMAIN_VERIFIER_REQUIRED` until domain-specific closure verification is wired.
 
 ### Append-only quarter ledger
 
