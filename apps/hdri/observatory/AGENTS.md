@@ -176,13 +176,28 @@ strict UTF-8 text (including opaque original `raw_json`, without JSON validation
 Manifest/snapshot hashes and exact seed/site row locators accompany each frozen row.
 The seed schema must match the known columns/types/nullability/primary key; sites
 validation covers only id/domain. Both tables require rowid-alias integer primary
-keys. Extra site classification fields are neither exported nor certified here.
+keys. Extra site classification fields are neither exported nor certified by the seed reader.
 An orphan seed, unsupported schema, invalid cell or aggregate row over 8 MiB fails;
 no silent filtering, truncation or domain deduplication. Transfer guards run in SQL
 before driver transfer; iteration has a 100-million-row safety ceiling. The ceiling
 is not a throughput claim or a license to omit remaining rows. Original path/item
 strings are data, never filesystem instructions. Unreferenced sites need a separate
 complete scan; this is not a complete harvest database export.
+
+`streamPreparedHarvestSites` performs that independent full scan of the exact
+eight-column `sites` table, including sites without seeds. It preserves `hwo_uid`,
+`hwo_confidence`, `hwo_provenance`, `bundesland`, `gemeinde` and `created_at` with
+the original domain/id. Nulls, blank strings and finite out-of-range confidence
+values are retained without reinterpretation; non-finite numbers fail. Opaque
+provenance text is not authenticated methodology evidence. Unknown columns fail
+rather than being silently dropped. The same 8 MiB transfer bound, row ceiling,
+strict UTF-8, immutable snapshot-bound locators and full-exhaustion requirements
+apply. This reader does not require a seed table and does not certify seed closure.
+Reading sites successfully does not make orphan seeds acceptable: the separate
+seed scan must also succeed. `site_hwo_mappings`, cohorts and strata remain outside
+both readers; complete historical classification and population continuity still
+require their own retained evidence. Never infer a missing mapping from today's
+codebook or turn a nullable classification into a new calculated result.
 
 `prepared-snapshot.ts` owns the shared before/after byte and sidecar verification for
 both readers. Each reader still owns its schema. Complete exhaustion is required,
