@@ -9,8 +9,11 @@ import {
   type BaselineRecord,
 } from "../../tools/preservation/baseline-comparison.js";
 import { migrateCore } from "@syrokomskyi/business-core/migrate";
-import { generateSigningKey } from "@syrokomskyi/observatory-crypto";
+import { generateSigningKey, signObservation } from "@syrokomskyi/observatory-crypto";
+import type { Observation } from "@syrokomskyi/observatory-core";
 import { inspectRetainedFile } from "@warpgogol/pipeline-node";
+import { migrateObservatory } from "../db/migrate.js";
+import { streamInsertObservations } from "../db/sync-writers.js";
 import { inventorySources } from "../../tools/preservation/inventory.js";
 import {
   preserveQ2,
@@ -30,6 +33,7 @@ import { inspectBaselineScope } from "../../tools/preservation/baseline-scope.js
 import { inspectBaselineProvenance } from "../../tools/preservation/baseline-provenance.js";
 import { streamPreparedAssetStates } from "../../tools/preservation/asset-state-source.js";
 import { materializeAssetStateBaseline } from "../../tools/preservation/asset-state-materialization.js";
+import { materializeBaselineClosure } from "../../tools/preservation/baseline-closure-materialization.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -130,6 +134,169 @@ async function fixture(
     cohorts: () => streamPreparedCohorts(prepared, snapshot.uri),
     strata: () => streamPreparedStrata(prepared, snapshot.uri),
   };
+}
+async function closureFixture(extraIdentity = false) {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "hdri-baseline-closure-"));
+  roots.push(root);
+  const source = path.join(root, "source");
+  await fs.mkdir(source);
+  const canonicalId = "0198f000-0000-7000-8000-000000000002";
+  const core = new Database(path.join(source, "core.db"));
+  migrateCore(core);
+  core.exec(`
+    INSERT INTO sites
+      (id,domain,hwo_uid,hwo_confidence,hwo_provenance,bundesland,gemeinde,created_at)
+    VALUES (1,'retained.example','A-01',0.875,'retained','BE','001',1779113162);
+    INSERT INTO site_hwo_mappings VALUES
+      (1,'destatis_group','01','Group 01','retained-classifier',1779113200);
+  `);
+  const coreTables = (
+    core
+      .prepare(
+        "SELECT name FROM pragma_table_list WHERE schema='main' AND substr(name,1,7)<>'sqlite_' ORDER BY name",
+      )
+      .all() as { name: string }[]
+  ).map((row) => row.name);
+  core.close();
+
+  const observatory = new Database(path.join(source, "observatory.db"));
+  migrateObservatory(observatory);
+  observatory.prepare("INSERT INTO asset_id_map VALUES (?,?,?,?)").run(
+    "da-retained-site",
+    canonicalId,
+    "retained.example",
+    "2026-05-03T11:00:00Z",
+  );
+  if (extraIdentity)
+    observatory.prepare("INSERT INTO asset_id_map VALUES (?,?,?,?)").run(
+      "da-extra-site",
+      "0198f000-0000-7000-8000-000000000099",
+      "extra.example",
+      "2026-05-03T11:00:00Z",
+    );
+  const retainedObservation: Observation = {
+    observation_id: "0198f000-0000-7000-8000-000000000001",
+    asset_id: canonicalId,
+    crawl_id: "retained-crawl",
+    signal_path: "web.presence",
+    value_bool: true,
+    value_num: null,
+    value_str: null,
+    value_json: null,
+    value_type: "bool",
+    observed_at: "2026-05-02T10:00:00+02:00",
+    recorded_at: "2026-05-03T11:00:00Z",
+    collector_version: "1",
+    probe_version: null,
+    ruleset_version: "1",
+    source_hash: null,
+    crawl_hash: "2026-q2-de",
+    evidence_ref: null,
+    confidence: 0.75,
+    status: "active",
+    superseded_by: null,
+    deprecated_reason: null,
+  };
+  async function* observations() {
+    yield retainedObservation;
+  }
+  await streamInsertObservations(observatory, observations(), {
+    runId: "retained-run",
+    ontologyVersion: "ontology-1",
+    period: "2026-q2",
+    factoryRunId: "factory-run",
+  });
+  const signed = signObservation(retainedObservation, key);
+  observatory
+    .prepare(
+      "UPDATE observations SET obs_json=?,signature=?,signed_at=?,signing_key_id=?,collector_id=?",
+    )
+    .run(
+      `${JSON.stringify(signed, null, 2)}\n`,
+      signed.signature,
+      signed.signed_at,
+      signed.signing_key_id,
+      signed.collector_id,
+    );
+  const observatoryTables = (
+    observatory
+      .prepare(
+        "SELECT name FROM pragma_table_list WHERE schema='main' AND substr(name,1,7)<>'sqlite_' ORDER BY name",
+      )
+      .all() as { name: string }[]
+  ).map((row) => row.name);
+  observatory.close();
+
+  const destinations = [0, 1, 2].map((n) => ({
+    path: path.join(root, `replica-${n}`),
+    failureDomain: `closure-${n}`,
+    medium: `closure-disk-${n}`,
+    credentialBoundary: `closure-key-${n}`,
+  }));
+  const preserved = await preserveQ2({
+    sourceRoots: [source],
+    inventory: await inventorySources({ roots: [source] }),
+    destinations,
+    dryRun: false,
+    signingKey: key,
+  });
+  expect(preserved.status).toBe("pass");
+  const prepared = await prepareBaselineSource({
+    destinations,
+    manifestSha256: preserved.inputFingerprint,
+    verificationKeys: new Map([
+      [key.signingKeyId, { signingKeyId: key.signingKeyId, publicKeyPem: key.publicKeyPem }],
+    ]),
+    sourceDestinationPath: destinations[0].path,
+    workRoot: path.join(root, "private"),
+  });
+  const snapshots = prepared.manifest.artifacts.filter(
+    (artifact) => artifact.representation === "sqlite-snapshot",
+  );
+  const harvest = snapshots.find((artifact) => artifact.uri.endsWith("core.db"))!;
+  const observation = snapshots.find((artifact) => artifact.uri.endsWith("observatory.db"))!;
+  const requiredHarvest = new Set([
+    "sites",
+    "site_source_seeds",
+    "site_hwo_mappings",
+    "site_cohorts",
+    "site_strata",
+  ]);
+  const scopeInventory = await inspectBaselineScope(prepared, {
+    schema: "hdri-baseline-scope@1",
+    manifestSha256: prepared.manifestSha256,
+    sources: [
+      {
+        snapshot: { uri: harvest.uri, sha256: harvest.sha256, bytes: harvest.bytes },
+        profile: "harvest",
+        scope: { status: "unavailable", reason: "Fixture historical authority unavailable" },
+        tables: coreTables.map((name) => ({
+          name,
+          disposition: requiredHarvest.has(name) ? "required" : "retained-only",
+          reason: requiredHarvest.has(name) ? null : "Outside joined materialization",
+        })),
+      },
+      {
+        snapshot: {
+          uri: observation.uri,
+          sha256: observation.sha256,
+          bytes: observation.bytes,
+        },
+        profile: "observatory",
+        scope: { status: "unavailable", reason: "Fixture historical authority unavailable" },
+        tables: observatoryTables.map((name) => ({
+          name,
+          disposition:
+            name === "observations" || name === "asset_id_map" ? "required" : "retained-only",
+          reason:
+            name === "observations" || name === "asset_id_map"
+              ? null
+              : "Outside joined materialization",
+        })),
+      },
+    ],
+  });
+  return { root, prepared, harvest, observation, scopeInventory, canonicalId };
 }
 async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
   const result: T[] = [];
@@ -396,6 +563,74 @@ describe("complete prepared baseline source declarations", () => {
       period: "2026-q2",
     });
   });
+  it("materializes one four-domain target from process-local identity and harvest scope", async () => {
+    const f = await closureFixture();
+    const targetPath = path.join(f.root, "joined-target", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    const report = await materializeBaselineClosure({
+      prepared: f.prepared,
+      scopeInventory: f.scopeInventory,
+      observatorySnapshotUri: f.observation.uri,
+      harvestSnapshotUri: f.harvest.uri,
+      targetPath,
+      period: "2026-q2",
+      import: {
+        runId: "joined-baseline-fixture",
+        importedAt: "2026-09-16T14:00:00.000Z",
+        implementationFingerprint: "fixture-closure",
+        ontologyVersion: "fixture-ontology",
+        codebookVersion: "fixture-codebook",
+      },
+    });
+    expect(report).toMatchObject({
+      schema: "hdri-baseline-closure-materialization@1",
+      status: "compared-not-admitted",
+      comparisons: {
+        identities: { status: "equal", sourceRows: 1, targetRows: 1 },
+        observations: { status: "equal", sourceRows: 1, targetRows: 1 },
+        assetStates: { status: "equal", sourceRows: 1, targetRows: 1 },
+        mappings: { status: "equal", sourceRows: 1, targetRows: 1 },
+      },
+    });
+    const target = new Database(targetPath, { readonly: true, fileMustExist: true });
+    handles.push(target);
+    expect(
+      target
+        .prepare(
+          `SELECT
+          (SELECT COUNT(*) FROM asset_id_map) AS identities,
+          (SELECT COUNT(*) FROM observations) AS observations,
+          (SELECT COUNT(*) FROM asset_states) AS asset_states,
+          (SELECT COUNT(*) FROM asset_hwo_mappings) AS mappings`,
+        )
+        .get(),
+    ).toEqual({ identities: 1, observations: 1, asset_states: 1, mappings: 1 });
+    expect(target.prepare("SELECT asset_id FROM asset_states").pluck().get()).toBe(f.canonicalId);
+  });
+
+  it("rejects an identity domain absent from the complete harvest domain", async () => {
+    const f = await closureFixture(true);
+    const targetPath = path.join(f.root, "mismatched-target", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(
+      materializeBaselineClosure({
+        prepared: f.prepared,
+        scopeInventory: f.scopeInventory,
+        observatorySnapshotUri: f.observation.uri,
+        harvestSnapshotUri: f.harvest.uri,
+        targetPath,
+        period: "2026-q2",
+        import: {
+          runId: "joined-baseline-fixture",
+          importedAt: "2026-09-16T14:00:00.000Z",
+          implementationFingerprint: "fixture-closure",
+          ontologyVersion: "fixture-ontology",
+          codebookVersion: "fixture-codebook",
+        },
+      }),
+    ).rejects.toThrow("BASELINE_IDENTITY_ASSET_DOMAIN_MISMATCH");
+  });
+
   it.each([
     "snapshot",
     "required-table",

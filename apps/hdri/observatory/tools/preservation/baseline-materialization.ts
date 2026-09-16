@@ -1,8 +1,8 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Materialize retained Q2 identity mappings into a fresh current-schema database and independently compare exact values.</purpose>
+<purpose>Materialize retained Q2 identity and observation domains into fresh current-schema databases and independently compare exact values.</purpose>
 <non-goals>
-  <item>Does not materialize observations, asset states, cohorts or evidence objects.</item>
+  <item>Does not materialize asset states, cohorts or evidence objects.</item>
   <item>Does not authenticate historical producer scope or issue an admission receipt.</item>
 </non-goals>
 <!-- risk: crypto, fs-write -->
@@ -10,6 +10,7 @@
 <CHANGE_SUMMARY>
   <item>RFC-0115 A1: materialize and independently compare the complete retained Observatory identity map.</item>
   <item>Require the exact process-local complete Observatory scope inventory before target creation.</item>
+  <item>Expose the same bounded source/target record streams to the joined baseline closure comparator.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: A successful identity comparison is one partial domain result, never baseline admission.
@@ -68,16 +69,16 @@ export type ObservationMaterializationReport = Readonly<{
   }>;
 }>;
 
-const fields = ["canonical_id", "domain", "first_seen"] as const;
+export const BASELINE_IDENTITY_FIELDS = ["canonical_id", "domain", "first_seen"] as const;
 
 function sourceRecord(row: RetainedObservationIdentityMapRow): BaselineRecord {
   return {
     key: row.identity.provisional_id,
-    values: fields.map((field) => row.identity[field]),
+    values: BASELINE_IDENTITY_FIELDS.map((field) => row.identity[field]),
   };
 }
 
-function* targetRecords(db: Database.Database): Generator<BaselineRecord> {
+export function* targetIdentityRecords(db: Database.Database): Generator<BaselineRecord> {
   const rows = db.prepare(
     `SELECT provisional_id,canonical_id,domain,first_seen
     FROM asset_id_map INDEXED BY sqlite_autoindex_asset_id_map_1
@@ -90,7 +91,7 @@ function* targetRecords(db: Database.Database): Generator<BaselineRecord> {
   }
 }
 
-async function* sourceRecords(
+export async function* sourceIdentityRecords(
   prepared: PreparedBaselineSource,
   snapshotUri: string,
 ): AsyncGenerator<BaselineRecord> {
@@ -98,16 +99,16 @@ async function* sourceRecords(
     yield sourceRecord(row);
 }
 
-const observationFields = RETAINED_OBSERVATION_COLUMN_NAMES.slice(1);
+export const BASELINE_OBSERVATION_FIELDS = RETAINED_OBSERVATION_COLUMN_NAMES.slice(1);
 
 function observationRecord(row: RetainedObservationSourceRow): BaselineRecord {
   return {
     key: row.columns.id as string,
-    values: observationFields.map((field) => row.columns[field]),
+    values: BASELINE_OBSERVATION_FIELDS.map((field) => row.columns[field]),
   };
 }
 
-async function* sourceObservationRecords(
+export async function* sourceObservationRecords(
   prepared: PreparedBaselineSource,
   snapshotUri: string,
 ): AsyncGenerator<BaselineRecord> {
@@ -115,7 +116,7 @@ async function* sourceObservationRecords(
     yield observationRecord(row);
 }
 
-function* targetObservationRecords(db: Database.Database): Generator<BaselineRecord> {
+export function* targetObservationRecords(db: Database.Database): Generator<BaselineRecord> {
   const selected = RETAINED_OBSERVATION_COLUMN_NAMES.map((name) => `"${name}"`).join(",");
   const rows = db
     .prepare(
@@ -211,9 +212,9 @@ export async function materializeObservationIdentityBaseline(options: Readonly<{
   try {
     comparison = await compareBaselineRecords({
       domain: "asset_id_map",
-      fields,
-      source: sourceRecords(options.prepared, options.snapshotUri),
-      target: targetRecords(verify),
+      fields: BASELINE_IDENTITY_FIELDS,
+      source: sourceIdentityRecords(options.prepared, options.snapshotUri),
+      target: targetIdentityRecords(verify),
     });
   } finally {
     verify.close();
@@ -308,13 +309,13 @@ export async function materializeObservationBaseline(options: Readonly<{
   try {
     identities = await compareBaselineRecords({
       domain: "asset_id_map",
-      fields,
-      source: sourceRecords(options.prepared, options.snapshotUri),
-      target: targetRecords(verify),
+      fields: BASELINE_IDENTITY_FIELDS,
+      source: sourceIdentityRecords(options.prepared, options.snapshotUri),
+      target: targetIdentityRecords(verify),
     });
     observations = await compareBaselineRecords({
       domain: "observations",
-      fields: observationFields,
+      fields: BASELINE_OBSERVATION_FIELDS,
       source: sourceObservationRecords(options.prepared, options.snapshotUri),
       target: targetObservationRecords(verify),
     });

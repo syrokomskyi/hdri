@@ -1,0 +1,306 @@
+/*
+<MODULE_CONTRACT>
+<purpose>Materialize retained Observatory identity/observations and Harvest AssetState/HWO domains into one fresh current-schema database and compare the complete joined projection.</purpose>
+<non-goals>
+  <item>Does not authenticate historical provenance, evidence/CAS closure or implementation dependencies.</item>
+  <item>Does not issue baseline admission or make the blocked import CLI operational.</item>
+</non-goals>
+<!-- risk: crypto, fs-write -->
+</MODULE_CONTRACT>
+<CHANGE_SUMMARY>
+  <item>RFC-0115 A1: join process-local Observatory identities to Harvest domains and compare four materialized domains in one target.</item>
+</CHANGE_SUMMARY>
+*/
+// @ai-invariant: This joined target remains compared-not-admitted until source trust, evidence and operational closure are independently verified.
+
+import Database from "better-sqlite3";
+import { inspectRetainedFile } from "@warpgogol/pipeline-node";
+import {
+  BASELINE_IDENTITY_FIELDS,
+  BASELINE_OBSERVATION_FIELDS,
+  materializeObservationBaseline,
+  sourceIdentityRecords,
+  sourceObservationRecords,
+  targetIdentityRecords,
+  targetObservationRecords,
+} from "./baseline-materialization.js";
+import {
+  BASELINE_ASSET_MAPPING_FIELDS,
+  BASELINE_ASSET_STATE_FIELDS,
+  sourceAssetMappingRecords,
+  sourceAssetStateRecords,
+  targetAssetMappingRecords,
+  targetAssetStateRecords,
+  validateBaselineImportMetadata,
+  type BaselineImportMetadata,
+} from "./asset-state-materialization.js";
+import { compareBaselineRecords, type BaselineDomainComparison } from "./baseline-comparison.js";
+import { streamPreparedAssetStates } from "./asset-state-source.js";
+import { streamPreparedObservationIdentityMap } from "./observation-source.js";
+import type { BaselineScopeInventory, BaselineSourceClaim } from "./baseline-scope.js";
+import type { PreparedBaselineSource } from "./preserve.js";
+
+export type BaselineClosureMaterializationReport = Readonly<{
+  schema: "hdri-baseline-closure-materialization@1";
+  status: "compared-not-admitted";
+  manifestSha256: string;
+  sourceSnapshots: Readonly<{
+    observatory: Readonly<{ uri: string; sha256: string; bytes: number }>;
+    harvest: Readonly<{ uri: string; sha256: string; bytes: number }>;
+  }>;
+  sourceScopes: Readonly<{ observatory: BaselineSourceClaim; harvest: BaselineSourceClaim }>;
+  target: Readonly<{ sha256: string; bytes: number }>;
+  import: BaselineImportMetadata;
+  comparisons: Readonly<{
+    identities: BaselineDomainComparison;
+    observations: BaselineDomainComparison;
+    assetStates: BaselineDomainComparison;
+    mappings: BaselineDomainComparison;
+  }>;
+}>;
+
+function harvestSource(options: Readonly<{
+  prepared: PreparedBaselineSource;
+  scopeInventory: BaselineScopeInventory;
+  harvestSnapshotUri: string;
+}>) {
+  const scoped = options.scopeInventory.sources.find(
+    (source) => source.declaration.snapshot.uri === options.harvestSnapshotUri,
+  );
+  if (!scoped || scoped.declaration.profile !== "harvest")
+    throw new Error("HARVEST_BASELINE_SCOPE_REQUIRED");
+  const snapshot = options.prepared.manifest.artifacts.find(
+    (artifact) =>
+      artifact.uri === options.harvestSnapshotUri && artifact.representation === "sqlite-snapshot",
+  );
+  if (!snapshot) throw new Error("HARVEST_BASELINE_SNAPSHOT_REQUIRED");
+  return { snapshot, scope: scoped.declaration.scope };
+}
+
+async function canonicalDomains(
+  prepared: PreparedBaselineSource,
+  observatorySnapshotUri: string,
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  for await (const row of streamPreparedObservationIdentityMap(
+    prepared,
+    observatorySnapshotUri,
+  )) {
+    if (result.has(row.identity.domain))
+      throw new Error(`DUPLICATE_BASELINE_IDENTITY_DOMAIN: ${row.identity.domain}`);
+    result.set(row.identity.domain, row.identity.canonical_id);
+  }
+  if (!result.size) throw new Error("NONEMPTY_IDENTITY_DOMAIN_REQUIRED");
+  return result;
+}
+
+async function appendAssetStates(options: Readonly<{
+  prepared: PreparedBaselineSource;
+  scopeInventory: BaselineScopeInventory;
+  harvestSnapshotUri: string;
+  targetPath: string;
+  canonicalByDomain: ReadonlyMap<string, string>;
+  period: string;
+  import: BaselineImportMetadata;
+}>): Promise<void> {
+  const target = new Database(options.targetPath, { fileMustExist: true });
+  try {
+    target.exec(`
+      CREATE TABLE baseline_asset_state_lineage (
+        asset_id TEXT PRIMARY KEY,
+        source_local_site_id INTEGER NOT NULL UNIQUE,
+        hwo_confidence REAL,
+        source_created_at TEXT
+      );
+      CREATE TABLE baseline_asset_mapping_lineage (
+        asset_id TEXT NOT NULL,
+        mapping_system TEXT NOT NULL,
+        source_local_site_id INTEGER NOT NULL,
+        source_created_at TEXT,
+        PRIMARY KEY (asset_id,mapping_system)
+      );
+    `);
+    const insertState = target.prepare(
+      `INSERT INTO asset_states
+      (asset_id,domain,gewerk_group,hwo_uid,hwo_provenance,bundesland,gemeinde,
+       valid_from,valid_to,run_id,period) VALUES (?,?,?,?,?,?,?,?,NULL,?,?)`,
+    );
+    const insertStateLineage = target.prepare(
+      "INSERT INTO baseline_asset_state_lineage VALUES (?,?,?,?)",
+    );
+    const insertMapping = target.prepare(
+      `INSERT INTO asset_hwo_mappings
+      (asset_id,mapping_system,target_code,target_label,source,run_id,recorded_at)
+      VALUES (?,?,?,?,?,?,?)`,
+    );
+    const insertMappingLineage = target.prepare(
+      "INSERT INTO baseline_asset_mapping_lineage VALUES (?,?,?,?)",
+    );
+    target.exec("BEGIN IMMEDIATE");
+    try {
+      let count = 0;
+      for await (const row of streamPreparedAssetStates({
+        prepared: options.prepared,
+        scopeInventory: options.scopeInventory,
+        snapshotUri: options.harvestSnapshotUri,
+        canonicalByDomain: options.canonicalByDomain,
+      })) {
+        insertState.run(
+          row.record.asset_id,
+          row.record.domain,
+          row.record.gewerk_group,
+          row.record.hwo_uid,
+          row.record.hwo_provenance,
+          row.record.bundesland,
+          row.record.gemeinde,
+          options.import.importedAt,
+          options.import.runId,
+          options.period,
+        );
+        insertStateLineage.run(
+          row.record.asset_id,
+          BigInt(row.retained.localSiteId),
+          row.retained.hwoConfidence,
+          row.retained.createdAt,
+        );
+        for (const [index, mapping] of row.record.mappings.entries()) {
+          insertMapping.run(
+            row.record.asset_id,
+            mapping.mapping_system,
+            mapping.target_code,
+            mapping.target_label,
+            mapping.source,
+            options.import.runId,
+            options.import.importedAt,
+          );
+          insertMappingLineage.run(
+            row.record.asset_id,
+            mapping.mapping_system,
+            BigInt(row.retained.localSiteId),
+            row.retained.mappings[index].createdAt,
+          );
+        }
+        count++;
+      }
+      if (!count) throw new Error("NONEMPTY_ASSET_STATE_DOMAIN_REQUIRED");
+      target.exec("COMMIT");
+    } catch (error) {
+      if (target.inTransaction) target.exec("ROLLBACK");
+      throw error;
+    }
+  } finally {
+    target.close();
+  }
+}
+
+export async function materializeBaselineClosure(options: Readonly<{
+  prepared: PreparedBaselineSource;
+  scopeInventory: BaselineScopeInventory;
+  observatorySnapshotUri: string;
+  harvestSnapshotUri: string;
+  targetPath: string;
+  period: string;
+  import: BaselineImportMetadata;
+}>): Promise<BaselineClosureMaterializationReport> {
+  if (options.period !== options.prepared.manifest.period)
+    throw new Error("BASELINE_CLOSURE_PERIOD_MISMATCH");
+  const importMetadata = validateBaselineImportMetadata(options.import);
+  const harvested = harvestSource(options);
+  const observation = await materializeObservationBaseline({
+    prepared: options.prepared,
+    scopeInventory: options.scopeInventory,
+    snapshotUri: options.observatorySnapshotUri,
+    targetPath: options.targetPath,
+    assetIdNamespace: "canonical",
+  });
+  const canonicalByDomain = await canonicalDomains(
+    options.prepared,
+    options.observatorySnapshotUri,
+  );
+  await appendAssetStates({
+    prepared: options.prepared,
+    scopeInventory: options.scopeInventory,
+    harvestSnapshotUri: options.harvestSnapshotUri,
+    targetPath: options.targetPath,
+    canonicalByDomain,
+    period: options.period,
+    import: importMetadata,
+  });
+
+  const sourceOptions = {
+    prepared: options.prepared,
+    scopeInventory: options.scopeInventory,
+    snapshotUri: options.harvestSnapshotUri,
+    canonicalByDomain,
+    meta: importMetadata,
+    period: options.period,
+  };
+  const target = new Database(options.targetPath, { readonly: true, fileMustExist: true });
+  let identities: BaselineDomainComparison;
+  let observations: BaselineDomainComparison;
+  let assetStates: BaselineDomainComparison;
+  let mappings: BaselineDomainComparison;
+  try {
+    identities = await compareBaselineRecords({
+      domain: "asset_id_map",
+      fields: BASELINE_IDENTITY_FIELDS,
+      source: sourceIdentityRecords(options.prepared, options.observatorySnapshotUri),
+      target: targetIdentityRecords(target),
+    });
+    observations = await compareBaselineRecords({
+      domain: "observations",
+      fields: BASELINE_OBSERVATION_FIELDS,
+      source: sourceObservationRecords(options.prepared, options.observatorySnapshotUri),
+      target: targetObservationRecords(target),
+    });
+    assetStates = await compareBaselineRecords({
+      domain: "asset_states",
+      fields: BASELINE_ASSET_STATE_FIELDS,
+      source: sourceAssetStateRecords(sourceOptions),
+      target: targetAssetStateRecords(target),
+    });
+    mappings = await compareBaselineRecords({
+      domain: "asset_hwo_mappings",
+      fields: BASELINE_ASSET_MAPPING_FIELDS,
+      source: sourceAssetMappingRecords(sourceOptions),
+      target: targetAssetMappingRecords(target),
+    });
+  } finally {
+    target.close();
+  }
+  if (
+    identities.status !== "equal" ||
+    observations.status !== "equal" ||
+    assetStates.status !== "equal" ||
+    mappings.status === "different"
+  )
+    throw new Error("BASELINE_CLOSURE_COMPARISON_FAILED");
+  if (assetStates.sourceRows !== canonicalByDomain.size)
+    throw new Error("BASELINE_IDENTITY_ASSET_DOMAIN_MISMATCH");
+  const targetEvidence = await inspectRetainedFile(options.targetPath);
+  return Object.freeze({
+    schema: "hdri-baseline-closure-materialization@1",
+    status: "compared-not-admitted",
+    manifestSha256: options.prepared.manifestSha256,
+    sourceSnapshots: Object.freeze({
+      observatory: observation.sourceSnapshot,
+      harvest: Object.freeze({
+        uri: harvested.snapshot.uri,
+        sha256: harvested.snapshot.sha256,
+        bytes: harvested.snapshot.bytes,
+      }),
+    }),
+    sourceScopes: Object.freeze({
+      observatory: observation.sourceScope,
+      harvest: harvested.scope,
+    }),
+    target: Object.freeze(targetEvidence),
+    import: importMetadata,
+    comparisons: Object.freeze({
+      identities: Object.freeze(identities),
+      observations: Object.freeze(observations),
+      assetStates: Object.freeze(assetStates),
+      mappings: Object.freeze(mappings),
+    }),
+  });
+}

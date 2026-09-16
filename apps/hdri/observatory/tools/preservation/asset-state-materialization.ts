@@ -9,6 +9,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0115 A1: materialize current AssetState/HWO tables with source-only lineage and independent read-back.</item>
+  <item>Expose validated import metadata and exact record streams to the joined baseline closure owner.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: This partial target remains compared-not-admitted until joined to the authenticated complete identity/observation closure.
@@ -56,8 +57,8 @@ export type AssetStateMaterializationReport = Readonly<{
   }>;
 }>;
 
-type ImportMetadata = AssetStateMaterializationReport["import"];
-const ASSET_FIELDS = [
+export type BaselineImportMetadata = AssetStateMaterializationReport["import"];
+export const BASELINE_ASSET_STATE_FIELDS = [
   "asset_id",
   "domain",
   "gewerk_group",
@@ -71,7 +72,7 @@ const ASSET_FIELDS = [
   "run_id",
   "period",
 ] as const;
-const MAPPING_FIELDS = [
+export const BASELINE_ASSET_MAPPING_FIELDS = [
   "target_code",
   "target_label",
   "source",
@@ -94,7 +95,9 @@ function text(value: unknown, label: string): string {
   return value;
 }
 
-function metadata(value: ImportMetadata): ImportMetadata {
+export function validateBaselineImportMetadata(
+  value: BaselineImportMetadata,
+): BaselineImportMetadata {
   const importedAt = text(value.importedAt, "TIME");
   if (new Date(importedAt).toISOString() !== importedAt)
     throw new Error("INVALID_BASELINE_IMPORT_TIME");
@@ -118,7 +121,7 @@ function mappingKey(localSiteId: string, system: string): string {
 
 function assetRecord(
   row: RetainedAssetStateProjection,
-  meta: ImportMetadata,
+  meta: BaselineImportMetadata,
   period: string,
 ): BaselineRecord {
   return {
@@ -142,7 +145,7 @@ function assetRecord(
 
 function mappingRecords(
   row: RetainedAssetStateProjection,
-  meta: ImportMetadata,
+  meta: BaselineImportMetadata,
 ): BaselineRecord[] {
   return row.record.mappings.map((mapping, index) => ({
     key: mappingKey(row.retained.localSiteId, mapping.mapping_system),
@@ -157,26 +160,26 @@ function mappingRecords(
   }));
 }
 
-async function* sourceAssets(options: {
+export async function* sourceAssetStateRecords(options: {
   prepared: PreparedBaselineSource;
   scopeInventory: BaselineScopeInventory;
   snapshotUri: string;
   canonicalByDomain: ReadonlyMap<string, string>;
-  meta: ImportMetadata;
+  meta: BaselineImportMetadata;
   period: string;
 }): AsyncGenerator<BaselineRecord> {
   for await (const row of streamPreparedAssetStates(options))
     yield assetRecord(row, options.meta, options.period);
 }
 
-async function* sourceMappings(
-  options: Parameters<typeof sourceAssets>[0],
+export async function* sourceAssetMappingRecords(
+  options: Parameters<typeof sourceAssetStateRecords>[0],
 ): AsyncGenerator<BaselineRecord> {
   for await (const row of streamPreparedAssetStates(options))
     for (const record of mappingRecords(row, options.meta)) yield record;
 }
 
-function* targetAssets(db: Database.Database): Generator<BaselineRecord> {
+export function* targetAssetStateRecords(db: Database.Database): Generator<BaselineRecord> {
   const rows = db
     .prepare(
       `SELECT l.source_local_site_id,s.asset_id,s.domain,s.gewerk_group,s.hwo_uid,
@@ -191,7 +194,7 @@ function* targetAssets(db: Database.Database): Generator<BaselineRecord> {
     yield { key: siteKey(String(row[0])), values: row.slice(1) as BaselineRecord["values"] };
 }
 
-function* targetMappings(db: Database.Database): Generator<BaselineRecord> {
+export function* targetAssetMappingRecords(db: Database.Database): Generator<BaselineRecord> {
   const rows = db
     .prepare(
       `SELECT l.source_local_site_id,m.mapping_system,m.target_code,m.target_label,m.source,
@@ -216,12 +219,12 @@ export async function materializeAssetStateBaseline(options: Readonly<{
   targetPath: string;
   canonicalByDomain: ReadonlyMap<string, string>;
   period: string;
-  import: ImportMetadata;
+  import: BaselineImportMetadata;
 }>): Promise<AssetStateMaterializationReport> {
   assertPreparedBaselineSource(options.prepared);
   if (options.period !== options.prepared.manifest.period)
     throw new Error("BASELINE_ASSET_STATE_PERIOD_MISMATCH");
-  const importMetadata = metadata(options.import);
+  const importMetadata = validateBaselineImportMetadata(options.import);
   const canonicalByDomain = new Map(options.canonicalByDomain);
   const writeRows = streamPreparedAssetStates({ ...options, canonicalByDomain });
   const targetPath = path.resolve(options.targetPath);
@@ -340,15 +343,15 @@ export async function materializeAssetStateBaseline(options: Readonly<{
   try {
     assetStates = await compareBaselineRecords({
       domain: "asset_states",
-      fields: ASSET_FIELDS,
-      source: sourceAssets(sourceOptions),
-      target: targetAssets(verify),
+      fields: BASELINE_ASSET_STATE_FIELDS,
+      source: sourceAssetStateRecords(sourceOptions),
+      target: targetAssetStateRecords(verify),
     });
     mappings = await compareBaselineRecords({
       domain: "asset_hwo_mappings",
-      fields: MAPPING_FIELDS,
-      source: sourceMappings(sourceOptions),
-      target: targetMappings(verify),
+      fields: BASELINE_ASSET_MAPPING_FIELDS,
+      source: sourceAssetMappingRecords(sourceOptions),
+      target: targetAssetMappingRecords(verify),
     });
   } finally {
     verify.close();
