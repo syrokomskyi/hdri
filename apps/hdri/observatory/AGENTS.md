@@ -247,3 +247,31 @@ yielded row matched. Do not accumulate prepared reader output merely to compare 
 The existing typed-value digests, ordering checks, row-pair lookahead and bounded
 diagnostics remain unchanged. Equality still proves only the supplied projection;
 full domain/snapshot coverage and independent target reading remain caller duties.
+
+`tools/preservation/baseline-scope.ts` supplies `inspectBaselineScope(prepared,
+declaration)` as an inventory diagnostic, not admission. The closed
+`hdri-baseline-scope@1` envelope contains `manifestSha256` and `sources`; every
+prepared SQLite snapshot must appear exactly once, pinned by URI/hash/size. Each
+source declares `profile`, `scope`, and every non-internal main-schema table/view
+in `tables`. Harvest requires sites/seeds/mappings/cohorts/strata; Observatory
+requires observations/identity mappings. Other objects require `retained-only`
+with a nonblank reason. `unclassified` preserves explicit unsupported accounting;
+it is not permission to skip data required for an eventual conversion.
+
+Historical scope is either `unavailable` with a reason or `retained-claim` with
+producer/device strings and 1–64 listed artifact evidence URIs. These are claims,
+not authenticated historical identities. The result only reports
+`inventory-checked-not-admitted`, including when every profile is recognized.
+It verifies snapshot bytes before/after metadata reading and finally rereads all
+prepared artifact bytes, including originals/WAL/CAS as files, never SQLite
+connections. Original-file identity and standalone snapshot generation stay
+separate. Writer exclusion and stable ancestors remain mandatory.
+
+Limits: 1,024 sources, 1,024 table declarations/objects per source, 4 KiB per text
+field and 8 MiB aggregate declaration text. Input is detached before asynchronous
+I/O. Extra fields/accessors, omitted/duplicate snapshots/tables, unknown evidence
+URIs and mismatched bytes fail. Table names/types/counts are inventory only:
+schema validation and complete row decoding belong to the domain readers. This
+diagnostic does not inventory triggers/index definitions, verify profile choice,
+resolve source/device identity or establish complete scientific domain coverage.
+Do not convert `retained-only` reasons into approved scientific exclusions.
