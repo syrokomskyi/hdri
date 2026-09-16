@@ -67,6 +67,7 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 | `quarter:status` | `tsx -C @syrokomskyi/source tools/quarter-status.ts` |
 | `quarter:readiness` | `tsx -C @syrokomskyi/source tools/quarter-readiness.ts` |
 | `preservation:check` | `tsx -C @syrokomskyi/source tools/preservation-check.ts` |
+| `admission:evidence` | `tsx -C @syrokomskyi/source tools/admission-evidence.ts` |
 
 ## Dependencies
 

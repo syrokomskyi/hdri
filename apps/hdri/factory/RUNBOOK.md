@@ -61,20 +61,9 @@ When blocked, the gate reports stable codes: `MISSING_PRESERVATION_RECEIPT`, `MI
 
 ## Chain of Trust (Signature Verification)
 
-Q3 production uses the forward-only `hdri-source-signature@2` contract. Each numeric
-factory producer copies its final SQLite generation to an immutable
-`source-snapshot.sqlite`, verifies the closed copy, records its byte length and
-SHA-256 plus deterministic per-domain row counts, and signs the complete canonical
-manifest. The manifest binds schema/digest domain, device/key, source token,
-application/version, counts, signing time, and snapshot metadata.
+Q3 production uses the forward-only `hdri-source-signature@2` contract. Each numeric factory producer copies its final SQLite generation to an immutable `source-snapshot.sqlite`, verifies the closed copy, records its byte length and SHA-256 plus deterministic per-domain row counts, and signs the complete canonical manifest. The manifest binds schema/digest domain, device/key, source token, application/version, counts, signing time, and snapshot metadata.
 
-Every downstream consumer discovers exactly one matching manifest per device, loads
-the device key from `transparency/keys/`, verifies scope and the Ed25519 signature,
-then checks that the adjacent snapshot is a regular file with the signed size and
-SHA-256. A v1/hash-only manifest or a producer output without the adjacent snapshot
-is rejected; no runtime compatibility reader exists. The old format is interpreted
-only by the dedicated Q2 preservation diagnostic, without re-signing or upgrading
-its historical claims.
+Every downstream consumer discovers exactly one matching manifest per device, loads the device key from `transparency/keys/`, verifies scope and the Ed25519 signature, then checks that the adjacent snapshot is a regular file with the signed size and SHA-256. A v1/hash-only manifest or a producer output without the adjacent snapshot is rejected; no runtime compatibility reader exists. The old format is interpreted only by the dedicated Q2 preservation diagnostic, without re-signing or upgrading its historical claims.
 
 ### How it works
 
@@ -94,10 +83,7 @@ its historical claims.
 
 ### Q3 rollout boundary
 
-Before activating a Q3 run, regenerate or remove every pre-cutover producer output
-under the participating upstream roots and verify that each numeric factory emits
-the v2 manifest and adjacent snapshot. Do not mix v1 and v2 outputs in one upstream
-root, and do not treat a legacy manifest as evidence that can be upgraded in place.
+Before activating a Q3 run, regenerate or remove every pre-cutover producer output under the participating upstream roots and verify that each numeric factory emits the v2 manifest and adjacent snapshot. Do not mix v1 and v2 outputs in one upstream root, and do not treat a legacy manifest as evidence that can be upgraded in place.
 
 ### Key locations
 
@@ -500,22 +486,11 @@ apps/hdri/factory/
 
 ## Qualification harness (RFC-0111)
 
-`quarter:rehearse` currently provides an offline adapter controller, not end-to-end
-factory qualification. It verifies actual adapter output bytes, independent
-verifier receipts and explicit resume, and always reports
-`operationallyQualified: false`.
+`quarter:rehearse` currently provides an offline adapter controller, not end-to-end factory qualification. It verifies actual adapter output bytes, independent verifier receipts and explicit resume, and always reports `operationallyQualified: false`.
 
-All seven collectors are now included in the HDRI CI test gate. Policy/contract
-tests and small controller fixtures do not constitute the required 1k whole-chain
-run. Actual production adapters, operation-boundary fault injection, complete
-runtime/resource evidence and signed 10k/50k/200k runs remain open.
+All seven collectors are now included in the HDRI CI test gate. Policy/contract tests and small controller fixtures do not constitute the required 1k whole-chain run. Actual production adapters, operation-boundary fault injection, complete runtime/resource evidence and signed 10k/50k/200k runs remain open.
 
-This machine is approved for offline work: see the
-[recorded profile](../../../docs/rfcs/verification/rfc-0115-approved-local-runner-2026-09-13.json).
-This is hardware/authorization context, not a runnable adapter profile or a
-capacity receipt. See the [observatory runbook](../observatory/RUNBOOK.md) for the
-current controller contract. No live capture or public promotion is authorized by
-a controller manifest.
+This machine is approved for offline work: see the [recorded profile](../../../docs/rfcs/verification/rfc-0115-approved-local-runner-2026-09-13.json). This is hardware/authorization context, not a runnable adapter profile or a capacity receipt. See the [observatory runbook](../observatory/RUNBOOK.md) for the current controller contract. No live capture or public promotion is authorized by a controller manifest.
 
 ---
 
@@ -592,20 +567,17 @@ All factory and observatory entry points use `VerifiedAdmissionInput` from `@syr
 
 ### Quarter readiness from verified evidence
 
-`quarter:readiness` requires `--period`, `--operation`, `--evidence-input`,
-`--evidence-root` and `--trusted-keys`. It uses the bounded file verifier,
-the strict `hdri-admission-evidence@1` Ed25519 envelope and the pinned trust
-manifest before evaluating the gate. Every envelope binds one domain-evidence
-object by schema, contained URI, size and digest; those bytes are reread before
-the role-specific verifier runs. Digest files and the old `--input`
-fallback have been removed. Do not fill admission refs with unchecked objects
-or treat fixture-key readiness as operational qualification. Operational keys
-require the exact trust-manifest byte digest in the deployment variable
-`HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256`; a missing or mismatched pin blocks
-before the keyring is parsed. They also require a role-specific domain/closure
-verifier; until those verifiers are wired, mutating commands stop with
-`ADMISSION_DOMAIN_VERIFIER_REQUIRED`. No operational digest or keyring has been
-provisioned by repository tests.
+`quarter:readiness` requires `--period`, `--operation`, `--evidence-input`, `--evidence-root` and `--trusted-keys`. It uses the bounded file verifier, the strict `hdri-admission-evidence@1` Ed25519 envelope and the pinned trust manifest before evaluating the gate. Every envelope binds one domain-evidence object by schema, contained URI, size and digest; those bytes are reread before the role-specific verifier runs. Digest files and the old `--input` fallback have been removed. Do not fill admission refs with unchecked objects or treat fixture-key readiness as operational qualification. Operational keys require the exact trust-manifest byte digest in the deployment variable `HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256`; a missing or mismatched pin blocks before the keyring is parsed.
+
+All eight run-app entry points and the mutating observatory tools now consume `--admission-input`, `--admission-evidence-root` and `--admission-trusted-keys` through the shared `parseRunOptions`; each `main.ts` injects the pinned `HDRI_OPERATIONAL_ADMISSION_TRUST_SHA256` at the entry boundary. Operational envelopes run through `verifyAdmissionDomainEvidence` from `@syrokomskyi/factory-core`, which re-parses the referenced artifact and checks the role-specific claim — a valid signature alone never authorizes effects:
+
+- **`predecessor`** — `hdri-quarter-capsule@1` manifest with `state: "sealed"` whose `period` is the immediate calendar predecessor of the admitted period.
+- **`preservation`** — `hdri-preservation@1` receipt with `status: "pass"`, `operation` `preserve:verify` or `baseline:import`, and zero violations.
+- **`qualification`** — `hdri-rehearsal-run@1` manifest with `status: "complete"`, `operationallyQualified: true` and a matching comparison. The offline rehearsal controller still reports `operationallyQualified: false`, so this role stays honestly blocked until a real qualified run exists.
+- **`capacity`** — `hdri-capacity-report@1` for the admitted period with `verdict: "pass"` and positive measured resources.
+- **`publication`** — `hdri-publication-readiness@1` for the admitted period and capsule with `status: "ready"`.
+
+`pnpm --dir apps/hdri/observatory admission:evidence` produces the artifacts and envelopes: `keygen` (fresh Ed25519 pair in a fresh directory), `trust` (build `hdri-admission-trust@1` and print its pin digest), `capacity` (measure this machine against explicit minimums), `mint` (sign one envelope over an artifact inside the evidence root) and `input` (author `hdri-admission-input@1` from the minted envelope refs). No operational digest or keyring is provisioned by repository tests; fixture-class envelopes never satisfy operational admission.
 
 ---
 
@@ -613,15 +585,9 @@ provisioned by repository tests.
 
 ### Current boundary
 
-The [2026-09-13 review](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md)
-found that green helper tests did not exercise the actual release, rebuild or
-custody commands. Criteria AC-1–AC-8 and AC-10 remain open; AC-9 records this
-documentation only. No readiness claim follows from archived RFC status.
+The [2026-09-13 review](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md) found that green helper tests did not exercise the actual release, rebuild or custody commands. Criteria AC-1–AC-8 and AC-10 remain open; AC-9 records this documentation only. No readiness claim follows from archived RFC status.
 
-The rehearsal controller now runs real isolated producer/verifier processes,
-retains byte-bound output/receipt/sample evidence, resumes the same locked run and
-compares real declared projection files. It never issues operational qualification.
-`--interrupt-after-stage` tests controller progress, not durable CAS/event boundaries.
+The rehearsal controller now runs real isolated producer/verifier processes, retains byte-bound output/receipt/sample evidence, resumes the same locked run and compares real declared projection files. It never issues operational qualification. `--interrupt-after-stage` tests controller progress, not durable CAS/event boundaries.
 
 ### Commands and limitations
 
@@ -634,20 +600,10 @@ compares real declared projection files. It never issues operational qualificati
 | `quarter:record` | Transition API exists; automatic actual-outcome/scheduler wiring is not proved |
 | `custody:scan` | Diagnostic implementation is not trusted recurring custody; integrity, lag and restore semantics need correction |
 
-`custody:scan --mode restore-drill` currently checks stored objects and keys; it
-does not reconstruct a release. Receipt age is not the age of unreplicated evidence.
-Use neither as recovery proof or as permission to discard evidence.
+`custody:scan --mode restore-drill` currently checks stored objects and keys; it does not reconstruct a release. Receipt age is not the age of unreplicated evidence. Use neither as recovery proof or as permission to discard evidence.
 
 ### Safe sequence
 
-Follow the [corrective implementation order](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
-Complete authenticated admission and collector/snapshot authority first; then real
-scientific/public production, isolated reconstruction, failure-atomic release,
-whole-chain qualification, and scheduled custody. Keep live gates closed meanwhile.
+Follow the [corrective implementation order](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md). Complete authenticated admission and collector/snapshot authority first; then real scientific/public production, isolated reconstruction, failure-atomic release, whole-chain qualification, and scheduled custody. Keep live gates closed meanwhile.
 
-Use fresh explicit evidence/scratch roots; archive durable run evidence on the
-recorded ext4 filesystem, not volatile `/tmp`. Recheck free disk/inodes and competing
-load before every scale level. Retain the original 2 GiB coordinator / 12 GiB whole
-tree / four browser slots / 12 h qualification limits. Q2, sealed capsules and public
-history remain immutable. Restoring data may create a separate verified copy, never
-rewrite the only original.
+Use fresh explicit evidence/scratch roots; archive durable run evidence on the recorded ext4 filesystem, not volatile `/tmp`. Recheck free disk/inodes and competing load before every scale level. Retain the original 2 GiB coordinator / 12 GiB whole tree / four browser slots / 12 h qualification limits. Q2, sealed capsules and public history remain immutable. Restoring data may create a separate verified copy, never rewrite the only original.
