@@ -24,14 +24,21 @@ type TableDeclaration = Readonly<{
   disposition: "required" | "retained-only";
   reason: string | null;
 }>;
-type SourceClaim = Readonly<
+export type BaselineSourceClaim = Readonly<
   | { status: "unavailable"; reason: string }
-  | { status: "retained-claim"; producer: string; device: string; evidenceUris: readonly string[] }
+  | {
+      status: "retained-claim";
+      producer: string;
+      device: string;
+      sourceToken: string;
+      signatureUri: string;
+      evidenceUris: readonly string[];
+    }
 >;
-type SourceDeclaration = Readonly<{
+export type BaselineSourceDeclaration = Readonly<{
   snapshot: SnapshotArtifact;
   profile: Profile;
-  scope: SourceClaim;
+  scope: BaselineSourceClaim;
   tables: readonly TableDeclaration[];
 }>;
 export type BaselineScopeInventory = Readonly<{
@@ -41,7 +48,7 @@ export type BaselineScopeInventory = Readonly<{
   /** Exact preserved input closure; no artifact is excluded by a table disposition. */
   retainedArtifactCount: number;
   sources: readonly Readonly<{
-    declaration: SourceDeclaration;
+    declaration: BaselineSourceDeclaration;
     sourceRole: string;
     original: SnapshotArtifact;
     /** Includes views/virtual/shadow tables; required readers must reject unsupported shapes. */
@@ -58,6 +65,15 @@ const MAX_TABLES = 1024;
 const MAX_TEXT_BYTES = 4096;
 const MAX_DECLARATION_TEXT_BYTES = 8 * 1024 * 1024;
 const utf8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+const scopeInventories = new WeakSet<object>();
+
+/** Reject reconstructed JSON that did not complete this process-local inventory pass. */
+export function assertBaselineScopeInventory(
+  value: unknown,
+): asserts value is BaselineScopeInventory {
+  if (!value || typeof value !== "object" || !scopeInventories.has(value))
+    throw new Error("PROCESS_LOCAL_BASELINE_SCOPE_INVENTORY_REQUIRED");
+}
 
 function object(value: unknown, names: readonly string[]): Record<string, unknown> {
   if (
@@ -136,24 +152,36 @@ export async function inspectBaselineScope(
     if (typeof row.profile !== "string" || !Object.hasOwn(PROFILES, row.profile))
       throw new Error("UNKNOWN_BASELINE_SCOPE_PROFILE");
     const profile = row.profile as Profile;
-    let scope: SourceClaim;
+    let scope: BaselineSourceClaim;
     const status = Object.getOwnPropertyDescriptor(row.scope ?? {}, "status")?.value;
     if (status === "unavailable") {
       const claim = object(row.scope, ["status", "reason"]);
       scope = Object.freeze({ status, reason: declaredText(claim.reason) });
     } else if (status === "retained-claim") {
-      const claim = object(row.scope, ["status", "producer", "device", "evidenceUris"]);
+      const claim = object(row.scope, [
+        "status",
+        "producer",
+        "device",
+        "sourceToken",
+        "signatureUri",
+        "evidenceUris",
+      ]);
       const refs = array(claim.evidenceUris, 64).map(declaredText);
+      const signatureUri = declaredText(claim.signatureUri);
       if (
         !refs.length ||
         new Set(refs).size !== refs.length ||
-        refs.some((uri) => !artifacts.has(uri))
+        refs.some((uri) => !artifacts.has(uri)) ||
+        !refs.includes(signatureUri) ||
+        artifacts.get(signatureUri)?.representation !== "original"
       )
         throw new Error("BASELINE_SCOPE_EVIDENCE_UNLISTED");
       scope = Object.freeze({
         status,
         producer: declaredText(claim.producer),
         device: declaredText(claim.device),
+        sourceToken: declaredText(claim.sourceToken),
+        signatureUri,
         evidenceUris: Object.freeze(refs),
       });
     } else throw new Error("INVALID_BASELINE_SCOPE_CLAIM");
@@ -259,11 +287,13 @@ export async function inspectBaselineScope(
     if (actual.sha256 !== artifact.sha256 || actual.bytes !== artifact.bytes)
       throw new Error("BASELINE_SCOPE_ARTIFACT_CHANGED");
   }
-  return Object.freeze({
+  const result = Object.freeze({
     schema: "hdri-baseline-scope-inventory@1",
     manifestSha256: prepared.manifestSha256,
     status: "inventory-checked-not-admitted",
     retainedArtifactCount: artifacts.size,
     sources: Object.freeze(sources),
   });
+  scopeInventories.add(result);
+  return result;
 }

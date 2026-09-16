@@ -8,7 +8,8 @@ import {
   type BaselineRecord,
 } from "../../tools/preservation/baseline-comparison.js";
 import { migrateCore } from "@syrokomskyi/business-core/migrate";
-import { generateSigningKey } from "@syrokomskyi/observatory-crypto";
+import { generateSigningKey, signSource } from "@syrokomskyi/observatory-crypto";
+import { inspectRetainedFile } from "@warpgogol/pipeline-node";
 import { inventorySources } from "../../tools/preservation/inventory.js";
 import {
   preserveQ2,
@@ -25,6 +26,7 @@ import {
   streamPreparedStrata,
 } from "../../tools/preservation/cohort-source.js";
 import { inspectBaselineScope } from "../../tools/preservation/baseline-scope.js";
+import { verifyBaselineProvenance } from "../../tools/preservation/baseline-provenance.js";
 
 const roots: string[] = [];
 const handles: Database.Database[] = [];
@@ -35,7 +37,11 @@ afterEach(async () => {
 });
 const key = { ...generateSigningKey(), signingKeyId: "seed-test", collectorId: "fixture" };
 const json = ' { "name": "café", "opaque": [1, 2] }\n';
-async function fixture(edit?: (db: Database.Database) => void, wal = false) {
+async function fixture(
+  edit?: (db: Database.Database) => void,
+  wal = false,
+  afterDatabaseReady?: (source: string) => Promise<void>,
+) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "hdri-seed-reader-"));
   roots.push(root);
   const source = path.join(root, "source");
@@ -55,6 +61,7 @@ async function fixture(edit?: (db: Database.Database) => void, wal = false) {
   ).run("\uFEFFcafé\0🙂", json);
   edit?.(db);
   if (!wal) db.close();
+  await afterDatabaseReady?.(source);
   const destinations = [0, 1, 2].map((n) => ({
     path: path.join(root, `replica-${n}`),
     failureDomain: `fixture-${n}`,
@@ -282,6 +289,9 @@ describe("complete prepared baseline source declarations", () => {
   it("never upgrades retained producer/device claims into historical authentication", async () => {
     const f = await fixture();
     const base = declaration(f);
+    const evidence = f.prepared.manifest.artifacts.find(
+      (artifact) => artifact.representation === "original",
+    )!;
     const input = {
       ...base,
       sources: [
@@ -291,7 +301,9 @@ describe("complete prepared baseline source declarations", () => {
             status: "retained-claim",
             producer: "claimed-owner",
             device: "claimed-device",
-            evidenceUris: [f.snapshot.uri],
+            sourceToken: "2026-q2-de",
+            signatureUri: evidence.uri,
+            evidenceUris: [evidence.uri],
           },
         },
       ],
@@ -302,6 +314,126 @@ describe("complete prepared baseline source declarations", () => {
     input.sources[0].scope.evidenceUris = ["outside/not-retained.json"];
     await expect(inspectBaselineScope(f.prepared, input)).rejects.toThrow(
       "BASELINE_SCOPE_EVIDENCE_UNLISTED",
+    );
+  });
+  async function signedFixture(
+    mutate?: (manifest: ReturnType<typeof signSource>) => ReturnType<typeof signSource>,
+    encode: (manifest: ReturnType<typeof signSource>) => string = JSON.stringify,
+  ) {
+    return fixture(undefined, false, async (source) => {
+      const original = await inspectRetainedFile(path.join(source, "core.db"));
+      const signed = signSource({
+        signingKey: key,
+        sourceToken: "2026-q2-de",
+        appId: "0-harvest-source",
+        appVersion: "2.0.0",
+        contentHash: original.sha256,
+        rowsSigned: 1,
+      });
+      const manifest = mutate?.(signed) ?? signed;
+      await fs.writeFile(path.join(source, "source-signature.json"), encode(manifest), {
+        flag: "wx",
+      });
+    });
+  }
+  function signedDeclaration(f: Awaited<ReturnType<typeof fixture>>) {
+    const base = declaration(f);
+    const signatureUri = "originals/source-0000/source-signature.json";
+    return {
+      ...base,
+      sources: [
+        {
+          ...base.sources[0],
+          scope: {
+            status: "retained-claim",
+            producer: "0-harvest-source",
+            device: "fixture",
+            sourceToken: "2026-q2-de",
+            signatureUri,
+            evidenceUris: [signatureUri],
+          },
+        },
+      ],
+    };
+  }
+  const provenanceKeys = () =>
+    new Map([
+      [
+        key.signingKeyId,
+        {
+          signingKeyId: key.signingKeyId,
+          publicKeyPem: key.publicKeyPem,
+          collectorId: key.collectorId,
+        },
+      ],
+    ]);
+  it("reports only the signed original-byte claim and keeps snapshot generation unbound", async () => {
+    const f = await signedFixture((manifest) => ({ ...manifest, app_id: "retained-app-claim" }));
+    const input = signedDeclaration(f);
+    input.sources[0].scope.producer = "retained-app-claim";
+    const inventory = await inspectBaselineScope(f.prepared, input);
+    const report = await verifyBaselineProvenance(f.prepared, inventory, provenanceKeys());
+    expect(report).toMatchObject({
+      status: "provenance-checked-not-admitted",
+      signedByteClaimsVerified: 1,
+      unavailableClaims: 0,
+    });
+    expect(report.sources[0]).toMatchObject({
+      status: "device-token-original-bytes-verified-snapshot-generation-unbound",
+      device: "fixture",
+      sourceToken: "2026-q2-de",
+      originalSha256: inventory.sources[0].original.sha256,
+      unsignedMetadata: { producer: "retained-app-claim", appVersion: "2.0.0" },
+    });
+    expect(Object.isFrozen(report)).toBe(true);
+    expect(Object.isFrozen(report.sources)).toBe(true);
+    expect(Object.isFrozen(report.sources[0])).toBe(true);
+  });
+  it.each([
+    "forged-inventory",
+    "wrong-period",
+    "wrong-device",
+    "wrong-producer",
+    "wrong-original-hash",
+    "unknown-key",
+    "invalid-signature",
+  ])("rejects an unauthenticated baseline source claim: %s", async (defect) => {
+    const f = await signedFixture(
+      defect === "invalid-signature"
+        ? (manifest) => ({
+            ...manifest,
+            signature: `${manifest.signature[0] === "A" ? "B" : "A"}${manifest.signature.slice(1)}`,
+          })
+        : defect === "wrong-original-hash"
+          ? (manifest) => ({ ...manifest, content_hash: "0".repeat(64) })
+          : undefined,
+    );
+    const input = signedDeclaration(f);
+    if (defect === "wrong-period") input.sources[0].scope.sourceToken = "2026-q3-de";
+    if (defect === "wrong-device") input.sources[0].scope.device = "other-device";
+    if (defect === "wrong-producer") input.sources[0].scope.producer = "other-app";
+    const inventory = await inspectBaselineScope(f.prepared, input);
+    const keys = provenanceKeys();
+    if (defect === "unknown-key") keys.clear();
+    await expect(
+      verifyBaselineProvenance(
+        f.prepared,
+        defect === "forged-inventory" ? { ...inventory } : inventory,
+        keys,
+      ),
+    ).rejects.toThrow();
+  });
+  it("rejects duplicate manifest fields even when JSON.parse would overwrite them", async () => {
+    const f = await signedFixture(undefined, (manifest) => {
+      const normal = JSON.stringify(manifest);
+      return normal.replace(
+        '{"device_id":"fixture",',
+        '{"device_id":"other","device_id":"fixture",',
+      );
+    });
+    const inventory = await inspectBaselineScope(f.prepared, signedDeclaration(f));
+    await expect(verifyBaselineProvenance(f.prepared, inventory, provenanceKeys())).rejects.toThrow(
+      "INVALID_BASELINE_SOURCE_SIGNATURE_SHAPE",
     );
   });
   it("detaches caller state before I/O and rejects changed retained non-snapshot bytes", async () => {
