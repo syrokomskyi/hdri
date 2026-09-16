@@ -11,6 +11,7 @@
   <item>RFC-0115 A1: join process-local Observatory identities to Harvest domains and compare four materialized domains in one target.</item>
   <item>Carry explicit current-Observation semantic validation evidence into the joined report.</item>
   <item>Reject caller import ontology labels that differ from the complete retained observation domain.</item>
+  <item>Require exact retained ontology/codebook artifacts and validate every observation against their parsed contract.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: This joined target remains compared-not-admitted until source trust, evidence and operational closure are independently verified.
@@ -45,6 +46,10 @@ import {
 } from "./observation-source.js";
 import type { BaselineScopeInventory, BaselineSourceClaim } from "./baseline-scope.js";
 import type { PreparedBaselineSource } from "./preserve.js";
+import {
+  inspectBaselineMethodology,
+  type BaselineMethodologyInspection,
+} from "./baseline-methodology.js";
 
 export type BaselineClosureMaterializationReport = Readonly<{
   schema: "hdri-baseline-closure-materialization@1";
@@ -57,10 +62,12 @@ export type BaselineClosureMaterializationReport = Readonly<{
   sourceScopes: Readonly<{ observatory: BaselineSourceClaim; harvest: BaselineSourceClaim }>;
   target: Readonly<{ sha256: string; bytes: number }>;
   import: BaselineImportMetadata;
+  methodology: BaselineMethodologyInspection;
   observationSemantics: Readonly<{
     status: "validated-not-authenticated";
     rows: number;
     ontologyVersions: readonly string[];
+    ontologyArtifactValidated: boolean;
   }>;
   comparisons: Readonly<{
     identities: BaselineDomainComparison;
@@ -264,6 +271,8 @@ export async function materializeBaselineClosure(options: Readonly<{
   scopeInventory: BaselineScopeInventory;
   observatorySnapshotUri: string;
   harvestSnapshotUri: string;
+  ontologyArtifactUri: string;
+  codebookArtifactUri: string;
   targetPath: string;
   period: string;
   import: BaselineImportMetadata;
@@ -272,12 +281,20 @@ export async function materializeBaselineClosure(options: Readonly<{
     throw new Error("BASELINE_CLOSURE_PERIOD_MISMATCH");
   const importMetadata = validateBaselineImportMetadata(options.import);
   const harvested = harvestSource(options);
+  const methodology = await inspectBaselineMethodology({
+    prepared: options.prepared,
+    ontologyArtifactUri: options.ontologyArtifactUri,
+    codebookArtifactUri: options.codebookArtifactUri,
+    ontologyVersion: importMetadata.ontologyVersion,
+    codebookVersion: importMetadata.codebookVersion,
+  });
   const observation = await materializeObservationBaseline({
     prepared: options.prepared,
     scopeInventory: options.scopeInventory,
     snapshotUri: options.observatorySnapshotUri,
     targetPath: options.targetPath,
     assetIdNamespace: "canonical",
+    methodology,
   });
   const canonicalByDomain = await canonicalDomains(
     options.prepared,
@@ -395,6 +412,7 @@ export async function materializeBaselineClosure(options: Readonly<{
     }),
     target: Object.freeze(targetEvidence),
     import: importMetadata,
+    methodology,
     observationSemantics: observation.semantics,
     comparisons: Object.freeze({
       identities: Object.freeze(identities),

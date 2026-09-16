@@ -147,6 +147,35 @@ async function closureFixture(
   roots.push(root);
   const source = path.join(root, "source");
   await fs.mkdir(source);
+  const input = path.join(source, "input");
+  await fs.mkdir(input);
+  await fs.writeFile(
+    path.join(input, "ontology.yaml"),
+    `version: ontology-1
+signals:
+  web.presence:
+    label: Web presence
+    value_type: bool
+    introduced_in: ontology-1
+    deprecated_in: null
+    stability: high
+`,
+  );
+  await fs.writeFile(
+    path.join(input, "codebook.yaml"),
+    `id: fixture-codebook
+version: 1.0.0
+ontologyRef: ontology.yaml
+dimensions:
+  - id: presence
+    weight: 1
+    indicators:
+      - id: web-presence
+        inputKey: web.presence
+        weight: 1
+        rule: { type: bool, trueScore: 100, falseScore: 0 }
+`,
+  );
   const canonicalId = "0198f000-0000-7000-8000-000000000002";
   const core = new Database(path.join(source, "core.db"));
   migrateCore(core);
@@ -272,6 +301,14 @@ async function closureFixture(
   );
   const harvest = snapshots.find((artifact) => artifact.uri.endsWith("core.db"))!;
   const observation = snapshots.find((artifact) => artifact.uri.endsWith("observatory.db"))!;
+  const ontology = prepared.manifest.artifacts.find(
+    (artifact) =>
+      artifact.representation === "original" && artifact.uri.endsWith("input/ontology.yaml"),
+  )!;
+  const codebook = prepared.manifest.artifacts.find(
+    (artifact) =>
+      artifact.representation === "original" && artifact.uri.endsWith("input/codebook.yaml"),
+  )!;
   const requiredHarvest = new Set([
     "sites",
     "site_source_seeds",
@@ -313,7 +350,16 @@ async function closureFixture(
       },
     ],
   });
-  return { root, prepared, harvest, observation, scopeInventory, canonicalId };
+  return {
+    root,
+    prepared,
+    harvest,
+    observation,
+    ontology,
+    codebook,
+    scopeInventory,
+    canonicalId,
+  };
 }
 async function collect<T>(rows: AsyncIterable<T>): Promise<T[]> {
   const result: T[] = [];
@@ -589,6 +635,8 @@ describe("complete prepared baseline source declarations", () => {
       scopeInventory: f.scopeInventory,
       observatorySnapshotUri: f.observation.uri,
       harvestSnapshotUri: f.harvest.uri,
+      ontologyArtifactUri: f.ontology.uri,
+      codebookArtifactUri: f.codebook.uri,
       targetPath,
       period: "2026-q2",
       import: {
@@ -596,16 +644,32 @@ describe("complete prepared baseline source declarations", () => {
         importedAt: "2026-09-16T14:00:00.000Z",
         implementationFingerprint: "fixture-closure",
         ontologyVersion: "ontology-1",
-        codebookVersion: "fixture-codebook",
+        codebookVersion: "1.0.0",
       },
     });
     expect(report).toMatchObject({
       schema: "hdri-baseline-closure-materialization@1",
       status: "compared-not-admitted",
+      methodology: {
+        status: "parsed-source-bytes-not-producer-authenticated",
+        ontology: {
+          uri: f.ontology.uri,
+          sha256: f.ontology.sha256,
+          version: "ontology-1",
+        },
+        codebook: {
+          uri: f.codebook.uri,
+          sha256: f.codebook.sha256,
+          id: "fixture-codebook",
+          version: "1.0.0",
+          ontologyRef: "ontology.yaml",
+        },
+      },
       observationSemantics: {
         status: "validated-not-authenticated",
         rows: 1,
         ontologyVersions: ["ontology-1"],
+        ontologyArtifactValidated: true,
       },
       comparisons: {
         identities: { status: "equal", sourceRows: 1, targetRows: 1 },
@@ -653,6 +717,8 @@ describe("complete prepared baseline source declarations", () => {
         scopeInventory: f.scopeInventory,
         observatorySnapshotUri: f.observation.uri,
         harvestSnapshotUri: f.harvest.uri,
+        ontologyArtifactUri: f.ontology.uri,
+        codebookArtifactUri: f.codebook.uri,
         targetPath,
         period: "2026-q2",
         import: {
@@ -660,7 +726,7 @@ describe("complete prepared baseline source declarations", () => {
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
           ontologyVersion: "ontology-1",
-          codebookVersion: "fixture-codebook",
+          codebookVersion: "1.0.0",
         },
       }),
     ).rejects.toThrow(`INVALID_CURRENT_OBSERVATION_${error}`);
@@ -676,6 +742,8 @@ describe("complete prepared baseline source declarations", () => {
         scopeInventory: f.scopeInventory,
         observatorySnapshotUri: f.observation.uri,
         harvestSnapshotUri: f.harvest.uri,
+        ontologyArtifactUri: f.ontology.uri,
+        codebookArtifactUri: f.codebook.uri,
         targetPath,
         period: "2026-q2",
         import: {
@@ -683,10 +751,62 @@ describe("complete prepared baseline source declarations", () => {
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
           ontologyVersion: "caller-invented-ontology",
-          codebookVersion: "fixture-codebook",
+          codebookVersion: "1.0.0",
         },
       }),
-    ).rejects.toThrow("BASELINE_IMPORT_ONTOLOGY_VERSION_MISMATCH");
+    ).rejects.toThrow("BASELINE_ONTOLOGY_ARTIFACT_VERSION_MISMATCH");
+  });
+
+  it("rejects a retained signal absent from the exact prepared ontology bytes", async () => {
+    const f = await closureFixture({ observationPatch: { signal_path: "web.unknown" } });
+    const targetPath = path.join(f.root, "ontology-signal-mismatch", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(
+      materializeBaselineClosure({
+        prepared: f.prepared,
+        scopeInventory: f.scopeInventory,
+        observatorySnapshotUri: f.observation.uri,
+        harvestSnapshotUri: f.harvest.uri,
+        ontologyArtifactUri: f.ontology.uri,
+        codebookArtifactUri: f.codebook.uri,
+        targetPath,
+        period: "2026-q2",
+        import: {
+          runId: "joined-baseline-fixture",
+          importedAt: "2026-09-16T14:00:00.000Z",
+          implementationFingerprint: "fixture-closure",
+          ontologyVersion: "ontology-1",
+          codebookVersion: "1.0.0",
+        },
+      }),
+    ).rejects.toThrow("BASELINE_OBSERVATION_ONTOLOGY_INVALID: unknown_signal");
+  });
+
+  it("rejects changed methodology bytes before creating the joined target", async () => {
+    const f = await closureFixture();
+    await fs.appendFile(path.join(f.prepared.root, f.ontology.uri), "changed");
+    const targetPath = path.join(f.root, "changed-methodology", "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(
+      materializeBaselineClosure({
+        prepared: f.prepared,
+        scopeInventory: f.scopeInventory,
+        observatorySnapshotUri: f.observation.uri,
+        harvestSnapshotUri: f.harvest.uri,
+        ontologyArtifactUri: f.ontology.uri,
+        codebookArtifactUri: f.codebook.uri,
+        targetPath,
+        period: "2026-q2",
+        import: {
+          runId: "joined-baseline-fixture",
+          importedAt: "2026-09-16T14:00:00.000Z",
+          implementationFingerprint: "fixture-closure",
+          ontologyVersion: "ontology-1",
+          codebookVersion: "1.0.0",
+        },
+      }),
+    ).rejects.toThrow("BASELINE_METHODOLOGY_ARTIFACT_CHANGED");
+    await expect(fs.stat(targetPath)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("rejects an identity domain absent from the complete harvest domain", async () => {
@@ -699,6 +819,8 @@ describe("complete prepared baseline source declarations", () => {
         scopeInventory: f.scopeInventory,
         observatorySnapshotUri: f.observation.uri,
         harvestSnapshotUri: f.harvest.uri,
+        ontologyArtifactUri: f.ontology.uri,
+        codebookArtifactUri: f.codebook.uri,
         targetPath,
         period: "2026-q2",
         import: {
@@ -706,7 +828,7 @@ describe("complete prepared baseline source declarations", () => {
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
           ontologyVersion: "ontology-1",
-          codebookVersion: "fixture-codebook",
+          codebookVersion: "1.0.0",
         },
       }),
     ).rejects.toThrow("BASELINE_IDENTITY_ASSET_DOMAIN_MISMATCH");
@@ -722,6 +844,8 @@ describe("complete prepared baseline source declarations", () => {
         scopeInventory: f.scopeInventory,
         observatorySnapshotUri: f.observation.uri,
         harvestSnapshotUri: f.harvest.uri,
+        ontologyArtifactUri: f.ontology.uri,
+        codebookArtifactUri: f.codebook.uri,
         targetPath,
         period: "2026-q2",
         import: {
@@ -729,7 +853,7 @@ describe("complete prepared baseline source declarations", () => {
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
           ontologyVersion: "ontology-1",
-          codebookVersion: "fixture-codebook",
+          codebookVersion: "1.0.0",
         },
       }),
     ).rejects.toThrow("UNMATERIALIZED_BASELINE_SELECTION_DOMAIN");
@@ -745,6 +869,8 @@ describe("complete prepared baseline source declarations", () => {
         scopeInventory: f.scopeInventory,
         observatorySnapshotUri: f.observation.uri,
         harvestSnapshotUri: f.harvest.uri,
+        ontologyArtifactUri: f.ontology.uri,
+        codebookArtifactUri: f.codebook.uri,
         targetPath,
         period: "2026-q2",
         import: {
@@ -752,7 +878,7 @@ describe("complete prepared baseline source declarations", () => {
           importedAt: "2026-09-16T14:00:00.000Z",
           implementationFingerprint: "fixture-closure",
           ontologyVersion: "ontology-1",
-          codebookVersion: "fixture-codebook",
+          codebookVersion: "1.0.0",
         },
       }),
     ).rejects.toThrow("UNRESOLVED_BASELINE_EVIDENCE_REFERENCE");

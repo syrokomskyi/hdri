@@ -13,6 +13,7 @@
   <item>Expose the same bounded source/target record streams to the joined baseline closure comparator.</item>
   <item>Validate every retained row against current Observation semantics before target insertion.</item>
   <item>Report the bounded set of ontology versions observed across the complete retained stream.</item>
+  <item>Optionally require a process-local exact-byte methodology inspection for ontology validation.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: A successful identity comparison is one partial domain result, never baseline admission.
@@ -49,6 +50,10 @@ import {
   type BaselineSourceClaim,
 } from "./baseline-scope.js";
 import { assertCurrentObservationSemantics } from "./baseline-observation-semantics.js";
+import {
+  assertObservationMatchesBaselineMethodology,
+  type BaselineMethodologyInspection,
+} from "./baseline-methodology.js";
 
 export type IdentityMaterializationReport = Readonly<{
   schema: "hdri-baseline-identity-materialization@1";
@@ -74,6 +79,7 @@ export type ObservationMaterializationReport = Readonly<{
     status: "validated-not-authenticated";
     rows: number;
     ontologyVersions: readonly string[];
+    ontologyArtifactValidated: boolean;
   }>;
 }>;
 
@@ -253,6 +259,7 @@ export async function materializeObservationBaseline(options: Readonly<{
   snapshotUri: string;
   targetPath: string;
   assetIdNamespace: "canonical";
+  methodology?: BaselineMethodologyInspection;
 }>): Promise<ObservationMaterializationReport> {
   if (options.assetIdNamespace !== "canonical")
     throw new Error("CANONICAL_OBSERVATION_NAMESPACE_REQUIRED");
@@ -299,6 +306,12 @@ export async function materializeObservationBaseline(options: Readonly<{
         options.assetIdNamespace,
       )) {
         assertCurrentObservationSemantics(row.observation);
+        if (options.methodology)
+          assertObservationMatchesBaselineMethodology(
+            options.prepared,
+            options.methodology,
+            row.observation,
+          );
         semanticRows++;
         ontologyVersions.add(row.observation.columns.ontology_version as string);
         if (ontologyVersions.size > 64)
@@ -361,6 +374,7 @@ export async function materializeObservationBaseline(options: Readonly<{
       ontologyVersions: Object.freeze(
         [...ontologyVersions].sort((left, right) => Buffer.compare(Buffer.from(left), Buffer.from(right))),
       ),
+      ontologyArtifactValidated: options.methodology !== undefined,
     }),
   });
 }
