@@ -8,6 +8,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0113/0115 review: remove digest-file fallback and fail closed until trusted evidence verification is wired.</item>
+  <item>RFC-0113: verify explicit signed evidence with bounded I/O, pinned key classes and the shared ProgramGate.</item>
 </CHANGE_SUMMARY>
 */
 
