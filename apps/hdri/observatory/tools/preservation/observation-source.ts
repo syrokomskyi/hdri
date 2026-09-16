@@ -11,16 +11,15 @@
 <CHANGE_SUMMARY>
   <item>RFC-0115 A1: enforce the known observation-table shape, transfer bounds, exact SQL/JSON agreement and snapshot read-back.</item>
   <item>Join retained identity mappings in the same pinned snapshot using an explicit identifier namespace and bounded indexed lookups.</item>
+  <item>Share private snapshot I/O with the harvest reader while retaining observation-specific schema validation.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: Only consume prepareBaselineSource output in writer-exclusive storage; an accepted row is not a verified archive or completed stream.
 import { createHash } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
 import { TextDecoder } from "node:util";
 import Database from "better-sqlite3";
-import { assertRelativeObjectPath, inspectRetainedFile } from "@warpgogol/pipeline-node";
-import { assertPreparedBaselineSource, type PreparedBaselineSource } from "./preserve.js";
+import type { PreparedBaselineSource } from "./preserve.js";
+import { streamPreparedSnapshot } from "./prepared-snapshot.js";
 import { hasConsistentObservationEnvelope } from "../../run/verify/verify-core.js";
 import { assertBaselineCanonicalId } from "./contracts.js";
 
@@ -305,7 +304,10 @@ export function streamPreparedObservations(
   prepared: PreparedBaselineSource,
   snapshotUri: string,
 ): AsyncGenerator<RetainedObservationSourceRow> {
-  return streamSnapshot(prepared, snapshotUri, (db) => readRows(db, prepared.manifest.period));
+  return streamPreparedSnapshot(prepared, snapshotUri, "OBSERVATION", function* (db) {
+    checkSchema(db);
+    yield* readRows(db, prepared.manifest.period);
+  });
 }
 
 /**
@@ -321,7 +323,8 @@ export function streamPreparedObservationIdentities(
 ): AsyncGenerator<RetainedObservationIdentity> {
   if (assetIdNamespace !== "provisional" && assetIdNamespace !== "canonical")
     throw new Error("EXPLICIT_SOURCE_ASSET_ID_NAMESPACE_REQUIRED");
-  return streamSnapshot(prepared, snapshotUri, function* (db, artifact) {
+  return streamPreparedSnapshot(prepared, snapshotUri, "OBSERVATION", function* (db, artifact) {
+    checkSchema(db);
     checkTableSchema(db, "asset_id_map", IDENTITY_COLUMNS);
     for (const [name, column, cid, origin] of [
       ["sqlite_autoindex_asset_id_map_1", "provisional_id", 0, "pk"],
@@ -381,67 +384,4 @@ export function streamPreparedObservationIdentities(
       });
     }
   });
-}
-
-function streamSnapshot<T>(
-  prepared: PreparedBaselineSource,
-  snapshotUri: string,
-  read: (
-    db: Database.Database,
-    artifact: Readonly<{ uri: string; sha256: string; bytes: number }>,
-  ) => Iterable<T>,
-): AsyncGenerator<T> {
-  assertPreparedBaselineSource(prepared);
-  assertRelativeObjectPath(snapshotUri);
-  const matches = prepared.manifest.artifacts.filter((artifact) => artifact.uri === snapshotUri);
-  if (matches.length !== 1 || matches[0].representation !== "sqlite-snapshot")
-    throw new Error("DECLARED_OBSERVATION_SNAPSHOT_REQUIRED");
-  const expected = { ...matches[0] };
-  const file = path.join(prepared.root, snapshotUri);
-  const artifact = Object.freeze({
-    uri: expected.uri,
-    sha256: expected.sha256,
-    bytes: expected.bytes,
-  });
-  async function verifyBytes() {
-    let header = Buffer.alloc(0);
-    const actual = await inspectRetainedFile(file, (chunk) => {
-      if (header.length < 20)
-        header = Buffer.concat([header, chunk.subarray(0, 20 - header.length)]);
-    });
-    if (actual.sha256 !== expected.sha256 || actual.bytes !== expected.bytes)
-      throw new Error("OBSERVATION_SNAPSHOT_CHANGED");
-    if (
-      actual.bytes < 100 ||
-      header.subarray(0, 16).toString("binary") !== "SQLite format 3\0" ||
-      header[18] !== 1 ||
-      header[19] !== 1
-    )
-      throw new Error("STANDALONE_OBSERVATION_SNAPSHOT_REQUIRED");
-    for (const suffix of ["-wal", "-shm", "-journal"]) {
-      try {
-        await fs.lstat(file + suffix);
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
-        throw error;
-      }
-      throw new Error("OBSERVATION_SNAPSHOT_SIDECAR");
-    }
-  }
-  return (async function* () {
-    await verifyBytes();
-    const db = new Database(file, { readonly: true, fileMustExist: true });
-    try {
-      db.pragma("query_only=ON");
-      db.pragma("trusted_schema=OFF");
-      checkSchema(db);
-      yield* read(db, artifact);
-    } finally {
-      try {
-        db.close();
-      } finally {
-        await verifyBytes();
-      }
-    }
-  })();
 }
