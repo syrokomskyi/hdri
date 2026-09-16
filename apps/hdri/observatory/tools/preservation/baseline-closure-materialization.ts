@@ -9,6 +9,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>RFC-0115 A1: join process-local Observatory identities to Harvest domains and compare four materialized domains in one target.</item>
+  <item>Carry explicit current-Observation semantic validation evidence into the joined report.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: This joined target remains compared-not-admitted until source trust, evidence and operational closure are independently verified.
@@ -55,6 +56,10 @@ export type BaselineClosureMaterializationReport = Readonly<{
   sourceScopes: Readonly<{ observatory: BaselineSourceClaim; harvest: BaselineSourceClaim }>;
   target: Readonly<{ sha256: string; bytes: number }>;
   import: BaselineImportMetadata;
+  observationSemantics: Readonly<{
+    status: "validated-not-authenticated";
+    rows: number;
+  }>;
   comparisons: Readonly<{
     identities: BaselineDomainComparison;
     observations: BaselineDomainComparison;
@@ -383,6 +388,7 @@ export async function materializeBaselineClosure(options: Readonly<{
     }),
     target: Object.freeze(targetEvidence),
     import: importMetadata,
+    observationSemantics: observation.semantics,
     comparisons: Object.freeze({
       identities: Object.freeze(identities),
       observations: Object.freeze(observations),

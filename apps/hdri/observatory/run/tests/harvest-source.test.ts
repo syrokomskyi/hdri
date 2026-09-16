@@ -136,7 +136,12 @@ async function fixture(
   };
 }
 async function closureFixture(
-  options: Readonly<{ extraIdentity?: boolean; cohort?: boolean; evidenceRef?: string }> = {},
+  options: Readonly<{
+    extraIdentity?: boolean;
+    cohort?: boolean;
+    evidenceRef?: string;
+    observationPatch?: Partial<Observation>;
+  }> = {},
 ) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "hdri-baseline-closure-"));
   roots.push(root);
@@ -207,6 +212,7 @@ async function closureFixture(
     status: "active",
     superseded_by: null,
     deprecated_reason: null,
+    ...options.observationPatch,
   };
   async function* observations() {
     yield retainedObservation;
@@ -596,6 +602,7 @@ describe("complete prepared baseline source declarations", () => {
     expect(report).toMatchObject({
       schema: "hdri-baseline-closure-materialization@1",
       status: "compared-not-admitted",
+      observationSemantics: { status: "validated-not-authenticated", rows: 1 },
       comparisons: {
         identities: { status: "equal", sourceRows: 1, targetRows: 1 },
         observations: { status: "equal", sourceRows: 1, targetRows: 1 },
@@ -620,6 +627,39 @@ describe("complete prepared baseline source declarations", () => {
         .get(),
     ).toEqual({ identities: 1, observations: 1, asset_states: 1, mappings: 1 });
     expect(target.prepare("SELECT asset_id FROM asset_states").pluck().get()).toBe(f.canonicalId);
+  });
+
+  it.each([
+    ["value discriminator", { value_type: "num" }, "VALUE_INVARIANT"],
+    ["confidence", { confidence: 2 }, "CONFIDENCE"],
+    ["measurement time", { observed_at: "not-a-time" }, "OBSERVED_AT"],
+    ["lifecycle", { deprecated_reason: "invalid-active-state" }, "LIFECYCLE"],
+    [
+      "JSON value",
+      { value_bool: null, value_json: "{", value_type: "json" },
+      "JSON",
+    ],
+  ] as const)("rejects retained %s that is not a current Observation", async (label, patch, error) => {
+    const f = await closureFixture({ observationPatch: patch });
+    const targetPath = path.join(f.root, `semantic-${label.replaceAll(" ", "-")}`, "observatory.db");
+    await fs.mkdir(path.dirname(targetPath));
+    await expect(
+      materializeBaselineClosure({
+        prepared: f.prepared,
+        scopeInventory: f.scopeInventory,
+        observatorySnapshotUri: f.observation.uri,
+        harvestSnapshotUri: f.harvest.uri,
+        targetPath,
+        period: "2026-q2",
+        import: {
+          runId: "joined-baseline-fixture",
+          importedAt: "2026-09-16T14:00:00.000Z",
+          implementationFingerprint: "fixture-closure",
+          ontologyVersion: "fixture-ontology",
+          codebookVersion: "fixture-codebook",
+        },
+      }),
+    ).rejects.toThrow(`INVALID_CURRENT_OBSERVATION_${error}`);
   });
 
   it("rejects an identity domain absent from the complete harvest domain", async () => {

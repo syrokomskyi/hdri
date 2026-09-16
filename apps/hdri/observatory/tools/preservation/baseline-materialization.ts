@@ -11,6 +11,7 @@
   <item>RFC-0115 A1: materialize and independently compare the complete retained Observatory identity map.</item>
   <item>Require the exact process-local complete Observatory scope inventory before target creation.</item>
   <item>Expose the same bounded source/target record streams to the joined baseline closure comparator.</item>
+  <item>Validate every retained row against current Observation semantics before target insertion.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: A successful identity comparison is one partial domain result, never baseline admission.
@@ -46,6 +47,7 @@ import {
   type BaselineScopeInventory,
   type BaselineSourceClaim,
 } from "./baseline-scope.js";
+import { assertCurrentObservationSemantics } from "./baseline-observation-semantics.js";
 
 export type IdentityMaterializationReport = Readonly<{
   schema: "hdri-baseline-identity-materialization@1";
@@ -67,6 +69,7 @@ export type ObservationMaterializationReport = Readonly<{
     identities: BaselineDomainComparison;
     observations: BaselineDomainComparison;
   }>;
+  semantics: Readonly<{ status: "validated-not-authenticated"; rows: number }>;
 }>;
 
 export const BASELINE_IDENTITY_FIELDS = ["canonical_id", "domain", "first_seen"] as const;
@@ -255,6 +258,7 @@ export async function materializeObservationBaseline(options: Readonly<{
     options.targetPath,
   );
   const target = new Database(targetPath);
+  let semanticRows = 0;
   try {
     migrateObservatory(target);
     stampObservatoryMeta(target, "hdri-baseline-converter", "observation-v1");
@@ -288,6 +292,8 @@ export async function materializeObservationBaseline(options: Readonly<{
         options.snapshotUri,
         options.assetIdNamespace,
       )) {
+        assertCurrentObservationSemantics(row.observation);
+        semanticRows++;
         observationInsert.run(
           ...RETAINED_OBSERVATION_COLUMN_NAMES.map((name) => row.observation.columns[name]),
         );
@@ -339,6 +345,10 @@ export async function materializeObservationBaseline(options: Readonly<{
     comparisons: Object.freeze({
       identities: Object.freeze(identities),
       observations: Object.freeze(observations),
+    }),
+    semantics: Object.freeze({
+      status: "validated-not-authenticated",
+      rows: semanticRows,
     }),
   });
 }
