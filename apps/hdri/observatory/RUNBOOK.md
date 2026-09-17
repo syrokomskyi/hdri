@@ -352,6 +352,55 @@ Fresh roots must be empty/new; resume must point to that root's own manifest. Ke
 
 `--interrupt-after-stage` exercises controller recovery only. It does not inject a crash at CAS, event transaction, selected-result publication, extraction, scientific report, replica or public-pointer boundaries.
 
+### Scale rehearsal (10k / 50k / 200k, RFC-0115 C4)
+
+The production-adapter rehearsal runs the real thirteen-stage qualification chain against a deterministic synthetic corpus — no live sites, network or DNS are required. `--targets` is one of `1000|10000|50000|200000`; corpus bytes are a pure function of `(seed, targets)`, so clean, fault and resumed runs consume an identical input.
+
+```sh
+# 1. Generate the deterministic corpus (sites + pages + frame_cells).
+pnpm --filter @syrokomskyi/observatory exec tsx tools/rehearsal-fixture.ts \
+  --targets 10000 --out .output/rehearsal-10k/fixture --seed 115
+
+# 2. Build the frozen runtime closure (esbuild adapters + vendored native deps + profile.json).
+#    Raise --stage-timeout-ms so the dominant stage (extraction) cannot hit the 1 h default.
+pnpm --filter @syrokomskyi/observatory exec tsx tools/build-rehearsal-runtime.ts \
+  --out .output/rehearsal-10k/runtime \
+  --fixture-root .output/rehearsal-10k/fixture \
+  --browser-root ~/.cache/puppeteer/chrome \
+  --stage-timeout-ms 14400000
+
+# 3. Clean run → evidence-clean.
+pnpm --filter @syrokomskyi/observatory exec tsx tools/quarter-rehearsal.ts \
+  --profile .output/rehearsal-10k/runtime/profile.json --targets 10000 \
+  --evidence-root .output/rehearsal-10k/evidence-clean --json
+
+# 4. Fault run → evidence-fault; exits 75 at the stage's declared faultBoundary.
+pnpm --filter @syrokomskyi/observatory exec tsx tools/quarter-rehearsal.ts \
+  --profile .output/rehearsal-10k/runtime/profile.json --targets 10000 \
+  --evidence-root .output/rehearsal-10k/evidence-fault --fault-stage extraction --json
+
+# 5. Resume + compare — only once clean=complete AND fault=interrupted.
+pnpm --filter @syrokomskyi/observatory exec tsx tools/quarter-rehearsal.ts \
+  --profile .output/rehearsal-10k/runtime/profile.json --targets 10000 \
+  --evidence-root .output/rehearsal-10k/evidence-fault \
+  --resume .output/rehearsal-10k/evidence-fault/run-manifest.json \
+  --compare .output/rehearsal-10k/evidence-clean/run-manifest.json --json
+```
+
+Ordering rules:
+
+- `--fault-stage <name>` injects at that stage's declared `faultBoundary` (e.g. `extraction` → `extraction-checkpoint`, fires at the page midpoint). The run exits `75` and the manifest becomes `status: "interrupted"`.
+- `--resume` must point at the interrupted root's own `run-manifest.json`; `--compare` reads the **completed** clean manifest's `selectedProjectionSha256`. Launch resume only after clean is `complete` — a running clean manifest has no comparison digest yet.
+- Success is `operationallyQualified: true` + `comparison.match: true`, with `scoring/projection.jsonl` and `independent-rebuild/projection.jsonl` byte-identical between the two roots.
+
+Timing and resources (measured on this host):
+
+- Extraction dominates (~70% of wall time). At 1k a full clean run is ~9.5 min; at 10k ~2.5–3 h when two runs share CPU. Scale roughly linearly: 50k ≈ 8–15 h, 200k ≈ 32–60 h per clean run.
+- Run scales **sequentially** (clean → fault → resume). Parallel clean+fault halves throughput per run without saving total CPU time and muddies per-stage timing.
+- `--stage-timeout-ms` must exceed the dominant stage: use ≥4 h for 10k, ≥12 h for 50k, ≥48 h for 200k.
+- Disk ≈ 343 MB per 1k of combined evidence+fixture+runtime (~3.4 GB at 10k, ~69 GB at 200k). Keep evidence roots on durable storage, never `/tmp`.
+- `.sqlite` outputs and the manifests that hash them are expected to differ between runs (page layout, freelist, volatile `liveness.latency_ms`); only the declared `comparisonFiles` JSONL projections are the byte-equality surface.
+
 ### Qualification still required
 
 CI now selects every collector and the shared authority/process boundaries. The small controller tests are not the required 1k whole-chain CI fixture. There is no verified scheduled 10k run or completed 50k/200k qualification. Before scale-up, close the [ordered corrective plan](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md), retain measured disk/inode peaks and whole-tree RSS, freeze complete runtime identity, execute the actual fault schedule and independently verify signed proof. Limits remain 2 GiB coordinator RSS, 12 GiB whole-tree RSS, four browser slots and 12 hours. Store lasting run evidence on durable storage, never only in `/tmp`.
