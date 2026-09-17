@@ -19,6 +19,8 @@
     { "path": "../../../packages/observatory/observatory-emit" },
     { "path": "../../../packages/observatory/observatory-crypto" },
     { "path": "../../../packages/observatory/observatory-vault" },
-    { "path": "../../../packages/hdri-codebook" }
+    { "path": "../../../packages/hdri-codebook" },
+    { "path": "../../../packages/business/business-crawler" },
+    { "path": "../../../packages/business/business-core" }
   ]
 }

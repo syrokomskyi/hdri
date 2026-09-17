@@ -23,18 +23,23 @@ import {
   runIsolatedProcess,
 } from "@warpgogol/pipeline-node";
 import { QUALIFICATION_STAGES, REFERENCE_PROFILE_LIMITS } from "@syrokomskyi/observatory-emit";
+import { FAULT_BOUNDARIES, FAULT_EXIT_CODE, type FaultBoundary } from "./adapters/common.js";
 
 interface StageAdapter {
   stage: string;
   producer: string;
   verifier: string;
   outputs: string[];
+  /** Deterministic failpoint this stage's producer acknowledges when scheduled. */
+  faultBoundary?: FaultBoundary;
 }
 
 interface RehearsalProfile {
   schema: "hdri-rehearsal-profile@1";
   runtimeRoot: string;
   fixtureRoot: string;
+  /** Frozen browser closure mounted read-only at /runtime/browsers. */
+  browserRoot?: string;
   stages: StageAdapter[];
   comparisonFiles: string[];
   stageTimeoutMs: number;
@@ -48,10 +53,18 @@ interface FileProof {
 interface StageResult {
   stage: string;
   inputFingerprint: string;
+  consumedSha256: string;
   outputs: FileProof[];
   execution: FileProof;
   verification: FileProof;
   samples: FileProof[];
+}
+interface FaultRecord {
+  stage: string;
+  boundary: string;
+  attempt: number;
+  /** Proof of the preserved fault acknowledgement under receipts/. */
+  receipt: FileProof;
 }
 interface RunManifest {
   schema: "hdri-rehearsal-run@1";
@@ -61,11 +74,16 @@ interface RunManifest {
   runtimeSha256: string;
   fixtureSha256: string;
   nodeSha256: string;
+  browserSha256: string | null;
+  browserSlots: number;
   stages: StageResult[];
+  faults: FaultRecord[];
+  peakWorkBytes: number;
+  peakWorkFiles: number;
   status: "running" | "interrupted" | "complete";
   selectedProjectionSha256: string | null;
   comparison: { inputFingerprint: string; selectedProjectionSha256: string; match: true } | null;
-  operationallyQualified: false;
+  operationallyQualified: boolean;
   elapsedMs: number;
 }
 
@@ -97,6 +115,7 @@ function parseProfile(raw: unknown): RehearsalProfile {
     "schema",
     "runtimeRoot",
     "fixtureRoot",
+    "browserRoot",
     "stages",
     "comparisonFiles",
     "stageTimeoutMs",
@@ -116,17 +135,31 @@ function parseProfile(raw: unknown): RehearsalProfile {
     input.stageTimeoutMs > REFERENCE_PROFILE_LIMITS.maxDurationMs
   )
     throw new Error("INVALID_STAGE_DEADLINE");
+  if (
+    input.browserRoot !== undefined &&
+    (typeof input.browserRoot !== "string" || !path.isAbsolute(input.browserRoot))
+  )
+    throw new Error("EXPLICIT_REHEARSAL_ROOTS_REQUIRED");
   if (!Array.isArray(input.stages)) throw new Error("MISSING_STAGE_ADAPTERS");
   const stages = input.stages.map((rawStage) => {
     const stage = record(rawStage, "STAGE_ADAPTER");
-    exactFields(stage, ["stage", "producer", "verifier", "outputs"]);
+    exactFields(stage, ["stage", "producer", "verifier", "outputs", "faultBoundary"]);
     if (typeof stage.stage !== "string" || !Array.isArray(stage.outputs) || !stage.outputs.length)
       throw new Error("INVALID_STAGE_ADAPTER");
+    if (
+      stage.faultBoundary !== undefined &&
+      !FAULT_BOUNDARIES.includes(stage.faultBoundary as FaultBoundary)
+    )
+      throw new Error(`INVALID_FAULT_BOUNDARY:${String(stage.faultBoundary)}`);
     return {
       stage: stage.stage,
       producer: relativeFile(stage.producer),
       verifier: relativeFile(stage.verifier),
       outputs: stage.outputs.map(relativeFile),
+      // undefined values are not fingerprintable — omit the key entirely.
+      ...(stage.faultBoundary === undefined
+        ? {}
+        : { faultBoundary: stage.faultBoundary as FaultBoundary }),
     };
   });
   if (
@@ -150,6 +183,8 @@ function parseProfile(raw: unknown): RehearsalProfile {
     schema: "hdri-rehearsal-profile@1",
     runtimeRoot: input.runtimeRoot,
     fixtureRoot: input.fixtureRoot,
+    // undefined values are not fingerprintable — omit the key entirely.
+    ...(input.browserRoot === undefined ? {} : { browserRoot: input.browserRoot as string }),
     stageTimeoutMs: input.stageTimeoutMs,
     stages,
     comparisonFiles,
@@ -220,6 +255,8 @@ export interface RehearsalOptions {
   compare?: string;
   /** Controller-boundary fault for exercising resume; not a production CAS/transaction fault. */
   interruptAfterStage?: string;
+  /** Stage whose declared faultBoundary is armed on its first produce attempt. */
+  faultStage?: string;
 }
 
 export async function runRehearsal(options: RehearsalOptions): Promise<RunManifest> {
@@ -230,6 +267,8 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
     if ((await fs.realpath(profile[key])) !== profile[key])
       throw new Error("SYMLINK_REHEARSAL_ROOT");
   }
+  if (profile.browserRoot && (await fs.realpath(profile.browserRoot)) !== profile.browserRoot)
+    throw new Error("SYMLINK_REHEARSAL_ROOT");
   const root = path.resolve(options.evidenceRoot);
   if (["/", "/tmp", "/var", "/home", process.cwd(), process.env.HOME].includes(root))
     throw new Error("REHEARSAL_ROOT_TOO_BROAD");
@@ -247,17 +286,29 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
     !profile.stages.some((stage) => stage.stage === options.interruptAfterStage)
   )
     throw new Error("UNKNOWN_INTERRUPTION_STAGE");
+  if (options.faultStage) {
+    const faultStage = profile.stages.find((stage) => stage.stage === options.faultStage);
+    if (!faultStage) throw new Error("UNKNOWN_FAULT_STAGE");
+    if (!faultStage.faultBoundary)
+      throw new Error(`STAGE_HAS_NO_FAULT_BOUNDARY:${options.faultStage}`);
+  }
   const node = await fs.realpath(process.execPath);
+  const browserSha256 = profile.browserRoot
+    ? (await digestDirectory(profile.browserRoot)).sha256
+    : null;
   const identity = {
     targets: options.targets,
     profileSha256: digestValue({
       ...profile,
       runtimeRoot: "/runtime/closure",
       fixtureRoot: "/input/fixtures",
+      browserRoot: "/runtime/browsers",
     }).sha256,
     runtimeSha256: (await digestDirectory(profile.runtimeRoot)).sha256,
     fixtureSha256: (await digestDirectory(profile.fixtureRoot)).sha256,
     nodeSha256: (await digestFile(node)).sha256,
+    browserSha256,
+    browserSlots: REFERENCE_PROFILE_LIMITS.maxBrowserWorkers,
   };
   const inputFingerprint = digestValue(identity).sha256;
   const manifestPath = path.join(root, "run-manifest.json");
@@ -294,7 +345,10 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
         !["running", "interrupted", "complete"].includes(loaded.status as string) ||
         Object.entries(identity).some(([field, value]) => loaded[field] !== value) ||
         !Array.isArray(loaded.stages) ||
-        loaded.stages.length > profile.stages.length
+        loaded.stages.length > profile.stages.length ||
+        !Array.isArray(loaded.faults) ||
+        !Number.isSafeInteger(loaded.peakWorkBytes) ||
+        !Number.isSafeInteger(loaded.peakWorkFiles)
       )
         throw new Error("RESUME_INPUT_MISMATCH");
       const candidate = loaded as unknown as RunManifest;
@@ -329,6 +383,9 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
           ...identity,
           inputFingerprint,
           stages: [],
+          faults: [],
+          peakWorkBytes: 0,
+          peakWorkFiles: 0,
           status: "running",
           selectedProjectionSha256: null,
           comparison: null,
@@ -350,6 +407,20 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
       const stage = profile.stages[index]!;
       const attempt = `${String(index).padStart(2, "0")}-${randomUUID()}`;
       const samples: FileProof[] = [];
+      // The stage's consumed-input fingerprint binds it to the fixture plus the
+      // byte-exact outputs of every completed upstream stage.
+      const consumedSha256 = digestValue({
+        fixture: identity.fixtureSha256,
+        upstream: manifest.stages.flatMap((completed) => completed.outputs),
+      }).sha256;
+      const faultAttempt =
+        manifest.faults.filter((fault) => fault.stage === stage.stage).length + 1;
+      const armFault =
+        options.faultStage === stage.stage && faultAttempt === 1 ? stage.faultBoundary : undefined;
+      // An incomplete stage re-runs from a clean directory: partial outputs of a
+      // faulted attempt are never reused.
+      const stageWorkDir = path.join(workRoot, stage.stage);
+      await fs.rm(stageWorkDir, { recursive: true, force: true });
       const run = async (entry: string, mode: string) => {
         const remainingMs = REFERENCE_PROFILE_LIMITS.maxDurationMs - manifest!.elapsedMs;
         if (remainingMs <= 0) throw new Error("REHEARSAL_DURATION_EXCEEDED");
@@ -373,11 +444,21 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
               "/scratch",
               "--input-fingerprint",
               inputFingerprint,
+              "--consumed",
+              consumedSha256,
+              "--fault-attempt",
+              String(faultAttempt),
+              "--browser-slots",
+              String(identity.browserSlots),
+              ...(armFault && mode === "produce" ? ["--fault-boundary", armFault] : []),
             ],
             readOnlyMounts: [
               { source: node, destination: "/runtime/node" },
               { source: profile.runtimeRoot, destination: "/runtime/closure" },
               { source: profile.fixtureRoot, destination: "/input/fixtures" },
+              ...(profile.browserRoot
+                ? [{ source: profile.browserRoot, destination: "/runtime/browsers" }]
+                : []),
             ],
             scratchRoot: workRoot,
             timeoutMs: Math.min(profile.stageTimeoutMs, remainingMs),
@@ -405,6 +486,23 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
       const execution = await run(stage.producer, "produce");
       const executionUri = `receipts/${attempt}-execution.json`;
       await writeJson(path.join(root, executionUri), execution, true);
+      if (execution.exitCode === FAULT_EXIT_CODE) {
+        // Deterministic failpoint: preserve the acknowledgement the producer
+        // sealed at the boundary, record it, then interrupt for resume.
+        const ackName = `fault-${armFault}.json`;
+        const ackSource = path.join(stageWorkDir, ackName);
+        const ackUri = `receipts/${attempt}-${ackName}`;
+        await fs.copyFile(ackSource, path.join(root, ackUri));
+        manifest.faults.push({
+          stage: stage.stage,
+          boundary: armFault!,
+          attempt: faultAttempt,
+          receipt: await fileProof(root, ackUri),
+        });
+        manifest.status = "interrupted";
+        await writeJson(manifestPath, manifest);
+        throw new Error(`REHEARSAL_FAULT_INTERRUPTED:${stage.stage}:${armFault}`);
+      }
       if (execution.exitCode !== 0)
         throw new Error(`STAGE_EXECUTION_FAILED:${stage.stage}:${execution.stderr}`);
       const outputs = await Promise.all(stage.outputs.map((uri) => fileProof(root, uri)));
@@ -420,6 +518,7 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
         verdict.inputFingerprint !== inputFingerprint ||
         verdict.status !== "pass" ||
         verdict.targets !== options.targets ||
+        verdict.consumedSha256 !== consumedSha256 ||
         digestValue(verdict.outputs).sha256 !== digestValue(outputs).sha256
       ) {
         throw new Error(`STAGE_VERIFICATION_MISMATCH:${stage.stage}`);
@@ -431,11 +530,28 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
       manifest.stages.push({
         stage: stage.stage,
         inputFingerprint,
+        consumedSha256,
         outputs,
         execution: await fileProof(root, executionUri),
         verification: await fileProof(root, verificationUri),
         samples,
       });
+      // Disk/inode peaks over the whole work tree after each completed stage.
+      let workBytes = 0;
+      let workFiles = 0;
+      const walk = async (dir: string): Promise<void> => {
+        for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+          const full = path.join(dir, entry.name);
+          if (entry.isDirectory()) await walk(full);
+          else if (entry.isFile()) {
+            workFiles += 1;
+            workBytes += (await fs.lstat(full)).size;
+          }
+        }
+      };
+      await walk(workRoot);
+      manifest.peakWorkBytes = Math.max(manifest.peakWorkBytes, workBytes);
+      manifest.peakWorkFiles = Math.max(manifest.peakWorkFiles, workFiles);
       manifest.status = "running";
       await writeJson(manifestPath, manifest);
       if (options.interruptAfterStage === stage.stage)
@@ -469,6 +585,9 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
       };
     }
     manifest.status = "complete";
+    // Qualification is only claimed when the resumed run's selected projection
+    // is byte-identical to a completed clean run's — the recovery proof.
+    manifest.operationallyQualified = manifest.comparison?.match === true;
     await writeJson(manifestPath, manifest);
     return manifest;
   } catch (error) {

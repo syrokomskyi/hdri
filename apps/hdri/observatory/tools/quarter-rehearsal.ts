@@ -28,6 +28,7 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
       resume: { type: "string" },
       compare: { type: "string" },
       "interrupt-after-stage": { type: "string" },
+      "fault-stage": { type: "string" },
       json: { type: "boolean", default: false },
     },
   });
@@ -41,11 +42,14 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     resume: values.resume,
     compare: values.compare,
     interruptAfterStage: values["interrupt-after-stage"],
+    faultStage: values["fault-stage"],
   });
   if (values.json) process.stdout.write(`${JSON.stringify(result)}\n`);
   else
     process.stdout.write(
-      `Verified ${result.stages.length} adapter stages. Operational qualification is not granted.\n`,
+      result.operationallyQualified
+        ? `Verified ${result.stages.length} adapter stages; resume equivalence proven. Operational qualification granted for this profile.\n`
+        : `Verified ${result.stages.length} adapter stages. Operational qualification is not granted.\n`,
     );
 }
 

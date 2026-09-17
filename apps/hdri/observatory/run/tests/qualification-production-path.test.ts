@@ -19,7 +19,9 @@ import path from "node:path";
 import {
   createQualificationReceipt,
   validateQualificationReceipt,
+  QUALIFICATION_STAGES,
 } from "@syrokomskyi/observatory-emit";
+import { runRehearsal } from "../qualification/rehearsal.js";
 
 let tmpDir: string;
 
@@ -134,167 +136,169 @@ describe("RFC-0115 AC-5: absent stage proof rejects receipt", () => {
 });
 
 describe("RFC-0115 AC-6: interrupted/resumed fixture produces same selected-result projection", () => {
-  it("resume state preserves completed stages", async () => {
-    const statePath = path.join(tmpDir, ".rehearse-state.json");
-    const stages = ["source-admission", "frame-identity", "liveness"];
+  // Real controller runs against stub adapters: the contract under test is
+  // profile parsing, isolation, byte-bound resume, fault acknowledgement and
+  // qualification derivation — not the production stage logic itself.
+  const STAGE_OUTPUTS = (stage: string): string[] => [
+    `work/${stage}/out.bin`,
+    `work/${stage}/projection.jsonl`,
+  ];
 
-    await fs.writeFile(statePath, JSON.stringify({ completedStages: stages }, null, 2), "utf8");
+  const stubProducer = (outputs: string[]): string => `import fs from "node:fs";
+import path from "node:path";
+const args = new Map();
+for (let i = 2; i < process.argv.length; i += 2) args.set(process.argv[i], process.argv[i + 1]);
+const stage = args.get("--stage");
+const work = args.get("--work-root");
+const boundary = args.get("--fault-boundary");
+if (boundary) {
+  const dir = path.join(work, stage);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, "fault-" + boundary + ".json"),
+    JSON.stringify({ schema: "hdri-stage-fault@1", stage, boundary }),
+  );
+  process.exit(75);
+}
+for (const uri of ${JSON.stringify(outputs)}) {
+  const p = path.join(work, uri.replace(/^work\\//, ""));
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, stage + "|" + uri + "|" + args.get("--input-fingerprint") + "\\n");
+}
+`;
 
-    const content = await fs.readFile(statePath, "utf8");
-    const loaded = JSON.parse(content) as { completedStages: string[] };
+  const stubVerifier = (outputs: string[]): string => `import { createHash } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+const args = new Map();
+for (let i = 2; i < process.argv.length; i += 2) args.set(process.argv[i], process.argv[i + 1]);
+const work = args.get("--work-root");
+const outputs = ${JSON.stringify(outputs)}.map((uri) => {
+  const bytes = fs.readFileSync(path.join(work, uri.replace(/^work\\//, "")));
+  return { uri, bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") };
+});
+process.stdout.write(JSON.stringify({
+  schema: "hdri-stage-verification@1",
+  stage: args.get("--stage"),
+  status: "pass",
+  targets: Number(args.get("--targets")),
+  inputFingerprint: args.get("--input-fingerprint"),
+  consumedSha256: args.get("--consumed"),
+  outputs,
+}) + "\\n");
+`;
 
-    expect(loaded.completedStages).toEqual(stages);
-  });
+  async function buildStubRuntime(root: string): Promise<string> {
+    const runtimeRoot = path.join(root, "runtime");
+    const fixtureRoot = path.join(root, "fixture");
+    await fs.mkdir(fixtureRoot, { recursive: true });
+    await fs.writeFile(path.join(fixtureRoot, "fixture-manifest.json"), '{"ok":true}\n');
+    const stages = QUALIFICATION_STAGES.map((stage) => {
+      const outputs = STAGE_OUTPUTS(stage);
+      const dir = path.join(runtimeRoot, "adapters", stage);
+      return fs
+        .mkdir(dir, { recursive: true })
+        .then(() =>
+          Promise.all([
+            fs.writeFile(path.join(dir, "produce.mjs"), stubProducer(outputs)),
+            fs.writeFile(path.join(dir, "verify.mjs"), stubVerifier(outputs)),
+          ]),
+        )
+        .then(() => ({
+          stage,
+          producer: `adapters/${stage}/produce.mjs`,
+          verifier: `adapters/${stage}/verify.mjs`,
+          outputs,
+          ...(stage === "extraction" ? { faultBoundary: "extraction-checkpoint" } : {}),
+        }));
+    });
+    const profile = {
+      schema: "hdri-rehearsal-profile@1",
+      runtimeRoot,
+      fixtureRoot,
+      stageTimeoutMs: 60_000,
+      stages: await Promise.all(stages),
+      comparisonFiles: ["work/scoring/projection.jsonl"],
+    };
+    const profilePath = path.join(root, "profile.json");
+    await fs.writeFile(profilePath, JSON.stringify(profile, null, 2));
+    return profilePath;
+  }
 
-  it("resume from interrupted state resumes at first incomplete stage", async () => {
-    const allStages = [
-      "source-admission",
-      "frame-identity",
-      "liveness",
-      "homepage-capture",
-      "detected-capture",
-    ];
-    const completedStages = ["source-admission", "frame-identity"];
+  it("clean run completes all 13 stages but is not qualified without comparison", async () => {
+    const profile = await buildStubRuntime(path.join(tmpDir, "clean-setup"));
+    const manifest = await runRehearsal({
+      profile,
+      targets: 1000,
+      evidenceRoot: path.join(tmpDir, "clean-run"),
+    });
+    expect(manifest.status).toBe("complete");
+    expect(manifest.stages).toHaveLength(13);
+    expect(manifest.operationallyQualified).toBe(false);
+    expect(manifest.peakWorkBytes).toBeGreaterThan(0);
+    expect(manifest.peakWorkFiles).toBeGreaterThan(0);
+  }, 120_000);
 
-    // Find first incomplete stage
-    let startFrom = 0;
-    for (let i = 0; i < allStages.length; i++) {
-      if (!completedStages.includes(allStages[i]!)) {
-        startFrom = i;
-        break;
-      }
-    }
+  it("fault-interrupted run resumes to a byte-identical projection and qualifies", async () => {
+    const profile = await buildStubRuntime(path.join(tmpDir, "setup"));
+    const clean = await runRehearsal({
+      profile,
+      targets: 1000,
+      evidenceRoot: path.join(tmpDir, "clean"),
+    });
+    const faultRoot = path.join(tmpDir, "faulted");
+    await expect(
+      runRehearsal({
+        profile,
+        targets: 1000,
+        evidenceRoot: faultRoot,
+        faultStage: "extraction",
+      }),
+    ).rejects.toThrow("REHEARSAL_FAULT_INTERRUPTED:extraction");
+    const interrupted = JSON.parse(
+      await fs.readFile(path.join(faultRoot, "run-manifest.json"), "utf8"),
+    ) as { status: string; faults: { stage: string; boundary: string }[]; stages: unknown[] };
+    expect(interrupted.status).toBe("interrupted");
+    expect(interrupted.faults).toHaveLength(1);
+    expect(interrupted.faults[0]).toMatchObject({
+      stage: "extraction",
+      boundary: "extraction-checkpoint",
+    });
+    expect(interrupted.stages.length).toBeLessThan(13);
 
-    expect(allStages[startFrom]).toBe("liveness");
-  });
+    const resumed = await runRehearsal({
+      profile,
+      targets: 1000,
+      evidenceRoot: faultRoot,
+      resume: path.join(faultRoot, "run-manifest.json"),
+      compare: path.join(tmpDir, "clean", "run-manifest.json"),
+      faultStage: "extraction",
+    });
+    expect(resumed.status).toBe("complete");
+    expect(resumed.stages).toHaveLength(13);
+    expect(resumed.comparison?.match).toBe(true);
+    expect(resumed.selectedProjectionSha256).toBe(clean.selectedProjectionSha256);
+    expect(resumed.operationallyQualified).toBe(true);
+  }, 240_000);
 
-  it("deterministic failpoint produces same fault decision for same inputs", () => {
-    // Verify that the deterministic fault injection formula is reproducible
-    const faultRates = {
-      "cas-write": 0.001,
-      "event-transaction": 0.001,
-      "final-publication": 0.001,
-      "extraction-checkpoint": 0.001,
-      "scientific-report": 0.001,
-      "replica-copy": 0.001,
-      "public-promotion": 0.001,
-    } as const;
-
-    const targets = 1000;
-    let counter = 0;
-
-    // Run the same calculation twice and verify identical results
-    const results1: boolean[] = [];
-    const results2: boolean[] = [];
-
-    for (let stageIndex = 0; stageIndex < 13; stageIndex++) {
-      counter++;
-      const rate = faultRates["cas-write"] * (targets >= 200000 ? 1 : 0.1);
-      const deterministic = ((stageIndex * 7919 + counter) % 100000) / 100000;
-      results1.push(deterministic < rate);
-    }
-
-    counter = 0;
-    for (let stageIndex = 0; stageIndex < 13; stageIndex++) {
-      counter++;
-      const rate = faultRates["cas-write"] * (targets >= 200000 ? 1 : 0.1);
-      const deterministic = ((stageIndex * 7919 + counter) % 100000) / 100000;
-      results2.push(deterministic < rate);
-    }
-
-    expect(results1).toEqual(results2);
-  });
-
-  it("implementation fingerprint is deterministic for same stage definitions", () => {
-    const proofs = [
-      {
-        stage: "a",
-        consumed: ["x"],
-        produced: ["y"],
-        verified: ["z"],
-        faultPoint: "cas-write" as const,
-      },
-      {
-        stage: "b",
-        consumed: ["y"],
-        produced: ["w"],
-        verified: ["v"],
-        faultPoint: null,
-      },
-    ];
-
-    const fingerprint1 = createHash("sha256")
-      .update(
-        JSON.stringify({
-          stages: proofs.map((p) => p.stage),
-          consumed: proofs.map((p) => p.consumed),
-          produced: proofs.map((p) => p.produced),
-          verified: proofs.map((p) => p.verified),
-          faultPoints: proofs.map((p) => p.faultPoint ?? null),
-        }),
-      )
-      .digest("hex");
-
-    const fingerprint2 = createHash("sha256")
-      .update(
-        JSON.stringify({
-          stages: proofs.map((p) => p.stage),
-          consumed: proofs.map((p) => p.consumed),
-          produced: proofs.map((p) => p.produced),
-          verified: proofs.map((p) => p.verified),
-          faultPoints: proofs.map((p) => p.faultPoint ?? null),
-        }),
-      )
-      .digest("hex");
-
-    expect(fingerprint1).toBe(fingerprint2);
-  });
-
-  it("implementation fingerprint changes when stage evidence changes", () => {
-    const baseProofs = [
-      {
-        stage: "a",
-        consumed: ["x"],
-        produced: ["y"],
-        verified: ["z"],
-        faultPoint: null,
-      },
-    ];
-
-    const modifiedProofs = [
-      {
-        stage: "a",
-        consumed: ["x", "x2"], // Added consumed evidence
-        produced: ["y"],
-        verified: ["z"],
-        faultPoint: null,
-      },
-    ];
-
-    const fingerprint1 = createHash("sha256")
-      .update(
-        JSON.stringify({
-          stages: baseProofs.map((p) => p.stage),
-          consumed: baseProofs.map((p) => p.consumed),
-          produced: baseProofs.map((p) => p.produced),
-          verified: baseProofs.map((p) => p.verified),
-          faultPoints: baseProofs.map((p) => p.faultPoint ?? null),
-        }),
-      )
-      .digest("hex");
-
-    const fingerprint2 = createHash("sha256")
-      .update(
-        JSON.stringify({
-          stages: modifiedProofs.map((p) => p.stage),
-          consumed: modifiedProofs.map((p) => p.consumed),
-          produced: modifiedProofs.map((p) => p.produced),
-          verified: modifiedProofs.map((p) => p.verified),
-          faultPoints: modifiedProofs.map((p) => p.faultPoint ?? null),
-        }),
-      )
-      .digest("hex");
-
-    expect(fingerprint1).not.toBe(fingerprint2);
-  });
+  it("controller interrupt after a stage resumes at the next stage", async () => {
+    const profile = await buildStubRuntime(path.join(tmpDir, "setup2"));
+    const root = path.join(tmpDir, "interrupted");
+    await expect(
+      runRehearsal({
+        profile,
+        targets: 1000,
+        evidenceRoot: root,
+        interruptAfterStage: "liveness",
+      }),
+    ).rejects.toThrow("REHEARSAL_INTERRUPTED:liveness");
+    const resumed = await runRehearsal({
+      profile,
+      targets: 1000,
+      evidenceRoot: root,
+      resume: path.join(root, "run-manifest.json"),
+    });
+    expect(resumed.status).toBe("complete");
+    expect(resumed.stages).toHaveLength(13);
+  }, 240_000);
 });
