@@ -1,0 +1,20 @@
+schema: "population-policy@1"
+#
+# Population frame policy for HDRI post-stratification — the Destatis 16×7 contract.
+#
+# The same statistical frame applies to 2026-q2 (implicit: Destatis group + bundesland
+# via asset_hwo_mappings in ExportMartGogol) and 2026-q3 (formal population-frame
+# contract). Only the validation machinery is new; the frame definition is unchanged.
+
+frame:
+  source: "Destatis / ZDH Handwerkszaehlung"
+  table: "53111-0011"
+  statisticalUnit: "Handwerksunternehmen"
+  strata:
+    system: "destatis_group"
+    groups: ["I", "II", "III", "IV", "V", "VI", "VII"]
+    count: 7
+  regions:
+    system: "bundesland"
+    count: 16
+  cells: 112 # 16 bundeslaender x 7 destatis groups

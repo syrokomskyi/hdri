@@ -6,71 +6,75 @@
  * <CHANGE_SUMMARY>
   <item>Document the existing methodology-snapshot module contract for Compass-aware maintenance.</item>
   <item>RFC-0107: include content hashes (codebookSha256, ontologySha256) in snapshot output for content-based methodology identity.</item>
+  <item>Q2-Q3 comparability: emit all 8 METHODOLOGY_CONTENT_FIELDS digests. File-backed artifacts
+  hash raw source bytes; signal map + scoring semantics use canonical semantic digests
+  (methodology-digests.ts) so identical behavior hashes identically across refactors.</item>
 </CHANGE_SUMMARY>
 */
 
-import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { scoringSemanticsDigest, sha256hex, signalMapDigest } from "./methodology-digests";
 import { arg, computeInputFingerprint, fileExists, requireCommonArgs, writeReport } from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
 const codebookPath = arg("--codebook");
 const ontologyPath = arg("--ontology");
-const policiesDir = arg("--policies-dir");
+const missingnessPolicyPath = arg("--missingness-policy");
+const classificationPolicyPath = arg("--classification-policy");
+const populationPolicyPath = arg("--population-policy");
+const suppressionPolicyPath = arg("--suppression-policy");
+// Optional provenance marker — e.g. "reconstructed-from-preserved-evidence" for a
+// snapshot rebuilt from recovered Q2 content rather than produced at seal time.
+const provenance = arg("--provenance");
 
 const violations: string[] = [];
 const warnings: string[] = [];
 
-const hashFile = async (filePath: string): Promise<string> => {
-  const content = await fs.readFile(filePath);
-  return createHash("sha256").update(content).digest("hex");
+/** Reads + hashes a required file-backed component; records a violation when absent. */
+const componentDigest = async (
+  filePath: string | undefined,
+  label: string,
+): Promise<string | undefined> => {
+  if (!filePath) {
+    violations.push(`${label}_missing`);
+    return undefined;
+  }
+  if (!(await fileExists(path.resolve(filePath)))) {
+    violations.push(`${label}_not_found`);
+    return undefined;
+  }
+  return sha256hex(await fs.readFile(path.resolve(filePath)));
 };
 
 let codebookVersion: string | undefined;
 let ontologyVersion: string | undefined;
-let canonicalHash: string | undefined;
-let codebookSha256: string | undefined;
-let ontologySha256: string | undefined;
 
-if (!codebookPath || !ontologyPath) {
-  violations.push("methodology_inputs_missing");
-} else {
-  if (!(await fileExists(path.resolve(codebookPath)))) {
-    violations.push("codebook_not_found");
-  } else if (!(await fileExists(path.resolve(ontologyPath)))) {
-    violations.push("ontology_not_found");
-  } else {
-    const codebookHash = await hashFile(path.resolve(codebookPath));
-    const ontologyHash = await hashFile(path.resolve(ontologyPath));
-    codebookSha256 = codebookHash;
-    ontologySha256 = ontologyHash;
+// File-backed declarative artifacts → raw source bytes.
+const codebookSha256 = await componentDigest(codebookPath, "codebook");
+const ontologySha256 = await componentDigest(ontologyPath, "ontology");
+const missingnessPolicySha256 = await componentDigest(missingnessPolicyPath, "missingness_policy");
+const classificationPolicySha256 = await componentDigest(
+  classificationPolicyPath,
+  "classification_policy",
+);
+const populationPolicySha256 = await componentDigest(populationPolicyPath, "population_policy");
+const suppressionPolicySha256 = await componentDigest(suppressionPolicyPath, "suppression_policy");
 
-    const codebook = await fs.readFile(path.resolve(codebookPath), "utf8");
-    const codebookMatch = codebook.match(/version:\s*["']?([^"'\n#]+)/);
-    codebookVersion = codebookMatch?.[1]?.trim();
-
-    const ontology = await fs.readFile(path.resolve(ontologyPath), "utf8");
-    const ontologyMatch = ontology.match(/version:\s*["']?([^"'\n#]+)/);
-    ontologyVersion = ontologyMatch?.[1]?.trim();
-
-    let policyHashes: string[] = [];
-    if (policiesDir && (await fileExists(path.resolve(policiesDir)))) {
-      const entries = await fs.readdir(path.resolve(policiesDir), { withFileTypes: true });
-      for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-        if (entry.isFile() && entry.name.endsWith(".yaml")) {
-          policyHashes.push(await hashFile(path.join(path.resolve(policiesDir), entry.name)));
-        }
-      }
-    }
-
-    canonicalHash = createHash("sha256")
-      .update([codebookHash, ontologyHash, ...policyHashes].join("\n"))
-      .digest("hex");
-
-    if (!codebookVersion) warnings.push("codebook_version_not_found");
-    if (!ontologyVersion) warnings.push("ontology_version_not_found");
-  }
+// Code components → canonical semantic digests from the live packages.
+let scoringSemanticsSha256: string | undefined;
+let signalMapSha256: string | undefined;
+if (codebookSha256) {
+  const codebook = await fs.readFile(path.resolve(codebookPath!), "utf8");
+  codebookVersion = codebook.match(/version:\s*["']?([^"'\n#]+)/)?.[1]?.trim();
+  if (!codebookVersion) warnings.push("codebook_version_not_found");
+  scoringSemanticsSha256 = scoringSemanticsDigest(codebook);
+  signalMapSha256 = signalMapDigest();
+}
+if (ontologySha256) {
+  const ontology = await fs.readFile(path.resolve(ontologyPath!), "utf8");
+  ontologyVersion = ontology.match(/version:\s*["']?([^"'\n#]+)/)?.[1]?.trim();
+  if (!ontologyVersion) warnings.push("ontology_version_not_found");
 }
 
 await writeReport(
@@ -84,11 +88,26 @@ await writeReport(
     capsuleId,
     codebookPath ?? "",
     ontologyPath ?? "",
-    policiesDir ?? "",
+    missingnessPolicyPath ?? "",
+    classificationPolicyPath ?? "",
+    populationPolicyPath ?? "",
+    suppressionPolicyPath ?? "",
   ),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,
   [],
-  { codebookVersion, ontologyVersion, canonicalHash, codebookSha256, ontologySha256 },
+  {
+    codebookVersion,
+    ontologyVersion,
+    provenance,
+    codebookSha256,
+    ontologySha256,
+    scoringSemanticsSha256,
+    signalMapSha256,
+    missingnessPolicySha256,
+    classificationPolicySha256,
+    populationPolicySha256,
+    suppressionPolicySha256,
+  },
 );

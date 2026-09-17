@@ -1,0 +1,40 @@
+schema: "missingness-policy@1"
+#
+# Missingness policy for HDRI scoring — codifies how absent signals are scored.
+# These semantics are implemented by scoreSite/isMissing in @syrokomskyi/hdri-codebook
+# and declared per-indicator via the codebook `missing:` field.
+#
+# Identical between 2026-q2 and 2026-q3: same codebook missing declarations and the
+# same scoring engine behavior (verified by behavioral fingerprint 6004be41…).
+
+# A signal value counts as "missing" when it is null/undefined or an empty/blank
+# string. presence-typed rules are never treated as missing (absence IS the signal).
+missingDetection:
+  presenceRuleNeverMissing: true
+  missingWhen: ["null", "undefined", "empty_or_blank_string"]
+
+# Per-indicator `missing.kind` resolution.
+kinds:
+  zero:
+    score: 0
+    confidence: 1.0
+    countsWeight: true
+  skip:
+    excludedFromRollup: true
+  impute:
+    score: "<indicator.missing.imputedScore>"
+    confidence: 0.5
+    countsWeight: true
+  conditional:
+    # Resolve via upstream collection status signalStatuses[inputKey]; when absent,
+    # fall back to states.absent, then to default.
+    resolveVia: "signalStatuses[inputKey]"
+    fallbackOrder: ["states[explicitStatus]", "states.absent", "default"]
+    states: ["absent", "unreachable", "forbidden", "not_applicable"]
+    stateOutcomes:
+      zero: { score: 0, confidence: 1.0, countsWeight: true }
+      exclude: { excludedFromRollup: true }
+      skip: { excludedFromRollup: true }
+
+# A present value that fails its scoring rule is excluded (score null, weight 0).
+ruleErrorOutcome: { excludedFromRollup: true }

@@ -1,0 +1,21 @@
+schema: "k-anon-policy@1"
+#
+# RECONSTRUCTED Q2 suppression / k-anonymity policy.
+# provenance: reconstructed-from-preserved-evidence
+#
+# Q2 (emit 2026-05-27, pipelines-webgogol-4 @ a574593c) had NO versioned policy file.
+# The threshold was a hardcoded constant K_ANONYMITY_MIN = 5 applied uniformly to all
+# published aggregates (ExportMartGogol.ts:38, export-hdri-dashboard-archive.ts).
+# Codified here as the equivalent effective policy.
+
+provenance: reconstructed-from-preserved-evidence
+source:
+  repo: pipelines-webgogol-4
+  commit: a574593cbb261c58becfc7c751cf63cbca175f86
+  evidence: "const K_ANONYMITY_MIN = 5 (hardcoded, all products)"
+
+# Q2 applied a single flat threshold — equivalent to default_k == hard_floor == 5.
+default_k: 5
+hard_floor: 5
+high_risk_release: false
+effective_k_min: 5

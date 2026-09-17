@@ -1,0 +1,22 @@
+schema: "classification-qc-policy@1"
+#
+# RECONSTRUCTED Q2 classification policy.
+# provenance: reconstructed-from-preserved-evidence
+#
+# Q2 (emit 2026-05-27, pipelines-webgogol-4 @ a574593c) performed NO classification QC
+# sampling. The Destatis group classification existed (asset_hwo_mappings), but there
+# was no QC sampling policy — classification-qc-policy-v1.yaml postdates Q2 (RFC-0107,
+# 2026-09-12). Codified here as the honest "no QC" policy.
+
+provenance: reconstructed-from-preserved-evidence
+source:
+  repo: pipelines-webgogol-4
+  commit: a574593cbb261c58becfc7c751cf63cbca175f86
+  evidence: "no classification QC policy file or sampling code at Q2-seal"
+
+qc: none
+maxSamplePerCell: 0
+minimumWilsonLowerBound: 0
+censusCellsUseExactPrecision: false
+suppressedProductsOnMissingLabels: []
+suppressedProductsOnFailedStrata: []
