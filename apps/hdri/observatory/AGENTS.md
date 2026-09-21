@@ -160,3 +160,12 @@ Qualification adapters under `run/qualification/adapters/` must emit byte-identi
 - Never fire-and-forget async appends (`void appendJsonl`, `void fsp.appendFile`) inside synchronous `db.transaction` callbacks: concurrent `appendFile` calls complete out of order on the libuv threadpool and reorder projection lines across runs. `appendJsonl` in `adapters/common.ts` writes synchronously for this reason — keep it that way.
 - Concurrent worker pools (e.g. `browser-audit` axe slots) must buffer each result by its deterministic input index and flush in input order after `Promise.all` — completion order is non-deterministic.
 - `.sqlite` outputs are never byte-reproducible (page layout, freelist, change counter) and may hold volatile evidence (`liveness.latency_ms`); exclude volatile fields from projections. `consumedSha256` binds to upstream output bytes, so any non-deterministic upstream output propagates into `source_hash`/emit signatures — only the JSONL projections are the comparison surface.
+
+## Rehearsal adapter scale safety (200k qualification)
+
+Lessons from the 10k/50k/200k scale rehearsals — all four bugs only fired at ≥50k and each cost a multi-hour run:
+
+- Never do per-row autocommit inserts into SQLite at scale. Under `journal_mode=DELETE` every row is an fsync — ~1.2M cycles stalled `extraction` ~8.3h at 50k and exhausted the 12h stage budget (unresumable). Batch inserts inside periodic `db.transaction` blocks (`COMMIT_EVERY` in `adapters/extraction/produce.ts`): ~0.3min at 50k, ~1.4min at 200k.
+- Never `fsp.readFile` a file just to hash it — Node throws `ERR_FS_FILE_TOO_LARGE` past 2 GiB (`translation/observations.sqlite` is ~3.6 GB at 200k). Stream via `createReadStream` → `createHash`; use `sha256File` from `adapters/common.ts`. Same for byte-equality checks on large files (`replication/verify.ts` compares shard digests, not buffers).
+- Never spread large arrays into function arguments (`Math.max(...lines)`) — ~200k args overflow the call stack (`RangeError`) at verification time, after the producer already ran. Use `reduce`.
+- `inputFingerprint` binds `runtimeSha256`: rebuilding the runtime closure makes every prior run unresumable (`RESUME_INPUT_MISMATCH`). Clean and fault runs of one qualification must share the same runtime — patch the source, rebuild, then re-run BOTH clean and fault on the new closure.
