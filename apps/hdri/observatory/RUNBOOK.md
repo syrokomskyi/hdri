@@ -247,7 +247,7 @@ Each destination contains exact `originals/<role>` bytes, separate `snapshots/<r
 
 Verification always reads every file, checks the exact listed set, hashes, sizes, signature, external key and destination receipt. Unexpected files and symlinks fail. Keep diagnostic logs outside the closure. Copy/read-back is O(total bytes) with several passes, O(file count) inventory memory and bounded streaming buffers; it is not the 200k qualification run.
 
-`planned` with zero exit means read-only validation only. `pass` with zero exit means all declared copies passed byte/signature checks, not operational admission. Errors/interruptions can leave partial output; never delete originals or overwrite an attempted destination to retry. Keep partial roots and select new destinations. The `baseline:import` CLI currently fails before I/O with `BASELINE_CONVERSION_UNVERIFIED`; do not bypass it using internal converter helpers. Follow the [A1 correction sequence](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
+`planned` with zero exit means read-only validation only. `pass` with zero exit means all declared copies passed byte/signature checks, not operational admission. Errors/interruptions can leave partial output; never delete originals or overwrite an attempted destination to retry. Keep partial roots and select new destinations. The `baseline:import` CLI now runs the verified converter end-to-end — it authenticates every declared replica, materializes all retained domains into a fresh current-schema target and independently rereads both sides, completing `compared-not-admitted`. That status is conversion+comparison only, never operational admission; producer/device attribution, custody and the admission gate remain separate. Follow the [A1 correction sequence](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
 
 ### Baseline comparison building blocks (A1 partial)
 
@@ -266,7 +266,7 @@ The WAL integration fixture uses the actual preservation coordinator and verifie
 
 ### Verified baseline input preparation (A1 partial)
 
-Code checkpoint `ac6a4e2` adds `prepareBaselineSource` to the existing preservation owner. It accepts `destinations`, `manifestSha256`, `verificationKeys`, an exact `sourceDestinationPath` selecting one declared copy, and a new absolute `workRoot`. There is no CLI command for this intermediate step; `baseline:import` stays blocked.
+Code checkpoint `ac6a4e2` adds `prepareBaselineSource` to the existing preservation owner. It accepts `destinations`, `manifestSha256`, `verificationKeys`, an exact `sourceDestinationPath` selecting one declared copy, and a new absolute `workRoot`. `baseline:import` invokes this as its first stage, then the scope/methodology checks and the joined materialization+comparison.
 
 The function verifies signatures, receipts and every object in all declared copies before creating work files. Trust comes from the externally supplied digest/key, never the bundled key or a caller-supplied manifest. Caller-owned metadata is detached before asynchronous work. The existing current `source-NNNN/<relative>` inventory layout identifies original roots solely to prevent filesystem overlap; it does not establish producer/device attribution. Unknown/inconsistent layouts fail before working output. Recorded original paths are not opened or required to exist, but the work root must be disjoint from them and every replica.
 
