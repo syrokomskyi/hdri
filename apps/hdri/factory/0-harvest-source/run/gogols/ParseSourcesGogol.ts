@@ -72,8 +72,9 @@ import { listBatchSourceFiles } from "../source-files.js";
 import { getParserForSource } from "../parsers/index.js";
 import { classifySeedWebsite, parseSourceDocument } from "../parsers/source-document.js";
 import { openCoreSqlite } from "../db/connection.js";
-import { getDbDir } from "../paths.js";
-import { outputRootDir } from "../config.js";
+import { getBatchInputDir, getDbDir } from "../paths.js";
+import { inputDir, outputRootDir } from "../config.js";
+import { exclusionsClosureSha256, loadVerifiedSourceExclusions } from "../source-exclusions.js";
 import {
   insertSkippedSeed,
   upsertFileStat,
@@ -221,7 +222,47 @@ export class ParseSourcesGogol extends Gogol {
 
       const DEPENDENCY_FINGERPRINT = "harvest-v2";
 
+      // B2: operator-authorized exclusions (review 2026-09-15). When an artifact exists for
+      // this batch it is fully verified — entire source closure + every listed file's
+      // path/sha256/bytes — before any file is skipped. Excluded files keep an explicit
+      // operator-excluded receipt bound to the authorized set digest; anything unrecognized
+      // outside the authorized set still fails closed below.
+      const exclusions = await loadVerifiedSourceExclusions(
+        path.join(inputDir, "source-exclusions.json"),
+        batchName,
+        getBatchInputDir(batchName),
+      );
+      if (exclusions) {
+        for (const entry of exclusions.values()) {
+          upsertFileStat(
+            db,
+            {
+              path: `${batchName}/${entry.path}`,
+              type: "excluded",
+              itemsParsed: 0,
+              itemsRegistered: 0,
+              itemsSkipped: 0,
+              noUrl: 0,
+              badUrl: 0,
+              stopDomain: 0,
+            },
+            0,
+            { noUrl: 0, badUrl: 0, stopDomain: 0 },
+            {
+              contentSha256: entry.sha256,
+              parserId: "operator-excluded",
+              parserVersion: exclusionsClosureSha256([...exclusions.values()]),
+              dependencyFingerprint: DEPENDENCY_FINGERPRINT,
+            },
+          );
+        }
+        console.log(
+          `  Operator-authorized exclusions verified: ${exclusions.size} file(s) excluded`,
+        );
+      }
+
       let sourceFiles = allSourceFiles.filter((sf) => {
+        if (exclusions?.has(sf.logicalPath)) return false; // excluded: receipt already written
         const existing = processedReceipts.get(sf.batchScopedPath);
         if (!existing) return true; // No receipt or NULL content_sha256 → re-parse
         const currentHash = fileHashes.get(sf.batchScopedPath)!;

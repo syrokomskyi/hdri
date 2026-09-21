@@ -1,0 +1,4073 @@
+{
+  "schema": "hdri-source-exclusions@1",
+  "batch": "2026-q3-de-01",
+  "sourceSha256": "49698e1263ebe80919c35f9c26fa6c2151056b8e316d5a12ba6160ca71608619",
+  "inventorySha256": "17e9018b25c425d7536aa24e2486c0857e03e042ddeea1ea013454c6dce3885c",
+  "summarySha256": "268e1b136a172ddab029c805d013cd6340d1a96d5d99d5fde4edba358b89bb73",
+  "authorization": "docs/reviews/code/apps-hdri-observatory/review-2026-09-15-16-15-apps-hdri-observatory.md",
+  "exclusionsSha256": "5f05b8e354729dab66f75db86fab5ead2ca2dc903460c67a30cc95fccf5fe1a2",
+  "exclusions": [
+    {
+      "path": "www.stadtbranchenbuch.com/aachen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/aachen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/aachen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/achat-hotels.com/berlin",
+      "sha256": "7dd39a5bb909223616fc23acc84acd1311b33151746b27cb2fbfb60b4f70cd5b",
+      "bytes": 241835,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/albershausen.stadtbranchenbuch.com/1357162.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/albershausen.stadtbranchenbuch.com/7880794.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/albershausen.stadtbranchenbuch.com/874769.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/0357/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/0483/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/0657/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/1163/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/1573/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/1894/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/2631/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/3120/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/3278/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/3321/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/3745/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/3752/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/5058/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/5347/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/5513/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/5694/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/7091/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/7961/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/7968/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/8601/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/9068/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/9147/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/B143/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/B4C5/index.en.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/B626/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/B907/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/B913/index.en.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/B9D1/index.de.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/all.accor.com/hotel/B9F0/index.en.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/altdorf-kreis-boeblingen.stadtbranchenbuch.com/690845.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/altdorf.stadtbranchenbuch.com/8869646.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/attenweiler.stadtbranchenbuch.com/61313.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bad-ueberkingen.stadtbranchenbuch.com/7880926.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bammental.stadtbranchenbuch.com/1542779.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bammental.stadtbranchenbuch.com/1542917.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bempflingen.stadtbranchenbuch.com/7875623.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/berghaupten.stadtbranchenbuch.com/7941911.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/berlin.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/berlin.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/berlin.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/berlin.stadtbranchenbuch.com/F/-2.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/berlin.stadtbranchenbuch.com/T/-1.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bermatingen.stadtbranchenbuch.com/7972015.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bielefeld.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bielefeld.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bielefeld.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bigsquadra.com/restaurants/coccodrillo-berlin",
+      "sha256": "963bc36288d0e743c3607749c4cb9e5eccafd047e48955577815bc2a2e2b831f",
+      "bytes": 257184,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bigsquadra.com/restaurants/edmondo-hamburg",
+      "sha256": "0f1450bb8105caa5f21ec4c20144b50bd73f3a182e8d05de6e7f79fff07d0a62",
+      "bytes": 258460,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bochum.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bochum.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bochum.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bodnegg.stadtbranchenbuch.com/1460057.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/boebingen-an-der-rems.stadtbranchenbuch.com/7904178.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/boutiques.valentino.com/en-wx/germany/valentino-alsterhaus-hamburg-germany/_utm_source=StorePages&utm_medium=GMB&utm_content=DE&utm_campaign=valentino-alsterhaus-hamburg-germany",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bretten.stadtbranchenbuch.com/1051227.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-baden-wuerttemberg.stadtbranchenbuch.com/altheim/2447839.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-baden-wuerttemberg.stadtbranchenbuch.com/braunenweiler/3493181.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-baden-wuerttemberg.stadtbranchenbuch.com/dangstetten/7958131.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-baden-wuerttemberg.stadtbranchenbuch.com/fachsenfeld/68853.html",
+      "sha256": "e32cf846f4ebde063938fbfd8928a3829c613235b40bff5aca8aa2159d0115c7",
+      "bytes": 32264,
+      "auditDisposition": "error"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-baden-wuerttemberg.stadtbranchenbuch.com/fueramoos/7970561.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-baden-wuerttemberg.stadtbranchenbuch.com/rammingen-wuerttemberg/3162178.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-baden-wuerttemberg.stadtbranchenbuch.com/taeferrot/3863999.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bayern.stadtbranchenbuch.com/lindach/817340.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/alleshausen-brasenberg/2525048.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/altheim-bei-riedlingen/4085427.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/bad-saulgaua/5226025.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/berkheim-kreis-biberach-an-der-riss/3863873.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/berkheim-kreis-biberach-an-der-riss/962302.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/bu00e4renthal/9435082.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/drackenstein-schwaebische-alb/8298460.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/eberhardzell-ot-oberessendorf/9775101.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/erolzheim-kreis-biberach-an-der-riss/8734282.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/erolzheim-kreis-biberach-an-der-riss/9301637.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/eselbach/86478.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/herrenberg-im-gaeu/6357818.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/koelleshof/47005.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/1679499.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/1855668.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/51463.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/6398903.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/8762250.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/8986896.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/9196203.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/9219468.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/langenau-wuerttemberg/9302900.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/meersburg-bodensee/148099.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/oellingen-wuerttemberg/8934512.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/riedlingen-wuerttemberg/8986069.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/schramberg-sulgen/3472448.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/schramberg-sulgen/7609109.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/schramberg-sulgen/79691.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/st-johann-gaechingen/1545083.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/st-johann-gaechingen/7961494.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/bundesland-bb.stadtbranchenbuch.com/trebbichau-an-der-fuhne/4594729.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/castrop-rauxel.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/castrop-rauxel.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/castrop-rauxel.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/cleebronn.stadtbranchenbuch.com/1654709.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-boulevard-(schlossstrasse)",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-danzigerstrasse",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-friedrichstr-s-u-bhf-(wayne-s)",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-friedrichstrasse-(checkpoint)",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-humboldthafen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-keithstrasse",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-panoramastrasse-(alex-4)",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-rathausstrasse-(alex-2)",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-ring-center-2-og",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-ring-center-3-eg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/berlin-rosa-luxemburg-strasse-(alexanderplatz)",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/cs-koeln-hauptbahnhof",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/foodfactory-berlin-cube",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-ak-harburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-ak-rissen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-brandsende",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-grosser-grasbrook",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-hauptbahnhof",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-kaiserkai",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-ottenser-haupstrasse",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-st-georg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-stephansplatz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/hamburg-strandkai",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/koeln-antonsgasse-7",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/koeln-cinedom",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/koeln-flughafen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/koeln-hauptbahnhof",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/coffee-fellows.com/locations/koeln-karolingerring",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/consent.youtube.com/m_continue=https%3A%2F%2Fwww.youtube.com%2Fuser%2FBAEKclips%3Fcbrd%3D1&gl=DE&m=0&pc=yt&cm=2&hl=en&src=1",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/consent.youtube.com/ml_continue=https_/www.youtube.com/user/BAEKclips_cbrd%3D1&gl=DE&hl=en&cm=2&pc=yt&src=1&escs=AZ8E49Ac7WrKx3djfgJeIQIm6HBbLE5hwORu-azadvfhEBoFih3upz_MPJzIdzI0vnvQnRODIdeLTKPdMtvIANnJyidhZrBOfWug",
+      "sha256": "ca84c0fcce70ea6136db2f5ad1e66e2b8010d568d55692c2e7c91925a0e36c71",
+      "bytes": 34509,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/cookies.txt",
+      "sha256": "a9d14b2dabb8528fd26e1678165df8d6bd3fd859955366ec74461dbe9d8961e5",
+      "bytes": 30076,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/crailsheim.stadtbranchenbuch.com/6092916.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/dahler.com/alster-ost",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/deckenpfronn.stadtbranchenbuch.com/7872364.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/denkingen.stadtbranchenbuch.com/8854738.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/devk-re.com/_utm_source=ExtNet&utm_medium=listings&utm_campaign=AOB---YID100385853&utm_term=RD",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/dienst-leister.com/index.php/hausverwaltung",
+      "sha256": "a0272456b6b5c10999784cbf73db5fb0b1e71f058b86b3abc552f9eb4878b886",
+      "bytes": 21512,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/direct-book.com/properties/hoteldelisa",
+      "sha256": "2dee35707a13527a379640722278eac55b169cf0648826288e250fa4c179877f",
+      "bytes": 56223,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/dortmund.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/dortmund.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/dortmund.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/dq.mediamarktsaturn.com/Customer/ServiceMenu_b=9CE71601-C13D-4099-90A5-C4C16903F646",
+      "sha256": "c4604cd36daabe133e91e5447207568ad1759596427deba9be8fcba4469bd91e",
+      "bytes": 16334,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/duesseldorf.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/duesseldorf.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/duesseldorf.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/duesseldorf.stadtbranchenbuch.com/T/-1.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/1254401.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/1329794.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/1590470.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/1590524.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/1694424.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/2827624.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/2982090.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/3673684.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/3937577.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/3937629.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/5152796.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/5662846.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/7904363.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/7904365.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/7904392.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/7904405.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/8846342.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/durlangen.stadtbranchenbuch.com/9348956.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/elchesheim-illingen.stadtbranchenbuch.com/7914823.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/erolzheim.stadtbranchenbuch.com/59337.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/erolzheim.stadtbranchenbuch.com/8858745.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/ertingen.stadtbranchenbuch.com/7968017.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/eschweiler.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/eschweiler.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/eschweiler.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/fhp-immobilien.com/_y_source=1_MTQ4NjgyNzMtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "bba6dc9129fe6282f2f732fa7999ab799380e575b9aab4a22f8cf613dbf1b5ea",
+      "bytes": 305243,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/find.shell.com/de/fuel/10024714-haslach-muehlenstr/de_DE",
+      "sha256": "ccc1199a7c2e1c4e297d32995499f555b88a2068b55806905d6997ea59d3dda6",
+      "bytes": 177790,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/find.shell.com/de/fuel/10024722-binzen-an-der-b/de_DE",
+      "sha256": "596bd1257bc11723bcf040fc0bf5129a68a1cb2130d9c6aea59e2d89c25fe2eb",
+      "bytes": 179626,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/find.shell.com/de/fuel/10024952-breitnau-oberhoellsteig/de_DE",
+      "sha256": "74b05f00bc0e1d1a7f13c8bfc693170aa0086cf26e291488de6a379559bc14d3",
+      "bytes": 178514,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/find.shell.com/de/fuel/10025510-aichstetten-am-waizenhof-12/de_DE",
+      "sha256": "34d3fa657d26a3d246ecda3652eb43ea8f68a54d424a8f9e9d8d1a8cd51935ef",
+      "bytes": 179600,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/find.shell.com/de/fuel/10025596-dogern-schnotstr/de_DE",
+      "sha256": "1b5bf52ccc8cbd0ed2cf020702b3e78440909b94e639cb1174d32fefc6313d22",
+      "bytes": 180801,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/find.shell.com/de/fuel/10027411-boennigheim-erligheimer-str/de_DE",
+      "sha256": "8b962975e578b74f9f8bec5815928e811ef84b653a6809c208ba2993f36b8f6c",
+      "bytes": 179237,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/find.shell.com/de/fuel/11294753-eberhardzell-petrusstr-2/de_DE",
+      "sha256": "670161a3ff56ca3ae2dc4104b527d9e3bde34d5ed19f868e53998b7e6aa32dbb",
+      "bytes": 178737,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/find.shell.com/de/fuel/12986524-ev-rewe-riedlingen-gammertinge/de_DE",
+      "sha256": "b339f1369d55073acc87fc6fb91d830ab6181d2300146f1aa245e0c12254a65f",
+      "bytes": 177423,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/flensburg.stadtbranchenbuch.com/T/-1.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/form.opendi.com/index.html",
+      "sha256": "7190026df67cb11e683ef575247e580f6aba98a4090234a45ac6bab5ccb518b5",
+      "bytes": 2638,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/form.opendi.com/robots.txt",
+      "sha256": "ff7751af407f3df920736e63f41cd564e7d847e7d20744b39df27fb5a050fc0c",
+      "bytes": 1081,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/frankenhardt.stadtbranchenbuch.com/7900855.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/frankfurt.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/frankfurt.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/frankfurt.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/freudental.stadtbranchenbuch.com/7884439.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/frittenwerk.com/berlin-alexanderplatz.php",
+      "sha256": "6449ab7f987cf3caf5887710aa64e4ebaa3816807cd62c45e9bc2663fe656f52",
+      "bytes": 336349,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/frittenwerk.com/berlin-tauentzienstrasse.php",
+      "sha256": "c575ee60f5b85eb2acfacc224dad3ce569259b5ca6419bac9c7d88065637b9a3",
+      "bytes": 335197,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/frittenwerk.com/hamburg-hbf.php",
+      "sha256": "8fe05d4fa020a52bcffbbd13d74ddb02f817890947ebb56df19ef26582a57c69",
+      "bytes": 312156,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/garbsen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/garbsen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/garbsen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/gasthof-adler-berkheim.eatbu.com/_lang=de",
+      "sha256": "942ca93767bd6de80845946910c47cfbbaef3288edf326deac7ae49c21fd8a66",
+      "bytes": 469840,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/gelsenkirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/gelsenkirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/gelsenkirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/goettingen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/goettingen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/goettingen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/F/-2.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/S/4444.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/T/-1.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/T/1054.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/T/2973.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/T/421.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/T/424.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/T/425.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/T/436.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/T/549.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/V/1293.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/V/1951.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/V/833.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/W/1637.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hamburg.stadtbranchenbuch.com/W/799.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hannover.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hannover.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hannover.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/himmel-ueber-altona-hamburg.eatbu.com/_lang=de",
+      "sha256": "5e475078e13b6dad6080e0a02ccb16e134248933052986b0214ee3e57c0c54b9",
+      "bytes": 105475,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hockenheim.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hockenheim.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hockenheim.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/hrewards.com/de/steigenberger-hotel-am-kanzleramt-berlin_wt_mc=seo_listing.shr.yext.berlin_kanzleramt.hotel_link.text_cta",
+      "sha256": "0472c82ad22e74ebb0bb8852fa07b7c070bf2cb03e6ac752b810c45eaa50956a",
+      "bytes": 356065,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/huettenberg.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/huettenberg.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/huettenberg.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/instagram.com/mr.mrselegant_salon_igshid=MmIzYWVlNDQ5Yg==",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kassel.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kassel.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kassel.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kensington-international.com/de/de/berlin-suedwest/wilmersdorf",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kensington-international.com/de/de/berlin/koepenick",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kensington-international.com/de/de/berlin/mitte",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kensington-international.com/de/de/berlin/pankow",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kirchlengern.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kirchlengern.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kirchlengern.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/A/27.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/F/-2.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/G/188.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/G/3115.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/R/2632.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/koeln.stadtbranchenbuch.com/T/-1.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/kuppenheim.stadtbranchenbuch.com/5145570.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/leipzig.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/leipzig.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/leipzig.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/limburgerhof.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/limburgerhof.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/limburgerhof.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/locations.armani.com/de/giorgio-armani/deutschland/giorgio-armani-hamburg-neuer-wall",
+      "sha256": "9f6f20a7825740efa4974db41af8c961d99f5472a7505a03e73fe0ada832ff9d",
+      "bytes": 33003,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/ludwigshafen-am-rhein.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/ludwigshafen-am-rhein.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/ludwigshafen-am-rhein.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Adalbertstra%c3%9fe%20100+52062+Aachen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Alte%20Dorfstr.%2034%20a+70599+Stuttgart",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Am%20Diebsteich%209+22761+Hamburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Am%20Luftschacht%207+45886+Gelsenkirchen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Am%20Weinberg%201+84076+Pfeffenhausen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=An%20der%20Waldd%c3%b6rferbahn%207+22159+Hamburg-Farmsen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Artur-Ladebeck-Stra%c3%9fe%20151+33647+Bielefeld",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Bahnhofstra%c3%9fe%2014+84347+Pfarrkirchen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Bahnhofstra%c3%9fe%2023+15378+R%c3%bcdersdorf%20bei%20Berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Baierbacher%20Str.%20152+83071+Stephanskirchen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Barfu%c3%9fg%c3%a4%c3%9fchen%2012+04109+Leipzig",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Berliner%20Str.%2043%20A+14169+Berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Bodenshofweg%203+50858+K%c3%b6ln",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Bongardstra%c3%9fe%2021+44787+Bochum",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Brehmstr.%203+40239+D%c3%bcsseldorf",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Bremer%20Stra%c3%9fe%202+27327+Schwarme",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Carl-Benz-Stra%c3%9fe%203+68723+Schwetzingen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Constantinstr.%2090+50679+K%c3%b6ln",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Friedensau%2019+67117+Limburgerhof",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Friedrichstr.%2025+25436+Tornesch",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Goethestr.%2011+35625+H%c3%bcttenberg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Hahnstra%c3%9fe%2070+60528+Frankfurt%20am%20Main",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Hamburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Hans-Theisen-Stra%c3%9fe%202+79331+Teningen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Hiddenhausener%20Str.%201+32278+Kirchlengern",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Hinter%20den%20Bergen%2010+68766+Hockenheim",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Hornemannweg%202+30167+Hannover",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Kaiser-Wilhelm-Str.%2060-62+12247+Berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Kurt-Tucholsky-Str.%2019+52249+Eschweiler",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Kurze-Geismar-Strasse%209+37073+G%c3%b6ttingen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=L%c3%bcneburger%20Str.%2039+21073+Hamburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Lessingstr.%206+64331+Weiterstadt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Moritzstr.%2013+08523+Plauen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Neusser%20Stra%c3%9fe%20260+50733+K%c3%b6ln",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Obere%20Lichtenplatzer%20Stra%c3%9fe%20325+42287+Wuppertal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Pfalzburger%20Stra%c3%9fe%2050+10717+Berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Poppenb%c3%bctteler%20Bogen%2017A+22399+Hamburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=R%c3%b6srather%20Str.%20743+51107+K%c3%b6ln",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Rathausplatz%202+30823+Garbsen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Roggenkamp%201+49597+Rieste",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Rothenditmolder%20Stra%c3%9fe%2010+34117+Kassel",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Rottenbucher%20Str.%2016+81377+M%c3%bcnchen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Saarburger%20Str.%2043+67071+Ludwigshafen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Saseler%20Bogen%203+22393+Hamburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=St.-Apern-Str.%2014-18+50667+K%c3%b6ln",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Steenbreede%204+46348+Raesfeld",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Tempelhofer%20Damm%20171-173+12099+Berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Waldd%c3%b6rferstr.%20104+22041+Hamburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Westenhellweg%20102-106+44137+Dortmund",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Westring%20214+44579+Castrop-Rauxel",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Wiltbergstr.%2023+13125+Berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/maps.google.com/maps_daddr=Zollenspieker%20Hauptdeich%20141+21037+Hamburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/mercure.accor.com/9068",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/muenchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/muenchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/muenchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/muenchen.stadtbranchenbuch.com/T/-1.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/mutlangen.stadtbranchenbuch.com/4358048.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/mutlangen.stadtbranchenbuch.com/4470767.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/mutlangen.stadtbranchenbuch.com/4516653.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/mutlangen.stadtbranchenbuch.com/7905502.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/mutlangen.stadtbranchenbuch.com/7905520.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/numastays.com/locations/germany/berlin/charlottenburg/savi_adults=1&arrival=2023-08-10&children=0&departure=2023-08-12&infants=0",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/pfarrkirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/pfarrkirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/pfarrkirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/pfeffenhausen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/pfeffenhausen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/pfeffenhausen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/plauen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/plauen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/plauen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/raesfeld.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/raesfeld.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/raesfeld.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/bw/aichstetten/am-waizenhof-4_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=49757&utm_campaign=evergreen-2020&y_source=1_MTQ5MjQyODEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "880738f029ec99cc5f031efe86f44e1e1d2ca362feb4c870573eddf1e0c39b8f",
+      "bytes": 410940,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/bw/gaggenau/murgtalstraße-2b3685.html.z",
+      "sha256": "c3b113ea0748149224de4e38c18ee02e8e9666d37d277460eadb8b80e0cea507",
+      "bytes": 90900,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/bw/gaggenau/murgtalstra├ƒe-2b_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=46386&utm_campaign=evergreen-2020&y_source=1_MTQ5MjcwNDItNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "3cc17b48d7fa078d8f064b4ceaaec69a950a2abd88141454e64439f3b1e7d4ec",
+      "bytes": 418188,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/bw/rietheim-weilhelm/langes-gewand-3_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=64995&utm_campaign=evergreen-2020&y_source=1_MTQ5MjY3ODItNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "490fca16e8f1e6c755fa398294b1d77b6906f4c321e44bb850affe3f8256b0a6",
+      "bytes": 421064,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hb/hamburg/glockengießerwall-8-1070d7.html.z",
+      "sha256": "9ed57af6ee107e7bc23f02ff27c1a3d669d03c37b5520444d9f66490e133352e",
+      "bytes": 91216,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hb/hamburg/glockengie├ƒerwall-8-10_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=34422&utm_campaign=evergreen-2020&y_source=1_MTQ5MjY3NzUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "78b9a2ad50c872fbd9766c113154638bfff3b2e35a9293de1274ee3be0afad71",
+      "bytes": 432058,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hb/hamburg/hochenluftchaussee-28_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=42430&utm_campaign=evergreen-2020&y_source=1_MTQ5MjUwNjAtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "dc788b955a7e2c1ebc068ff7363942646bc6501827320d0814f9e44b190a25bb",
+      "bytes": 432434,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/bahnhof-altona-shopping_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=34603&utm_campaign=evergreen-2020&y_source=1_MTQ5MjQyNjYtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "3b410c7d0d73976a494f95449644a1a62bdaee4b4685484b5ee2de89c1891e4e",
+      "bytes": 432625,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/ballindamm-38_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=44594&utm_campaign=evergreen-2020&y_source=1_MTQ5MjQ1MzEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "09ff55a09be9da60397fa3e6b5cf4c6bb4f11aff85bed3de0b64a78d0761df25",
+      "bytes": 432342,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/cuxhavener-str-261_y_source=1_MjA3MTczMjctNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "403c1d399d6298fd9276198c19710fafc01560125e78b4ffa6453a81a02742ca",
+      "bytes": 424912,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/dratelnstraße-32fb94.html.z",
+      "sha256": "95cc1b63fa00b18fe66500b92d28fc5728b91012638eb0ad47a2d58582b1c106",
+      "bytes": 90220,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/dratelnstra├ƒe-32_y_source=1_MTA0NDIzMjc2MS01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "c51fb3ea09a7df904113c7fa747df0020c8d8e8a0a34132d81777e1a5f976fd7",
+      "bytes": 419852,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/gansemarkt-36_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=30800&utm_campaign=evergreen-2020&y_source=1_MTQ5MjU0NTEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "16e9c0f7cf43daeedb114181c417a7df74f179ff78b75ea95e16e26e474ed385",
+      "bytes": 432076,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/hammerbrookstraße-92-942d85.html.z",
+      "sha256": "6e65023f1691f71e900d812debc6959e388c673f8e3b1b8b4509c425e2bac97b",
+      "bytes": 91459,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/hammerbrookstra├ƒe-92-94_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=40696&utm_campaign=evergreen-2020&y_source=1_MTQ5MjcxNzMtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "775be95232aa63acaaf14317b769d7511b995549925efd951a102bf6151b6f3f",
+      "bytes": 432393,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/hannoversche-strasse-86_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=34660&utm_campaign=evergreen-2020&y_source=1_MTQ5Mjc2OTUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "99baf7152d8d17d8cebe86f3126f99fb6816195b93deeeae3af373b06127d7b2",
+      "bytes": 429802,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/heegbarg-2_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=35679&utm_campaign=evergreen-2020&y_source=1_MTQ5MjQ4NjEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "ccd9d452fd332210b6e9652889e6e4e4e9b605b736e2e144d154a075c4745bd2",
+      "bytes": 431625,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/johann-meyer-str-58_y_source=1_ODAzMTI1ODItNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "f470759b2f59a8e9eaf988ba14c9346f9a5bfc23e9a6c0efa4b5ec5b43e7d4c8",
+      "bytes": 419840,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/mollner-landstraße-331e2.html.z",
+      "sha256": "733452216236d1ed63131df8e59aef477d32d48accd602530e24d0788b34d9b1",
+      "bytes": 91371,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/mollner-landstra├ƒe-3_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=39604&utm_campaign=evergreen-2020&y_source=1_MTQ5MjYzMDctNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "d0d6328632e25ec5ef641d34d7f38e9b792418f0f5c678899120dc15206cc938",
+      "bytes": 431253,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/mundsburger-damm-61_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=45026&utm_campaign=evergreen-2020&y_source=1_MTQ5MjM4NzQtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "acda5044474d5b9f343617a958a796da44d82e78db0f5410d072adcf5006d2e5",
+      "bytes": 432247,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/osdorfer-landstr-131-135_y_source=1_MjA3MTY5ODMtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "f119233a00c043ffe1f42973ce334f033cb78149426fdbd09f50633c713ecd68",
+      "bytes": 422051,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/uberseeboulevard-7_y_source=1_MjAwODUzNzMxNi01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "4faf85861f216207d7b976de9f9f27986d0e6d1c638d62f34b790c5d52733860",
+      "bytes": 416632,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/wandsbecker-marktstraße-84566.html.z",
+      "sha256": "809eb1fcf75904d0f50c16da69f5873b4d8918c8e252c64eb63c43ae9086fd73",
+      "bytes": 91318,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/de/deutschland/hh/hamburg/wandsbecker-marktstra├ƒe-8_utm_source=yext-other&utm_medium=local&utm_term=acq&utm_content=64184&utm_campaign=evergreen-2020&y_source=1_MTQ5MjM3OTYtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "a285df67db3093682acbea100d0dfa5ccd79c5c7119600527e0f5bd52da69477",
+      "bytes": 432406,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/germany/bw/buhl-vimbuch/vimbucher-straße-751b4d.html.z",
+      "sha256": "77d331332931a9eeb3bf71bee7de21136617d7bb795117320db9fc9896d465fc",
+      "bytes": 88370,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/germany/bw/buhl-vimbuch/vimbucher-stra├ƒe-75_y_source=1_MjAyMTY0NjEzNC01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "67beb27f0ce002ff1bfda6e9b4b79244c6f293a25235e9965a611b26c1a80f36",
+      "bytes": 395387,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/restaurants.subway.com/germany/hh/hamburg/theodor-heuss-platz-3_y_source=1_MjAzMjM1MjYzNi01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "8d783d6d11aacc5db1157d2b42a5b9d20d41750aa9f0e3fe7c4655a5025270e7",
+      "bytes": 416508,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/rieste.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/rieste.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/rieste.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/ruedersdorf-bei-berlin.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/ruedersdorf-bei-berlin.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/ruedersdorf-bei-berlin.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schoemberg-bei-balingen.stadtbranchenbuch.com/1891424.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schoemberg-bei-balingen.stadtbranchenbuch.com/3360650.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schoenau-im-schwarzwald.stadtbranchenbuch.com/1493962.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwaebisch-gmuend.stadtbranchenbuch.com/1689836.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwaebisch-gmuend.stadtbranchenbuch.com/2966272.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwaebisch-gmuend.stadtbranchenbuch.com/4026285.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwaebisch-gmuend.stadtbranchenbuch.com/5187951.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwaebisch-gmuend.stadtbranchenbuch.com/8635235.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwaebisch-gmuend.stadtbranchenbuch.com/8689148.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwaebisch-gmuend.stadtbranchenbuch.com/8746337.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwarme.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwarme.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwarme.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwetzingen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwetzingen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/schwetzingen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/service.stadtbranchenbuch.com/delete",
+      "sha256": "4227d440da1ef9df0c326a22a49bde950cb06fea9a4aa9f40c047833e0da30ef",
+      "bytes": 6529,
+      "auditDisposition": "unsupported-extension"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/shop.brunellocucinelli.com/de-de/hamburg-209.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/sinn.com/filialen/Alle-Modehaeuser.html_path=/Hamburg/Hamburg-Harburg-156",
+      "sha256": "b3e81034d28d060592ea663e4e19d035ca116c1b37414b43e55d0e92150aa263",
+      "bytes": 129751,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/static.opendi.com/robots.txt",
+      "sha256": "889f17098b8f9db670e2c18832e647a9b5a521cf70103b6c9c6206ff795d45e8",
+      "bytes": 263,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stephanskirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stephanskirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stephanskirchen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/storelocator.hackett.com/_q=Hackett+London+Hamburg+Westfield&y_source=1_MjAxMDk4MDQ1NS01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "2dcb2bbb66b78178305f2f7308d525736b44c2983d057eb79e052dbaadb0543f",
+      "bytes": 142610,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/storelocator.hackett.com/hackett-london-hamburg-9fc32fe152f8_y_source=1_MjM3NDIxOTUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "4bdcca1e4f2c0c59c0d224e7c48e9343273a6d580343712eff25cc140a5646b9",
+      "bytes": 469426,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/storelocator.pepejeans.com/pepe-jeans-europa-passage-f96d5a59f7b7_y_source=1_MjM3NDIzMDUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "dcc7d615a6713c6d3c4e77507f61f40d011a0853cbbe17d944d34d5d5da4b728",
+      "bytes": 471509,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.bang-olufsen.com/de/deutschland/berlin/kantstr-17_y_source=1_MTExOTk3OTYtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "86277316b489a9704ac0e21a02211253a4caf99eb57d04588b9d5e4a58174d75",
+      "bytes": 72830,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.burberry.com/de/de/hamburg/neuer-wall-36",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.deichmann.com/baden-wuerttemberg/ebersbach/bahnhofstrasse-1.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.deichmann.com/baden-wuerttemberg/endingen/elsaesser-strasse-1-a.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.deichmann.com/baden-wuerttemberg/neckartenzlingen/karlstrasse-14.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.deichmann.com/de-de/de/baden-wuerttemberg/ebersbach/bahnhofstrasse-1",
+      "sha256": "6a99c01d756a2c8fa1f556d847fc5142bc47d367e18aafea92c7d402efe08760",
+      "bytes": 119969,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.deichmann.com/de-de/de/baden-wuerttemberg/endingen/elsaesser-strasse-1-a",
+      "sha256": "e647f8fba3103d585eace628ff09fc283b059b23af945b5072b471592643e8f5",
+      "bytes": 119364,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.deichmann.com/de-de/de/baden-wuerttemberg/neckartenzlingen/karlstrasse-14",
+      "sha256": "e01436f65517106e0a85fec9ff4b0fc429eef47dfffdfa7ef080adb348293a49",
+      "bytes": 119968,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.deichmann.com/de-de/de/endingen/elsaesser-strasse-1-a",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.soliver.com/hamburg/monckebergstr-13",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.superdry.com/de/hamburg/10-12-gerhofstraße90f0.z",
+      "sha256": "0406fa013ce9b6b3f397c62c5dd63008f72cd25f3a9bfb0fc50c2b472abc1e3a",
+      "bytes": 675,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.superdry.com/de/hamburg/10-12-gerhofstra├ƒe_utm_source=ExtNet&utm_medium=Yext",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.superdry.com/de/hamburg/osdorfer-landstraße-131/135.2bd890f0.delayed.z",
+      "sha256": "0406fa013ce9b6b3f397c62c5dd63008f72cd25f3a9bfb0fc50c2b472abc1e3a",
+      "bytes": 675,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stores.superdry.com/de/hamburg/osdorfer-landstra├ƒe-131/135_utm_source=ExtNet&utm_medium=Yext",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stuttgart.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stuttgart.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/stuttgart.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/suitsupply.com/en-nl/stores/hamburg",
+      "sha256": "336884d15418c5c9016b5c39c8fca3168beea641e7d37ebde2ec868cb4353a6e",
+      "bytes": 260578,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/suitsupply.com/en-nl/stores/hamburg-breuninger",
+      "sha256": "890974f63ded6514c857dbd84b08d7cb0f25b8f2df2747ae489d80376188b772",
+      "bytes": 260304,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/suitsupply.com/stores/hamburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/suitsupply.com/stores/hamburg-breuninger",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/teningen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/teningen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/teningen.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/tools.google.com/dlpage/gaoptout_hl=de",
+      "sha256": "6063aebfe015e60360e4af94886ba3be201bf904fecc56b3db25b6771bad1e5e",
+      "bytes": 11040,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/tornesch.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/tornesch.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/tornesch.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/uliclan.wix.com/mueller-fliesen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/weil-am-rhein.stadtbranchenbuch.com/781476.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/weiterstadt.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/weiterstadt.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/weiterstadt.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/wuppertal.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_center.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/wuppertal.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_left.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/wuppertal.stadtbranchenbuch.com/'/static.opendi.com/ng/images/maps/map_f_right.png'",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.4tc-realestate.com/_y_source=1_MTA2NjQwNDAyMS01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "98ed9797e11299ce7001fb99e7f8841727dc5fa7614be52b002e08b40fc2704d",
+      "bytes": 332521,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.accorhotels.com/de/hotel-1163-mercure-hotel-hamburg-city/index.shtml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.adagio-city.com/7329_utm_campaign=seoMaps&utm_medium=seoMaps&utm_source=googleMaps&y_source=1_MTUzNTkyODctNzE1LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.adagio-city.com/gb/hotel-7329-aparthotel-adagio-berlin-kurfurstendamm/index.shtml_utm_campaign=seoMaps&utm_medium=seoMaps&utm_source=googleMaps&y_source=1_MTUzNTkyODctNzE1LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "9958fba6e6d26be2c57a825d45deaf0c4c9bce7f2e0bd55c904517fc5c529256",
+      "bytes": 997208,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.amiparis.com/de-de",
+      "sha256": "eb31b845b488f5cfce0e4a410ec249d03cbdf454a75f2e208f4fc2705ab8c584",
+      "bytes": 1027480,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.autoservice.com/iz-kfz-meisterbetrieb",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.autoservice.com/piepertechnik",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.balenciaga.com/en-de/storelocator/hamburg-neuerwall",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.barberhouse.com/hamburg-barbershop-hopfensack-kontohausviertel",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.bestwestern.com/de_DE/book/hotel-rooms.95265.html_iata=00171890&ssob=BLBWI0003G&cid=BLBWI0003G_yext_website_95265",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.boels.com/de-de/_utm_source=extnet&utm_medium=yext&utm_content=335",
+      "sha256": "f172116ea4318d66663c8215bf4adc9cc560d44508c85ad3f11f38caaa294878",
+      "bytes": 187422,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.booking.com/hotel/de/pensionhotelkleist.html",
+      "sha256": "3264b3d0192590aeb7ceeaab252317dbe53d1ac59482176801166d6087abe50b",
+      "bytes": 8415,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg-wandsbek_quarree_8-10/CN12.html_y_source=1_MTQ4Njk4NjUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "c21a074aa9299585079374f594df7643e1e52c2e53ef6a0c09da59e2230368cd",
+      "bytes": 1339742,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg_ballindamm_40/CDC8.html_y_source=1_MjkyODU5MTYtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "1cd5024f474f506f6b6ecf7db59e42554d0876b644715c30784f8ed05ddc72d7",
+      "bytes": 1339247,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg_hamburger_str._27/CAN2.html_y_source=1_MTQ4NzIyODEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "3a975759df18824196afb1d517aa999a825b8ae9f4b00ecbe8cb75a161dd32fb",
+      "bytes": 1339290,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg_hannoversche_strasse_86/CFR7.html_y_source=1_MTA5NTE1MDkxMi01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "493891ec0a2870d0eec49028cb4eb3d316ac078936fae89f2a08ca4adf1498eb",
+      "bytes": 1300267,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg_heegbarg_31/CDX2.html_y_source=1_MTQ4NzIzNDQtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "3f6a2583a41b3d6077ac77f14cf98556ccb1dbc2004f0ab6220126a98831ca81",
+      "bytes": 1300146,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg_osdorfer_landstrae_131-135/CT03.html_y_source=1_MTQ4NjkzNzgtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "714af264e084133e7cb946a273e5ec6499d6511ea6bd26509be13eb3776f1e58",
+      "bytes": 1339344,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg_ottenser_hauptstrasse_10/CCE0.html_y_source=1_MTY4MzU2MzAtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "1ef8cef83fbf7e30e20e586a919587e9a87d206aae0e99e95ffb1b8ad2e3e4a0",
+      "bytes": 1339345,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg_spitalerstrae_8a/CV94.html_y_source=1_MTQ4NzA2NjAtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "db48435d675bd69af1377897756500070dcd904cd12110217452aaeda402d2a9",
+      "bytes": 1300275,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.calzedonia.com/de/geschafte/hamburg/hamburg_ueberseequartier__ueberseeboulevard_7/CEM2.html_y_source=1_MjAxNzk3NjEzMi01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "a53d5fc3b0953c9685a5c34b6610929bb9dfa5cbbd4d85e0cfeb9350dc689bfa",
+      "bytes": 1300359,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.chanel.com/de/storelocator/store/chanel-hamburg-32051/_y_source=1_MTQ5MzA0OTEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "a1da47ad66e029748fe95f2c32a7f5b88dda408dea59c1b69b2d6aa78800ac0e",
+      "bytes": 440,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.channoine-partner.com/susanne.stierl",
+      "sha256": "43d1975c57c31f30b532cc187d5ff98df4165abc5d6e62df7c7cec23b5da5fca",
+      "bytes": 120974,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-boulevard-(schlossstrasse)",
+      "sha256": "c53de822bf8d4f557558cb401cbaba1af524148bc24a339c10c98b4d1b14e5bf",
+      "bytes": 95093,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-danzigerstrasse",
+      "sha256": "6a99d07b2fcc715c8e3af29dc83c853ab98d652e410eb93561156d2f9020b49f",
+      "bytes": 94542,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-friedrichstr-s-u-bhf-(wayne-s)",
+      "sha256": "662ea24219912f835f8fa0cd60830d5d327d18195d118af7719ba9c8d01060de",
+      "bytes": 92936,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-friedrichstrasse-(checkpoint)",
+      "sha256": "0503f9b18380493599e2539709c0dc41c5387b8653dc306684bef43c2e888063",
+      "bytes": 95081,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-humboldthafen",
+      "sha256": "9fc919e821e6858ff39a823e5d6b5b4e966ba8c2cd61cd5de97da989a059df44",
+      "bytes": 94969,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-keithstrasse",
+      "sha256": "2fdb4bf940ddc09527d025a3a5d35b9b159b57782ec6a902448122fcb42d7760",
+      "bytes": 92869,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-panoramastrasse-(alex-4)",
+      "sha256": "11796b4f959d218464230c749a13ed497bf196996221102da28268edad3b76ce",
+      "bytes": 93730,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-rathausstrasse-(alex-2)",
+      "sha256": "5672250fdffb239e69992142343b3baeae34b9bafc3c58a8d6101f4e10d60726",
+      "bytes": 95096,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-ring-center-2-og",
+      "sha256": "56fa1771aae29950a9a75661444cdd0a316b03ba46a6c813e4d6a0299a49f624",
+      "bytes": 94561,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-ring-center-3-eg",
+      "sha256": "c663862a2fe72865cc8a0aa70f03df89e29bc85cb40bebcc6ad47a607cefae43",
+      "bytes": 95016,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/berlin-rosa-luxemburg-strasse-(alexanderplatz)",
+      "sha256": "b2f498f176ac2abcda2080c309ab2347137875fc30b0a00f252cf327a2cec5cb",
+      "bytes": 94888,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/cs-koeln-hauptbahnhof",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/foodfactory-berlin-cube",
+      "sha256": "9e436d16519fc8fd2eb4eebf89658e3ee7f927cb5829fc9bfc43e2bbef491fc7",
+      "bytes": 95950,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-ak-harburg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-ak-rissen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-brandsende",
+      "sha256": "9d000a9ce9dd93a245edc6543353d4638a34a1489523f36aa3ebc2ddf0c17833",
+      "bytes": 83795,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-grosser-grasbrook",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-hauptbahnhof",
+      "sha256": "630d0c06e85318ef25e1be423e69bb4090aedc0c49640db380c288ec759f9a3f",
+      "bytes": 84976,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-kaiserkai",
+      "sha256": "7bef19b7648953df740a78f5ef641328f3c9a5fdefc74fcfb420ada8712dc497",
+      "bytes": 83881,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-ottenser-haupstrasse",
+      "sha256": "45276c0caaae3e5b65ea50250b5cc6d1a17a74195a7d266bf63b51e5cb9c9450",
+      "bytes": 81683,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-st-georg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-stephansplatz",
+      "sha256": "44134ec06346e186e85ef04b9182d5dabc3d68df46209a6ced2799d7db58ad00",
+      "bytes": 83516,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/hamburg-strandkai",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/koeln-antonsgasse-7",
+      "sha256": "474e5432e490df80acea740b5c16f4e2f8fc564ea1bf832c360410af40479fc0",
+      "bytes": 88456,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/koeln-cinedom",
+      "sha256": "4e210babdfc360abbe2d26d5622e60318bbf4b04332f179b3961ed0422b57cc6",
+      "bytes": 88828,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/koeln-flughafen",
+      "sha256": "fa91b8b98b6878ddf8273233480f7e503c671bd5b9c0061efb1e82fe79f9b66f",
+      "bytes": 79896,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/koeln-hauptbahnhof",
+      "sha256": "cb6d490b969244b326c59f2381d96d3ea01384f647b23145970a1b89ac9e3245",
+      "bytes": 87651,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.coffee-fellows.com/locations/koeln-karolingerring",
+      "sha256": "39a7f63169d62206e34528123c647dad9d222b1f5d92a9ce60a8a412abbff8e6",
+      "bytes": 88537,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.cushmanwakefield.com/de-de/germany/offices/berlin-zimmerstr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.cushmanwakefield.com/de-de/germany/offices/hamburg",
+      "sha256": "8fb527db2808d386a3656fc37f1260de80de267ac0466159308e2a5abe2f4729",
+      "bytes": 94051,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahler.com/berlin-wannsee",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahler.com/de/immobilienmakler/wohnimmobilien/hamburg/elbvororte",
+      "sha256": "9b1729005322f3ab20f0430c9634bc9e631cdc481b4c38bccfbac0528ef4db69",
+      "bytes": 275022,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahler.com/elbvororte",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahler.com/hamburg-alstertal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahler.com/hamburg-hafencity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/alster-ost",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/de/immobilienmakler/wohnimmobilien/berlin/berlin-wannsee",
+      "sha256": "a1ab734ea02cc810fee0fc58ddd73c3aadab358135342ba492afd5451191fcf4",
+      "bytes": 331457,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/de/immobilienmakler/wohnimmobilien/hamburg/alster-ost",
+      "sha256": "664fa502238d4e4239e18d0ef4ba96ce5317a705cd8104a094621491e904db70",
+      "bytes": 212362,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/de/immobilienmakler/wohnimmobilien/hamburg/alster-west",
+      "sha256": "d2b2b24f1a3647eef0852e881aad59943e058fe016a226296649e3ed72441c3c",
+      "bytes": 361789,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/de/immobilienmakler/wohnimmobilien/hamburg/alstertal",
+      "sha256": "8e346b57d267297a68af7f1372b2dc1cd18ee7b6fc7d21f8f38ff0be9d94df18",
+      "bytes": 443017,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/de/immobilienmakler/wohnimmobilien/hamburg/eppendorf",
+      "sha256": "c4ce150863e43bce3ddbcbcddd02d6d7fab3832ea6f5013d0faa7089fbba1b20",
+      "bytes": 342827,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/de/immobilienmakler/wohnimmobilien/hamburg/hafencity",
+      "sha256": "b8df8f4c253316cb3cc227e2787ff58277f27922322694e6d13e2d73d278fc59",
+      "bytes": 230441,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/de/immobilienmakler/wohnimmobilien/hamburg/niendorf-schnelsen",
+      "sha256": "9403cd6b4bf23b3e9e89535f3ecedfa7d2e98bfaf998d7bf6c3003a3704dadb8",
+      "bytes": 232833,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/hamburg-alster-west",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/hamburg-eppendorf",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dahlercompany.com/hamburg-niendorf-schnelsen",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.deloitte.com/de/de.html",
+      "sha256": "301ceb787f1bb75faa1eda3e8ddcf604bc55ecea4754f0f94a46c0377f663305",
+      "bytes": 334097,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.discoverasr.com/citadines/germany/citadines-kurfurstendamm-berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.dvag.com/allfinanzberatung/produktvielfalt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.easyhotel.com/hotels/germany/berlin/berlin-hackescher-markt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/1081319318400648",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/163095580470099",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/594048353799205",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/Autopfandhaus",
+      "sha256": "6458289d4b49f85c25c2762a0ae6cacfe2759a6dda5bf672b98ff5081c7e5838",
+      "bytes": 1222921,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/BeautyCarEhrenkirchen",
+      "sha256": "537fe2f54fc847bc15c1002e04db01dc631a8a9de5157d5cb2e00b608c1ebf5e",
+      "bytes": 1456825,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/Georgs-Gym-760366907332304",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/GeorgsGymBerlin",
+      "sha256": "0be9113f85c0f8a8ae056c1e9992e09bf510931b3fc1151861baa7f3722fc319",
+      "bytes": 1194301,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/Jobdistrict/posts/1082447578528628",
+      "sha256": "ef9e7d43ea02f9462c3c1036c84e5715cf30ff0986b134b05a6791a4052a94fe",
+      "bytes": 803499,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/ZollenspiekerFaehrhaus",
+      "sha256": "1801a9af396e381d4bc369e72de68706e1c54f3956a13fc73e7c1dea31d6bf77",
+      "bytes": 1510514,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/brandschutz.jaeger",
+      "sha256": "447d0d4412868e4bd2f185a89d614e8c2e4e456fd8057de91a7ac9c0975dc94a",
+      "bytes": 1264605,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/jaycjayarts",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/kochgalabau",
+      "sha256": "2cd6f9c5e3085cccb287a8f2aa25e9c908629e8f0c2fa5ba38f9f1e73ce6e5ff",
+      "bytes": 337359,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/moebelwerkberlin",
+      "sha256": "c404805f39249b9717c5ef6e3d41a2e0bd40c9352788d6a05643770122d2a5c4",
+      "bytes": 1156594,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/pages/Peter-Bauer-Bauer/273649746721821",
+      "sha256": "d4bc7f0db8654374041030883aedf3dd116ed6d14d4bbc100182c8fc4ced7fc0",
+      "bytes": 339884,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/postbank",
+      "sha256": "a3745612cd30b95a26f7a55bca71183a73b3af6fcaa3a55e1355367a47e08c2e",
+      "bytes": 1278459,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/profile.php_id=100086385889373",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/profile.php_id=61584928727646",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.facebook.com/wollknoll",
+      "sha256": "4825aa83e6f75c95199cafdd45c353384fb6e60c006b16f32b0890c509528caf",
+      "bytes": 1193452,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.fachuebersetzungsdienst.com/Uebersetzungsbuero-Koeln.html",
+      "sha256": "c5105830d52bfb4c6801db973f3560d3fbd70dc004aa46147399e3b5b4732fe6",
+      "bytes": 35336,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.falconeri.com/_y_source=1_MjAyNzkyNzE4Ni01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.forvismazars.com/de/de/kontakt/kontaktformular",
+      "sha256": "4a51c23b1982633762f87c96c02a9be78696e3b3b32c84272e1a75531da4f69a",
+      "bytes": 250325,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.frittenwerk.com/berlin-friedrichstrasse.php",
+      "sha256": "dbb7f6894a1a4d0630cd980b44c4735b5a1b35704caaf590203b18ad338078e7",
+      "bytes": 336342,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.frittenwerk.com/hamburg.php",
+      "sha256": "501b32c2bf54bb21ad0fe893e664ab8c2443bd66abd46e7db402282fe888b224",
+      "bytes": 336574,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.frittenwerk.com/koeln-ehrenstrasse.php",
+      "sha256": "73c0a6b361859a8798209cb512b627eea3dc36bdcf7c7f7789dcc13c4785af1e",
+      "bytes": 336084,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.frittenwerk.com/koeln-hbf.php",
+      "sha256": "d86822b6c912066489a71abfe099ceaa01b2de0c4ca1f4f468edf30e36bb3407",
+      "bytes": 326818,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.frittenwerk.com/mall-of-berlin.php",
+      "sha256": "2f3ff8b0eba2732407b37cb349ac83c27055ea2955de4e3a74207f036aeace2c",
+      "bytes": 336311,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.g-star.com/stores/de/g-star-store-hamburg-bergstrasse_utm_source=localbusiness&utm_medium=organic&utm_campaign=yext&utm_content=listing&y_source=1_MzgwMjE1Ny01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.g-star.com/stores/de/g-star-store-hamburg-meile_utm_source=localbusiness&utm_medium=organic&utm_campaign=yext&utm_content=listing&y_source=1_MjU3NTQwNjAtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.gtlaw.com/en/locations/berlin_utm_source=extnet&utm_medium=yext",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.gudrunsjoden.com/de-de/konzeptlaeden/alle-konzeptlaeden",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.gudrunsjoden.com/de-de/konzeptlaeden/unsere-laden",
+      "sha256": "c3b2d487be2aa26693f91ed20aa34bb8afb09db3c668bc4027c36404cfc1944d",
+      "bytes": 346827,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.h-hotels.com/de/h2/hotels/h2-hotel-berlin-alexanderplatz",
+      "sha256": "ca1acc622d63917bb238dbc7ee1d659055b0c1de8ea812bcfcec6953c811ad46",
+      "bytes": 139275,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.h-hotels.com/de/h4/hotels/h4-hotel-berlin-alexanderplatz",
+      "sha256": "d7f3f9677f6f9edde28b5b426016c7b8f9d772eff3e56790bc7efdfbc6eb4692",
+      "bytes": 149504,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.h-hotels.com/de/hplus/hotels/hplus-hotel-4youth-berlin",
+      "sha256": "d7ca4c92457bd0205de3cbc24b36a6f7af3600c73f0ca75d0febd42274a40923",
+      "bytes": 144282,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.h-hotels.com/de/hplus/hotels/hplus-hotel-berlin-mitte",
+      "sha256": "4aa4c82ec0364b15a81bca3dd51d623c6766693ef6d4f1f7c1e0484e943fdae5",
+      "bytes": 139736,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.h-hotels.com/de/hyperion/hotels/hyperion-hotel-berlin",
+      "sha256": "4ec5093008f9ed5e3af04ed5fc173c9cef4eac1e0eeb43660173e0bb6a77083e",
+      "bytes": 254099,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.hotel-bb.com/de",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.hsr-hydraulics.com/de/hydraulik-service/hamburg-dubbenwinkel-7",
+      "sha256": "92597a19a8d0e9e1c586eaacdb04fc358ce5125e310da9d0a5edb92f5284c33e",
+      "bytes": 390674,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.htb-steuerberater.com/_cn-reloaded=1",
+      "sha256": "4efc3be2b3fa80e6565d971dca697ee8e78c8c6c9c35a09b6ffb6afab083a15b",
+      "bytes": 614540,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/berlin-germany_cm_mmc=YextLocal-_-HI-_-DE-_-BERFB",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/berlin-germany_cm_mmc=YextLocal-_-HI-_-DE-_-BERHB",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/crowneplaza/hotels/gb/en/berlin/bercc/hoteldetail_cm_mmc=YextLocal-_-CP-_-DE-_-BERCC",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/berck/hoteldetail_cm_mmc=YextLocal-_-RN-_-DE-_-BERCK",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/berfh/hoteldetail_cm_mmc=YextLocal-_-RN-_-DE-_-BERFH",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/bergm/hoteldetail_cm_mmc=YextLocal-_-RN-_-DE-_-BERGM",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/berkb/hoteldetail",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/berpb/hoteldetail",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/berpd/hoteldetail_cm_mmc=YextLocal-_-RN-_-DE-_-BERPD",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/berrv/hoteldetail_cm_mmc=YextLocal-_-RN-_-DE-_-BERRV",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/bersy/hoteldetail_cm_mmc=YextLocal-_-RN-_-DE-_-BERSY",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/garner-hotels/hotels/us/en/berlin/bertw/hoteldetail_cm_mmc=YextLocal-_-RN-_-DE-_-BERTW",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/holiday-inn-the-niu/hotels/us/en/berlin/berdb/hoteldetail",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/holidayinn/hotels/gb/en/berlin/berap/hoteldetail_cm_mmc=YextLocal-_-HI-_-DE-_-BERAP",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/holidayinn/hotels/gb/en/berlin/berow/hoteldetail_cm_mmc=YextLocal-_-HI-_-DE-_-BEROW",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/holidayinn/hotels/gb/en/berlin/berpa/hoteldetail_cm_mmc=YextLocal-_-HI-_-DE-_-BERPA",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/holidayinn/hotels/gb/en/berlin/bersa/hoteldetail_cm_mmc=YextLocal-_-HI-_-DE-_-BERSA",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/holidayinnexpress/hotels/gb/en/berlin/berab/hoteldetail_cm_mmc=YextLocal-_-EX-_-DE-_-BERAB",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/holidayinnexpress/hotels/gb/en/berlin/berax/hoteldetail_cm_mmc=YextLocal-_-EX-_-DE-_-BERAX",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/hotelindigo/hotels/gb/en/berlin/beriw/hoteldetail_cm_mmc=YextLocal-_-IN-_-DE-_-BERIW",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/intercontinental/hotels/gb/en/berlin/berha/hoteldetail_cm_mmc=YextLocal-_-IC-_-DE-_-BERHA",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/spnd/hotels/gb/en/berlin/berbb/hoteldetail_cm_mmc=YextLocal-_-SP-_-DE-_-BERBB",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.ihg.com/spnd/hotels/us/en/berlin/berac/hoteldetail",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.instagram.com/moraba_sternschanze",
+      "sha256": "62b21b9a04d2ec50f55e23baf1096f4eb8155ad4072a17cee0feaf6974e35f67",
+      "bytes": 1555308,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.instagram.com/mr.mrselegant_salon_igshid=MmIzYWVlNDQ5Yg%3D%3D",
+      "sha256": "3cf49cafbe1622fbd5c2ce5eea7e39fc95d5a7d1cd5c99ab71a9be7f58c595a1",
+      "bytes": 937046,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.intimissimi.com/de/geschafte/hamburg/hamburg_ballindamm_40/ICC9.html_y_source=1_MjkyNjc2NzgtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "32a693d598408f982fbf474938aaf8382931839d0abb6b449afaba67d4e0ddc8",
+      "bytes": 412983,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.intimissimi.com/de/geschafte/hamburg/hamburg_heegbarg_31/IY45.html_y_source=1_MTQ4NzE3NTUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "ac7b1bbe749ae26ba94983e7efbc04d4a76a364c40acadb9cd698a7885c9daa9",
+      "bytes": 412934,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.intimissimi.com/de/geschafte/hamburg/hamburg_osdorfer_landstrae_131-135/IZ35.html_y_source=1_MTQ4NzA5MzctNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "c71275fd127214a367b45bdbedcc47849e408b8a856eb86394919e376472526e",
+      "bytes": 413117,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.intimissimi.com/de/geschafte/hamburg/hamburg_spitalerstrae_8b/IQ33.html_y_source=1_MTQ4NzE4NzgtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "5c5512da96964fb35a2bd61719c81bf3f24d48ccf9fc88b4e0d05a2b48b81917",
+      "bytes": 413124,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.intimissimi.com/de/geschafte/hamburg/hamburg_ueberseequartier__ueberseeboulevard_7/IEW7.html_y_source=1_MjAxODI2OTUwOC01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "4c055ad3e8f3b62cd51597f54a4958ce39b220391f79461fb00c5571177ef855",
+      "bytes": 413013,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.intimissimi.com/de/hamburg_sc_aez/IY45.html_y_source=1_MTQ4NzE3NTUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.jack-wolfskin.com/store/233571",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.jack-wolfskin.com/store/233581",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.jack-wolfskin.com/store/233641",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.jack-wolfskin.com/store/233801",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.jack-wolfskin.com/store/J028-hamburg-heegbarg-31",
+      "sha256": "92168f708f91dd5f6315cb3c4feefa5bd65e811d10e8d957bc43fb12323cb8ac",
+      "bytes": 761602,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.jack-wolfskin.com/store/J029-hamburg-ottenser-hauptstrasse-10",
+      "sha256": "2cfca1d55e531d3089425ae6508ac8c8b3db938a489839fd7ec9a86980b8fc3e",
+      "bytes": 762077,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.jack-wolfskin.com/store/J031-hamburg-julius-brecht-strasse-6",
+      "sha256": "482fc19add86db41779a25ce5332264eb88bebe65b8a9835d8e5a8e41e6f55ee",
+      "bytes": 759371,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.jack-wolfskin.com/store/J032-hamburg-moenckebergstrasse-31",
+      "sha256": "44a4ed7a2d749fbf33e0b75e9734fdd6418f5f633139f686198b79374dd4dec0",
+      "bytes": 764069,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.karl.com/en",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.karllagerfeld.com/en",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.lacoste.com/de/stores/germany/hamburg/lacosteaez-5338",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.lacoste.com/de/stores/germany/hamburg/lacostehamburg-965_utm_source=yext&utm_medium=referral&utm_campaign=OtherPublisher&utm_term=Lacoste_Hamburg&utm_content=965",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.liebherr.com/de/deu/├╝ber-liebherr/liebherr-weltweit/deutschland/components-kirchdorf/liebherr-components-kirchdorf-gmbh.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.liebherr.com/de/deu/├╝ber-liebherr/liebherr-weltweit/deutschland/kirchdorf/liebherr-hydraulikbagger-gmbh.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.liebherr.com/de/deu/├╝ber-liebherr/liebherr-weltweit/deutschland/liebherr-it-services-gmbh/liebherr-it-services-gmbh.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.liebherr.com/de/deu/├╝ber-liebherr/liebherr-weltweit/deutschland/liebherr-logistics-gmbh/liebherr-logistics-gmbh.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.lockeliving.com/en/berlin/locke-at-east-side-gallery",
+      "sha256": "2b3fe3d55f9de4efa455ed26ab7255ddca98f2352e2972185c105b4ed4b6853a",
+      "bytes": 219395,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.mcdonalds.com/de/de-de/restaurant-suche.html/l/aichstetten/am-waizenhof-8/670&cid=listing_0670",
+      "sha256": "2fce725271521140383bb79a60006f706a2735efd46c46714c038fae4f587c6b",
+      "bytes": 191518,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.mcdonalds.com/de/de-de/restaurant-suche.html/l/dornstadt/lerchenbergstrasse-9/234&cid=listing_0234",
+      "sha256": "2b19ba037db217595373da7945f6ca9275b794147924851ab3cbb62f0963c951",
+      "bytes": 191518,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.mcdonalds.com/de/de-de/restaurant-suche.html/l/ellwangen-jagst-/ellwanger-berge-ost/2109&cid=listing_2109",
+      "sha256": "74a0569f935f3198fdbcbecad75bb20e2a1be9796476d1ba11138fbe0653d273",
+      "bytes": 191512,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.mcdonalds.com/de/de-de/restaurant-suche.html/l/gaggenau/murgtalstrasse-1/979&cid=listing_0979",
+      "sha256": "9afdcd83db5e20ee56a59f26215130f2353c01cbb6ba8ebe4a0b70df55d54d46",
+      "bytes": 191518,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.mcdonalds.com/de/de-de/restaurant-suche.html/l/langenau/magirusstrasse-14/1029&cid=listing_1029",
+      "sha256": "5d005f3bf399f73f68084ea2ef90f2d326149c84f0bd0ae5e18cafbe8f584f21",
+      "bytes": 191512,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.mcdonalds.com/de/de-de/restaurant-suche.html/l/mullheim/schliengener-strasse-22/1285&cid=listing_1285&cid=listing_1285",
+      "sha256": "f71c9ecafed430d97bc397fbd160bedca6b130e4bfb93e46a6402dc4a687678c",
+      "bytes": 191518,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.mcdonalds.com/de/de-de/restaurant-suche.html/l/obersontheim/birngrundle/1938&cid=listing_1938",
+      "sha256": "cb76eff70c78f53590b91497a116a4fae40225cb45fd4a6fcc5009691a473d6a",
+      "bytes": 191512,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.mercure.com/9068",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.nike.com/de/retail/s/nike-hamburg_cp=61872410739_seo_&y_source=1_Mjc2Mjc5NC01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "c76f303dd207279b1e6cc281503328deb412ec617dac4d7e74ceae8f7a353401",
+      "bytes": 667566,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.opendi.com/impressum.html",
+      "sha256": "fb9ded7b1c2216d9c95aac351f1891a441e489019dbde3f1af8ec559b5b97cb4",
+      "bytes": 4180,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.opendi.com/index.html",
+      "sha256": "775a564f4b4020b1457330d907172f1c636e2c7d0477708076ecd88493a47123",
+      "bytes": 6482,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.opendi.com/robots.txt",
+      "sha256": "d2a4156e2ac0e71b2c05fb5039d154b4c35bb8c4175a4ae3879eea03cac560e5",
+      "bytes": 323,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.primark.com/de-de/stores/hamburg/billstedt-center_y_source=1_ODU3OTUyNS01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "d6f0b3f66edda2d3717c96bd2f441f55e15138407b37c19775015f928326d86e",
+      "bytes": 1504,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/de-de/hotels/park-inn-berlin-alexanderplatz_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_local+e_pii+d_cese+f_de-de+h_DEBERALX",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/de-de/hotels/radisson-blu-hamburg-airport_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_local+e_rdb+d_cese+f_de-de+h_DEHAMAIR",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/de-de/hotels/radisson-blu-hamburg_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_local+e_rdb+d_cese+f_de-de+h_DEHAM1",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/de-de/hotels/radisson-collection-berlin_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_local+e_rco+d_cese+f_de-de+h_DEBER1",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/de-de/hotels/radisson-individuals-berlin_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_local+e_ri+d_cese+f_de-de+h_DEBERAAA",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/de-de/hotels/radisson-red-berlin-kudamm_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_local+e_rdr+d_cese+f_de-de+h_DEPPBERPBK",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/en-us/hotels/park-plaza-berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/en-us/hotels/radisson-blu-hamburg-airport/dining/stoke_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_localSTOKE+e_rdb+d_cese+f_en-us+t_fnb+h_DEHAMAIR",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/en-us/hotels/radisson-blu-hamburg/dining/balaustine_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_localBalau+e_rdb+d_cese+f_en-us+t_fnb+h_DEHAM1",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.radissonhotels.com/en-us/hotels/radisson-blu-hamburg/restaurant-bar/filini_facilitatorId=GLOBALSEO&cid=a_se+b_yex+c_emea+i_localFilin+e_rdb+d_cese+f_en-US+t_fnb+h_DEHAM1",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.rimowa.com/de/en/home_utm_source=yext-extended-network&utm_medium=referral",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.simon-kucher.com/en/country/germany",
+      "sha256": "87f1f9928baf465448217942c2f2ba1b3276f8d9fc6e1bd56e21b325201386f8",
+      "bytes": 171903,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.smartments.com/de/serviced-apartments-berlin/city-west",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.smartments.com/de/serviced-apartments-berlin/karlshorst",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.smartments.com/de/serviced-apartments-berlin/prenzlauer-berg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.stadtbranchenbuch.com/reviewticker.html",
+      "sha256": "89327f3c758ccc943db4bf36de55ce8c7eac84acec467348ebc14edb7b0163f5",
+      "bytes": 139110,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.subway.com/de-de_y_source=1_MTA1NTAxMDQyMi01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "c344b647182992142e328562f865bcf46cbe626a62d8cf413090e60096cab1c9",
+      "bytes": 62904,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.subway.com/de-de_y_source=1_MTAxMzc0MjU1OS01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "3590864cd2496a00a4be3365694fa8af04c6045e61c108f70e0cea65be632e2e",
+      "bytes": 62904,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.the-ash.com/restaurants/koeln-hahnenstrasse",
+      "sha256": "672abf49fe5c1abdcfa607dd5e95dc7335efd2f7357276e0038777227f15cfa4",
+      "bytes": 72081,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.the-ash.com/restaurants/koeln-messe-city",
+      "sha256": "48a7e8f0840f703ba1e9b5656ee78f1e72e7034bb600bb141c7c896188ec5479",
+      "bytes": 75342,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.tuv.com/germany/de/locationfinder/amd-koeln.html",
+      "sha256": "3d49d4a61f63f5c296712e87c1c84ace2f66e0a358b51128b87151c913b4892e",
+      "bytes": 241501,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.tuv.com/germany/de/locationfinder/location-detail-page_130177.html",
+      "sha256": "28af3fbee326e1a865e8b95d6847d1fef5b5208b57415b8afc22e15fd401ea47",
+      "bytes": 186820,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.tuv.com/germany/de/locationfinder/location-detail-page_130178.html",
+      "sha256": "24909f38386e8ecc50b9264ce0bf5d93648c8dba2ece34698be29e4ee19b2c03",
+      "bytes": 196221,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.tuv.com/germany/de/termin-pruefstelle/_lat=48.580752&lng=8.597531",
+      "sha256": "b1ee0d89c0efbef69c9737614780bc9bf6550a76a5c2b794250c3c4c10b89481",
+      "bytes": 197275,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.tuvsud.com/de-de/branchen/mobilitaet-und-automotive/hauptuntersuchung/hu-anmeldung_locationSign=083",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.tuvsud.com/de-de/branchen/mobilitaet-und-automotive/hauptuntersuchung/hu-anmeldung_locationSign=443",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.twitter.com/autopfandhaus",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.vieteran.com/_utm_source=gbp",
+      "sha256": "a47173908f1d80c68bbb114ff3be7f6df1c5fca3fe918c005aaf363a0e9f6c38",
+      "bytes": 132591,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/haus-kaufen/berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilien/berlin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-city-west_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExMDYtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-friedrichshain-kreuzberg_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTA1NzIwNjg5NS01OTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-grunewald_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExMTEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-hermsdorf_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjEyNDctNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-lichterfelde-lankwitz_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjEyOTItNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-marzahn-hellersdorf",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-mitte_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExNjctNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-neukoelln_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjEwNzEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-nikolassee-wannsee_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjEzMDUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-pankow_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExNTQtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-prenzlauer-berg_utm_source=ExtNet&utm_medium=extNET&y_source=1_OTE1MjM2MTYtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/berlin-spandau_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExNDYtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/hamburg-alster-ost_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExMDUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/hamburg-alster-west_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExNDUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/hamburg-alstertal_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjEzMzEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/hamburg-commercial_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY2NTgzNzctNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/hamburg-elbvororte_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExOTgtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/hamburg-harburg_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExNjEtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/hamburg-schnelsen-niendorf_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjExNzUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/hamburg-wandsbek_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjEyMTgtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/koeln-commercial_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY2NTg0MDItNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/koeln-dellbrueck_utm_source=ExtNet&utm_medium=extNET&y_source=1_MTY1NjEwNDUtNTk5LWxvY2F0aW9uLndlYnNpdGU%3D",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.von-poll.com/de/immobilienmakler/koeln-lindenthal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.watchband-berlin.com/_",
+      "sha256": "9e17cb15dd75bbbd5dbb984eda674863c3b10ab72613cf8a39a00c3e11a8492a",
+      "bytes": 162,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/user/BAEKclips",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=5EUUQ-mnc44",
+      "sha256": "8cc5e94f2f5ce591f16fecdc5d578d5b538a9e00b23d9406940a168bd5a3a61c",
+      "bytes": 1136520,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=Bm0nvSEWA_E",
+      "sha256": "32473f602a60943ae8b342bd100c0716126b746d8658384f6dcdd712addbf41a",
+      "bytes": 746022,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=EO4m0KPqRzU",
+      "sha256": "d2b7cd7fe9424939ce62bd9452f7815c262f5950934ca66c94db989d5beec23c",
+      "bytes": 1153582,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=HpWAaSaD3UE",
+      "sha256": "decf89698cca5a72f9291390974a955e22784f8e347b8ad43f370ac7f42eeddd",
+      "bytes": 1111656,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=Jun4QyaHRpU",
+      "sha256": "53cd141dbff4fa3818c0d0d72cb14851c2a98451434be451354908086557f677",
+      "bytes": 1175240,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=Qtl9-j0oCsM",
+      "sha256": "dac214c6ac319ae012e789eafd68f9a4f8b9ab81971d5a6df4761a55d4845ad1",
+      "bytes": 1232816,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=RaaLrZ7fJuc",
+      "sha256": "1e45a7148b659e86cfef15ec37c614ab232b1c809593790b8f7385c6d38a3ee8",
+      "bytes": 1139496,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=Tpu13WYSOL0",
+      "sha256": "b18e4699d5cfd860b72426635e64933e09e711f1bb20fd1a2d6852274a8e25e6",
+      "bytes": 1132276,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www.youtube.com/watch_v=dcGAoBuyM2s",
+      "sha256": "79dc812ef6667abc154442bb18c906e5a00ea00e9bad65e756bcfe36d8824130",
+      "bytes": 1231881,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/www2.deloitte.com/de/de.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    },
+    {
+      "path": "www.stadtbranchenbuch.com/zell-unter-aichelberg.stadtbranchenbuch.com/1734742.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "auditDisposition": "unrecognized"
+    }
+  ]
+}

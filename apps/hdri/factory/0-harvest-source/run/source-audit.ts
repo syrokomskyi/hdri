@@ -38,7 +38,7 @@ export interface SourceFileOutcome {
   inspection: SourceDocumentInspection | null;
 }
 
-async function* files(root: string, depth = 0): AsyncGenerator<string> {
+export async function* walkSourceBatchFiles(root: string, depth = 0): AsyncGenerator<string> {
   if (depth > 64) throw new Error("SOURCE_DEPTH_LIMIT");
   await assertCanonicalFilePath(root);
   const entries = await fs.readdir(root, { withFileTypes: true });
@@ -46,11 +46,35 @@ async function* files(root: string, depth = 0): AsyncGenerator<string> {
   entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   for (const entry of entries) {
     const file = path.join(root, entry.name);
-    if (entry.isDirectory()) yield* files(file, depth + 1);
+    if (entry.isDirectory()) yield* walkSourceBatchFiles(file, depth + 1);
     else if (entry.isFile()) yield file;
     else throw new Error("SOURCE_SPECIAL_FILE");
   }
 }
+
+/**
+ * Single-walk source closure digest — the same [logicalPath, sha256, bytes] folding the audit
+ * uses for sourceSha256. Admission-time verification recomputes this and compares against the
+ * pinned value; any drift fails closed.
+ */
+export const sourceClosureSha256 = async (
+  batchRoot: string,
+): Promise<{ files: number; sourceSha256: string }> => {
+  const closure = createHash("sha256");
+  let count = 0;
+  for await (const file of walkSourceBatchFiles(batchRoot)) {
+    if (++count > 1_000_000) throw new Error("SOURCE_FILE_COUNT_LIMIT");
+    const digest = await inspectRetainedFile(file);
+    closure.update(
+      JSON.stringify([
+        path.relative(batchRoot, file).split(path.sep).join("/"),
+        digest.sha256,
+        digest.bytes,
+      ]),
+    );
+  }
+  return { files: count, sourceSha256: closure.digest("hex") };
+};
 
 // Caller must exclude concurrent writers and keep ancestor directories stable.
 // Two complete byte walks detect drift; they are not a filesystem snapshot or admission.
@@ -59,7 +83,7 @@ export async function* auditSourceBatch(
 ): AsyncGenerator<SourceFileOutcome, { files: number; sourceSha256: string }> {
   const closure = createHash("sha256");
   let count = 0;
-  for await (const file of files(batchRoot)) {
+  for await (const file of walkSourceBatchFiles(batchRoot)) {
     if (++count > 1_000_000) throw new Error("SOURCE_FILE_COUNT_LIMIT");
     const logicalPath = path.relative(batchRoot, file).split(path.sep).join("/");
     const ext = path.extname(file).toLowerCase();
@@ -121,7 +145,7 @@ export async function* auditSourceBatch(
   const first = closure.digest("hex");
   const verified = createHash("sha256");
   let verifiedCount = 0;
-  for await (const file of files(batchRoot)) {
+  for await (const file of walkSourceBatchFiles(batchRoot)) {
     if (++verifiedCount > 1_000_000) throw new Error("SOURCE_FILE_COUNT_LIMIT");
     const digest = await inspectRetainedFile(file);
     verified.update(
