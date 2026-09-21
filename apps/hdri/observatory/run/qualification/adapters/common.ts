@@ -135,6 +135,17 @@ export function openCorpus(fixtureRoot: string): Database.Database {
 export const sha256Hex = (data: string | Buffer | Uint8Array): string =>
   createHash("sha256").update(data).digest("hex");
 
+/**
+ * Stream a file through SHA-256. `fsp.readFile` materialises the whole file as a
+ * single Buffer and throws ERR_FS_FILE_TOO_LARGE past 2 GiB — stage outputs such
+ * as translation/observations.sqlite exceed that at 200k targets.
+ */
+export const sha256File = async (abs: string): Promise<string> => {
+  const hash = createHash("sha256");
+  for await (const chunk of fs.createReadStream(abs)) hash.update(chunk);
+  return hash.digest("hex");
+};
+
 /** Deterministic UUIDv7-shaped id derived from a namespaced string. */
 export const deterministicId = (namespace: string, key: string): string => {
   const hex = sha256Hex(`${namespace}:${key}`);
@@ -238,7 +249,7 @@ export async function proveOutputs(
     const abs = scratchPath(workRoot, uri);
     const stat = await fsp.stat(abs);
     if (!stat.isFile() || stat.size === 0) throw new Error(`MISSING_STAGE_OUTPUT:${uri}`);
-    proofs.push({ uri, bytes: stat.size, sha256: sha256Hex(await fsp.readFile(abs)) });
+    proofs.push({ uri, bytes: stat.size, sha256: await sha256File(abs) });
   }
   return proofs;
 }
@@ -304,11 +315,10 @@ export function fixtureFetch(corpus: Database.Database): typeof fetch {
   const pageBySite = corpus.prepare("SELECT html FROM pages WHERE site_seq = ? AND kind = ?");
   const resolve = (rawUrl: string): { site: CorpusSite; kind: string; url: URL } => {
     const url = new URL(rawUrl);
-    let host = url.hostname;
+    const host = url.hostname;
     let site = siteByDomain.get(host) as CorpusSite | undefined;
     if (!site && host.startsWith("www.")) {
       site = siteByDomain.get(host.slice(4)) as CorpusSite | undefined;
-      if (site) host = site.domain;
     }
     if (!site) throw fetchLikeError("ENOTFOUND", `getaddrinfo ENOTFOUND ${url.hostname}`);
     const kind = PAGE_PATHS[url.pathname] ?? "home";

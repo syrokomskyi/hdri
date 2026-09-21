@@ -36,7 +36,9 @@ const slotLines = fs
   .trim()
   .split("\n")
   .map((l) => JSON.parse(l) as { active: number });
-const peak = Math.max(...slotLines.map((l) => l.active));
+// Reduce, not Math.max(...spread): ~200k slot lines exceed the argument-count
+// limit and crash with RangeError: Maximum call stack size exceeded.
+const peak = slotLines.reduce((m, l) => (l.active > m ? l.active : m), 0);
 if (peak > args.browserSlots) fail(`BROWSER_SLOTS_EXCEEDED:${peak}>${args.browserSlots}`);
 
 // Deterministic sample re-audit in a fresh browser (0.5%, min 1).

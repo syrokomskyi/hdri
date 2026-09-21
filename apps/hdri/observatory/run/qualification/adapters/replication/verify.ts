@@ -17,7 +17,7 @@ import {
   parseAdapterArgs,
   proveOutputs,
   scratchPath,
-  sha256Hex,
+  sha256File,
 } from "../common.js";
 
 const args = parseAdapterArgs();
@@ -41,10 +41,12 @@ if (!replicaResult.ok)
 // Manifests must be identical and every replica shard byte-equal to the vault shard.
 if (manifest.shards.length !== replicaManifest.shards.length) fail("REPLICA_MANIFEST_MISMATCH");
 for (const entry of manifest.shards) {
-  const a = fs.readFileSync(path.join(vaultDir, entry.path));
-  const b = fs.readFileSync(path.join(replicaDir, entry.path));
-  if (!a.equals(b)) fail(`REPLICA_BYTES_MISMATCH:${entry.path}`);
-  if (sha256Hex(a) !== entry.sha256) fail(`VAULT_HASH_MISMATCH:${entry.path}`);
+  // Stream both shards — at 200k each is ~1.8 GB, so readFileSync would hold
+  // ~3.6 GB in buffers. sha256 equality is byte-equality for this check.
+  const aHash = await sha256File(path.join(vaultDir, entry.path));
+  const bHash = await sha256File(path.join(replicaDir, entry.path));
+  if (aHash !== bHash) fail(`REPLICA_BYTES_MISMATCH:${entry.path}`);
+  if (aHash !== entry.sha256) fail(`VAULT_HASH_MISMATCH:${entry.path}`);
 }
 
 // Row count parity with the translation DB.

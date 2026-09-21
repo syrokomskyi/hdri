@@ -92,11 +92,21 @@ const pages: { domain: string; kind: string; dir: string; cas: string }[] = [
 ];
 const midpoint = Math.floor(pages.length / 2);
 const checkpointPath = path.join(stageDir, "checkpoint.json");
+// One fsync per COMMIT_EVERY pages instead of one journal cycle per signal row:
+// ~1.2M autocommit fsyncs collapse to a few dozen, which is what lets the stage
+// finish inside the rehearsal duration budget instead of stalling on disk I/O.
+const COMMIT_EVERY = 2000;
+db.exec("BEGIN");
 
 for (const [i, page] of pages.entries()) {
   const html = fs.readFileSync(path.join(page.dir, page.cas), "utf8");
   signalCount += extractPage(page.domain, page.kind, html);
-  if (i === midpoint - 1) {
+  const atCheckpoint = i === midpoint - 1;
+  if (atCheckpoint || (i + 1) % COMMIT_EVERY === 0) {
+    db.exec("COMMIT");
+    db.exec("BEGIN");
+  }
+  if (atCheckpoint) {
     await writeJsonAtomic(checkpointPath, {
       schema: "hdri-extraction-checkpoint@1",
       stage: args.stage,
@@ -110,6 +120,7 @@ for (const [i, page] of pages.entries()) {
       });
   }
 }
+db.exec("COMMIT");
 if (!fs.existsSync(checkpointPath))
   await writeJsonAtomic(checkpointPath, {
     schema: "hdri-extraction-checkpoint@1",
@@ -119,9 +130,7 @@ if (!fs.existsSync(checkpointPath))
   });
 
 const coverage = db
-  .prepare(
-    "SELECT signal, COUNT(*) AS n FROM extracted_signals GROUP BY signal ORDER BY signal",
-  )
+  .prepare("SELECT signal, COUNT(*) AS n FROM extracted_signals GROUP BY signal ORDER BY signal")
   .all() as { signal: string; n: number }[];
 await writeJsonAtomic(path.join(stageDir, "extraction-manifest.json"), {
   schema: "hdri-extraction@1",
