@@ -1,0 +1,807 @@
+{
+  "dataset": {
+    "id": "destatis-mapping",
+    "title": "Mapping from HWO master dataset to Destatis Gewerbegruppen I-VII",
+    "source_document": {
+      "filename": "HWO2021-PDF-Datei.pdf",
+      "title": "Gewerbegruppen der Handwerksstatistiken nach Handwerksordnung Stand 2021",
+      "publisher": "Statistisches Bundesamt (Destatis)"
+    },
+    "notes": [
+      "This mapping is based on the Destatis grouping document, not on the legal order of Anlage A/B.",
+      "Destatis groups I-VII map only A and B1 entries from the provided document.",
+      "B2 entries are intentionally not mapped because the provided Destatis group PDF does not classify them into I-VII."
+    ]
+  },
+  "target_system": {
+    "id": "destatis_group",
+    "groups": [
+      {
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      },
+      {
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      },
+      {
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      },
+      {
+        "code": "IV",
+        "label": "Kraftfahrzeuggewerbe"
+      },
+      {
+        "code": "V",
+        "label": "Lebensmittelgewerbe"
+      },
+      {
+        "code": "VI",
+        "label": "Gesundheitsgewerbe"
+      },
+      {
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    ]
+  },
+  "entries": [
+    {
+      "uid": "A-01",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "A-03",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "A-04",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "A-05",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "A-06",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "A-07",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "A-11",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "A-43",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "B1-54",
+      "target": {
+        "system": "destatis_group",
+        "code": "I",
+        "label": "Bauhauptgewerbe"
+      }
+    },
+    {
+      "uid": "A-02",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-09",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-10",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-23",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-24",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-25",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-27",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-39",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-42",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-44",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-46",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-47",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-52",
+      "target": {
+        "system": "destatis_group",
+        "code": "II",
+        "label": "Ausbaugewerbe"
+      }
+    },
+    {
+      "uid": "A-13",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-14",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-16",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-18",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-19",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-21",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-22",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-26",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-29",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-40",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-45",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-49",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-50",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-51",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-07",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-08",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-09",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-10",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-14",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-33",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-35",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-36",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-37",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-39",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "B1-40",
+      "target": {
+        "system": "destatis_group",
+        "code": "III",
+        "label": "Handwerke für den gewerblichen Bedarf"
+      }
+    },
+    {
+      "uid": "A-15",
+      "target": {
+        "system": "destatis_group",
+        "code": "IV",
+        "label": "Kraftfahrzeuggewerbe"
+      }
+    },
+    {
+      "uid": "A-17",
+      "target": {
+        "system": "destatis_group",
+        "code": "IV",
+        "label": "Kraftfahrzeuggewerbe"
+      }
+    },
+    {
+      "uid": "A-20",
+      "target": {
+        "system": "destatis_group",
+        "code": "IV",
+        "label": "Kraftfahrzeuggewerbe"
+      }
+    },
+    {
+      "uid": "A-41",
+      "target": {
+        "system": "destatis_group",
+        "code": "IV",
+        "label": "Kraftfahrzeuggewerbe"
+      }
+    },
+    {
+      "uid": "A-30",
+      "target": {
+        "system": "destatis_group",
+        "code": "V",
+        "label": "Lebensmittelgewerbe"
+      }
+    },
+    {
+      "uid": "A-31",
+      "target": {
+        "system": "destatis_group",
+        "code": "V",
+        "label": "Lebensmittelgewerbe"
+      }
+    },
+    {
+      "uid": "A-32",
+      "target": {
+        "system": "destatis_group",
+        "code": "V",
+        "label": "Lebensmittelgewerbe"
+      }
+    },
+    {
+      "uid": "B1-28",
+      "target": {
+        "system": "destatis_group",
+        "code": "V",
+        "label": "Lebensmittelgewerbe"
+      }
+    },
+    {
+      "uid": "B1-29",
+      "target": {
+        "system": "destatis_group",
+        "code": "V",
+        "label": "Lebensmittelgewerbe"
+      }
+    },
+    {
+      "uid": "B1-30",
+      "target": {
+        "system": "destatis_group",
+        "code": "V",
+        "label": "Lebensmittelgewerbe"
+      }
+    },
+    {
+      "uid": "A-33",
+      "target": {
+        "system": "destatis_group",
+        "code": "VI",
+        "label": "Gesundheitsgewerbe"
+      }
+    },
+    {
+      "uid": "A-34",
+      "target": {
+        "system": "destatis_group",
+        "code": "VI",
+        "label": "Gesundheitsgewerbe"
+      }
+    },
+    {
+      "uid": "A-35",
+      "target": {
+        "system": "destatis_group",
+        "code": "VI",
+        "label": "Gesundheitsgewerbe"
+      }
+    },
+    {
+      "uid": "A-36",
+      "target": {
+        "system": "destatis_group",
+        "code": "VI",
+        "label": "Gesundheitsgewerbe"
+      }
+    },
+    {
+      "uid": "A-37",
+      "target": {
+        "system": "destatis_group",
+        "code": "VI",
+        "label": "Gesundheitsgewerbe"
+      }
+    },
+    {
+      "uid": "A-08",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "A-12",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "A-28",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "A-38",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "A-48",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "A-53",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-05",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-06",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-11",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-16",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-18",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-19",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-20",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-21",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-23",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-24",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-25",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-26",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-31",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-32",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-38",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-43",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-45",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-46",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-47",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-48",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-49",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-50",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-51",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-52",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-55",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    },
+    {
+      "uid": "B1-56",
+      "target": {
+        "system": "destatis_group",
+        "code": "VII",
+        "label": "Handwerke für den privaten Bedarf"
+      }
+    }
+  ],
+  "quality_checks": {
+    "mapped_entry_count": 94,
+    "unmapped_active_A_B1_uids": []
+  }
+}

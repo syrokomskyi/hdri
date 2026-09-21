@@ -1,0 +1,55 @@
+{
+  "name": "@warpgogol/pipeline-core",
+  "version": "0.1.10",
+  "private": false,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syrokomskyi/pipeline-core.git"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm exec eslint src --ext .ts",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit",
+    "upgrade-packages": "pnpm up --latest",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./phase": {
+      "types": "./src/lib/pipeline-phase.ts",
+      "import": "./dist/lib/pipeline-phase.js",
+      "default": "./dist/lib/pipeline-phase.js"
+    },
+    "./step": {
+      "types": "./src/lib/pipeline-step.ts",
+      "import": "./dist/lib/pipeline-step.js",
+      "default": "./dist/lib/pipeline-step.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.10.0",
+    "eslint": "~10.9.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "4.1.10"
+  }
+}

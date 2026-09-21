@@ -1,0 +1,22 @@
+.env
+.env.*
+
+# Build outputs
+dist
+node_modules
+
+# Workspace
+.turbo
+
+# TypeScript
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Signing key — never commit private key material
+apps/hdri/observatory/.input/signing-key/
+
+# Dashboard debug
+/src/assets/data/debug-csv/

@@ -1,0 +1,27 @@
+{
+  "schema": "observatory-imported-evidence@1",
+  "origin": "converted-evidence",
+  "importedAt": "2026-09-14T10:00:00.000Z",
+  "sourceManifest": {
+    "uri": "archive/content-manifest.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "bytes": 2048
+  },
+  "sourceRecords": [
+    {
+      "artifact": {
+        "uri": "archive/snapshots/source-0000/observatory.db",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "bytes": 8192
+      },
+      "locator": "observations/observation_id=0198f000-0000-7000-8000-000000000002"
+    }
+  ],
+  "target": {
+    "kind": "observation",
+    "assetId": "0198F000-0000-7000-8000-000000000001",
+    "recordId": "0198f000-0000-7000-8000-000000000002",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "measurement": { "status": "observed", "measuredAt": "2026-05-18T21:42:29+02:00" }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@syrokomskyi/pipeline-steps-hdri",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm exec eslint src --ext .ts",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit",
+    "upgrade-packages": "pnpm up --latest",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@syrokomskyi/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "markdown-table": "^3.0.4",
+    "tslib": "^2.8.1"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "*"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

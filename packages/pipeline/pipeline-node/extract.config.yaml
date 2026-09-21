@@ -1,0 +1,40 @@
+# extract.config.yaml — pipeline-node standalone package export
+# RFC-0098: Publish pipeline SDK packages to NPM
+
+projectDir: packages/pipeline/pipeline-node
+destName: pipeline-node
+standalone: true
+
+workspacePrefixes:
+  - "@syrokomskyi/"
+  - "@warpgogol/"
+stripScopes:
+  - "@syrokomskyi/"
+  - "@warpgogol/"
+  - "@wgogol/"
+preservePackages:
+  - "@warpgogol/pipeline-core"
+  - "@warpgogol/pipeline-ai"
+packageManager: "pnpm"
+ignoreDirs:
+  - .output
+  - .debug
+  - .debug-public
+  - .astro
+  - spec
+  - .agents
+
+extraGitignore:
+  - .output
+  - .debug
+  - .debug-public
+
+postProcess:
+  - action: delete
+    path: AGENTS.md
+
+git:
+  remote: git@github.com:syrokomskyi/pipeline-node.git
+  autoPush: true
+
+skipSecretScan: true

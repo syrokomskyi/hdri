@@ -1,0 +1,19 @@
+{
+  "name": "@syrokomskyi/clients-hdri",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter @syrokomskyi/dashboard... run --if-present build",
+    "typecheck": "pnpm --filter @syrokomskyi/dashboard... run --if-present typecheck",
+    "lint": "pnpm --filter @syrokomskyi/dashboard... run --if-present lint",
+    "test": "pnpm --filter @syrokomskyi/dashboard... run --if-present test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.10.0",
+    "eslint": "~10.7.0",
+    "tsx": "^4.22.3",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.64.0"
+  },
+  "packageManager": "pnpm@11.20.0"
+}

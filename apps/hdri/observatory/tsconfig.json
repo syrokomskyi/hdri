@@ -1,7 +1,11 @@
 {
   "extends": "../../../tsconfig.app.json",
   "$schema": "https://json.schemastore.org/tsconfig",
-  "include": ["run/**/*.ts", "run/**/*.d.ts", "tools/**/*.ts"],
+  "include": [
+    "run/**/*.ts",
+    "run/**/*.d.ts",
+    "tools/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "**/dist/**",
@@ -10,17 +14,5 @@
     ".input",
     ".output",
     "tools/kernel.config.ts"
-  ],
-  "references": [
-    { "path": "../../../packages/pipeline/pipeline-steps" },
-    { "path": "../../../packages/pipeline/pipeline-node" },
-    { "path": "../../../packages/pipeline/pipeline-core" },
-    { "path": "../../../packages/observatory/observatory-core" },
-    { "path": "../../../packages/observatory/observatory-emit" },
-    { "path": "../../../packages/observatory/observatory-crypto" },
-    { "path": "../../../packages/observatory/observatory-vault" },
-    { "path": "../../../packages/hdri-codebook" },
-    { "path": "../../../packages/business/business-crawler" },
-    { "path": "../../../packages/business/business-core" }
   ]
 }

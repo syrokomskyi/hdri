@@ -1,0 +1,159 @@
+/*
+<MODULE_CONTRACT>
+<purpose>Define and manage pipeline steps with customizable execution and explanation logic.</purpose>
+<non-goals>
+  <item>Does not execute the pipeline steps themselves.</item>
+  <item>Does not handle pipeline orchestration or scheduling.</item>
+</non-goals>
+</MODULE_CONTRACT>
+<CHANGE_SUMMARY>
+  <item>Initial implementation of the PipelineStep abstract class.</item>
+</CHANGE_SUMMARY>
+*/
+
+import type {
+  PipelineExplainContext,
+  PipelineArtifacts,
+  PipelineStepGuideFactory,
+  PipelineStepGuideSeed,
+  PipelineStepGuide,
+  PipelineStepLike,
+  PipelineFingerprintContract,
+  PipelineStepExecutionSemantics,
+  PipelineRetryPolicy,
+  PipelineStepContext,
+} from "./pipeline-types.js";
+
+export abstract class PipelineStep<TContext extends PipelineStepContext = PipelineStepContext> {
+  #explainStepOverride?:
+    PipelineStepGuideSeed | PipelineStepGuideFactory<PipelineStepLike<TContext>>;
+  #declaredOperationValue?: unknown;
+
+  abstract readonly id: string;
+
+  readonly artifacts: PipelineArtifacts<TContext> = {};
+
+  guide?: PipelineStepGuide;
+
+  readonly retryPolicy: PipelineRetryPolicy = "on_output_invalid";
+
+  readonly executionSemantics: PipelineStepExecutionSemantics = "pure_artifact";
+
+  /** Override when public step configuration does not fully describe output-affecting options. */
+  protected fingerprintOperationValue(_ctx: TContext): unknown {
+    return {
+      id: this.id,
+      retryPolicy: this.retryPolicy,
+      artifacts: Object.fromEntries(
+        Object.entries(this.artifacts).map(([artifactId, artifact]) => [
+          artifactId,
+          {
+            kind: artifact.kind,
+            relativePath: artifact.relativePath,
+            optional: artifact.optional ?? false,
+          },
+        ]),
+      ),
+    };
+  }
+
+  get fingerprint(): PipelineFingerprintContract<TContext> {
+    return {
+      schema: "pipeline-fingerprint-contract@1",
+      executionSemantics: this.executionSemantics,
+      implementationInputs: async () => [
+        {
+          kind: "runtime",
+          id: "pipeline-core-lifecycle",
+          version: "pipeline-artifact-lifecycle@1",
+        },
+        { kind: "value", id: "step-constructor", value: this.constructor.toString() },
+      ],
+      operationInputs: async (ctx) => [
+        { kind: "value", id: "step-operation", value: this.fingerprintOperationValue(ctx) },
+        ...(this.#declaredOperationValue === undefined
+          ? []
+          : [
+              {
+                kind: "value" as const,
+                id: "step-declaration",
+                value: this.#declaredOperationValue,
+              },
+            ]),
+      ],
+    };
+  }
+
+  /**
+   * Optional list of step IDs to skip. When set, the engine calls
+   * `shouldSkip` with this list; subclasses may override `getSkipIds`
+   * for dynamic skip logic (e.g. reading from pipeline state).
+   */
+  skipStepIds?: string[];
+
+  /**
+   * Returns the list of step IDs that should be skipped for this run.
+   * Override in subclasses to provide dynamic skip logic.
+   * Defaults to `this.skipStepIds`.
+   */
+  getSkipIds(_ctx: TContext): string[] {
+    return this.skipStepIds ?? [];
+  }
+
+  getArtifactPath(ctx: TContext, artifactId: string): string {
+    return ctx.getStepArtifactPath(this.id, artifactId);
+  }
+
+  withExplanation(
+    explanation: PipelineStepGuideSeed | PipelineStepGuideFactory<PipelineStepLike<TContext>>,
+    declaredOperationValue?: unknown,
+  ): this {
+    this.#explainStepOverride = explanation;
+    this.#declaredOperationValue = declaredOperationValue;
+    return this;
+  }
+
+  explainStep(context: PipelineExplainContext<PipelineStepLike<TContext>>): PipelineStepGuideSeed {
+    if (this.#explainStepOverride) {
+      return typeof this.#explainStepOverride === "function"
+        ? this.#explainStepOverride(context)
+        : this.#explainStepOverride;
+    }
+
+    return {
+      title: this.id,
+      purpose: `Run the operational step \`${this.id}\`.`,
+      inputs: ["Validated upstream pipeline state and artifacts"],
+    };
+  }
+
+  getPromptFileNames(): string[] {
+    return [`${this.id}.md`];
+  }
+
+  async shouldSkip(ctx: TContext): Promise<boolean> {
+    return this.getSkipIds(ctx).includes(this.id);
+  }
+
+  /**
+   * Returns the IDs of artifacts that should be validated for this run.
+   * Override in subclasses to exclude conditionally-declared artifacts
+   * (e.g. artifacts that are only produced when a brief flag is enabled).
+   * Defaults to all declared artifact IDs.
+   */
+  getActiveArtifactIds(_ctx: TContext): string[] {
+    return Object.keys(this.artifacts);
+  }
+
+  async validateBeforeStart(ctx: TContext): Promise<void> {
+    void ctx;
+  }
+
+  async hydrateFromArtifacts(ctx: TContext): Promise<void> {
+    void ctx;
+  }
+
+  abstract run(ctx: TContext): Promise<void>;
+}
+
+export { PipelineStep as Gogol, PipelineStep as PipelineGogol };

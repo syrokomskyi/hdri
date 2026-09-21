@@ -1,0 +1,29 @@
+{
+  "dataset": {
+    "id": "wikidata-bundeslaender",
+    "title": "Mapping from German federal states (Bundesländer) to Wikidata Q-IDs",
+    "notes": [
+      "All 16 German Bundesländer with their canonical Wikidata Q-IDs.",
+      "Q-IDs are stable and verified via Wikidata API.",
+      "Used for linking HDRI strata to Wikidata geographic entities."
+    ]
+  },
+  "entries": [
+    { "key": "baden-wuerttemberg", "label": "Baden-Württemberg", "qid": "Q985" },
+    { "key": "bayern", "label": "Bayern", "qid": "Q980" },
+    { "key": "berlin", "label": "Berlin", "qid": "Q64" },
+    { "key": "brandenburg", "label": "Brandenburg", "qid": "Q1208" },
+    { "key": "bremen", "label": "Bremen", "qid": "Q1210" },
+    { "key": "hamburg", "label": "Hamburg", "qid": "Q1055" },
+    { "key": "hessen", "label": "Hessen", "qid": "Q1199" },
+    { "key": "mecklenburg-vorpommern", "label": "Mecklenburg-Vorpommern", "qid": "Q1196" },
+    { "key": "niedersachsen", "label": "Niedersachsen", "qid": "Q1197" },
+    { "key": "nordrhein-westfalen", "label": "Nordrhein-Westfalen", "qid": "Q1198" },
+    { "key": "rheinland-pfalz", "label": "Rheinland-Pfalz", "qid": "Q1200" },
+    { "key": "saarland", "label": "Saarland", "qid": "Q1201" },
+    { "key": "sachsen", "label": "Sachsen", "qid": "Q1202" },
+    { "key": "sachsen-anhalt", "label": "Sachsen-Anhalt", "qid": "Q1206" },
+    { "key": "schleswig-holstein", "label": "Schleswig-Holstein", "qid": "Q1194" },
+    { "key": "thueringen", "label": "Thüringen", "qid": "Q1205" }
+  ]
+}

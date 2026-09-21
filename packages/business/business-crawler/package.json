@@ -1,0 +1,81 @@
+{
+  "name": "@syrokomskyi/business-crawler",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit",
+    "test": "pnpm exec vitest run",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@syrokomskyi/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./liveness": {
+      "@syrokomskyi/source": "./src/liveness.ts",
+      "types": "./dist/liveness.d.ts",
+      "import": "./dist/liveness.js",
+      "default": "./dist/liveness.js"
+    },
+    "./fetch-page": {
+      "@syrokomskyi/source": "./src/fetch-page.ts",
+      "types": "./dist/fetch-page.d.ts",
+      "import": "./dist/fetch-page.js",
+      "default": "./dist/fetch-page.js"
+    },
+    "./extract": {
+      "@syrokomskyi/source": "./src/extract.ts",
+      "types": "./dist/extract.d.ts",
+      "import": "./dist/extract.js",
+      "default": "./dist/extract.js"
+    },
+    "./robots-honor": {
+      "@syrokomskyi/source": "./src/robots-honor.ts",
+      "types": "./dist/robots-honor.d.ts",
+      "import": "./dist/robots-honor.js",
+      "default": "./dist/robots-honor.js"
+    },
+    "./error-codes": {
+      "@syrokomskyi/source": "./src/error-codes.ts",
+      "types": "./dist/error-codes.d.ts",
+      "import": "./dist/error-codes.js",
+      "default": "./dist/error-codes.js"
+    },
+    "./egress-policy": {
+      "@syrokomskyi/source": "./src/egress-policy.ts",
+      "types": "./dist/egress-policy.d.ts",
+      "import": "./dist/egress-policy.js",
+      "default": "./dist/egress-policy.js"
+    },
+    "./collector-health": {
+      "@syrokomskyi/source": "./src/collector-health.ts",
+      "types": "./dist/collector-health.d.ts",
+      "import": "./dist/collector-health.js",
+      "default": "./dist/collector-health.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@types/node": "^26.2.0",
+    "cheerio": "^1.2.0",
+    "robots-parser": "^3.0.1",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

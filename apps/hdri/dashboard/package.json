@@ -36,7 +36,6 @@
     "@cloudflare/workers-types": "^5.20260823.1",
     "@types/d3-scale-chromatic": "^3.1.0",
     "@types/node": "^26.2.0",
-    "@warpgogol/changelog-live": "workspace:*",
     "terser": "^5.50.0",
     "tsx": "^4.23.7",
     "typescript": "6.0.3",

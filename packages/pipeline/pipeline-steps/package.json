@@ -1,0 +1,78 @@
+{
+  "name": "@warpgogol/pipeline-steps",
+  "version": "0.1.4",
+  "private": false,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syrokomskyi/pipeline-steps.git"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm exec eslint src --ext .ts",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit",
+    "upgrade-packages": "pnpm up --latest",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "markdown-table": "^3.0.4",
+    "p-limit": "^6.2.0",
+    "systeminformation": "^5.33.1",
+    "tslib": "^2.8.1"
+  },
+  "peerDependencies": {
+    "axe-core": "*",
+    "better-sqlite3": "*",
+    "chrome-launcher": "*",
+    "lighthouse": "*",
+    "playwright": "*"
+  },
+  "peerDependenciesMeta": {
+    "axe-core": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    },
+    "chrome-launcher": {
+      "optional": true
+    },
+    "lighthouse": {
+      "optional": true
+    },
+    "playwright": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22.10.0",
+    "axe-core": "^4.13.0",
+    "chrome-launcher": "^1.2.1",
+    "eslint": "~10.9.0",
+    "lighthouse": "^13.4.1",
+    "playwright": "^1.62.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "4.1.10"
+  }
+}

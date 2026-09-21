@@ -12,17 +12,8 @@
     "changelog:init": "changelog-live init"
   },
   "dependencies": {
-    "@syrokomskyi/business-core": "workspace:*",
-    "@syrokomskyi/factory-core": "workspace:*",
-    "@syrokomskyi/observatory-core": "workspace:*",
-    "@syrokomskyi/observatory-crypto": "workspace:*",
-    "@syrokomskyi/observatory-emit": "workspace:*",
-    "@warpgogol/pipeline-core": "workspace:*",
-    "@warpgogol/pipeline-node": "workspace:*",
-    "@syrokomskyi/utils": "workspace:*",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.2.0",
-    "@warpgogol/changelog-live": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "gray-matter": "^4.0.3",

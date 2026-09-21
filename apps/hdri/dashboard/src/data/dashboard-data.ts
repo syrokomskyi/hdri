@@ -54,7 +54,7 @@ export function loadCurrentPeriod(period: string) {
   };
 }
 
-const codebookModules = import.meta.glob("../assets/data/public/codebook-observatory-*.yaml", {
+const codebookModules = import.meta.glob("../assets/data/public/codebook.yaml", {
   eager: true,
   query: "?raw",
   import: "default",
@@ -63,7 +63,7 @@ const codebookModules = import.meta.glob("../assets/data/public/codebook-observa
 export function loadCodebook() {
   const entries = Object.entries(codebookModules);
   if (entries.length === 0) {
-    throw new Error("No codebook-observatory-*.yaml found in assets/data/public/");
+    throw new Error("No codebook.yaml found in assets/data/public/");
   }
   // Pick the highest version by sorting on the filename.
   const sorted = entries.sort(([a], [b]) => b.localeCompare(a));

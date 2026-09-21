@@ -28,7 +28,7 @@ ${argumentsScript}
 const bytes = fs.readFileSync(args['work-root'] + '/' + args.stage + '.json');
 const result = JSON.parse(bytes);
 if (result.stage !== args.stage || result.targets !== Number(args.targets) || result.fixture !== fs.readFileSync(args['fixture-root']+'/corpus.txt','utf8')) process.exit(2);
-console.log(JSON.stringify({schema:'hdri-stage-verification@1',stage:args.stage,status:'pass',targets:Number(args.targets),inputFingerprint:args['input-fingerprint'],outputs:[{uri:'work/'+args.stage+'.json',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')}]}));
+console.log(JSON.stringify({schema:'hdri-stage-verification@1',stage:args.stage,status:'pass',targets:Number(args.targets),inputFingerprint:args['input-fingerprint'],consumedSha256:args['consumed'],outputs:[{uri:'work/'+args.stage+'.json',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')}]}));
 `;
 
 let root: string;

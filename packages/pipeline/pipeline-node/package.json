@@ -1,0 +1,126 @@
+{
+  "name": "@warpgogol/pipeline-node",
+  "version": "0.1.5",
+  "private": false,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syrokomskyi/pipeline-node.git"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm exec eslint src --ext .ts",
+    "test": "pnpm exec vitest run",
+    "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit",
+    "upgrade-packages": "pnpm up --latest",
+    "changelog": "changelog-live",
+    "changelog:init": "changelog-live init"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./context": {
+      "types": "./src/lib/create-node-pipeline-context.ts",
+      "import": "./dist/lib/create-node-pipeline-context.js",
+      "default": "./dist/lib/create-node-pipeline-context.js"
+    },
+    "./env": {
+      "types": "./src/lib/env.ts",
+      "import": "./dist/lib/env.js",
+      "default": "./dist/lib/env.js"
+    },
+    "./frontmatter": {
+      "types": "./src/lib/frontmatter.ts",
+      "import": "./dist/lib/frontmatter.js",
+      "default": "./dist/lib/frontmatter.js"
+    },
+    "./declarations": {
+      "types": "./src/lib/pipeline-declarations.ts",
+      "import": "./dist/lib/pipeline-declarations.js",
+      "default": "./dist/lib/pipeline-declarations.js"
+    },
+    "./engine": {
+      "types": "./src/lib/run-node-pipeline-engine.ts",
+      "import": "./dist/lib/run-node-pipeline-engine.js",
+      "default": "./dist/lib/run-node-pipeline-engine.js"
+    },
+    "./documentation": {
+      "types": "./src/lib/pipeline-documentation.ts",
+      "import": "./dist/lib/pipeline-documentation.js",
+      "default": "./dist/lib/pipeline-documentation.js"
+    },
+    "./types": {
+      "types": "./src/lib/node-pipeline-types.ts",
+      "import": "./dist/lib/node-pipeline-types.js",
+      "default": "./dist/lib/node-pipeline-types.js"
+    },
+    "./prompts": {
+      "types": "./src/lib/prompt-files.ts",
+      "import": "./dist/lib/prompt-files.js",
+      "default": "./dist/lib/prompt-files.js"
+    },
+    "./input-validation": {
+      "types": "./src/lib/input-validation.ts",
+      "import": "./dist/lib/input-validation.js",
+      "default": "./dist/lib/input-validation.js"
+    },
+    "./templates": {
+      "types": "./src/lib/template-files.ts",
+      "import": "./dist/lib/template-files.js",
+      "default": "./dist/lib/template-files.js"
+    },
+    "./llm-artifacts": {
+      "types": "./src/lib/llm-artifacts.ts",
+      "import": "./dist/lib/llm-artifacts.js",
+      "default": "./dist/lib/llm-artifacts.js"
+    },
+    "./cli": {
+      "types": "./src/lib/cli.ts",
+      "import": "./dist/lib/cli.js",
+      "default": "./dist/lib/cli.js"
+    },
+    "./paths": {
+      "types": "./src/lib/app-paths.ts",
+      "import": "./dist/lib/app-paths.js",
+      "default": "./dist/lib/app-paths.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "gray-matter": "^4.0.3",
+    "handlebars": "^4.7.9",
+    "tslib": "^2.8.1"
+  },
+  "peerDependencies": {
+    "playwright": "^1.62.1",
+    "sharp": "^0.35.3"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    },
+    "sharp": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.10.0",
+    "eslint": "~10.9.0",
+    "fast-check": "4.9.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "4.1.10"
+  }
+}
