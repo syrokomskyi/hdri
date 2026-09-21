@@ -18,6 +18,23 @@ is reproducible and tamper-evident.</purpose>
 import type Database from "better-sqlite3";
 import { sha256, sha256Json } from "@syrokomskyi/observatory-core";
 
+/**
+ * Deterministic JSON: object keys sorted recursively so semantically-equal data hashes
+ * equal. Shared with tools/scientific-reports/methodology-digests.ts — the run fingerprint
+ * and the scientific snapshot must digest identical canonical bytes (RFC-0107).
+ */
+export const canonicalJson = (value: unknown): string =>
+  JSON.stringify(value, (_key, val) =>
+    val !== null && typeof val === "object" && !Array.isArray(val)
+      ? Object.keys(val as Record<string, unknown>)
+          .sort()
+          .reduce<Record<string, unknown>>((acc, k) => {
+            acc[k] = (val as Record<string, unknown>)[k];
+            return acc;
+          }, {})
+      : val,
+  );
+
 export type MethodologyFingerprint = {
   codebookId: string;
   codebookVersion: string;

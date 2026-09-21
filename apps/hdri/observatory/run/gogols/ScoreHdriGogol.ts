@@ -31,6 +31,7 @@ import { openObservatoryDb } from "../db/connection";
 import { inputDir } from "../config";
 import { scoreAndWriteForRun, type ScoringSummary } from "../score/score-core";
 import { computeMethodologyFingerprint, writeRunMethodology } from "../score/methodology-core";
+import { loadMissingnessPolicySource, signalMapSource } from "../score/methodology-sources";
 
 export class ScoreHdriGogol extends Gogol {
   override readonly id = "score-hdri";
@@ -96,8 +97,8 @@ export class ScoreHdriGogol extends Gogol {
         scorerVersion: readScorerVersion(),
         codebookSource,
         ontologySource,
-        signalMapSource: null,
-        missingnessPolicySource: null,
+        signalMapSource: signalMapSource(),
+        missingnessPolicySource: await loadMissingnessPolicySource(),
       });
       // WP15: also record the population-frame content hash when a frame is present, so the
       // frozen per-period methodology snapshot (codebook + ontology + frame) is complete.

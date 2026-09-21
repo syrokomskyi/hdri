@@ -21,6 +21,8 @@ conventions, per the RFC's "archive both source bytes and canonical semantic dig
 import { createHash } from "node:crypto";
 import { AXE_SIGNAL_MAP, EXT_SIGNAL_MAP } from "@syrokomskyi/observatory-core";
 import { parseCodebookOrThrow, scoreSite } from "@syrokomskyi/hdri-codebook";
+import { canonicalJson } from "../../run/score/methodology-core";
+import { signalMapSource } from "../../run/score/methodology-sources";
 import type {
   Codebook,
   Indicator,
@@ -33,18 +35,10 @@ import type {
 export const sha256hex = (content: string | Buffer): string =>
   createHash("sha256").update(content).digest("hex");
 
-/** Deterministic JSON: object keys sorted recursively so semantically-equal data hashes equal. */
-export const canonicalJson = (value: unknown): string =>
-  JSON.stringify(value, (_key, val) =>
-    val !== null && typeof val === "object" && !Array.isArray(val)
-      ? Object.keys(val as Record<string, unknown>)
-          .sort()
-          .reduce<Record<string, unknown>>((acc, k) => {
-            acc[k] = (val as Record<string, unknown>)[k];
-            return acc;
-          }, {})
-      : val,
-  );
+// canonicalJson lives in run/score/methodology-core.ts and signalMapSource in
+// run/score/methodology-sources.ts — the run fingerprint and this snapshot producer must
+// digest identical canonical bytes (single implementation, RFC-0107).
+export { canonicalJson, signalMapSource };
 
 // --- Signal map -------------------------------------------------------------
 // The map lives in TypeScript source, so raw bytes drift with formatting. The semantic
@@ -54,7 +48,7 @@ export type SignalMapLike = ReadonlyArray<unknown>;
 export const signalMapDigest = (
   ext: SignalMapLike = EXT_SIGNAL_MAP,
   axe: SignalMapLike = AXE_SIGNAL_MAP,
-): string => sha256hex(canonicalJson({ axe, ext }));
+): string => sha256hex(signalMapSource(ext, axe));
 
 // --- Scoring semantics ------------------------------------------------------
 // "Scoring semantics" = the function (signals, codebook) → score. A behavioral fingerprint:
