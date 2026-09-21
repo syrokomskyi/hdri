@@ -17,16 +17,11 @@ import { parseImportedEvidenceIfClaimed } from "@syrokomskyi/observatory-core";
 import { assertBaselineCanonicalId } from "./contracts.js";
 import type { RetainedObservationSourceRow } from "./observation-source.js";
 
-const SIGNAL_PATH = /^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9_]*)+$/;
+const SIGNAL_PATH = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$/;
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 const VALUE_TYPES = new Set(["bool", "num", "str", "json"]);
 const STATUSES = new Set(["active", "superseded", "deprecated"]);
-const COLLECTION_STATUSES = new Set([
-  "absent",
-  "unreachable",
-  "forbidden",
-  "not_applicable",
-]);
+const COLLECTION_STATUSES = new Set(["absent", "unreachable", "forbidden", "not_applicable"]);
 const hasControlCharacter = (value: string): boolean =>
   Array.from(value).some((character) => {
     const code = character.codePointAt(0)!;
@@ -54,10 +49,14 @@ function timestamp(value: unknown, label: string): void {
 }
 
 /** Validate only current structural semantics. Ontology/version provenance remains a separate gate. */
-export function assertCurrentObservationSemantics(row: RetainedObservationSourceRow): void {
+export function assertCurrentObservationSemantics(
+  row: RetainedObservationSourceRow,
+  assetIdNamespace: "provisional" | "canonical" = "canonical",
+): void {
   const observation = row.payload;
   assertBaselineCanonicalId(observation.observation_id);
-  assertBaselineCanonicalId(observation.asset_id);
+  if (assetIdNamespace === "canonical") assertBaselineCanonicalId(observation.asset_id);
+  else text(observation.asset_id, "ASSET_ID");
   for (const field of ["crawl_id", "collector_version", "ruleset_version"] as const)
     text(observation[field], field.toUpperCase());
   text(observation.signal_path, "SIGNAL_PATH");

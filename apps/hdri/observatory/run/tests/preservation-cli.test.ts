@@ -139,16 +139,37 @@ describe("Q2 preservation actual CLI boundary", () => {
 
   it("blocks baseline import before creating any output or reading unverified archives", async () => {
     const before = (await fs.readdir(root)).sort();
+    // The destinations point at unpopulated copy-* dirs — replica authentication must
+    // fail before any work-root or target output is created.
     const result = await run([
       "baseline:import",
-      "--archive",
-      source,
+      "--destinations",
+      destinationsFile,
+      "--manifest-sha256",
+      createHash("sha256").update("unverified").digest("hex"),
+      "--key-id",
+      keyId,
+      "--verification-key",
+      path.join(root, "trusted-public.pem"),
+      "--source-destination",
+      path.join(root, "copy-0"),
+      "--work-root",
+      path.join(root, "work"),
+      "--scope-declaration",
+      path.join(root, "scope.json"),
+      "--ontology-artifact",
+      "x",
+      "--codebook-artifact",
+      "y",
+      "--import-metadata",
+      path.join(root, "import.json"),
       "--target",
       path.join(root, "baseline"),
+      "--period",
+      "2026-q2",
       "--json",
     ]);
     expect(result.code).toBe(1);
-    expect(result.diagnostic.violations[0].code).toBe("BASELINE_CONVERSION_UNVERIFIED");
     expect((await fs.readdir(root)).sort()).toEqual(before);
   });
 });

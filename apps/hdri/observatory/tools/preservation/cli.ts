@@ -15,9 +15,12 @@ import { readBoundedFile } from "@warpgogol/pipeline-node";
 import {
   parseDestinations,
   parsePreservationInventory,
+  prepareBaselineSource,
   preserveQ2,
   verifyReplicas,
 } from "./preserve.js";
+import { inspectBaselineScope } from "./baseline-scope.js";
+import { materializeBaselineClosure } from "./baseline-closure-materialization.js";
 
 const readJson = async (file: string): Promise<unknown> =>
   JSON.parse((await readBoundedFile(path.resolve(file), 64 * 1024 * 1024)).toString("utf8"));
@@ -28,10 +31,7 @@ function required(value: unknown): string {
 export async function main(args = process.argv.slice(2)): Promise<number> {
   const [command, ...rest] = args;
   try {
-    // No partial conversion may produce a successful CLI receipt. Replacement is
-    // the next A1 step; the old converter is intentionally not imported here.
-    if (command === "baseline:import") throw new Error("BASELINE_CONVERSION_UNVERIFIED");
-    if (command !== "preserve:q2" && command !== "preserve:verify")
+    if (command !== "preserve:q2" && command !== "preserve:verify" && command !== "baseline:import")
       throw new Error("UNKNOWN_PRESERVATION_COMMAND");
     const common = {
       destinations: { type: "string" as const },
@@ -45,12 +45,27 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
       options:
         command === "preserve:q2"
           ? { ...common, inventory: { type: "string" }, "dry-run": { type: "boolean" } }
-          : {
-              ...common,
-              "manifest-sha256": { type: "string" },
-              "verification-key": { type: "string" },
-              "key-id": { type: "string" },
-            },
+          : command === "baseline:import"
+            ? {
+                ...common,
+                "manifest-sha256": { type: "string" },
+                "verification-key": { type: "string" },
+                "key-id": { type: "string" },
+                "source-destination": { type: "string" },
+                "work-root": { type: "string" },
+                "scope-declaration": { type: "string" },
+                "ontology-artifact": { type: "string" },
+                "codebook-artifact": { type: "string" },
+                "import-metadata": { type: "string" },
+                target: { type: "string" },
+                period: { type: "string" },
+              }
+            : {
+                ...common,
+                "manifest-sha256": { type: "string" },
+                "verification-key": { type: "string" },
+                "key-id": { type: "string" },
+              },
     });
     const values: Record<string, unknown> = parsedValues;
     const seen = new Set<string>();
@@ -82,6 +97,46 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
         dryRun,
         signingKey: dryRun ? undefined : loadSigningKeyFromEnv(),
       });
+    } else if (command === "baseline:import") {
+      const signingKeyId = required(values["key-id"]);
+      const publicKeyPem = (
+        await readBoundedFile(path.resolve(required(values["verification-key"])), 4096)
+      ).toString("utf8");
+      // Authenticate every declared replica, then copy the complete pinned closure into a
+      // fresh private root. The scope declaration and import metadata are operator-authored
+      // files; the converter validates them against the prepared manifest before any write.
+      const prepared = await prepareBaselineSource({
+        destinations,
+        manifestSha256: required(values["manifest-sha256"]),
+        verificationKeys: new Map([[signingKeyId, { signingKeyId, publicKeyPem }]]),
+        sourceDestinationPath: path.resolve(required(values["source-destination"])),
+        workRoot: path.resolve(required(values["work-root"])),
+      });
+      const scopeInventory = await inspectBaselineScope(
+        prepared,
+        await readJson(required(values["scope-declaration"])),
+      );
+      const snapshots = new Map(
+        scopeInventory.sources.map((s) => [s.declaration.profile, s.declaration.snapshot.uri]),
+      );
+      const observatorySnapshotUri = snapshots.get("observatory");
+      const harvestSnapshotUri = snapshots.get("harvest");
+      if (!observatorySnapshotUri || !harvestSnapshotUri)
+        throw new Error("BASELINE_SCOPE_PROFILE_MISSING");
+      const importMetadata = await readJson(required(values["import-metadata"]));
+      if (!importMetadata || typeof importMetadata !== "object" || Array.isArray(importMetadata))
+        throw new Error("INVALID_BASELINE_IMPORT_METADATA");
+      diagnostic = await materializeBaselineClosure({
+        prepared,
+        scopeInventory,
+        observatorySnapshotUri,
+        harvestSnapshotUri,
+        ontologyArtifactUri: required(values["ontology-artifact"]),
+        codebookArtifactUri: required(values["codebook-artifact"]),
+        targetPath: path.resolve(required(values.target)),
+        period: required(values.period),
+        import: importMetadata as never,
+      });
     } else {
       const signingKeyId = required(values["key-id"]);
       const publicKeyPem = (
@@ -93,11 +148,20 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
         verificationKeys: new Map([[signingKeyId, { signingKeyId, publicKeyPem }]]),
       });
     }
-    // Always emit a machine-readable result, even without --json.
+    // Always emit a machine-readable result, even without --json. The baseline report
+    // completes only after zero-difference comparison; its status stays
+    // compared-not-admitted — admission is a separate gate, not this command's verdict.
     process.stdout.write(`${JSON.stringify(diagnostic)}\n`);
-    return diagnostic.status === "pass" || diagnostic.status === "planned" ? 0 : 1;
+    return diagnostic.status === "pass" ||
+      diagnostic.status === "planned" ||
+      diagnostic.status === "compared-not-admitted"
+      ? 0
+      : 1;
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
+    process.stderr.write(
+      `[baseline:import error] ${message}\n${error instanceof Error ? (error.stack ?? "") : ""}\n`,
+    );
     const reason =
       /^[A-Z][A-Z0-9_]{2,60}(?=:|$)/.exec(message)?.[0] ?? "PRESERVATION_COMMAND_FAILED";
     const code =

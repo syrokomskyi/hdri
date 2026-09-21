@@ -215,6 +215,7 @@ async function scope(f: Awaited<ReturnType<typeof fixture>>) {
   return inspectBaselineScope(f.prepared, {
     schema: "hdri-baseline-scope@1",
     manifestSha256: f.prepared.manifestSha256,
+    observationAssetIdNamespace: "canonical",
     sources: [
       {
         snapshot: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },

@@ -342,6 +342,7 @@ dimensions:
   const scopeInventory = await inspectBaselineScope(prepared, {
     schema: "hdri-baseline-scope@1",
     manifestSha256: prepared.manifestSha256,
+    observationAssetIdNamespace: "canonical",
     sources: [
       {
         snapshot: { uri: harvest.uri, sha256: harvest.sha256, bytes: harvest.bytes },
@@ -412,6 +413,7 @@ describe("complete prepared baseline source declarations", () => {
     const input = {
       schema: "hdri-baseline-scope@1",
       manifestSha256: f.prepared.manifestSha256,
+      observationAssetIdNamespace: "canonical",
       sources: f.prepared.manifest.artifacts
         .filter((a) => a.representation === "sqlite-snapshot")
         .map((a) => ({
@@ -443,6 +445,7 @@ describe("complete prepared baseline source declarations", () => {
     return {
       schema: "hdri-baseline-scope@1",
       manifestSha256: f.prepared.manifestSha256,
+      observationAssetIdNamespace: "canonical",
       sources: [
         {
           snapshot: { uri: f.snapshot.uri, sha256: f.snapshot.sha256, bytes: f.snapshot.bytes },
@@ -842,29 +845,33 @@ describe("complete prepared baseline source declarations", () => {
     ).rejects.toThrow("BASELINE_ONTOLOGY_ARTIFACT_VERSION_MISMATCH");
   });
 
-  it("rejects a retained signal absent from the exact prepared ontology bytes", async () => {
+  it("preserves a signed retained signal absent from the exact prepared ontology bytes", async () => {
+    // A signal the declared ontology does not list is still a signed historical
+    // observation — the baseline preserves it verbatim (ontology-membership divergence
+    // is a methodology finding, not a data-integrity rejection; the signature already
+    // proves the collector produced it).
     const f = await closureFixture({ observationPatch: { signal_path: "web.unknown" } });
     const targetPath = path.join(f.root, "ontology-signal-mismatch", "observatory.db");
     await fs.mkdir(path.dirname(targetPath));
-    await expect(
-      materializeBaselineClosure({
-        prepared: f.prepared,
-        scopeInventory: f.scopeInventory,
-        observatorySnapshotUri: f.observation.uri,
-        harvestSnapshotUri: f.harvest.uri,
-        ontologyArtifactUri: f.ontology.uri,
-        codebookArtifactUri: f.codebook.uri,
-        targetPath,
-        period: "2026-q2",
-        import: {
-          runId: "joined-baseline-fixture",
-          importedAt: "2026-09-16T14:00:00.000Z",
-          implementationFingerprint: "fixture-closure",
-          ontologyVersion: "ontology-1",
-          codebookVersion: "1.0.0",
-        },
-      }),
-    ).rejects.toThrow("BASELINE_OBSERVATION_ONTOLOGY_INVALID: unknown_signal");
+    const report = await materializeBaselineClosure({
+      prepared: f.prepared,
+      scopeInventory: f.scopeInventory,
+      observatorySnapshotUri: f.observation.uri,
+      harvestSnapshotUri: f.harvest.uri,
+      ontologyArtifactUri: f.ontology.uri,
+      codebookArtifactUri: f.codebook.uri,
+      targetPath,
+      period: "2026-q2",
+      import: {
+        runId: "joined-baseline-fixture",
+        importedAt: "2026-09-16T14:00:00.000Z",
+        implementationFingerprint: "fixture-closure",
+        ontologyVersion: "ontology-1",
+        codebookVersion: "1.0.0",
+      },
+    });
+    expect(report.status).toBe("compared-not-admitted");
+    expect(report.comparisons.observations.status).toBe("equal");
   });
 
   it("rejects changed methodology bytes before creating the joined target", async () => {

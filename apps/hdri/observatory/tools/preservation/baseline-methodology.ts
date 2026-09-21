@@ -29,10 +29,7 @@ import {
 } from "@warpgogol/pipeline-node";
 import { assertCurrentObservationSemantics } from "./baseline-observation-semantics.js";
 import type { RetainedObservationSourceRow } from "./observation-source.js";
-import {
-  assertPreparedBaselineSource,
-  type PreparedBaselineSource,
-} from "./preserve.js";
+import { assertPreparedBaselineSource, type PreparedBaselineSource } from "./preserve.js";
 
 const MAX_METHODOLOGY_BYTES = 16 * 1024 * 1024;
 const utf8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
@@ -77,13 +74,15 @@ async function retainedText(
   return { artifact, source: utf8.decode(bytes) };
 }
 
-export async function inspectBaselineMethodology(options: Readonly<{
-  prepared: PreparedBaselineSource;
-  ontologyArtifactUri: string;
-  codebookArtifactUri: string;
-  ontologyVersion: string;
-  codebookVersion: string;
-}>): Promise<BaselineMethodologyInspection> {
+export async function inspectBaselineMethodology(
+  options: Readonly<{
+    prepared: PreparedBaselineSource;
+    ontologyArtifactUri: string;
+    codebookArtifactUri: string;
+    ontologyVersion: string;
+    codebookVersion: string;
+  }>,
+): Promise<BaselineMethodologyInspection> {
   assertPreparedBaselineSource(options.prepared);
   if (options.ontologyArtifactUri === options.codebookArtifactUri)
     throw new Error("DISTINCT_BASELINE_METHODOLOGY_ARTIFACTS_REQUIRED");
@@ -143,12 +142,13 @@ export function assertObservationMatchesBaselineMethodology(
   prepared: PreparedBaselineSource,
   methodology: BaselineMethodologyInspection,
   row: RetainedObservationSourceRow,
+  assetIdNamespace: "provisional" | "canonical" = "canonical",
 ): void {
   assertPreparedBaselineSource(prepared);
   const ontology = inspected.get(methodology);
   if (!ontology || methodology.manifestSha256 !== prepared.manifestSha256)
     throw new Error("PROCESS_LOCAL_BASELINE_METHODOLOGY_REQUIRED");
-  assertCurrentObservationSemantics(row);
+  assertCurrentObservationSemantics(row, assetIdNamespace);
   if (row.columns.ontology_version !== methodology.ontology.version)
     throw new Error("BASELINE_OBSERVATION_ONTOLOGY_VERSION_MISMATCH");
   const issues = validateObservation(
@@ -162,6 +162,13 @@ export function assertObservationMatchesBaselineMethodology(
     },
     ontology,
   );
-  if (issues.length)
-    throw new Error(`BASELINE_OBSERVATION_ONTOLOGY_INVALID: ${issues[0].code}`);
+  // Ontology-membership issues are not fatal for a faithful baseline: a signal that is
+  // deprecated or absent from the declared ontology is still a signed historical
+  // observation, preserved verbatim (the comparison requires every retained source row).
+  // Structural and value conflicts (malformed path, value_type mismatch, value invariant)
+  // remain fatal — those indicate corruption, not methodology divergence.
+  const fatal = issues.filter(
+    (issue) => issue.code !== "deprecated_signal" && issue.code !== "unknown_signal",
+  );
+  if (fatal.length) throw new Error(`BASELINE_OBSERVATION_ONTOLOGY_INVALID: ${fatal[0].code}`);
 }

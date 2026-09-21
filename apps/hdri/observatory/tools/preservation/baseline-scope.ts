@@ -47,6 +47,9 @@ export type BaselineScopeInventory = Readonly<{
   status: "inventory-checked-not-admitted";
   /** Exact preserved input closure; no artifact is excluded by a table disposition. */
   retainedArtifactCount: number;
+  /** Declared namespace of the observatory source's observation asset_id column.
+   * Signed envelopes are preserved verbatim; the identity map resolves canonical ids. */
+  observationAssetIdNamespace: "provisional" | "canonical";
   sources: readonly Readonly<{
     declaration: BaselineSourceDeclaration;
     sourceRole: string;
@@ -126,12 +129,20 @@ export async function inspectBaselineScope(
       throw new Error("BASELINE_SCOPE_METADATA_LIMIT");
     return result;
   };
-  const envelope = object(input, ["schema", "manifestSha256", "sources"]);
+  const envelope = object(input, [
+    "schema",
+    "manifestSha256",
+    "observationAssetIdNamespace",
+    "sources",
+  ]);
   if (
     envelope.schema !== "hdri-baseline-scope@1" ||
     envelope.manifestSha256 !== prepared.manifestSha256
   )
     throw new Error("BASELINE_SCOPE_MANIFEST_MISMATCH");
+  const observationAssetIdNamespace = envelope.observationAssetIdNamespace;
+  if (observationAssetIdNamespace !== "provisional" && observationAssetIdNamespace !== "canonical")
+    throw new Error("INVALID_BASELINE_OBSERVATION_ASSET_ID_NAMESPACE");
   const artifacts = new Map(prepared.manifest.artifacts.map((a) => [a.uri, a]));
   const snapshots = prepared.manifest.artifacts.filter(
     (a) => a.representation === "sqlite-snapshot",
@@ -295,6 +306,7 @@ export async function inspectBaselineScope(
     manifestSha256: prepared.manifestSha256,
     status: "inventory-checked-not-admitted",
     retainedArtifactCount: artifacts.size,
+    observationAssetIdNamespace,
     sources: Object.freeze(sources),
   });
   scopeInventories.add(result);

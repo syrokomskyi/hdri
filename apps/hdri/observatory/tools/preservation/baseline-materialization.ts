@@ -296,20 +296,21 @@ export async function materializeObservationIdentityBaseline(
 }
 
 /** Materialize the complete retained Observatory identity and observation domains.
- * Canonical namespace is explicit: provisional IDs require a separate forward-only
- * projection because rewriting signed source envelopes would be invalid. */
+ * The observation asset_id namespace is explicit and externally declared: retained
+ * observations are preserved verbatim (signed envelopes are never rewritten), and the
+ * materialized identity map carries the provisional→canonical resolution. */
 export async function materializeObservationBaseline(
   options: Readonly<{
     prepared: PreparedBaselineSource;
     scopeInventory: BaselineScopeInventory;
     snapshotUri: string;
     targetPath: string;
-    assetIdNamespace: "canonical";
+    assetIdNamespace: "provisional" | "canonical";
     methodology: BaselineMethodologyInspection;
   }>,
 ): Promise<ObservationMaterializationReport> {
-  if (options.assetIdNamespace !== "canonical")
-    throw new Error("CANONICAL_OBSERVATION_NAMESPACE_REQUIRED");
+  if (options.assetIdNamespace !== "provisional" && options.assetIdNamespace !== "canonical")
+    throw new Error("EXPLICIT_SOURCE_ASSET_ID_NAMESPACE_REQUIRED");
   if (options.methodology.manifestSha256 !== options.prepared.manifestSha256)
     throw new Error("PROCESS_LOCAL_BASELINE_METHODOLOGY_REQUIRED");
   const { targetPath, sourceSnapshot, sourceScope } = await resolveFreshTarget(
@@ -367,11 +368,12 @@ export async function materializeObservationBaseline(
         options.snapshotUri,
         options.assetIdNamespace,
       )) {
-        assertCurrentObservationSemantics(row.observation);
+        assertCurrentObservationSemantics(row.observation, options.assetIdNamespace);
         assertObservationMatchesBaselineMethodology(
           options.prepared,
           options.methodology,
           row.observation,
+          options.assetIdNamespace,
         );
         const columns = row.observation.columns;
         const run = runs.get(columns.run_id as string);

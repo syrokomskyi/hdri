@@ -349,7 +349,7 @@ export async function materializeBaselineClosure(
     scopeInventory: options.scopeInventory,
     snapshotUri: options.observatorySnapshotUri,
     targetPath: options.targetPath,
-    assetIdNamespace: "canonical",
+    assetIdNamespace: options.scopeInventory.observationAssetIdNamespace,
     methodology,
   });
   const canonicalByDomain = await canonicalDomains(
