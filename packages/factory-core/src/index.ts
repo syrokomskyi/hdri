@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-0115 B5: expose authenticated immutable selected execution results to source consumers.</item>
   <item>Initial export setup for HDRI factory components and types.</item>
   <item>Remove createHdriFactoryEngine export — collapsed into runHdriFactoryEngine.</item>
   <item>Remove withDb export — dead code, 0 consumers.</item>
@@ -64,6 +65,8 @@ export {
   sourceOccurrenceId,
   KNOWN_INSTRUMENTS,
   DEFAULT_INSTRUMENT_PLAN,
+  INSTRUMENT_SEAL_STAGES,
+  sealStagesFor,
   validateInstrumentPlan,
   parseInstrumentPlanFromFrontmatter,
 } from "./lib/quarter-contracts.js";
@@ -86,6 +89,8 @@ export {
 } from "./lib/source-ledger-store.js";
 export type { SignedLedgerManifest, VerificationKeySource } from "./lib/source-ledger-store.js";
 export type { FrozenFrame, SourceDisposition, SourceOccurrence } from "./lib/source-ledger.js";
+export { verifyInheritedSourceBatch } from "./lib/verify-inherited-batch.js";
+export type { InheritedBatchVerification, InheritedSeedRow } from "./lib/verify-inherited-batch.js";
 export {
   assertStageComplete,
   selectTerminalResult,
@@ -102,6 +107,8 @@ export {
   readExecutionCasObject,
   rebuildExecution,
   verifyQuarterExecutionClosure,
+  loadVerifiedQuarterExecution,
+  assertVerifiedQuarterExecution,
   verifySignedStageSeal,
   withLeaseHeartbeat,
   workKeyId,
@@ -123,6 +130,7 @@ export {
   measurementEvidenceForWorkKey,
   declareStageTargetSet,
 } from "./lib/execution-store.js";
+export type { VerifiedQuarterExecution, VerifiedStageSelection } from "./lib/execution-store.js";
 export type {
   ExecutionEvidenceEnvelope,
   ExecutionEvent,
@@ -136,16 +144,28 @@ export type {
 } from "./lib/execution-store.js";
 export type { CommitAttemptInput, SealedProjection } from "./lib/sealed-projection.js";
 export {
+  appendCapsuleArtifacts,
+  appendCapsuleInventoryParts,
+  iterateCapsuleArtifacts,
+  appendCapsuleSealArtifacts,
+  createQuarterCapsuleStaging,
   sealQuarterCapsule,
+  sha256File,
+  snapshotCapsuleDbArtifact,
   validateCapsule,
   validateManifestSet,
   verifyQuarterCapsuleArtifacts,
   verifyQuarterCapsuleSignature,
   writeQuarterCapsuleCandidate,
-  writeQuarterCapsuleStaging,
   extractBatchIdsFromManifest,
   extractSourceLedgerHead,
 } from "./lib/capsule.js";
+export {
+  writeCapsuleInventory,
+  readCapsuleInventoryPart,
+  createCapsuleInventoryWriter,
+} from "./lib/capsule-inventory.js";
+export type { CapsuleInventoryPart } from "./lib/capsule-inventory.js";
 export type {
   CapsuleArtifact,
   CapsuleSignature,

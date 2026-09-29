@@ -44,12 +44,14 @@ export const promptsDir = paths.promptsDir;
 export const factoryRootDir = paths.factoryRootDir;
 
 /**
- * Root of the upstream 4-audit-lighthouse pipeline output.
+ * Root of the upstream 2-check-liveness pipeline output.
  * Used by VerifyUpstreamGogol to locate source-signature.json manifests.
+ * Axe consumes liveness-YYYY-qN.db (audit targets) and registry_YYYY.db —
+ * never 4-audit-lighthouse output, which is an optional disabled instrument.
  */
-export const upstreamLighthouseOutputRoot = getUpstreamOutputRoot(
+export const upstreamLivenessOutputRoot = getUpstreamOutputRoot(
   paths.factoryRootDir,
-  "4-audit-lighthouse",
+  "2-check-liveness",
 );
 
 /** Convert an absolute path to a relative one from the factory root. */

@@ -1,6 +1,17 @@
 # Changelog
 
 All notable changes to the `hdri` project are documented here.
+## 2026-09-24 — 2026-09-30
+
+### Added
+- Führe einen Prüfintervall (Janitor) ein, um Ressourcenengpässe und Pool-Deadlocks im Worker-Pool zu verhindern.
+
+### Changed
+- Behandle WorkerError als Ziel-Fehlschlag und führe betroffene Worker unmittelbar dem Idle-Pool zu, anstatt sie als Absturz zu werten.
+
+### Fixed
+- Fange das Ende der Worker-Standardausgabe (stderr) zur Diagnose tödlicher Fehler auf.
+
 ## 2026-09-17 — 2026-09-23
 
 ### Added

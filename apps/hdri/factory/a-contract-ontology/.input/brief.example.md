@@ -29,4 +29,17 @@ instrumentPlan:
   - instrument: lighthouse
     state: disabled
     reason: "Not configured for this quarter"
+
+# RFC-0106/0128: verified source admission — explicit list of per-device
+# capsule-staging.json manifest paths produced by quarter:init. Each entry is
+# verified (signature + artifact hashes) before its device's upstream DBs are
+# admitted as pipeline inputs. Required — unverified filesystem discovery is
+# no longer supported.
+inputManifestSet:
+  - "../capsules/<deviceId>/<period>/<capsuleId>/capsule-staging.json"
+
+# Complete signed harvest snapshot manifests, exactly one per admitted device.
+# Paths resolve from the app working directory; snapshots are adjacent to manifests.
+coreManifestSet:
+  - "../0-harvest-source/.output/<deviceId>/7-sign-source/source-signature.json"
 ---

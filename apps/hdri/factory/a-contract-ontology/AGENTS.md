@@ -53,3 +53,18 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 - `yaml` `^2.9.0`
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
+
+## Translation coverage and Q3 closure
+
+Expected signal paths are the ontology-defined intersection of the declared
+profile, Axe and liveness emitters. Liveness emission and reconciliation share
+one mapping; unknown Axe paths must not be emitted. Read persisted paths from
+`payload_json`, not the NUL-separated conflict key. Missing admitted paths and
+unexpected persisted paths stop translation before signing. This verifies signal
+catalogue coverage, not measurement ownership or selected-attempt closure.
+
+The [2026-09-25 Q3/Q4 checkpoint](../../../../docs/plans/plan-2026-09-25-hdri-q3-closure-q4-readiness.md)
+records unresolved B5 findings: mutable source paths after manifest verification,
+content-only profile joins, and an extra Axe asset outside frozen targets in the
+signed Q3 candidate. Preserve that candidate while correcting derivation; the
+coverage fix does not make it publishable.

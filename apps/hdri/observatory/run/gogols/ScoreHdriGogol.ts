@@ -11,7 +11,7 @@
   <item>Replace raw console.log/console.warn with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Add single-line progress reporting while scoring large asset batches.</item>
   <item>WP2: clear prior scores/dimensions/traces for the run before inserting (idempotent rebuild, no duplicate accumulation on re-runs).</item>
-  <item>WP7: delegate read+build+score+write to the shared score-core so rebuild-from-vault re-scores through the identical path (same overall_score + computation_hash).</item>
+  <item>Use shared scoring and quarter selection; record private exclusion counts without publishing collection failures.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -29,7 +29,7 @@ import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";
 import { inputDir } from "../config";
-import { scoreAndWriteForRun, type ScoringSummary } from "../score/score-core";
+import { scoreAndWriteForRun, scoreSelectionForPeriod, type ScoringSummary } from "../score/score-core";
 import { computeMethodologyFingerprint, writeRunMethodology } from "../score/methodology-core";
 import { loadMissingnessPolicySource, signalMapSource } from "../score/methodology-sources";
 
@@ -84,6 +84,7 @@ export class ScoreHdriGogol extends Gogol {
       summary = scoreAndWriteForRun(db, codebook, {
         runId,
         period: ctx.state.brief.period,
+        selectionPolicy: scoreSelectionForPeriod(ctx.state.brief.period),
         now,
         onProgress: (processed, total) => logProgress(this.id, processed, total, 1000, true),
       });
@@ -134,6 +135,9 @@ export class ScoreHdriGogol extends Gogol {
           scored,
           skipped,
           total,
+          selection_policy: scoreSelectionForPeriod(ctx.state.brief.period),
+          excluded_unavailable: summary.excludedUnavailable,
+          excluded_missing_profile: summary.excludedMissingProfile,
           codebook_id: codebook.id,
           codebook_version: codebook.version,
           run_id: runId,

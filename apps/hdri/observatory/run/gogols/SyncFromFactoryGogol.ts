@@ -11,6 +11,7 @@
   <item>Initial implementation: emit-bundle → observatory DB sync (P0.2.8).</item>
   <item>Add asset state ingestion from bundle asset-states.ndjson.</item>
   <item>Resolve exactly one period-and-capsule-addressed Factory emit bundle.</item>
+  <item>RFC-0115: use the neutral capsule root and retain the full population for explicit availability-only intake.</item>
   <item>Store gewerk_group from emitted asset states for downstream industry cohorting.</item>
   <item>Replace raw console.log/console.warn with structured NDJSON logger from @warpgogol/pipeline-core.</item>
   <item>Persist source bundle metadata on synced runs and show single-line progress while inserting large bundles.</item>
@@ -21,6 +22,8 @@
 // @ai-invariant: emit-bundle contract is immutable; never change manifest schema without version bump
 
 import path from "node:path";
+import fs from "node:fs/promises";
+import { quarterCapsuleDir } from "@syrokomskyi/factory-core";
 import {
   readEmitBundle,
   streamAssetStates,
@@ -37,11 +40,10 @@ import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";
 import { OBS_CHUNK, streamInsertObservations, writeAssetStatesDeduped } from "../db/sync-writers";
-import { outputRootDir } from "../config";
-import {
-  collectPanelEligibleAssetIds,
-  filterPanelEligibleObservations,
-} from "../eligibility/panel-eligibility";
+import { inputDir, outputRootDir } from "../config";
+import { selectSyncPopulation, syncObservations } from "../eligibility/sync-scope";
+import { parsePublicationScopeIntent } from "../release/publication-scope";
+import { SCIENTIFIC_PRODUCTS, type ScientificProduct } from "../release/release-contract";
 
 type BundleResult = {
   emitDir: string;
@@ -76,16 +78,21 @@ export class SyncFromFactoryGogol extends Gogol {
     }).withContext({ gogol: this.id });
 
     const deviceId = getDeviceId();
-    const capsuleDir = path.join(
-      brief.factoryContractRootDir,
-      ".output",
+    const capsuleDir = quarterCapsuleDir(
+      path.dirname(path.resolve(inputDir, "..", brief.factoryContractRootDir)),
       deviceId,
-      "capsules",
       brief.period,
       brief.capsuleId,
     );
     const emitDirs = [path.join(capsuleDir, "artifacts", "emit")];
     ctx.state.capsuleDir = capsuleDir;
+
+    let products: readonly ScientificProduct[] = SCIENTIFIC_PRODUCTS;
+    try {
+      products = parsePublicationScopeIntent(await fs.readFile(path.join(inputDir, "publication-scope.yaml"), "utf8"), brief);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
 
     const db = openObservatoryDb(year);
     const results: BundleResult[] = [];
@@ -114,7 +121,7 @@ export class SyncFromFactoryGogol extends Gogol {
     `);
 
     const checkBundle = db.prepare(
-      `SELECT 1 FROM synced_bundles WHERE run_id = ? AND observatory_run_id = ?`,
+      `SELECT bundle_hash, obs_count, asset_state_count FROM synced_bundles WHERE run_id = ? AND observatory_run_id = ?`,
     );
 
     // Asset states are bounded by the number of distinct assets (~100k), so they
@@ -141,7 +148,14 @@ export class SyncFromFactoryGogol extends Gogol {
           throw new Error("Factory emit manifest does not match the configured quarter capsule");
         }
 
-        if (checkBundle.get(manifest.run_id, runId)) {
+        const synced = checkBundle.get(manifest.run_id, runId) as {
+          bundle_hash: string; obs_count: number; asset_state_count: number;
+        } | undefined;
+        if (synced) {
+          if (synced.bundle_hash !== manifest.bundle_hash ||
+            (products.length === 1 && products[0] === "availability" &&
+              (synced.obs_count !== manifest.observation_count || synced.asset_state_count !== manifest.asset_state_count)))
+            throw new Error("Previously synced bundle does not match the requested intake population; use a fresh run");
           log.info("bundle-already-synced", `run_id=${manifest.run_id} already synced — skipping`, {
             factoryRunId: manifest.run_id,
             appId: manifest.app_id,
@@ -167,18 +181,19 @@ export class SyncFromFactoryGogol extends Gogol {
           assetStateCount: manifest.asset_state_count,
         });
 
-        const admission = await collectPanelEligibleAssetIds(
+        const admission = await selectSyncPopulation(
           streamObservations(bundle),
           previouslyAccepted,
+          products,
         );
-        if (admission.observationsScanned !== manifest.observation_count) {
+        if (admission.observationsScanned !== null && admission.observationsScanned !== manifest.observation_count) {
           throw new Error("Factory observation count changed during panel admission scan");
         }
         let observationsIgnoredNeverLive = 0;
         // ── Stream + chunk-insert admitted observations (bounded memory) ───────
         const { inserted: obsInserted, seen: obsSeen } = await streamInsertObservations(
           db,
-          filterPanelEligibleObservations(
+          syncObservations(
             streamObservations(bundle),
             admission.eligibleAssetIds,
             () => observationsIgnoredNeverLive++,
@@ -192,18 +207,22 @@ export class SyncFromFactoryGogol extends Gogol {
               logProgress(this.id, seen, manifest.observation_count, OBS_CHUNK, true),
           },
         );
+        if (obsSeen + observationsIgnoredNeverLive !== manifest.observation_count)
+          throw new Error("Factory observation count changed during intake");
 
         // ── Stream asset states → dedup into the run-level map (last-wins) ──────
         let assetSeen = 0;
         let assetStatesIgnoredNeverLive = 0;
         for await (const st of streamAssetStates(bundle)) {
           assetSeen += 1;
-          if (admission.eligibleAssetIds.has(st.asset_id)) {
+          if (admission.eligibleAssetIds === null || admission.eligibleAssetIds.has(st.asset_id)) {
             assetStateById.set(st.asset_id, { record: st, period: manifest.period });
           } else {
             assetStatesIgnoredNeverLive++;
           }
         }
+        if (assetSeen !== manifest.asset_state_count)
+          throw new Error("Factory asset state count changed during intake");
         let evidenceRecordsVerified = 0;
         for await (const _evidence of streamEvidence(bundle)) {
           evidenceRecordsVerified++;

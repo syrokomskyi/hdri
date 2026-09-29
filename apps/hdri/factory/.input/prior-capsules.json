@@ -4,8 +4,8 @@
   "priorCapsules": [
     {
       "period": "2026-q2",
-      "capsuleId": "0198f000-0000-7000-8000-000000000000",
-      "manifestPath": "../../observatory/.output/capsules/2026-q2/0198f000-0000-7000-8000-000000000000/capsule-manifest.json",
+      "capsuleId": "01a0c5e6-7029-7c75-897e-78f03e4c03c8",
+      "manifestPath": "../../capsules/andrii-zenbook/2026-q2/01a0c5e6-7029-7c75-897e-78f03e4c03c8/capsule-manifest.json",
       "sourceLedgerHead": "3ebf4e94511ca79ca439fb6a137eb1222352a61e9edd0bc40ad11e9f92a59583",
       "frameId": "frame-2026-q2.json",
       "batchIds": [

@@ -7,6 +7,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Added new signal groups for schema, legal, content, links, and social extraction.</item>
+  <item>Export the historical non-PII profile replay registry.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -29,3 +30,4 @@ export * from "./legal.js";
 export * from "./content.js";
 export * from "./links.js";
 export * from "./social.js";
+export * from "./profile-replay.js";

@@ -1,18 +1,20 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Load and parse period-specific and codebook data files for reliable use by its direct callers and maintainers.</purpose>
+<purpose>Load dashboard period data and validate manifest-bound availability JSON/CSV independently of score products.</purpose>
 <non-goals>
   <item>Does not handle data persistence or storage</item>
-  <item>Does not modify or transform the data content</item>
+  <item>Does not grant publication admission or consume private Observatory evidence</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation of data loading functions</item>
+  <item>RFC-0115: load availability releases separately without advancing the score-period pointer.</item>
 </CHANGE_SUMMARY>
 */
 
 import type { PeriodManifest, Overview, DimensionItem, SliceItem, MatrixItem } from "../types";
 import { parse as parseYaml } from "yaml";
+import { readAvailabilityDownload } from "../lib/availability";
 
 const manifestModules = import.meta.glob("../assets/data/public/periods/*/manifest.json", {
   eager: true,
@@ -32,6 +34,23 @@ const gewerkModules = import.meta.glob("../assets/data/public/periods/*/gewerke.
 const matrixModules = import.meta.glob("../assets/data/public/periods/*/matrix.json", {
   eager: true,
 });
+
+const availabilityFiles = import.meta.glob("../assets/data/public/availability/*/*.{json,csv}", {
+  eager: true, query: "?raw", import: "default",
+});
+
+export function loadAvailabilityPeriods() {
+  const roots = new Set(Object.keys(availabilityFiles).map(file => file.slice(0, file.lastIndexOf("/"))));
+  return [...roots].sort().reverse().map(root => {
+    const period = root.slice(root.lastIndexOf("/") + 1);
+    const read = (name: string) => {
+      const value = availabilityFiles[`${root}/${name}`];
+      if (typeof value !== "string") throw new Error(`Missing availability product: ${period}/${name}`);
+      return value;
+    };
+    return readAvailabilityDownload(period, read("public-manifest.json"), read("availability.json"), read("availability.csv"));
+  });
+}
 
 export function readPeriodFile<T>(modules: Record<string, unknown>, period: string): T {
   const entry = Object.entries(modules).find(([filePath]) =>

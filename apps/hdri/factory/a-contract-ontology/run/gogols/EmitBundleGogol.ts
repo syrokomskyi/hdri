@@ -7,6 +7,8 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-0115 B5: emit from admitted copies, retain harvest signatures and bind retries to the exact translation derivation.</item>
+  <item>Resume archive retention after committed emission; missing retained artifacts remain fatal.</item>
   <item>Extracted from monolithic main.ts as part of pipeline conversion.</item>
   <item>Add asset state harvesting from core_*.db for emit-bundle schema v2.</item>
   <item>Add gewerk_group in emitted asset states by deriving it from site_hwo_mappings with mapping_system = destatis_group.</item>
@@ -22,8 +24,6 @@
 import "@syrokomskyi/observatory-crypto/auto-env";
 import Database from "better-sqlite3";
 import fsp from "node:fs/promises";
-import fs from "node:fs";
-import crypto from "node:crypto";
 import path from "node:path";
 import { deriveAssetId } from "@syrokomskyi/observatory-core";
 import type { AssetStateMapping, AssetStateRecord } from "@syrokomskyi/observatory-core";
@@ -34,18 +34,24 @@ import {
   type SignedObservation,
 } from "@syrokomskyi/observatory-crypto";
 import {
+  appendCapsuleArtifacts,
+  appendCapsuleInventoryParts,
+  createCapsuleInventoryWriter,
   copyVerifiedArtifact,
   DEFAULT_INSTRUMENT_PLAN,
+  quarterCapsuleDir,
+  sha256File,
   verifyQuarterCapsuleArtifacts,
   verifyQuarterExecutionClosure,
   verifySourceClosure,
-  writeQuarterCapsuleStaging,
   type CapsuleArtifact,
   type QuarterCapsule,
 } from "@syrokomskyi/factory-core";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
-import { inputDir, outputRootDir } from "../config.js";
+import { factoryRootDir, inputDir, localDeviceId } from "../config.js";
+import { copyAdmittedSnapshot } from "../pipeline/admitted-snapshot.js";
+import { bindEmissionDerivation, readVerifiedEmission } from "../pipeline/emission-resume.js";
 
 const APP_VERSION = "0.1.0";
 const APP_ID = "a-contract-ontology";
@@ -100,8 +106,15 @@ export class EmitBundleGogol extends Gogol {
     }
 
     const factoryRunId = brief.capsuleId;
-    const capsuleDir = path.join(outputRootDir, "capsules", brief.period, brief.capsuleId);
+    // RFC-0128: capsule root is the neutral shared apps/hdri/capsules/ tree.
+    const capsuleDir = quarterCapsuleDir(
+      factoryRootDir,
+      localDeviceId,
+      brief.period,
+      brief.capsuleId,
+    );
     const emitDir = path.join(capsuleDir, "artifacts", "emit");
+    const derivationPath = path.join(path.dirname(signedObservationDbPath), "derivation.json");
     const stagingPath = path.join(capsuleDir, "capsule-staging.json");
     const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
     const instrumentPlan = brief.instrumentPlan ?? DEFAULT_INSTRUMENT_PLAN;
@@ -114,132 +127,136 @@ export class EmitBundleGogol extends Gogol {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
-    try {
-      const existing = JSON.parse(await fsp.readFile(stagingPath, "utf8")) as QuarterCapsule;
-      if (
-        existing.state !== "staging" ||
-        existing.period !== brief.period ||
-        existing.capsuleId !== brief.capsuleId
-      ) {
-        throw new Error(
-          `Quarter capsule staging identity mismatch: ${brief.period}/${brief.capsuleId}`,
-        );
-      }
-      await verifyQuarterCapsuleArtifacts(capsuleDir, existing);
-      await verifyQuarterExecutionClosure(capsuleDir, requiredStages, verificationKeys);
-      ctx.state.manifest = JSON.parse(
-        await fsp.readFile(path.join(emitDir, "manifest.json"), "utf8"),
+    const existing = JSON.parse(await fsp.readFile(stagingPath, "utf8")) as QuarterCapsule;
+    if (
+      existing.state !== "staging" ||
+      existing.period !== brief.period ||
+      existing.capsuleId !== brief.capsuleId ||
+      existing.deviceId !== localDeviceId
+    ) {
+      throw new Error(
+        `Quarter capsule staging identity mismatch: ${brief.period}/${brief.capsuleId}`,
       );
-      console.log(`[emit-bundle] Existing staging capsule verified; no artifacts rewritten.`);
-      return;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
+    await verifyQuarterCapsuleArtifacts(capsuleDir, existing);
     await verifyQuarterExecutionClosure(capsuleDir, requiredStages, verificationKeys);
-    await fsp.mkdir(path.dirname(emitDir), { recursive: true });
-
-    const writer = new EmitBundleWriter(emitDir, {
+    await bindEmissionDerivation(emitDir, derivationPath);
+    const emitIdentity = {
       app_id: APP_ID,
       collector_version: COLLECTOR_VERSION,
       ruleset_version: brief.ontologyVersion,
       ontology_version: brief.ontologyVersion,
       run_id: factoryRunId,
       period: brief.period,
-    });
-    await writer.open();
+    };
+    let manifest = await readVerifiedEmission(emitDir, emitIdentity);
+    if (manifest) {
+      console.log(
+        `[emit-bundle] Existing emit partitions verified; checking and completing retained evidence.`,
+      );
+    }
+    if (!manifest) {
+      const writer = new EmitBundleWriter(emitDir, emitIdentity);
+      await writer.open();
 
-    // ── Write observations ────────────────────────────────────────────────────
-    const committedObservations = writer.committedObservationCount;
-    const signedDb = new Database(signedObservationDbPath, { readonly: true, fileMustExist: true });
-    try {
-      const counts = signedDb
-        .prepare(
-          `
+      // ── Write observations ────────────────────────────────────────────────────
+      const committedObservations = writer.committedObservationCount;
+      const signedDb = new Database(signedObservationDbPath, {
+        readonly: true,
+        fileMustExist: true,
+      });
+      try {
+        const counts = signedDb
+          .prepare(
+            `
         SELECT
           (SELECT COUNT(*) FROM resolved_observations) AS resolved,
           (SELECT COUNT(*) FROM signed_observations) AS signed,
           (SELECT COALESCE(MAX(seq), 0) FROM signed_observations) AS max_seq
       `,
-        )
-        .get() as { resolved: number; signed: number; max_seq: number };
-      if (
-        counts.resolved === 0 ||
-        counts.signed !== counts.resolved ||
-        counts.max_seq !== counts.signed
-      ) {
-        throw new Error(
-          `Signed observation closure mismatch: resolved=${counts.resolved}, signed=${counts.signed}, max_seq=${counts.max_seq}`,
-        );
-      }
-      if (committedObservations > counts.signed) {
-        throw new Error("Signed observation store is shorter than the sealed emit checkpoint");
-      }
-      const rows = signedDb
-        .prepare(
-          `SELECT payload_json
+          )
+          .get() as { resolved: number; signed: number; max_seq: number };
+        if (
+          counts.resolved === 0 ||
+          counts.signed !== counts.resolved ||
+          counts.max_seq !== counts.signed
+        ) {
+          throw new Error(
+            `Signed observation closure mismatch: resolved=${counts.resolved}, signed=${counts.signed}, max_seq=${counts.max_seq}`,
+          );
+        }
+        if (committedObservations > counts.signed) {
+          throw new Error("Signed observation store is shorter than the sealed emit checkpoint");
+        }
+        const rows = signedDb
+          .prepare(
+            `SELECT payload_json
            FROM signed_observations
            WHERE seq > ?
            ORDER BY seq`,
-        )
-        .iterate(committedObservations) as IterableIterator<{ payload_json: string }>;
-      for (const row of rows) {
-        await writer.writeObservation(JSON.parse(row.payload_json) as SignedObservation);
-      }
-      const conflictCount = (
-        signedDb.prepare("SELECT COUNT(*) AS n FROM resolved_conflicts").get() as { n: number }
-      ).n;
-      const committedEvidence = writer.committedEvidenceCount;
-      if (committedEvidence > conflictCount) {
-        throw new Error("Conflict evidence store is shorter than the sealed emit checkpoint");
-      }
-      const conflicts = signedDb
-        .prepare(
-          `
+          )
+          .iterate(committedObservations) as IterableIterator<{ payload_json: string }>;
+        for (const row of rows) {
+          await writer.writeObservation(JSON.parse(row.payload_json) as SignedObservation);
+        }
+        const conflictCount = (
+          signedDb.prepare("SELECT COUNT(*) AS n FROM resolved_conflicts").get() as { n: number }
+        ).n;
+        const committedEvidence = writer.committedEvidenceCount;
+        if (committedEvidence > conflictCount) {
+          throw new Error("Conflict evidence store is shorter than the sealed emit checkpoint");
+        }
+        const conflicts = signedDb
+          .prepare(
+            `
         SELECT conflict_key, winner_observation_id, loser_observation_id, loser_payload_json
         FROM resolved_conflicts
         WHERE seq > ?
         ORDER BY seq
       `,
-        )
-        .iterate(committedEvidence) as IterableIterator<{
-        conflict_key: string;
-        winner_observation_id: string;
-        loser_observation_id: string;
-        loser_payload_json: string;
-      }>;
-      for (const conflict of conflicts) {
-        await writer.writeEvidence({
-          evidenceType: "observation-conflict",
-          resolutionPolicyVersion: "latest-recorded-device-observation-v1",
-          conflictKey: conflict.conflict_key,
-          winnerObservationId: conflict.winner_observation_id,
-          loserObservationId: conflict.loser_observation_id,
-          loserObservation: JSON.parse(conflict.loser_payload_json),
-        });
+          )
+          .iterate(committedEvidence) as IterableIterator<{
+          conflict_key: string;
+          winner_observation_id: string;
+          loser_observation_id: string;
+          loser_payload_json: string;
+        }>;
+        for (const conflict of conflicts) {
+          await writer.writeEvidence({
+            evidenceType: "observation-conflict",
+            resolutionPolicyVersion: "latest-recorded-device-observation-v1",
+            conflictKey: conflict.conflict_key,
+            winnerObservationId: conflict.winner_observation_id,
+            loserObservationId: conflict.loser_observation_id,
+            loserObservation: JSON.parse(conflict.loser_payload_json),
+          });
+        }
+      } finally {
+        signedDb.close();
       }
-    } finally {
-      signedDb.close();
-    }
 
-    // ── Write asset states from upstream core_*.db ────────────────────────────
-    let assetStateCount = 0;
-    const committedAssetStates = writer.committedAssetStateCount;
-    for (const coreDb of coreDbs) {
-      for (const rec of iterateAssetStates(coreDb.coreDbPath)) {
-        if (assetStateCount >= committedAssetStates) await writer.writeAssetState(rec);
-        assetStateCount++;
+      // ── Write asset states from upstream core_*.db ────────────────────────────
+      let assetStateCount = 0;
+      const committedAssetStates = writer.committedAssetStateCount;
+      for (const coreDb of coreDbs) {
+        if ((await sha256File(coreDb.coreDbPath)) !== coreDb.snapshotSha256)
+          throw new Error("Admitted harvest snapshot changed before emission");
+        for (const rec of iterateAssetStates(coreDb.coreDbPath)) {
+          if (assetStateCount >= committedAssetStates) await writer.writeAssetState(rec);
+          assetStateCount++;
+        }
       }
-    }
-    if (coreDbs.length > 0) {
-      console.log(
-        `[emit-bundle] Harvested ${assetStateCount} asset state(s) from ${coreDbs.length} core DB(s)`,
-      );
-    }
-    if (assetStateCount < committedAssetStates) {
-      throw new Error("Asset-state stream is shorter than the sealed emit checkpoint");
-    }
+      if (coreDbs.length > 0) {
+        console.log(
+          `[emit-bundle] Harvested ${assetStateCount} asset state(s) from ${coreDbs.length} core DB(s)`,
+        );
+      }
+      if (assetStateCount < committedAssetStates) {
+        throw new Error("Asset-state stream is shorter than the sealed emit checkpoint");
+      }
 
-    const manifest = await writer.commit();
+      manifest = await writer.commit();
+    }
     // Write manifest as step artifact.
     await fsp.writeFile(
       path.join(ctx.outputDir, "manifest.json"),
@@ -254,44 +271,40 @@ export class EmitBundleGogol extends Gogol {
     );
 
     const artifacts: CapsuleArtifact[] = [];
-    const retainDb = async (
-      stage: "liveness" | "profile" | "axe",
-      deviceId: string,
-      source: string,
-    ): Promise<void> => {
-      const uri = `artifacts/${stage}/${deviceId}/${path.basename(source)}`;
-      const destination = path.join(capsuleDir, uri);
-      await fsp.mkdir(path.dirname(destination), { recursive: true });
-      await fsp.unlink(destination).catch((error) => {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-      });
-      const sourceDb = new Database(source, { readonly: true, fileMustExist: true });
-      try {
-        const integrity = sourceDb.pragma("integrity_check") as Array<{ integrity_check: string }>;
-        if (integrity.some((row) => row.integrity_check !== "ok")) {
-          throw new Error(`SQLite source failed integrity_check: ${source}`);
-        }
-        await sourceDb.backup(destination);
-      } finally {
-        sourceDb.close();
+    const inventory = createCapsuleInventoryWriter(capsuleDir);
+    const originalArtifacts = new Map(
+      existing.artifacts.map((artifact) => [artifact.uri, artifact]),
+    );
+    let indexed = 0;
+    const indexArtifact = async (artifact: CapsuleArtifact): Promise<void> => {
+      const original = originalArtifacts.get(artifact.uri);
+      if (original) {
+        if (
+          original.sha256 !== artifact.sha256 ||
+          original.bytes !== artifact.bytes ||
+          original.stage !== artifact.stage
+        )
+          throw new Error(`Retained artifact conflicts with staging inventory: ${artifact.uri}`);
+        return;
       }
-      const snapshotDb = new Database(destination, { readonly: true, fileMustExist: true });
-      try {
-        const integrity = snapshotDb.pragma("integrity_check") as Array<{
-          integrity_check: string;
-        }>;
-        if (integrity.some((row) => row.integrity_check !== "ok")) {
-          throw new Error(`SQLite capsule snapshot failed integrity_check: ${uri}`);
-        }
-      } finally {
-        snapshotDb.close();
-      }
-      const stat = await fsp.stat(destination);
-      artifacts.push({ stage, uri, sha256: await hashFile(destination), bytes: stat.size });
+      await inventory.append(artifact);
+      if (++indexed % 100000 === 0)
+        console.log(`[emit-bundle] Indexed ${indexed} retained artifacts`);
     };
-    for (const item of livenessDbs) await retainDb("liveness", item.deviceId, item.livenessDbPath);
-    for (const item of discoveredPages) await retainDb("profile", item.deviceId, item.pagesDbPath);
-    for (const item of axeDbs) await retainDb("axe", item.deviceId, item.axeDbPath);
+    // Retain the exact admitted generation; never open or back up sealed SQLite originals.
+    for (const item of [...livenessDbs, ...discoveredPages, ...axeDbs]) {
+      const source = path.resolve(item.capsuleDir, item.artifact.uri);
+      const destination = path.resolve(capsuleDir, item.artifact.uri);
+      if (source !== destination)
+        await copyVerifiedArtifact(source, destination, item.artifact.sha256);
+      if (
+        (await sha256File(destination)) !== item.artifact.sha256 ||
+        (await fsp.stat(destination)).size !== item.artifact.bytes
+      ) {
+        throw new Error(`Admitted snapshot changed before retention: ${item.artifact.uri}`);
+      }
+      artifacts.push(item.artifact);
+    }
 
     const retainCasFile = async (
       stage: CapsuleArtifact["stage"],
@@ -303,20 +316,32 @@ export class EmitBundleGogol extends Gogol {
       const uri = `artifacts/${stage}/${deviceId}/${relativeStoragePath.replaceAll(path.sep, "/")}`;
       const destination = path.join(capsuleDir, uri);
       await copyVerifiedArtifact(source, destination, expectedSha256);
-      const sha256 = await hashFile(destination);
+      const sha256 = await sha256File(destination);
       const stat = await fsp.stat(destination);
-      artifacts.push({ stage, uri, sha256, bytes: stat.size });
+      const artifact = { stage, uri, sha256, bytes: stat.size };
+      if (
+        stage === "profile" ||
+        stage === "axe" ||
+        relativeStoragePath.startsWith("source-ledger/raw/")
+      )
+        await indexArtifact(artifact);
+      else artifacts.push(artifact);
     };
 
     for (const item of discoveredPages) {
-      const db = new Database(item.pagesDbPath, { readonly: true, fileMustExist: true });
+      const scratch = await fsp.mkdtemp(path.join(ctx.outputDir, "profile-retain-"));
+      let db: Database.Database | undefined;
       try {
+        db = new Database(await copyAdmittedSnapshot(item, scratch), {
+          readonly: true,
+          fileMustExist: true,
+        });
         const rows = db
           .prepare(
             "SELECT sha256 AS contentHash, storage_path AS storagePath FROM page_contents ORDER BY sha256",
           )
-          .all() as Array<{ contentHash: string; storagePath: string }>;
-        const outputRoot = path.dirname(path.dirname(path.dirname(item.pagesDbPath)));
+          .iterate() as IterableIterator<{ contentHash: string; storagePath: string }>;
+        const outputRoot = item.sourceOutputRoot;
         for (const row of rows) {
           if (
             row.storagePath !==
@@ -333,19 +358,25 @@ export class EmitBundleGogol extends Gogol {
           );
         }
       } finally {
-        db.close();
+        db?.close();
+        await fsp.rm(scratch, { recursive: true, force: true });
       }
     }
 
     for (const item of axeDbs) {
-      const db = new Database(item.axeDbPath, { readonly: true, fileMustExist: true });
+      const scratch = await fsp.mkdtemp(path.join(ctx.outputDir, "axe-retain-"));
+      let db: Database.Database | undefined;
       try {
+        db = new Database(await copyAdmittedSnapshot(item, scratch), {
+          readonly: true,
+          fileMustExist: true,
+        });
         const rows = db
           .prepare(
             "SELECT DISTINCT report_sha256 AS reportSha256 FROM axe_runs WHERE report_sha256 IS NOT NULL ORDER BY report_sha256",
           )
-          .all() as Array<{ reportSha256: string }>;
-        const outputRoot = path.dirname(path.dirname(path.dirname(item.axeDbPath)));
+          .iterate() as IterableIterator<{ reportSha256: string }>;
+        const outputRoot = item.sourceOutputRoot;
         for (const row of rows) {
           const relative = `data/audit-reports/axe/${row.reportSha256.slice(0, 2)}/${row.reportSha256}.json`;
           await retainCasFile(
@@ -357,12 +388,27 @@ export class EmitBundleGogol extends Gogol {
           );
         }
       } finally {
-        db.close();
+        db?.close();
+        await fsp.rm(scratch, { recursive: true, force: true });
       }
     }
 
     for (const item of coreDbs) {
-      const ledgerRoot = path.resolve(path.dirname(item.coreDbPath), "..", "source-ledger");
+      await retainCasFile(
+        "frame",
+        item.deviceId,
+        item.sourceSnapshotPath,
+        "harvest/source-snapshot.sqlite",
+        item.snapshotSha256,
+      );
+      await retainCasFile(
+        "frame",
+        item.deviceId,
+        item.sourceManifestPath,
+        "harvest/source-signature.json",
+        item.sourceManifestSha256,
+      );
+      const ledgerRoot = item.sourceLedgerRoot;
       const sourceClosure = await verifySourceClosure(ledgerRoot, brief.period, verificationKeys);
       for (const manifest of sourceClosure.manifests) {
         const relativeSegment = `segments/${manifest.batchId}.json`;
@@ -416,6 +462,7 @@ export class EmitBundleGogol extends Gogol {
 
     for (const uri of [
       "manifest.json",
+      "derivation.json",
       ...manifest.observation_partitions.map((partition) => partition.uri),
       ...manifest.asset_state_partitions.map((partition) => partition.uri),
       ...manifest.evidence_partitions.map((partition) => partition.uri),
@@ -425,7 +472,7 @@ export class EmitBundleGogol extends Gogol {
       artifacts.push({
         stage: "emit",
         uri: `artifacts/emit/${uri}`,
-        sha256: await hashFile(emitPath),
+        sha256: await sha256File(emitPath),
         bytes: emitStat.size,
       });
     }
@@ -438,7 +485,7 @@ export class EmitBundleGogol extends Gogol {
       artifacts.push({
         stage: "methodology",
         uri: methodologyUri,
-        sha256: await hashFile(methodologyPath),
+        sha256: await sha256File(methodologyPath),
         bytes: stat.size,
       });
     }
@@ -448,32 +495,29 @@ export class EmitBundleGogol extends Gogol {
       path.join(capsuleDir, "staging", "stage-seals"),
       path.join(capsuleDir, "staging", "targets"),
     ]) {
-      for (const evidencePath of await walkFiles(evidenceRoot)) {
+      for await (const evidencePath of walkFiles(evidenceRoot)) {
         const uri = path.relative(capsuleDir, evidencePath).replaceAll(path.sep, "/");
         const stat = await fsp.stat(evidencePath);
-        artifacts.push({
+        await indexArtifact({
           stage: "qc",
           uri,
-          sha256: await hashFile(evidencePath),
+          sha256: await sha256File(evidencePath),
           bytes: stat.size,
         });
       }
     }
 
-    const capsule: QuarterCapsule = {
-      period: brief.period,
-      capsuleId: brief.capsuleId,
-      state: "staging",
-      instrumentPlan,
-      artifacts,
-    };
-    await writeQuarterCapsuleStaging(capsuleDir, capsule);
+    // RFC-0128: the staging manifest was created at quarter-init and already
+    // carries every stage's seal-time entries — append emit-time artifacts
+    // (CAS files, emit partitions, methodology, remaining qc evidence) with
+    // dedup; a conflicting re-run fails instead of rewriting the manifest.
+    await appendCapsuleArtifacts(capsuleDir, artifacts);
+    await appendCapsuleInventoryParts(capsuleDir, await inventory.finish());
     ctx.state.manifest = manifest;
   }
 }
 
-const walkFiles = async (root: string): Promise<string[]> => {
-  const files: string[] = [];
+async function* walkFiles(root: string): AsyncGenerator<string> {
   const pending = [root];
   while (pending.length > 0) {
     const current = pending.pop()!;
@@ -484,23 +528,15 @@ const walkFiles = async (root: string): Promise<string[]> => {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
       throw error;
     }
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     for (const entry of entries) {
       const absolute = path.join(current, entry.name);
       if (entry.isDirectory()) pending.push(absolute);
-      else if (entry.isFile()) files.push(absolute);
+      else if (entry.isFile()) yield absolute;
+      else throw new Error(`Unsupported retained evidence entry: ${absolute}`);
     }
   }
-  return files.sort();
-};
-
-const hashFile = async (filePath: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const hash = crypto.createHash("sha256");
-    const input = fs.createReadStream(filePath);
-    input.on("error", reject);
-    input.on("data", (chunk) => hash.update(chunk));
-    input.on("end", () => resolve(hash.digest("hex")));
-  });
+}
 
 // ── Standalone helpers tested independently ───────────────────────────────────
 

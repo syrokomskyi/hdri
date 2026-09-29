@@ -1,73 +1,23 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Verifies Q2 archive restore drill: checks that the Q2 archive exists and its artifacts can be restored.</purpose>
-<non-goals><item>Does not perform a full data restore — verifies archive integrity and drill marker.</item></non-goals>
+<purpose>Write q2-restore QC from a pinned completed recovery record, both local archive copies and verified restored signed capsule bytes.</purpose>
+<non-goals><item>Does not repeat remote download, open SQLite, certify scientific replay or infer restoration from a marker file.</item></non-goals>
 </MODULE_CONTRACT>
- * <CHANGE_SUMMARY>
-  <item>Document the existing q2-restore module contract for Compass-aware maintenance.</item>
-</CHANGE_SUMMARY>
+<KEY_DECISIONS><item>The historical report filename is retained; restored period must be the immediate predecessor of the requested quarter.</item></KEY_DECISIONS>
+<CHANGE_SUMMARY><item>RFC-0115: replace optional-marker checks with real restored closure and signature verification.</item></CHANGE_SUMMARY>
 */
-
-import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
-import fs from "node:fs/promises";
 import path from "node:path";
-import { arg, computeInputFingerprint, fileExists, requireCommonArgs, writeReport } from "./shared";
-
-const hashFile = async (filePath: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const hash = createHash("sha256");
-    const stream = createReadStream(filePath);
-    stream.on("data", (chunk) => hash.update(chunk));
-    stream.once("error", reject);
-    stream.once("end", () => resolve(hash.digest("hex")));
-  });
+import { loadVerificationKeys } from "@syrokomskyi/observatory-crypto";
+import { verifyRestoredPredecessor } from "../../run/release/restored-predecessor";
+import { requireArg, requireCommonArgs, computeInputFingerprint, writeReport } from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
-const q2ArchiveDir = arg("--q2-archive-dir");
-const drillMarker = arg("--drill-marker");
-
-const violations: string[] = [];
-const warnings: string[] = [];
-
-if (!q2ArchiveDir) {
-  violations.push("q2_archive_dir_missing");
-} else {
-  const archivePath = path.resolve(q2ArchiveDir);
-  if (!(await fileExists(archivePath))) {
-    violations.push("q2_archive_not_found");
-  } else {
-    const manifestPath = path.join(archivePath, "archive-manifest.json");
-    if (!(await fileExists(manifestPath))) {
-      violations.push("q2_archive_manifest_missing");
-    } else {
-      const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8")) as {
-        artifacts: { uri: string; sha256: string }[];
-      };
-      for (const artifact of manifest.artifacts) {
-        const artifactPath = path.join(archivePath, artifact.uri);
-        if (!(await fileExists(artifactPath))) {
-          violations.push(`q2_artifact_missing:${artifact.uri}`);
-        } else if ((await hashFile(artifactPath)) !== artifact.sha256) {
-          violations.push(`q2_artifact_hash_mismatch:${artifact.uri}`);
-        }
-      }
-    }
-  }
-}
-
-if (drillMarker && !(await fileExists(path.resolve(drillMarker)))) {
-  violations.push("q2_restore_drill_marker_missing");
-}
-
-await writeReport(
-  "q2-restore",
-  "q2-restore.json",
-  evidenceDir,
-  period,
-  capsuleId,
-  computeInputFingerprint(period, capsuleId, q2ArchiveDir ?? "", drillMarker ?? ""),
-  violations.length === 0 ? "pass" : "fail",
-  violations,
-  warnings,
-);
+const closure = await verifyRestoredPredecessor({
+  currentPeriod: period, receiptPath: requireArg("--restore-receipt"),
+  receiptSha256: requireArg("--restore-receipt-sha256"), downloadedArchive: path.resolve(requireArg("--downloaded-archive")),
+  keys: await loadVerificationKeys(path.resolve(requireArg("--keys-dir"))),
+});
+await writeReport("q2-restore", "q2-restore.json", evidenceDir, period, capsuleId,
+  computeInputFingerprint("hdri-restored-predecessor-check@1", period, capsuleId, JSON.stringify(closure)),
+  "pass", [], ["declared_closure_byte_restore_not_scientific_rebuild", "remote_origin_is_a_pinned_execution_record_not_reexecuted",
+    "caller_key_and_receipt_authority_require_independent_admission"], [], closure);

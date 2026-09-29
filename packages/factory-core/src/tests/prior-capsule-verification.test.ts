@@ -107,7 +107,7 @@ async function fixture(
       "publication",
     ] as const
   ).map((stage) => ({ stage, uri: `${stage}/result` }));
-  for (const instrument of ["liveness", "profile", "axe"])
+  for (const instrument of ["liveness", "homepage-capture", "detected-page-capture", "axe"])
     for (const kind of ["targets", "stage-seals"])
       placeholders.push({ stage: "qc", uri: `staging/${kind}/${instrument}.json` });
   for (const item of placeholders) {

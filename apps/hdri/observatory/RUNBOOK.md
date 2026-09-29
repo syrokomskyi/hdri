@@ -1,6 +1,191 @@
 # Digital Observatory — Operations Runbook
 
+## Q3 availability-only operation (2026-09-26)
+
+The Factory bundle completed on 2026-09-26. The requested public product is now
+**unstratified website availability only**; industry scores, panel comparisons
+and population-weighted results are excluded. Raw collection and original
+evidence remain retained. No scientific publication or final Q3 seal is claimed.
+
+From this workspace, prepare the private candidate:
+
+```sh
+rtk proxy pnpm run availability:prepare --capsule-dir <absolute-capsule-dir> --keys-dir <absolute-transparency-keys-dir>
+rtk proxy pnpm run availability:reconcile --capsule-dir <absolute-capsule-dir> --keys-dir <absolute-transparency-keys-dir>
+rtk proxy pnpm run availability:preview --candidate <content-addressed-candidate.json> --reconciliation <content-addressed-comparison.json> --policy policies/k-anon-policy-v1.yaml
+rtk proxy pnpm run availability:disclosure --preview-dir <content-addressed-preview-directory> --period 2026-q3 --policy policies/k-anon-policy-v1.yaml
+```
+
+The candidate accounts for all authenticated sealed liveness targets, preserves
+reachable/unavailable/blocked/indeterminate outcomes, and records privacy failures
+without dropping targets. It is content-addressed under `.output/availability-candidates/`
+and marked `candidate-not-approved`; it is not copied to the public archive.
+The existing outcome policy is preserved, including retained nonstandard three-digit
+HTTP responses. Probe results are not quarterly uptime or evidence of business closure.
+The frozen probe treats many HTTP 4xx responses as reachable; this is transport
+reachability, not successful delivery of a usable page. Reconciliation verifies
+each signed outcome/reachability observation against its raw CAS result and
+consumes all bundle partitions to EOF. Its private output under
+`.output/availability-reconciliation/` is comparison evidence, not a release receipt.
+
+Do not run duplicate production writers. The latest preparation retry is
+`hdri-q3-availability-retry-20260926.service`; the original dependency service
+failed safely on HTTP 999, and the regression is covered by tests. Preparation
+and reconciliation subsequently completed successfully. Check collection jobs
+only every 20 minutes; this interval does not apply to recovery/debugging.
+Storage has moved from Google Drive to R2; follow
+[R2 preservation and recovery](R2-PRESERVATION.md), including its local-plus-R2 custody
+and verified-cleanup boundaries. Remaining scientific/privacy/recovery gates must
+pass before any Internet publication.
+
+The production preview is retained privately at
+`.output/availability-previews/fcf51c73d0109d78f7e7070d31e8717d4e9b54267810d4ba13b1198535bbff1e/`.
+It contains `availability.json`, `availability.csv` and `preview-manifest.json`.
+The manifest hash is the directory name; it binds both output hashes, the candidate,
+the reconciliation and policy. It is explicitly `preview-not-approved`, not a
+public manifest or a disclosure receipt. Preserve all three files together.
+
+The separate single-product disclosure report is
+`.output/availability-disclosure/fcf51c73d0109d78f7e7070d31e8717d4e9b54267810d4ba13b1198535bbff1e/a591e771d9f993c3695e9e17f5904ff4c6dc9b49a5d0a0e107e190d9e9a3ab0a.json`.
+It checks both formats and all five count cells (total plus four outcomes), rejects
+unknown/private fields and small-cell reconstruction through totals. Historical
+release interaction and external auxiliary information are not covered.
+
+The offline replay completed on September 27; all four output digests matched.
+Do not poll its completed service or repeat the expensive calculation without a
+changed input/runtime or an identified failure. See R2-PRESERVATION.md for retained
+image/source/receipt locations. Before Internet publication, finish product-scoped
+scientific admission, final capsule sealing and availability-aware dashboard
+integration. The existing dashboard still presents Q2 scores; do not substitute
+availability counts into score fields or imply quarter comparability.
+
+`quarter:release` retains `artifacts/qc/release/publication-attestation.json`
+before delivery. Retry verifies and reuses those exact signed bytes. A changed
+envelope, custody policy, receipt digest, key or invalid signature is a conflict;
+do not delete the file to force a retry. Full release qualification remains pending.
+
 ## Prerequisites
+
+### Executable availability/source QC (2026-09-27)
+
+The availability scientific producer now consumes signed liveness execution and
+selected CAS evidence directly. Use explicit inputs, not the removed guessed
+`--liveness-db`/`--frame` JSON interface:
+
+```sh
+rtk proxy pnpm exec tsx -C @syrokomskyi/source tools/scientific-reports/availability-report.ts --period 2026-q3 --capsule-id <id> --evidence-dir <private-output> --capsule-dir <restored-capsule> --keys-dir <public-keys> --policy policies/k-anon-policy-v1.yaml
+rtk proxy pnpm exec tsx -C @syrokomskyi/source tools/scientific-reports/source-qc.ts --period 2026-q3 --capsule-id <id> --evidence-dir <private-output> --capsule-dir <restored-capsule> --keys-dir <public-keys>
+```
+
+The real availability run completed at **2026-09-27T10:28:51.426Z**, service
+`hdri-q3-scientific-availability-20260927.service`, invocation
+`a35e8e46fdf148f08c9352001b9cd596`. Private result:
+`.output/availability-scientific-review/20260927/availability.json`. It passed,
+retained all 182,592 targets and reproduced candidate SHA-256
+`95bd243aadbc47687c3378639fe6f95155ae9aab881161899d98b1736a65446e`.
+The fingerprint binds staging manifest, policy, public keys and authenticated
+execution/CAS selection; it is not derived from input path strings.
+
+Source QC verifies signed frame/segments/occurrence bytes through the shared
+closure verifier, their declared capsule artifact bindings and exact equality
+with sealed liveness targets. It does not manufacture source-coverage, unresolved
+or conflict counts absent from the real contract. Its applicability is availability
+only; population/parser completeness and key authority are separate obligations.
+The source-QC production operation completed successfully at
+**2026-09-27T10:33:18.227Z**, as
+`hdri-q3-scientific-source-qc-20260927.service`, invocation
+`a8a27842c27c46c89731e591bed9187f`. The same private output directory contains
+`source-qc.json`: five source artifacts verified, exact equality of all 182,592
+frame candidates and liveness targets. Fingerprint:
+`b837b621bf0d0487813ab404ae714eec5136b21cc7550a2d1a4ba2f906e34bde`.
+Do not rerun these completed checks for status alone. Neither report is a final
+capsule seal or independent publication admission.
+
+The availability-only methodology closure was byte-verified at
+**2026-09-27T15:37:14.707Z**. The private report beside the two reports above is
+`methodology-snapshot.json`, fingerprint
+`8664fe4ac7adb90efe13777bd00a8cd8a7998d17512f87609a49701f81b2a463`.
+All 367 retained kit files (69,061,384 bytes) matched. Runtime manifest pin:
+`0a7c0249f265656d68c10df454cb2204b99de49eb68dde4bf52e28e40deb7082`.
+
+```sh
+rtk proxy pnpm exec tsx -C @syrokomskyi/source tools/scientific-reports/availability-methodology.ts --period 2026-q3 --capsule-id <id> --evidence-dir <private-output> --runtime-manifest <retained-runtime-kit/runtime-kit-manifest.json> --runtime-manifest-sha256 <externally-retained-pin> --policy policies/k-anon-policy-v1.yaml
+```
+
+This command verifies exact bytes, not container execution, image identity or
+authority of the caller's pin. The prior offline replay remains separate evidence.
+Required components include outcome classification, candidate/reconciliation/
+preview/disclosure sources, all four bundled commands, build metadata, image
+archive and policy; all other declared dependency files are also checked.
+The general score-methodology pipeline is not silently repurposed: automatic
+retained-kit integration and release input binding are still required.
+
+The restored Q2 predecessor check passed at **2026-09-27T15:43:27.057Z**.
+Its private `q2-restore.json` is in the same scientific-review directory;
+fingerprint `a2b8e19a94250c57c248878186db44f90d6e17943e2a7a5f8a89cbc495b97f66`.
+It verified the two retained local archive hashes, restored signature and all
+21 declared artifacts against recovery-record pin
+`676321ebc7932a2d71e333ff814ef848c8a02039edb018c9610cee30b60bda0d`.
+No new R2 download, archive extraction or SQLite connection was performed.
+
+```sh
+rtk proxy pnpm exec tsx -C @syrokomskyi/source tools/scientific-reports/q2-restore.ts --period 2026-q3 --capsule-id <id> --evidence-dir <private-output> --restore-receipt <completed-recovery-record.json> --restore-receipt-sha256 <externally-retained-pin> --downloaded-archive <downloaded.tar.zst> --keys-dir <public-keys>
+```
+
+This command consumes a pinned execution record; it cannot independently prove
+that the recorded bytes arrived from R2 or re-extract the archive. It requires
+the recorded source location and both local archive copies to remain available,
+and is not a replacement for the disaster-recovery procedure. It accepts the
+current flat-closure v1 record only. Both its pin and verification-key authority
+remain subject to release admission. Old guessed `--q2-archive-dir`/optional-marker
+invocations must be replaced with these explicit inputs, not fabricated markers.
+
+### Product-scoped validation
+
+`PrepareQuarterReleaseGogol` retains the operator intent from
+`.input/publication-scope.yaml` in the candidate's methodology inventory. The
+validator authenticates its byte binding and exact quarter/capsule scope before
+selecting applicable report producers. Availability-only omits classification
+and cross-quarter comparability; Q2 restoration, source QC, availability,
+privacy-disclosure, methodology-snapshot and reconciliation remain required.
+Absent retained intent means the original full report set, never automatic waiver.
+
+The public manifest itself and every declared product must match the capsule's
+publication inventory exactly. `quarter:release` repeats this check, capsule
+signature verification, required report reading and reconstruction binding before
+storage effects. A rebuild receipt for another capsule or public manifest fails,
+even when its own expected/rebuilt hashes match. Validation retries preserve
+existing report bytes; changed results cause a conflict rather than overwrite.
+Pre-seal reconstruction binds to the predicted final manifest bytes, not the
+candidate file digest: the final writer changes `state` to `sealed`. Use
+`expectedSealedManifestSha256(candidate)` for this prediction; it grants no seal
+authority. After sealing the actual file hash remains mandatory. A real-writer
+integration test verifies that the same receipt and validation bytes survive the
+transition. Raw `staging` manifests are not accepted by quarter validation.
+These are structural and cryptographic boundary checks, not qualification of the
+remaining scientific producers or a completed release transaction.
+
+The actual Q3 four-outcome files passed the updated scientific privacy CLI at
+2026-09-26T23:14:38.008Z: two files, five count cells, effective k=12. The private
+review root is `.output/availability-publication-review/fcf51c73d0109d78f7e7070d31e8717d4e9b54267810d4ba13b1198535bbff1e/`;
+its candidate public-manifest SHA-256 is
+`71a31ebf43f76b86ab6d1b83178802d14ef0ebde9fcd0979f9e083e56a078861`.
+The report explicitly warns that prior-release and auxiliary-information review
+is outstanding. Do not copy this private candidate to the dashboard as approved.
+
+Release artifact inspection (not a release gate):
+
+```sh
+rtk proxy pnpm run quarter:release-status --period 2026-q3 --release-id <capsule-id> --vault-dir <absolute-vault-dir> --json
+```
+
+The command uses the writer's actual `<vault>/releases/period=<period>/<capsule-id>.json`
+path. It distinguishes the envelope object digest from the pretty-printed file
+digest. Without trusted signature/admission/custody/delivery verification it
+returns `unverified` (or `fail` for malformed/missing artifacts), null verified
+state fields and exit code 1. Do not treat the existence of an attestation JSON
+as proof of publication. This replaces the unsafe earlier inferred status;
+historical evidence files are unchanged.
 
 - Node.js 22 (see `.nvmrc` / root `engines`; CI builds and re-proves reproducibility on 22), pnpm 10+
 - Repo-level `.env` provisioned with DEVICE_ID and DEVICE_SIGNING_KEY
@@ -42,17 +227,21 @@ Key settings:
 
 ```yaml
 ---
-sourceToken: "2026-q3-de-05"
 outputLanguage: de
 period: "2026-q3"
 capsuleId: "019..." # the same UUID v7 used by every Factory stage
-sourceDbDir: "../factory/0-harvest-source/.output"
-publicMode: false
+factoryContractRootDir: "../factory/a-contract-ontology"
+vaultDir: ".output/vault"
+ontologyVersion: "2.0.0" # must match the retained measurement ontology
+codebookId: "observatory-v1"
+skipGogols: []
 ---
 ```
 
-- `sourceToken` — must match the token used in factory
-- `sourceDbDir` — path to factory output (parent of all pipeline outputs)
+- `period` + `capsuleId` select one exact Factory capsule.
+- `factoryContractRootDir` selects the bundler workspace, not mutable source databases.
+- Ontology labels alone do not establish methodology compatibility; verify the
+  retained source bytes before executing a scoring/publication route.
 
 ### 3. Run the factory pipeline (sequential)
 
@@ -247,7 +436,7 @@ Each destination contains exact `originals/<role>` bytes, separate `snapshots/<r
 
 Verification always reads every file, checks the exact listed set, hashes, sizes, signature, external key and destination receipt. Unexpected files and symlinks fail. Keep diagnostic logs outside the closure. Copy/read-back is O(total bytes) with several passes, O(file count) inventory memory and bounded streaming buffers; it is not the 200k qualification run.
 
-`planned` with zero exit means read-only validation only. `pass` with zero exit means all declared copies passed byte/signature checks, not operational admission. Errors/interruptions can leave partial output; never delete originals or overwrite an attempted destination to retry. Keep partial roots and select new destinations. The `baseline:import` CLI now runs the verified converter end-to-end — it authenticates every declared replica, materializes all retained domains into a fresh current-schema target and independently rereads both sides, completing `compared-not-admitted`. That status is conversion+comparison only, never operational admission; producer/device attribution, custody and the admission gate remain separate. Follow the [A1 correction sequence](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
+`planned` with zero exit means read-only validation only. `pass` with zero exit means all declared copies passed byte/signature checks, not operational admission. Errors/interruptions can leave partial output; never delete originals or overwrite an attempted destination to retry. Keep partial roots and select new destinations. The `baseline:import` CLI runs the verified converter end-to-end — it authenticates every declared replica, materializes all retained domains into a fresh current-schema target and independently rereads both sides — then seals the result as a prior capsule under `apps/hdri/capsules/<deviceId>/2026-q2/<capsuleId>/` (RFC-0129): the preserved signed source-ledger closure and stage products are carried byte-identical (each inventory-verified), the converted baseline becomes `vault`, the exported `asset_id_map` becomes `identity`, the published Q2 bundle becomes `publication`, and the closure report is bound as `qc` evidence. All instruments are `disabled`; `legacy` is never set; the capsule signature attests the new manifest only. The sealed capsule is admissible to `quarter:init` via the unchanged `verifyPriorCapsule` path; producer/device attribution, custody and the admission gate remain separate. Follow the [A1 correction sequence](../../../docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md).
 
 ### Baseline comparison building blocks (A1 partial)
 

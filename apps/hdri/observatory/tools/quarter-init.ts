@@ -10,12 +10,14 @@
   <item>RFC-0044: create quarter initialization tool that generates prior-capsules.json from a sealed prior capsule.</item>
   <item>RFC-0112: rename --current-period to --period, --prior-capsule to --predecessor. Persist QuarterRecord. Idempotent re-init returns same record.</item>
   <item>RFC-0113 A3: append-only quarter ledger — write per-period immutable revisions instead of overwriting quarter-record.json.</item>
+  <item>RFC-0128: create the empty capsule-staging.json at quarter-open via createQuarterCapsuleStaging; --device-id and --instrument-plan-brief args.</item>
 </CHANGE_SUMMARY>
 */
 
 import "@syrokomskyi/observatory-crypto/auto-env";
 import fs from "node:fs/promises";
 import path from "node:path";
+import matter from "gray-matter";
 import {
   extractBatchIdsFromManifest,
   extractSourceLedgerHead,
@@ -32,15 +34,24 @@ import {
   parseQuarterRecordRevision,
   serializeQuarterLedgerIndex,
   parseQuarterLedgerIndex,
+  createQuarterCapsuleStaging,
+  quarterCapsuleDir,
+  parseInstrumentPlanFromFrontmatter,
   type CapsuleSignature,
   type HdriPeriod,
+  type InstrumentPlanEntry,
   type PriorCapsuleEntry,
   type QuarterCapsule,
   type QuarterRecord,
   type QuarterRecordRevision,
   type QuarterLedgerIndex,
 } from "@syrokomskyi/factory-core";
-import { getTransparencyKeysDir, loadVerificationKeys } from "@syrokomskyi/observatory-crypto";
+import {
+  findRepoRoot,
+  getDeviceId,
+  getTransparencyKeysDir,
+  loadVerificationKeys,
+} from "@syrokomskyi/observatory-crypto";
 
 const arg = (name: string): string | undefined => {
   const index = process.argv.indexOf(name);
@@ -57,12 +68,25 @@ const OUTPUT_DEFAULT = path.resolve(
   "prior-capsules.json",
 );
 
+// RFC-0128: the instrument plan is frozen at quarter-open from the contract
+// brief — the same brief the factory apps read.
+const INSTRUMENT_PLAN_BRIEF_DEFAULT = path.join(
+  "apps",
+  "hdri",
+  "factory",
+  "a-contract-ontology",
+  ".input",
+  "brief.md",
+);
+
 const main = async (): Promise<void> => {
   const priorCapsulePath = arg("--predecessor");
   const currentPeriod = arg("--period");
   const capsuleIdArg = arg("--capsule-id");
   const outputArg = arg("--output");
   const keysDirArg = arg("--keys-dir");
+  const deviceIdArg = arg("--device-id");
+  const instrumentPlanBriefArg = arg("--instrument-plan-brief");
   const force = hasFlag("--force");
   const jsonOutput = hasFlag("--json");
 
@@ -313,6 +337,44 @@ const main = async (): Promise<void> => {
   await fs.writeFile(recordTmpPath, recordSerialized, "utf8");
   await fs.rename(recordTmpPath, quarterRecordPath);
 
+  // 12b. RFC-0128: create the empty staging manifest at quarter-open. Each
+  // stage's sealStage appends its admission entries to it during the quarter.
+  const repoRoot = findRepoRoot();
+  const deviceId = deviceIdArg ?? getDeviceId();
+  const briefPath = instrumentPlanBriefArg
+    ? path.resolve(instrumentPlanBriefArg)
+    : path.join(repoRoot, INSTRUMENT_PLAN_BRIEF_DEFAULT);
+  let instrumentPlan: InstrumentPlanEntry[];
+  try {
+    const briefRaw = await fs.readFile(briefPath, "utf8");
+    instrumentPlan = parseInstrumentPlanFromFrontmatter(matter(briefRaw).data.instrumentPlan);
+  } catch (error) {
+    console.error(
+      `Instrument plan brief unreadable/invalid (${briefPath}): ${error instanceof Error ? error.message : String(error)}`,
+    );
+    process.exit(1);
+  }
+  const factoryRootDir = path.join(repoRoot, "apps", "hdri", "factory");
+  const newCapsuleDir = quarterCapsuleDir(
+    factoryRootDir,
+    deviceId,
+    currentPeriodTyped,
+    capsuleIdArg,
+  );
+  let stagingManifestPath: string;
+  try {
+    stagingManifestPath = await createQuarterCapsuleStaging(
+      newCapsuleDir,
+      { period: currentPeriodTyped, capsuleId: capsuleIdArg, deviceId },
+      instrumentPlan,
+    );
+  } catch (error) {
+    console.error(
+      `Staging manifest creation failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    process.exit(1);
+  }
+
   // 13. Output result
   const result = {
     command: "hdri.quarter.init",
@@ -333,6 +395,7 @@ const main = async (): Promise<void> => {
     totalEntries: priorCapsules.length,
     outputPath,
     quarterRecordPath,
+    stagingManifestPath,
   };
 
   if (jsonOutput) {
@@ -348,6 +411,7 @@ const main = async (): Promise<void> => {
     console.log(`  Total entries: ${priorCapsules.length}`);
     console.log(`  Output: ${outputPath}`);
     console.log(`  Quarter record: ${quarterRecordPath}`);
+    console.log(`  Staging manifest: ${stagingManifestPath}`);
   }
 };
 

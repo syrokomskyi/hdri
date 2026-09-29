@@ -7,18 +7,77 @@
 
 Asset-zentriertes longitudinales Observatorium für die Analyse der digitalen Präsenz.
 
-## Current readiness (2026-09-13)
+## Current readiness (2026-09-28)
 
-Live collection and publication remain blocked pending verified evidence admission.
-Direct exports and promotion apply cannot bypass this gate. Independent rebuild
-also stops at admission; its behind-gate reconstruction remains incomplete. The new
-offline rehearsal controller verifies real isolated adapter outputs and resume,
-but always reports `operationallyQualified: false`. Production adapters and the
-1k/10k/50k/200k whole-chain proofs remain open. The operator approved this machine
-for offline work; approval is not qualification. See the [factory runbook](../factory/RUNBOOK.md)
-and [current review](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md)
-before running commands. Existing descriptions are not an operational certificate.
-Original Q2 and existing public data must remain untouched.
+Q3 availability is now admitted, sealed, preserved locally and in R2, and live
+alongside unchanged Q2 scores at https://handwerk-index.org/.
+See [release evidence and exact hashes](../../../docs/reviews/code/apps-hdri-observatory/release-2026-09-28-q2-q3-site.md).
+
+Update 2026-09-28: the operator approved the separate `availability-only@1` capsule
+profile. It avoids building unused score-oriented identity/vault structures while
+preserving raw evidence, verification and custody requirements. The new
+`tools/availability-rebuild-receipt.ts --capsule-manifest <path>` binds retained
+offline replay to current public bytes without repeating collection. It does not
+grant publication approval. See [the approved contract](../../../docs/reviews/code/apps-hdri-observatory/decision-2026-09-28-availability-release-profile.md).
+
+The Q3 Factory bundle and availability-only publication completed.
+The operator selected **availability only**, excluding industry scores,
+panel and population-weighted products. `pnpm run availability:prepare --capsule-dir
+<absolute-path> --keys-dir <absolute-path>` prepares a private, content-addressed
+candidate from authenticated liveness targets, not a publication receipt. See
+[current operations](RUNBOOK.md#q3-availability-only-operation-2026-09-26).
+
+Preservation now targets the private R2 bucket `hdri-preservation` instead of Google
+Drive. See [migration, archive and recovery instructions](R2-PRESERVATION.md).
+The operator-selected custody scope is one local copy plus one R2 copy. Read-back
+integrity and independent reconstruction remain separate checks. Original Q2 and existing public data remain preserved;
+only verified migrated Drive residue is authorized for trash cleanup.
+
+`availability:preview` now prepares private four-outcome JSON/CSV with hashes
+binding the candidate, reconciliation and policy. It is not publication approval;
+see the runbook for the production preview and remaining gates.
+
+`availability:disclosure` independently checks the exact preview JSON/CSV and
+retained privacy policy. All four availability commands also reproduced the same
+Q3 hashes in network-disabled containers without installed project dependencies.
+The runtime kit is preserved locally and verified in R2. These are completed
+verification steps, not a final quarter seal or permission to publish.
+
+Product-scoped validation now reads capsule-retained, hash-bound publication
+intent. Availability-only excludes classification and comparison reports while
+retaining source, methodology, privacy, reconstruction and custody requirements.
+Release checks exact manifest/file inventory, capsule signature and current
+rebuild binding before storage writes. Production Q3 scientific closure and website
+publication completed; excluded products remain unqualified.
+
+Observatory intake now retains the complete population for explicit availability-only
+intent, without changing panel selection rules. Release identity export requires a
+complete provisional-to-canonical mapping and fails on missing or ambiguous IDs.
+The sealed Q2 declared closure has also been restored from R2 and byte-verified;
+this completed recovery does not claim scientific recalculation.
+
+Scientific availability/source QC commands now consume the actual signed capsule
+and explicit public verification keys. Availability reports retain all four outcomes,
+not an inferred attrition rate; source QC checks exact frame/target membership.
+These checks do not qualify excluded products or waive remaining release gates.
+
+The availability methodology producer verifies the pinned retained offline runtime
+kit and policy without rerunning collection. It emits an availability-only snapshot,
+not score-methodology equivalence or publication approval; see the runbook command.
+
+The availability reconciliation report can reuse the completed target-level comparison
+without rerunning collection: `tools/scientific-reports/availability-reconciliation.ts`
+takes `--candidate`, `--comparison`, `--bundle-manifest`, `--policy`, their matching
+`--<name>-sha256` pins, and `--period`, `--capsule-id`, `--evidence-dir`. This audits
+retained comparison evidence; it does not authenticate pin provenance or admit release.
+Q3 passed this audit on 2026-09-27: 182,592 targets, 365,184 compared availability
+observations and 4,245,640 previously scanned bundle observations. The private report
+is `.output/availability-scientific-review/20260927/reconciliation.json`, fingerprint
+`d02a132849e2de5c3a6586cede76977de8adcdbd7d8acebfcff2660f7456492f`.
+
+`quarter:release-status` currently inspects artifacts only. It requires an explicit
+period and cannot certify publication; see the runbook for its nonzero/unverified
+contract and the verification that remains outstanding.
 
 The [Q3 preparation update](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-15-16-15-apps-hdri-observatory.md) records the operator-approved bounded source exclusions and sequential launch work. Methodology comparison now rejects incomplete component identities and wrong-quarter snapshots; matching declared methodology never automatically authorizes panel or population-weighted comparisons. The existing snapshot producer remains incomplete, so this correction is not launch certification.
 
@@ -198,43 +257,17 @@ Alle Export-Tools (`export-dashboard-data`, `export-dashboard-archive`, `ExportM
 
 Der Kopiermechanismus bewahrt Q2-Originalbytes und getrennte SQLite-Snapshots in vollständigen signierten Kopien. Eine operative Sicherung ist damit noch nicht nachgewiesen. Die Baseline-Konversion bleibt bis zur Korrektur der Identitätszuordnung und des Wertevergleichs gesperrt.
 
-The device-scoped identity validator and exact streaming record comparator now have
-real SQLite regression coverage, including same-count value changes and preserved
-WAL snapshots. They are building blocks, not the completed converter: archive-bound
-schema mapping, imported-evidence provenance and final receipt wiring remain open.
-See the [conversion boundary](RUNBOOK.md#baseline-comparison-building-blocks-a1-partial).
+The device-scoped identity validator and exact streaming record comparator now have real SQLite regression coverage, including same-count value changes and preserved WAL snapshots. They are building blocks, not the completed converter: archive-bound schema mapping, imported-evidence provenance and final receipt wiring remain open. See the [conversion boundary](RUNBOOK.md#baseline-comparison-building-blocks-a1-partial).
 
-Archive input preparation now authenticates all declared copies and creates a
-fresh, fully reread working copy without opening retained databases. It checks
-standalone snapshot coverage and rejects changed or unexpected bytes. This is an
-internal converter building block, not a new command or completed Q2 import.
-See [verified input preparation](RUNBOOK.md#verified-baseline-input-preparation-a1-partial).
+Archive input preparation now authenticates all declared copies and creates a fresh, fully reread working copy without opening retained databases. It checks standalone snapshot coverage and rejects changed or unexpected bytes. This is an internal converter building block, not a new command or completed Q2 import. See [verified input preparation](RUNBOOK.md#verified-baseline-input-preparation-a1-partial).
 
-The baseline scope diagnostic now accounts for every prepared snapshot and table.
-Its separate historical-signature diagnostic verifies the Q2 token and original
-main-file hash only against a caller-supplied key map. It explicitly leaves key-map
-authority, unsigned producer metadata and the WAL/snapshot generation unproven, so
-neither result admits an import. See
-[baseline provenance limits](RUNBOOK.md#baseline-scope-and-historical-signature-diagnostics-a1-partial).
+The baseline scope diagnostic now accounts for every prepared snapshot and table. Its separate historical-signature diagnostic verifies the Q2 token and original main-file hash only against a caller-supplied key map. It explicitly leaves key-map authority, unsigned producer metadata and the WAL/snapshot generation unproven, so neither result admits an import. See [baseline provenance limits](RUNBOOK.md#baseline-scope-and-historical-signature-diagnostics-a1-partial).
 
-The signed-row diagnostic now rejects substituted observation IDs and conflicting
-or partial signing metadata embedded in retained JSON. It preserves original bytes
-and bounds retained failure messages. A successful signature check still does not
-prove quarterly completeness, all SQL/JSON field agreement, or historical signing
-time/device provenance. See [signature verification limits](RUNBOOK.md#5-verify-vault-signatures).
+The signed-row diagnostic now rejects substituted observation IDs and conflicting or partial signing metadata embedded in retained JSON. It preserves original bytes and bounds retained failure messages. A successful signature check still does not prove quarterly completeness, all SQL/JSON field agreement, or historical signing time/device provenance. See [signature verification limits](RUNBOOK.md#5-verify-vault-signatures).
 
-The observation source reader now consumes only process-local verified preparation
-objects. It limits row transfer before JavaScript allocation, rejects SQL/JSON
-contradictions and preserves original payload bytes. This covers the known
-observation table, not complete source provenance, current-format materialization
-or an operational import. See [bounded observation reading](RUNBOOK.md#bounded-observation-source-reader-a1-partial).
+The observation source reader now consumes only process-local verified preparation objects. It limits row transfer before JavaScript allocation, rejects SQL/JSON contradictions and preserves original payload bytes. This covers the known observation table, not complete source provenance, current-format materialization or an operational import. See [bounded observation reading](RUNBOOK.md#bounded-observation-source-reader-a1-partial).
 
-The identity-joined reader additionally resolves each observation against the same
-pinned snapshot's retained ID map. It requires an explicit provisional/canonical
-namespace, preserves source JSON and UUID spelling, and returns snapshot-bound row
-locators. Missing mappings fail instead of silently reassigning a site. This does
-not establish factory/device provenance or full identity-domain coverage.
-See [retained identity joins](RUNBOOK.md#snapshot-bound-observation-identity-joins-a1-partial).
+The identity-joined reader additionally resolves each observation against the same pinned snapshot's retained ID map. It requires an explicit provisional/canonical namespace, preserves source JSON and UUID spelling, and returns snapshot-bound row locators. Missing mappings fail instead of silently reassigning a site. This does not establish factory/device provenance or full identity-domain coverage. See [retained identity joins](RUNBOOK.md#snapshot-bound-observation-identity-joins-a1-partial).
 
 ### Befehle
 
@@ -242,7 +275,7 @@ See [retained identity joins](RUNBOOK.md#snapshot-bound-observation-identity-joi
 | --- | --- |
 | `preserve:q2` | Explizite `--inventory` und `--destinations` verarbeiten; Originale und Snapshots signiert sichern. `--dry-run` schreibt nichts. |
 | `preserve:verify` | Alle Dateien prüfen; `--destinations`, `--manifest-sha256`, `--verification-key` und `--key-id` sind erforderlich. |
-| `baseline:import` | Vor jedem Dateizugriff gesperrt: `BASELINE_CONVERSION_UNVERIFIED`. |
+| `baseline:import` | Verifizierte Konvertierung + Vergleich, dann Versiegelung als Prior-Capsule unter `apps/hdri/capsules/<deviceId>/2026-q2/<capsuleId>/` (RFC-0129). |
 
 ### Fehlermodi
 

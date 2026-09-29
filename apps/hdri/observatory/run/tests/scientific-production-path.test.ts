@@ -49,16 +49,13 @@ describe("AC-1: registry emits independently specified per-product verdict vecto
   });
 });
 
-describe("AC-2: complementary suppression cross-format and cross-quarter checks", () => {
-  it("passes when formats agree on n and no prior regression", () => {
+describe("AC-2: count consistency does not claim cross-quarter disclosure review", () => {
+  it("passes when formats agree on n", () => {
     const current: ProductDisclosureEntry[] = [
       { product: "cross-section", format: "csv", contentSha256: "a", n: 100 },
       { product: "cross-section", format: "json", contentSha256: "b", n: 100 },
     ];
-    const prior: ProductDisclosureEntry[] = [
-      { product: "cross-section", format: "csv", contentSha256: "c", n: 100 },
-    ];
-    const result = checkComplementarySuppression(current, prior, 5);
+    const result = checkComplementarySuppression(current, 5);
     expect(result.status).toBe("pass");
     expect(result.violations).toHaveLength(0);
   });
@@ -68,40 +65,37 @@ describe("AC-2: complementary suppression cross-format and cross-quarter checks"
       { product: "cross-section", format: "csv", contentSha256: "a", n: 100 },
       { product: "cross-section", format: "json", contentSha256: "b", n: 90 },
     ];
-    const result = checkComplementarySuppression(current, [], 5);
+    const result = checkComplementarySuppression(current, 5);
     expect(result.status).toBe("fail");
     expect(result.crossFormatMismatches).toHaveLength(1);
     expect(result.violations).toContain("complementary_suppression_cross_format:cross-section");
   });
 
-  it("fails when current n exceeds prior n (cross-quarter regression)", () => {
+  it("allows an expanded quarterly snapshot without claiming cross-quarter privacy", () => {
     const current: ProductDisclosureEntry[] = [
       { product: "cross-section", format: "csv", contentSha256: "a", n: 120 },
     ];
-    const prior: ProductDisclosureEntry[] = [
-      { product: "cross-section", format: "csv", contentSha256: "c", n: 100 },
-    ];
-    const result = checkComplementarySuppression(current, prior, 5);
-    expect(result.status).toBe("fail");
-    expect(result.crossQuarterRegressions).toHaveLength(1);
-    expect(result.violations).toContain("complementary_suppression_cross_quarter:cross-section");
+    const result = checkComplementarySuppression(current, 5);
+    expect(result.status).toBe("pass");
+    expect(result.crossQuarterAssessment).toBe("not-assessed");
+    expect(result.violations).toEqual([]);
   });
 
   it("fails when n below k threshold", () => {
     const current: ProductDisclosureEntry[] = [
       { product: "cross-section", format: "csv", contentSha256: "a", n: 3 },
     ];
-    const result = checkComplementarySuppression(current, [], 5);
+    const result = checkComplementarySuppression(current, 5);
     expect(result.status).toBe("fail");
     expect(result.violations).toContain("below_k_threshold:cross-section:csv:n=3");
   });
 
-  it("passes with empty prior products (first quarter)", () => {
+  it("does not require a previous snapshot for current count consistency", () => {
     const current: ProductDisclosureEntry[] = [
       { product: "cross-section", format: "csv", contentSha256: "a", n: 100 },
       { product: "cross-section", format: "json", contentSha256: "b", n: 100 },
     ];
-    const result = checkComplementarySuppression(current, [], 5);
+    const result = checkComplementarySuppression(current, 5);
     expect(result.status).toBe("pass");
   });
 });

@@ -1,7 +1,7 @@
 ---
 /**
  * <MODULE_CONTRACT><purpose>Provide MaturityBar behavior for the apps hdri dashboard src components subsystem and its direct callers.</purpose><non-goals><item>Do not define unrelated cross-workspace policy or orchestration behavior.</item></non-goals></MODULE_CONTRACT>
- * <CHANGE_SUMMARY><item>Document the existing MaturityBar module contract for Compass-aware maintenance.</item></CHANGE_SUMMARY>
+ * <CHANGE_SUMMARY><item>Count the combined advanced maturity band once, including pre-merged disclosure-safe exports.</item></CHANGE_SUMMARY>
  */
 import "../styles/maturity-bar.css";
 import type { Maturity } from "../types";
@@ -23,7 +23,7 @@ const colors: Record<string, string> = {
 };
 
 const merged = maturity
-  .filter((m) => m.id !== "vorbild" || m.count > 0)
+  .filter((m) => m.id !== "vorbild")
   .map((m) => {
     if (m.id === "fortgeschritten") {
       const vorbild = maturity.find((v) => v.id === "vorbild");
@@ -38,6 +38,7 @@ const merged = maturity
   });
 
 const total = merged.reduce((s, m) => s + m.count, 0);
+if (total !== sampleSize) throw new Error("Maturity band counts must equal the index sample size");
 const segments = merged.filter((m) => m.share > 0);
 
 const BANDS: Array<{ id: string; range: string; meaning: string }> = [
@@ -140,7 +141,7 @@ const advancedPct = pct(advancedShare, 1);
                         />
                         {m.label}
                       </td>
-                      <td data-sort-value={band.range}>{band.range}</td>
+                      <td data-sort-value={band.range}>{m.id === "fortgeschritten" && !maturity.some(v => v.id === "vorbild") ? "60 – 100" : band.range}</td>
                       <td data-sort-value={band.meaning}>{band.meaning}</td>
                     </tr>
                   );

@@ -1,6 +1,32 @@
 # Changelog
 
 All notable client-facing changes to the `hdri` project are documented here.
+## Plattform-Updates 2026-09-24 — 2026-09-30
+
+Im betrachteten Zeitraum wurden die Dashboard- und Datenverfügbarkeiten für das Q3-Release deutlich verbessert und die Stabilität sowie Nachvollziehbarkeit der wissenschaftlichen Daten erhöht. Gleichzeitig gab es Optimierungen bei der Datenanzeige, Berechnung der Verfügbarkeiten und der Trennung von Quellen und abgeleiteten Ergebnissen, um Transparenz und Datenintegrität für die Nutzer:innen zu gewährleisten. Zudem wurden neue Mechanismen zum Schutz wissenschaftlicher Nachweise sowie zur unabhängigen Verifikation und Wiederherstellung von Archivdaten implementiert.
+
+### Added
+- Eigenständiger Bereich zur Anzeige und Abgleich von Verfügbarkeitsdaten eingeführt, wodurch Nutzer:innen schnell einen Vergleich von aktuellen und früheren Quartalsdaten (Q2/Q3) erhalten (DE, EU).
+- Bereitstellung offline überprüfbarer Verfügbarkeitsprüfungen und robuster Attestierung – dies ermöglicht unabhängige Überprüfbarkeit und gestärkte Vertrauenswürdigkeit der Verfügbarkeitsdaten (EU).
+- Erweiterte Möglichkeiten, wissenschaftliche Nachweise für abgeleitete Scores vor Veröffentlichung zu überprüfen; dies schützt Nutzer:innen vor fehlerhaften oder nicht nachvollziehbaren Bewertungen und sichert die wissenschaftliche Transparenz (DE, EU).
+
+### Improved
+- Korrektur und klarere Darstellung der Schwellenwerte und Vergleichsgrenzen am Dashboard – dies sorgt für eine verständlichere Ergebnisinterpretation und verhindert Fehlannahmen (DE, EU).
+- Vereinheitlichung der Quartalsübersichten und Vermeidung von Mehrfachzählung bei Reifegraden, wodurch Nutzer:innen vollständige und unverzerrte Gesamtbilder erhalten (DE).
+- Optimierte Auswahl und Erhalt genehmigter Bewertungsprofile für vergangene Quartale gewährleisten stabilere Historienvergleiche bei der Auswertung (DE, EU).
+
+### Fixed
+- Fehlerbehebung bei der Sortierung von Tabellendaten, sodass nun alle Einträge zuverlässig nach gewünschten Kriterien dargestellt werden (DE).
+- Korrekte Anzeige und Veröffentlichung der zugelassenen Q3-Daten in allen relevanten öffentlichen Index- und Übersichtsdarstellungen, wodurch Informationslücken geschlossen wurden (DE).
+- Anpassung der Methoden zur Datenabgrenzung: Die Trennung von abgeleiteten Bewertungskandidaten und Quell-Daten wurde transparent nachvollzogen, was die Prüfbarkeit erhöht (DE, EU).
+
+### Security & Compliance
+- Stärkere Prüfroutinen für wissenschaftliche Nachweise: Abgeleitete Bewertungen werden nur noch aufgenommen, wenn ein eigener, nachvollziehbarer wissenschaftlicher Beleg vorliegt. Dies verbessert die Compliance in Bezug auf wissenschaftliche und rechtliche Anforderungen (DE, EU).
+- Erweiterte Archivierungsmechanismen mit strikter Bindung zwischen veröffentlichten Daten und Archivbestand (lokal & R2), wodurch eine nachweisbare, DSGVO-konforme Datenaufbewahrung und -wiederherstellung sichergestellt wird (EU).
+
+### Integrations
+- Integration und eigenständige Verifikation lokaler und R2-gemäß gesicherter Archivkopien; dies vereinfacht Verwaltungsprozesse und gibt Kund:innen Sicherheit über die sichere Speicherung und Wiederherstellung historischer Daten (EU).
+
 ## Platform Updates 2026-09-17 — 2026-09-23
 
 In dieser Aktualisierungsperiode wurden wichtige Verbesserungen an der Datenqualifikation und Methodik-Dokumentation vorgenommen, die Transparenz und Nachvollziehbarkeit für Nutzer in Europa erhöhen. Zudem wurden die Prüfprozesse ausgeweitet und Fehler im Umgang mit Qualifikationsdaten behoben, was für beständigere Datenabläufe sorgt.

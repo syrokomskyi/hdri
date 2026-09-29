@@ -4,18 +4,28 @@
 
 Asset-centric longitudinal observatory for digital presence analysis.
 
-## Current readiness (2026-09-13)
+## Current readiness (2026-09-26)
 
-Live collection and publication remain blocked pending verified evidence admission.
-Direct exports and promotion apply cannot bypass this gate. Independent rebuild
-also stops at admission; its behind-gate reconstruction remains incomplete. The new
-offline rehearsal controller verifies real isolated adapter outputs and resume,
-but always reports `operationallyQualified: false`. Production adapters and the
-1k/10k/50k/200k whole-chain proofs remain open. The operator approved this machine
-for offline work; approval is not qualification. See the [factory runbook](../factory/RUNBOOK.md)
-and [current review](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-13-13-19-apps-hdri-observatory.md)
-before running commands. Existing descriptions are not an operational certificate.
-Original Q2 and existing public data must remain untouched.
+The Q3 Factory bundle completed; final scientific sealing and publication remain
+pending. The operator selected **availability only**, excluding industry scores,
+panel and population-weighted products. `pnpm run availability:prepare --capsule-dir
+<absolute-path> --keys-dir <absolute-path>` prepares a private, content-addressed
+candidate from authenticated liveness targets, not a publication receipt. See
+[current operations](RUNBOOK.md#q3-availability-only-operation-2026-09-26).
+
+Preservation now targets the private R2 bucket `hdri-preservation` instead of Google
+Drive. See [migration, archive and recovery instructions](R2-PRESERVATION.md).
+The operator-selected custody scope is one local copy plus one R2 copy. Read-back
+integrity and independent reconstruction remain separate checks. Original Q2 and existing public data remain preserved;
+only verified migrated Drive residue is authorized for trash cleanup.
+
+`availability:preview` now prepares private four-outcome JSON/CSV with hashes
+binding the candidate, reconciliation and policy. It is not publication approval;
+see the runbook for the production preview and remaining gates.
+
+`quarter:release-status` currently inspects artifacts only. It requires an explicit
+period and cannot certify publication; see the runbook for its nonzero/unverified
+contract and the verification that remains outstanding.
 
 The [Q3 preparation update](../../../docs/reviews/code/apps-hdri-observatory/review-2026-09-15-16-15-apps-hdri-observatory.md) records the operator-approved bounded source exclusions and sequential launch work. Methodology comparison now rejects incomplete component identities and wrong-quarter snapshots; matching declared methodology never automatically authorizes panel or population-weighted comparisons. The existing snapshot producer remains incomplete, so this correction is not launch certification.
 

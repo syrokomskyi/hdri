@@ -64,10 +64,14 @@ export class SummarizeLivenessGogol extends Gogol {
     db.close();
 
     const registryDb = new Database(resolvedRegistryDbPath, { readonly: true });
-    const targetCount = (
+    const registrySites = (
       registryDb.prepare(`SELECT COUNT(*) AS n FROM sites`).get() as { n: number }
     ).n;
     registryDb.close();
+    // Capped runs (maxDomains >= 0) only check the first maxDomains targets;
+    // the stage stays unsealed, so completeness is measured against the cap.
+    const targetCount =
+      brief.maxDomains >= 0 ? Math.min(brief.maxDomains, registrySites) : registrySites;
     assertStageComplete({
       targetCount,
       succeeded: liveCount,

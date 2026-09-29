@@ -95,6 +95,7 @@ export class WorkerPool {
   private isShuttingDown = false;
   private readonly maxQueueLength: number;
   private readonly maxCrashRestartsPerMinute: number;
+  private janitor: NodeJS.Timeout | null = null;
   private pendingQueue: Array<{
     target: PoolTarget;
     workKey: string;
@@ -114,6 +115,26 @@ export class WorkerPool {
       this.workers.push(worker);
       this.idleQueue.push(worker);
     }
+    // Janitor: a ref'd interval that (a) keeps the event loop alive so a fully
+    // drained pool can never trigger an unsettled top-level await (exit 13),
+    // and (b) tops the pool back up to poolSize if workers are lost faster than
+    // they respawn (e.g. fork failures, or a crash-loop that hit the rate limit).
+    this.janitor = setInterval(() => this.topUp(), 2000);
+  }
+
+  private topUp(): void {
+    if (this.isShuttingDown) return;
+    while (this.workers.length < this.config.poolSize) {
+      try {
+        const worker = this.spawnWorker();
+        this.workers.push(worker);
+        this.idleQueue.push(worker);
+      } catch {
+        // Spawn failed (resource pressure) — retry on the next tick.
+        break;
+      }
+    }
+    this.drainPendingQueue();
   }
 
   getWorkerStates(): Array<{ state: string; pid: number | null; completedTargets: number }> {
@@ -126,6 +147,10 @@ export class WorkerPool {
 
   async shutdown(): Promise<void> {
     this.isShuttingDown = true;
+    if (this.janitor) {
+      clearInterval(this.janitor);
+      this.janitor = null;
+    }
     // Reject all pending queued tasks
     for (const pending of this.pendingQueue) {
       pending.reject(new Error("Pool shutting down"));
@@ -229,7 +254,20 @@ export class WorkerPool {
         clearTimeout(timer);
         this.pendingResolvers.delete(workKey);
         worker.process.off("message", onMessage);
-        this.handleWorkerError(worker);
+        // A WorkerError means the TARGET failed (site unreachable, navigation
+        // error, axe error) — the worker itself is alive and reusable: it closed
+        // its browser in `finally` and stays resident for the next task. Return
+        // it to idle like a completed task. Recycling it as a "crash" would kill
+        // a healthy worker on every failed site (~30-40% of targets), churning
+        // the pool and tripping the crash-rate limiter.
+        worker.completedTargets++;
+        worker.busy = false;
+        if (worker.completedTargets >= this.config.recycleAfterTargets) {
+          this.recycleWorker(worker, "max-targets");
+        } else {
+          worker.state = "idle";
+          this.idleQueue.push(worker);
+        }
         reject(new Error(msg.error));
         this.drainPendingQueue();
         return;
@@ -265,12 +303,12 @@ export class WorkerPool {
     this.dispatchToWorker(worker, pending.target, pending.workKey, pending.resolve, pending.reject);
   }
 
-  private spawnWorker(): PoolWorker {
-    if (this.isShuttingDown) {
-      throw new Error("Cannot spawn worker during shutdown");
-    }
-
-    // Crash rate limiting
+  /**
+   * Enforce the crash-restart rate limit. Must only be invoked for genuine
+   * crash-type restarts — never for the initial pool fill in start() or for
+   * planned `max-targets` recycles, which are routine and must not count.
+   */
+  private recordCrashRestart(): void {
     const now = Date.now();
     this.crashTimestamps.push(now);
     // Keep only crashes from the last minute
@@ -281,6 +319,12 @@ export class WorkerPool {
       throw new Error(
         `Crash restart rate exceeded: ${this.crashTimestamps.length} in the last minute`,
       );
+    }
+  }
+
+  private spawnWorker(): PoolWorker {
+    if (this.isShuttingDown) {
+      throw new Error("Cannot spawn worker during shutdown");
     }
 
     const childProcess = fork(this.config.workerEntryPath, [], {
@@ -300,9 +344,22 @@ export class WorkerPool {
 
     // Drain stdio to prevent pipe buffer exhaustion
     childProcess.stdout?.on("data", () => {});
-    childProcess.stderr?.on("data", () => {});
+    let stderrBuf = "";
+    childProcess.stderr?.on("data", (d) => {
+      stderrBuf += d.toString();
+      if (stderrBuf.length > 4000) stderrBuf = stderrBuf.slice(-4000);
+    });
 
     childProcess.on("exit", (code, signal) => {
+      // Log only abnormal exits — planned SIGTERM/SIGKILL recycles are routine
+      // and would spam the log. A non-zero/non-signal exit or a clean exit
+      // while busy indicates a real crash worth surfacing.
+      const abnormal = (code !== 0 && signal !== "SIGTERM" && signal !== "SIGKILL") || code === 0;
+      if (abnormal) {
+        console.error(
+          `[worker-pool] worker pid=${worker.pid} abnormal exit code=${code} signal=${signal} completed=${worker.completedTargets} stderr=${stderrBuf.slice(-800)}`,
+        );
+      }
       worker.state = "dead";
       // Remove from idle queue if present
       const idleIdx = this.idleQueue.indexOf(worker);
@@ -377,10 +434,6 @@ export class WorkerPool {
     this.recycleWorker(worker, "deadline-exceeded");
   }
 
-  private handleWorkerError(worker: PoolWorker): void {
-    this.recycleWorker(worker, "crash");
-  }
-
   private recycleWorker(worker: PoolWorker, reason: RecycleReason): void {
     this.recycleLog.push({ reason, at: new Date().toISOString() });
 
@@ -408,11 +461,22 @@ export class WorkerPool {
     // Spawn a replacement only if not shutting down
     if (!this.isShuttingDown) {
       try {
+        // Only genuine crashes count toward the rate limit. Routine recycles —
+        // `max-targets` (planned), `deadline-exceeded` and `cleanup-failure`
+        // (slow/hung task kills) — must respawn freely, otherwise frequent
+        // deadline kills throttle respawns, drain the pool to zero workers,
+        // and the run dies with an unsettled top-level await (exit 13).
+        if (reason === "crash") {
+          this.recordCrashRestart();
+        }
         const newWorker = this.spawnWorker();
         this.workers.push(newWorker);
         this.idleQueue.push(newWorker);
-      } catch {
+      } catch (e) {
         // Crash rate limit hit — pool continues with fewer workers
+        console.error(
+          `[worker-pool] respawn FAILED reason=${reason} workers=${this.workers.length} idle=${this.idleQueue.length} pending=${this.pendingQueue.length} err=${(e as Error).message}`,
+        );
       }
     }
   }

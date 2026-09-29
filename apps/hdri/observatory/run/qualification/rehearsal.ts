@@ -585,9 +585,12 @@ export async function runRehearsal(options: RehearsalOptions): Promise<RunManife
       };
     }
     manifest.status = "complete";
-    // Qualification is only claimed when the resumed run's selected projection
-    // is byte-identical to a completed clean run's — the recovery proof.
-    manifest.operationallyQualified = manifest.comparison?.match === true;
+    // Qualification is only claimed when a fault-interrupted run resumes to a
+    // selected projection byte-identical to a completed clean run's — the
+    // recovery proof. A clean interruptAfterStage + resume + compare also
+    // produces comparison.match but injected no fault, so it must not qualify.
+    manifest.operationallyQualified =
+      manifest.comparison?.match === true && manifest.faults.length > 0;
     await writeJson(manifestPath, manifest);
     return manifest;
   } catch (error) {

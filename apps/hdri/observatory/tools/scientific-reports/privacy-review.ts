@@ -6,6 +6,7 @@
  * <CHANGE_SUMMARY>
   <item>Document the existing privacy-review module contract for Compass-aware maintenance.</item>
   <item>RFC-0108: replace JSON-only cells reader with actual-byte CSV and JSON array readers. Accept --public-manifest. Produce DisclosureReport with filesChecked, cellsChecked, effectiveK.</item>
+  <item>RFC-0115: inspect exact four-outcome availability JSON/CSV and reject schema downgrades, policy mismatch and unknown JSON shapes.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -23,6 +24,7 @@ import {
   writeReport,
 } from "./shared";
 import type { DisclosureReport } from "../../run/release/release-contract";
+import { reviewAvailabilityDisclosure } from "../../run/release/availability-disclosure";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
 const publicManifestPath = arg("--public-manifest");
@@ -36,12 +38,15 @@ let effectiveK = 12;
 let filesChecked = 0;
 let cellsChecked = 0;
 let suppressedCells = 0;
+let policyContent = "";
 
 interface PublicManifestEntry {
   product: string;
   format: "csv" | "json";
   contentSha256: string;
   bytes: number;
+  schemaId?: string;
+  policySha256?: string;
 }
 
 interface PublicManifest {
@@ -118,6 +123,8 @@ function checkJsonCells(content: string, fileName: string, k: number): void {
         violations.push(`k_anon_violation:${fileName}:cell_${i}:count_below_${k}`);
       }
     }
+  } else {
+    violations.push(`unsupported_json_disclosure_shape:${fileName}`);
   }
 }
 
@@ -162,7 +169,7 @@ if (!publicManifestPath) {
     }
 
     if (policyPath && (await fileExists(path.resolve(policyPath)))) {
-      const policyContent = await fs.readFile(path.resolve(policyPath), "utf8");
+      policyContent = await fs.readFile(path.resolve(policyPath), "utf8");
       const policy = parseYaml(policyContent) as {
         effectiveKMin?: number;
         default_k?: number;
@@ -174,7 +181,36 @@ if (!publicManifestPath) {
 
     const manifestDir = path.dirname(manifestResolved);
 
-    for (const entry of manifest.products) {
+    const availabilityV2 = manifest.products.some(entry => entry.schemaId === "hdri-public-availability@2");
+    if (availabilityV2) {
+      // The v2 object is not a legacy row array: inspect all outcomes and exact paired bytes.
+      try {
+        const policy = parseYaml(policyContent);
+        if (!policy || !Number.isSafeInteger(policy.default_k) || policy.default_k < 1 ||
+          !Number.isSafeInteger(policy.hard_floor) || policy.hard_floor < 1 ||
+          typeof policy.high_risk_release !== "boolean") throw new Error("availability_v2_policy_required");
+        effectiveK = Math.max(policy.default_k, policy.hard_floor);
+        const policyHash = crypto.createHash("sha256").update(policyContent).digest("hex");
+        if (manifest.schema !== "hdri-public-manifest@1" || manifest.products.length !== 2 || manifest.policyDigest !== policyHash ||
+          manifest.kAnonymityMin !== effectiveK || new Set(manifest.products.map(entry => entry.format)).size !== 2 ||
+          manifest.products.some(entry => entry.product !== "availability" ||
+            entry.schemaId !== "hdri-public-availability@2" || entry.policySha256 !== policyHash ||
+            !["json", "csv"].includes(entry.format))) throw new Error("availability_v2_manifest_scope_mismatch");
+        const json = await fs.readFile(path.join(manifestDir, "availability.json"), "utf8");
+        const csv = await fs.readFile(path.join(manifestDir, "availability.csv"), "utf8");
+        const review = reviewAvailabilityDisclosure(json, csv, period, effectiveK);
+        for (const file of review.files) {
+          const entry = manifest.products.find(item => `availability.${item.format}` === file.name)!;
+          if (entry.contentSha256 !== file.sha256 || entry.bytes !== file.bytes)
+            throw new Error(`availability_v2_file_binding_mismatch:${file.name}`);
+        }
+        filesChecked = review.filesChecked;
+        cellsChecked = review.cellsChecked;
+        warnings.push("single_product_only_prior_releases_and_auxiliary_information_not_reviewed");
+      } catch (error) {
+        violations.push(error instanceof Error ? error.message : "availability_v2_disclosure_failed");
+      }
+    } else for (const entry of manifest.products) {
       const filePath = path.join(manifestDir, `${entry.product}.${entry.format}`);
       if (!(await fileExists(filePath))) {
         violations.push(`public_file_not_found:${entry.product}.${entry.format}`);
@@ -226,7 +262,7 @@ await writeReport(
   evidenceDir,
   period,
   capsuleId,
-  computeInputFingerprint(period, capsuleId, publicManifestPath ?? "", policyPath ?? ""),
+  computeInputFingerprint(period, capsuleId, manifestContent, policyContent),
   violations.length === 0 ? "pass" : "fail",
   violations,
   warnings,

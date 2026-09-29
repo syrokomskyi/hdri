@@ -4,7 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { describe, expect, it } from "vitest";
+import { fileURLToPath } from "node:url";
+import { afterEach, describe, expect, it } from "vitest";
 import { canonicalize, generateSigningKey } from "@syrokomskyi/observatory-crypto";
 import {
   parsePriorCapsulesFile,
@@ -278,6 +279,21 @@ const runQuarterInit = (
   }
 };
 
+// RFC-0128: quarter-init writes capsule-staging.json under the shared
+// apps/hdri/capsules/<deviceId>/ root — clean up the per-device dirs it creates.
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
+const capsulesRoot = path.join(repoRoot, "apps", "hdri", "capsules");
+const createdDeviceDirs = new Set<string>();
+const trackStagingManifest = (parsed: { stagingManifestPath?: string }): void => {
+  if (parsed.stagingManifestPath)
+    createdDeviceDirs.add(path.resolve(path.dirname(parsed.stagingManifestPath), "..", ".."));
+};
+afterEach(() => {
+  createdDeviceDirs.add(path.join(capsulesRoot, "test-device"));
+  for (const dir of createdDeviceDirs) fs.rmSync(dir, { recursive: true, force: true });
+  createdDeviceDirs.clear();
+});
+
 describe("quarter:init", () => {
   it("generates valid prior-capsules.json from a sealed capsule", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hdri-quarter-init-"));
@@ -319,6 +335,33 @@ describe("quarter:init", () => {
       expect(parsed.priorCapsule.batchIds).toEqual(["2026-q2-de-01", "2026-q2-de-05"]);
       expect(parsed.totalEntries).toBe(1);
       expect(parsed.outputPath).toBe(outputPath);
+
+      // RFC-0128: quarter-open creates the empty staging manifest in the
+      // shared capsule root apps/hdri/capsules/<deviceId>/<period>/<capsuleId>/.
+      trackStagingManifest(parsed);
+      expect(parsed.stagingManifestPath).toBe(
+        path.join(
+          capsulesRoot,
+          "test-device",
+          "2026-q3",
+          "0198faaa-0000-7000-8000-000000000001",
+          "capsule-staging.json",
+        ),
+      );
+      const staging = JSON.parse(
+        fs.readFileSync(parsed.stagingManifestPath, "utf8"),
+      ) as QuarterCapsule;
+      expect(staging.state).toBe("staging");
+      expect(staging.period).toBe("2026-q3");
+      expect(staging.capsuleId).toBe("0198faaa-0000-7000-8000-000000000001");
+      expect(staging.deviceId).toBe("test-device");
+      expect(staging.artifacts).toEqual([]);
+      expect(staging.instrumentPlan.map((e) => e.instrument)).toEqual([
+        "liveness",
+        "profile",
+        "axe",
+        "lighthouse",
+      ]);
 
       const fileContent = fs.readFileSync(outputPath, "utf8");
       const validated = parsePriorCapsulesFile(fileContent);
@@ -707,6 +750,79 @@ describe("quarter:init", () => {
 
       expect(result.exitCode).not.toBe(0);
       expect(result.stderr + result.stdout).toContain("not found");
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("creates the staging manifest with --device-id and --instrument-plan-brief overrides", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hdri-quarter-init-staging-"));
+    try {
+      const keysDir = path.join(tmpDir, "keys");
+      const keyEnv = buildKeyEnv(keysDir);
+
+      const capsuleDir = path.join(tmpDir, "capsule");
+      buildSealedCapsule(capsuleDir, keyEnv);
+
+      const outputPath = path.join(tmpDir, "prior-capsules.json");
+      const manifestPath = path.join(capsuleDir, "capsule-manifest.json");
+
+      const briefPath = path.join(tmpDir, "brief.md");
+      fs.writeFileSync(
+        briefPath,
+        [
+          "---",
+          "instrumentPlan:",
+          "  - instrument: liveness",
+          "    state: required",
+          "    reason: null",
+          "  - instrument: profile",
+          "    state: disabled",
+          '    reason: "test override"',
+          "  - instrument: axe",
+          "    state: required",
+          "    reason: null",
+          "  - instrument: lighthouse",
+          "    state: disabled",
+          '    reason: "test override"',
+          "---",
+          "",
+        ].join("\n"),
+      );
+
+      const result = runQuarterInit(
+        [
+          "--predecessor",
+          manifestPath,
+          "--period",
+          "2026-q3",
+          "--capsule-id",
+          "0198faaa-0000-7000-8000-000000000001",
+          "--output",
+          outputPath,
+          "--keys-dir",
+          keysDir,
+          "--device-id",
+          "device-b",
+          "--instrument-plan-brief",
+          briefPath,
+          "--json",
+        ],
+        keyEnv,
+      );
+
+      expect(result.exitCode).toBe(0);
+      const jsonLine = result.stdout.split("\n").find((l) => l.startsWith('{"'));
+      const parsed = JSON.parse(jsonLine ?? result.stdout);
+      trackStagingManifest(parsed);
+      expect(parsed.stagingManifestPath).toContain(`capsules${path.sep}device-b${path.sep}`);
+      const staging = JSON.parse(
+        fs.readFileSync(parsed.stagingManifestPath, "utf8"),
+      ) as QuarterCapsule;
+      expect(staging.deviceId).toBe("device-b");
+      expect(staging.instrumentPlan.find((e) => e.instrument === "profile")?.state).toBe(
+        "disabled",
+      );
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }

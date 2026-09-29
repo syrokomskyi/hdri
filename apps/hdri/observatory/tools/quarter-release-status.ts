@@ -1,134 +1,64 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Read-only diagnostic that reports the release state of an HDRI quarter from verified evidence (envelope, receipts, attestation).</purpose>
-<non-goals>
-  <item>Does not write, mutate, or publish anything.</item>
-  <item>Does not infer success from directory existence — only verified evidence establishes status.</item>
-</non-goals>
+<purpose>Read-only release artifact inspection with explicit scope and no inferred scientific, custody or publication success.</purpose>
+<non-goals><item>Does not verify trusted signatures, remote custody, admission or public delivery; does not mutate release evidence.</item></non-goals>
 </MODULE_CONTRACT>
-<CHANGE_SUMMARY>
-  <item>RFC-0109: create quarter-release-status.ts — read-only --release-id <id> --json command.</item>
-</CHANGE_SUMMARY>
+<CHANGE_SUMMARY><item>Reject guessed period/receipt paths and false published status from unverified attestation presence.</item></CHANGE_SUMMARY>
 */
-
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  sha256File,
-  type PublicationAttestation,
-  type ReleaseEnvelope,
-  type ReleaseState,
-  type ReplicaReceipt,
-} from "../run/release/release-contract";
+import { pathToFileURL } from "node:url";
+import { parseArgs } from "node:util";
+import { verifyReleaseEnvelope, type ReleaseEnvelope } from "../run/release/release-contract";
 
-const arg = (name: string): string | undefined => {
-  const index = process.argv.indexOf(name);
-  return index >= 0 ? process.argv[index + 1] : undefined;
-};
-
-const releaseId = arg("--release-id");
-const vaultDir = arg("--vault-dir");
-if (!releaseId) throw new Error("--release-id <id> is required");
-if (!vaultDir) throw new Error("--vault-dir <dir> is required");
-
-// Extract period from releaseId (format: <period>-<capsuleId>)
-const period = releaseId.includes("-") ? releaseId.split("-")[0]! : releaseId;
-
-const envelopePath = path.join(
-  path.resolve(vaultDir),
-  "releases",
-  `period=${period}`,
-  `${releaseId}.json`,
-);
-
-let envelope: ReleaseEnvelope;
-let envelopeFound = false;
-let envelopeSha256 = "";
-let releaseState: ReleaseState = "prepared";
-let replicasVerified = 0;
-let attestationDelivered = false;
-const violations: string[] = [];
-
-try {
-  const envelopeBytes = await fs.readFile(envelopePath, "utf8");
-  envelope = JSON.parse(envelopeBytes) as ReleaseEnvelope;
-  envelopeFound = true;
-  envelopeSha256 = await sha256File(envelopePath);
-
-  if (envelope.schema !== "hdri-release-envelope@1") {
-    violations.push("envelope_schema_mismatch");
-  } else {
-    releaseState = "scientifically-verified";
-  }
-} catch {
-  violations.push("envelope_not_found");
-}
-
-if (envelopeFound) {
-  // Check for replica receipts in capsule artifacts/qc/release/
-  // The receipts are co-located with the capsule, not the vault
-  // We check each replica destination for receipts
-  // Since we don't have the replica config here, we check the vault release dir
-  // for receipt references in the attestation
-
-  // Look for attestation file alongside envelope
-  const attestationPath = path.join(path.dirname(envelopePath), `${releaseId}-attestation.json`);
+/** An artifact inspector must not claim verified release state from caller-owned JSON. */
+export async function inspectReleaseArtifacts(vaultDir: string, period: string, releaseId: string) {
+  if (!/^\d{4}-q[1-4]$/.test(period) || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,199}$/.test(releaseId))
+    throw new Error("EXPLICIT_RELEASE_SCOPE_INVALID");
+  const envelopePath = path.join(path.resolve(vaultDir), "releases", `period=${period}`, `${releaseId}.json`);
+  let envelopeFound = false;
+  let envelopeSha256: string | null = null;
+  let envelopeFileSha256: string | null = null;
+  const violations: string[] = [];
   try {
-    const attestationBytes = await fs.readFile(attestationPath, "utf8");
-    const attestation = JSON.parse(attestationBytes) as PublicationAttestation;
-
-    if (attestation.schema !== "hdri-publication-attestation@1") {
-      violations.push("attestation_schema_mismatch");
+    const bytes = await fs.readFile(envelopePath);
+    envelopeFound = true;
+    envelopeFileSha256 = createHash("sha256").update(bytes).digest("hex");
+    const envelope = JSON.parse(bytes.toString("utf8")) as ReleaseEnvelope;
+    if (!envelope || !Array.isArray(envelope.inventory) ||
+      envelope.inventory.some(entry => !entry || typeof entry !== "object")) {
+      violations.push("envelope_shape_invalid");
     } else {
-      // Verify attestation references match envelope
-      if (attestation.releaseId !== releaseId) {
-        violations.push("attestation_release_id_mismatch");
-      }
-      if (attestation.envelopeSha256 !== envelopeSha256) {
-        violations.push("attestation_envelope_hash_mismatch");
-      }
-
-      // Check replica receipts referenced in attestation
-      for (const receiptSha256 of attestation.replicaReceiptSha256s) {
-        const receiptPath = path.join(path.dirname(envelopePath), `${receiptSha256.slice(0, 16)}.json`);
-        try {
-          const receiptBytes = await fs.readFile(receiptPath, "utf8");
-          const receipt = JSON.parse(receiptBytes) as ReplicaReceipt;
-          if (receipt.schema === "hdri-replica-receipt@1" && receipt.envelopeSha256 === envelopeSha256) {
-            replicasVerified++;
-          }
-        } catch {
-          violations.push(`replica_receipt_not_found:${receiptSha256.slice(0, 16)}`);
-        }
-      }
-
-      if (replicasVerified > 0) {
-        releaseState = "replicated";
-      }
-
-      // Check attestation delivery — verify attestation exists at known replica destinations
-      // We check if attestation file exists alongside the envelope
-      attestationDelivered = true;
-      releaseState = "published";
+      violations.push(...verifyReleaseEnvelope(envelope));
+      if (envelope.period !== period || envelope.releaseId !== releaseId)
+        violations.push("envelope_scope_mismatch");
+      // The writer signs the compact serialization hash, not the pretty file hash.
+      envelopeSha256 = createHash("sha256").update(JSON.stringify(envelope)).digest("hex");
     }
-  } catch {
-    violations.push("attestation_not_found");
+  } catch (error) {
+    violations.push((error as NodeJS.ErrnoException).code === "ENOENT" ? "envelope_not_found" : "envelope_unreadable_or_invalid");
   }
+  return {
+    command: "hdri.quarter.release-status",
+    status: violations.length ? "fail" : "unverified",
+    period, releaseId, envelopePath, envelopeFound, envelopeSha256, envelopeFileSha256,
+    releaseState: null, replicasVerified: null, attestationDelivered: null, violations,
+    unverifiedRequirements: ["trusted-attestation-signature", "scientific-and-publication-admission",
+      "local-and-remote-closure-custody", "public-archive-content-and-delivery"],
+  };
 }
 
-process.stdout.write(
-  `${JSON.stringify(
-    {
-      command: "hdri.quarter.release-status",
-      status: violations.length === 0 ? "pass" : "fail",
-      releaseId,
-      releaseState,
-      envelopeSha256,
-      replicasVerified,
-      attestationDelivered,
-      violations,
-    },
-    null,
-    2,
-  )}\n`,
-);
+export async function main(args = process.argv.slice(2)) {
+  const { values } = parseArgs({ args, strict: true, allowPositionals: false, options: {
+    "release-id": { type: "string" }, period: { type: "string" }, "vault-dir": { type: "string" }, json: { type: "boolean" },
+  } });
+  if (!values["release-id"] || !values.period || !values["vault-dir"])
+    throw new Error("--period, --release-id and --vault-dir are required");
+  const result = await inspectReleaseArtifacts(values["vault-dir"], values.period, values["release-id"]);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  // No successful publication verdict is implemented here; CI must not treat inspection as a gate pass.
+  process.exitCode = 1;
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href)
+  main().catch((error: unknown) => { process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; });

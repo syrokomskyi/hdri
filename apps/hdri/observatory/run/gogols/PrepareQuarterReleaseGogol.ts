@@ -7,6 +7,8 @@
   <item>Document the existing PrepareQuarterReleaseGogol module contract for Compass-aware maintenance.</item>
   <item>RFC-0108: admit only PublicProductRef entries as publication artifacts. Read from public-manifest.json instead of blindly admitting all martPaths.</item>
   <item>RFC-0109: output release-input.json manifest with capsule, evidence, public manifest, rebuild receipt, replica config, vault dir, public archive root refs. Set ctx.state.releaseInputPath.</item>
+  <item>RFC-0115: retain publication intent, the optional quarter-bound classification decision and public manifest before candidate validation.</item>
+  <item>Export complete current-run identities through explicit provisional mappings; reject missing or ambiguous mappings.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -31,6 +33,10 @@ import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { openObservatoryDb } from "../db/connection";
 import { inputDir, outputRootDir } from "../config";
+import { readRetainedPublicationScope } from "../release/publication-scope";
+import { requiredRetainedScientificReports } from "../release/release-contract";
+import { verifyPublicationClosure } from "../release/publication-closure";
+import { readReleaseIdentities } from "../release/release-identities";
 
 const hashFile = async (file: string): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -119,17 +125,7 @@ export class PrepareQuarterReleaseGogol extends Gogol {
     const year = parsePeriod(brief.period).year;
     const db = openObservatoryDb(year);
     try {
-      const identities = db
-        .prepare(
-          `
-        SELECT s.asset_id AS canonical_asset_id, s.domain, m.provisional_id, m.first_seen
-        FROM asset_states s JOIN asset_id_map m ON m.canonical_id = s.asset_id
-        WHERE s.run_id = ? ORDER BY s.asset_id
-      `,
-        )
-        .all(runId) as object[];
-      if (identities.length === 0)
-        throw new Error("Cannot prepare release without canonical UUID v7 identities");
+      const identities = readReleaseIdentities(db, runId);
       const identityPath = path.join(
         capsuleDir,
         "artifacts",
@@ -165,19 +161,23 @@ export class PrepareQuarterReleaseGogol extends Gogol {
           `artifacts/publication/${entry.product}.${entry.format}`,
         );
       }
+      await retain("publication", publicManifestPath, "artifacts/publication/public-manifest.json");
     }
-    for (const name of ["codebook.yaml", "ontology.yaml", "population-frame.json"]) {
+    for (const name of ["codebook.yaml", "ontology.yaml", "population-frame.json", "publication-scope.yaml", "classification-release-decision.yaml"]) {
       const source = path.join(inputDir, name);
       try {
         await fsp.access(source);
         await retain("methodology", source, `artifacts/methodology/${name}`);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-        if (name !== "population-frame.json") throw error;
+        if (name !== "population-frame.json" && name !== "publication-scope.yaml" && name !== "classification-release-decision.yaml") throw error;
       }
     }
 
     const candidate = { ...staging, state: "candidate" as const, artifacts };
+    await requiredRetainedScientificReports(capsuleDir, candidate, await readRetainedPublicationScope(capsuleDir, candidate));
+    if (!publicManifestPath) throw new Error("Public manifest is required for release preparation");
+    await verifyPublicationClosure(capsuleDir, candidate, publicManifestPath);
     ctx.state.candidateManifestPath = await writeQuarterCapsuleCandidate(capsuleDir, candidate);
     await this.writeReleaseInput(ctx, ctx.state.candidateManifestPath);
   }

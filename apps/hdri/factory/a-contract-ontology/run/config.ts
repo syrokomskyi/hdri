@@ -40,3 +40,5 @@ export const upstreamOutputRoots = {
 export const promptsDir = path.join(rootDir, "run", "prompts");
 
 export const localDeviceId = deviceId;
+/** apps/hdri/factory root — quarterCapsuleDir resolves capsules relative to it. */
+export const factoryRootDir = factoryRoot;

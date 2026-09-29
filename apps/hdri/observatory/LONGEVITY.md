@@ -148,12 +148,20 @@ Provision a new machine (`RUNBOOK.md` → one-time setup), copy the latest snaps
 
 ## Offsite replication & scheduled verification
 
+As of 2026-09-26, the operator selected private R2 storage in place of Google
+Drive. See [current R2 operations](R2-PRESERVATION.md). The first Q3 raw archive
+upload is not a final scientific seal or completed restore drill. Local SSD plus
+one R2 account does not satisfy the current two-independent-offsite release gate.
+
 The vault is the source of truth, so a single disk holding it is the single point of failure. Two habits make "the machine is gone" a recoverable event rather than a catastrophe:
 
 - **Replicate offsite.** `pnpm run replicate:vault -- --dest <offsite>` mirrors the manifest-recorded shards + `vault-manifest.json` + the methodology snapshot store to a second location — a mounted external disk, an rclone/s3fs mount of an object store (R2/S3), or another machine. It is dry-run by default, idempotent (copies only new/changed shards by sha256, never deletes), and **verifies the replica against the manifest after copying**. Run it after every quarter's publication, to at least two independent destinations.
 - **Verify on a schedule.** Silent bit-rot is caught only if you look. Schedule `pnpm run verify:shards` (manifest planned-verification: MISSING + CORRUPTED) on both the primary and each replica — e.g. weekly via cron/Task Scheduler — and alert on a non-zero exit. Pair with `pnpm run verify:vault` (ed25519 signatures + the trusted-keys policy) at least each quarter.
 
-A replica that passes `verify:shards` is a full, restorable copy of the source of truth: Drill 4 ("whole machine lost") becomes "point `--vault-dir` at the replica and rebuild".
+A passing `verify:shards` establishes integrity of the checked shards, not full
+recoverability by itself. Drill 4 ("whole machine lost") additionally requires the
+complete retained methodology/runtime/key closure and an actual successful rebuild
+in a fresh location using only the replica.
 
 ---
 

@@ -11,6 +11,7 @@ computation_hashes. The vault — not the working DB — is the recoverable sour
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>WP7: initial rebuild-from-vault tool.</item>
+  <item>Reconstruct the same quarter-specific profile selection as the live scoring pipeline.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -26,7 +27,7 @@ import type { AssetStateRecord } from "@syrokomskyi/observatory-core";
 import { migrateObservatory } from "../run/db/migrate";
 import { getDbDir, getObservatoryDbPath } from "../run/db/connection";
 import { writeAssetStatesDeduped, type AssetStateInput } from "../run/db/sync-writers";
-import { scoreAndWriteForRun } from "../run/score/score-core";
+import { scoreAndWriteForRun, scoreSelectionForPeriod } from "../run/score/score-core";
 import {
   bundleAssetStatesToInputs,
   insertRebuiltObservations,
@@ -113,6 +114,7 @@ async function main(): Promise<void> {
   const summary = scoreAndWriteForRun(db, codebook, {
     runId,
     period,
+    selectionPolicy: scoreSelectionForPeriod(period),
     now: new Date().toISOString(),
   });
   console.log(

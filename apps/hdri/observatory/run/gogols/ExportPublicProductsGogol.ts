@@ -9,6 +9,7 @@
 <CHANGE_SUMMARY>
   <item>RFC-0108: create public product exporter with allowlisted aggregate schema, k-anon suppression, and PublicProductRef manifest.</item>
   <item>RFC-0115: connect to SCIENTIFIC_REPORTS registry for ProductVerdict gating. Add complementary suppression cross-format/cross-quarter checks. Separate P0→D→P flow.</item>
+  <item>Unified quarterly HDRI: compare actual cell counts across formats, not aggregate row counts or fabricated prior totals; leave cross-quarter disclosure to its scientific review.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -87,31 +88,6 @@ function collectProductVerdictsFromRegistry(): ProductVerdict[] {
 
 function filterEligibleProducts(verdicts: ProductVerdict[]): ProductVerdict[] {
   return verdicts.filter((v) => v.status === "eligible");
-}
-
-async function loadPriorProducts(currentPeriod: string): Promise<ProductDisclosureEntry[]> {
-  const { year, quarter } = parsePeriod(currentPeriod);
-  const priorYear = quarter === 1 ? year - 1 : year;
-  const priorQuarter = quarter === 1 ? 4 : quarter - 1;
-  const priorPeriod = `${priorYear}-q${priorQuarter}`;
-  const priorManifestPath = path.join(
-    outputRootDir,
-    "public-archive",
-    priorPeriod,
-    "public-manifest.json",
-  );
-  try {
-    const content = await fs.readFile(priorManifestPath, "utf8");
-    const manifest = JSON.parse(content) as { products: PublicProductRef[] };
-    return manifest.products.map((p) => ({
-      product: p.product,
-      format: p.format,
-      contentSha256: p.contentSha256,
-      n: 0,
-    }));
-  } catch {
-    return [];
-  }
 }
 
 export class ExportPublicProductsGogol extends Gogol {
@@ -221,19 +197,16 @@ export class ExportPublicProductsGogol extends Gogol {
         sourceAggregateSha256: hashContent(JSON.stringify(aggRows)),
       });
 
-      // D: Disclosure check — complementary suppression across formats and quarters
-      const currentProducts: ProductDisclosureEntry[] = refs.map((r) => ({
+      // D: Count consistency only; this cannot certify cross-quarter disclosure.
+      const currentProducts: ProductDisclosureEntry[] = refs.flatMap((r) => publicAggs.map(row => ({
         product: r.product,
         format: r.format,
         contentSha256: r.contentSha256,
-        n: publicAggs.length,
-      }));
-      const priorProducts: ProductDisclosureEntry[] = await loadPriorProducts(
-        ctx.state.brief.period,
-      );
+        cellKey: JSON.stringify([row.axis, row.axis_value, row.stat_type, row.dimension_id]),
+        n: row.n,
+      })));
       const suppressionResult = checkComplementarySuppression(
         currentProducts,
-        priorProducts,
         kAnonymityMin,
       );
       if (suppressionResult.status === "fail") {

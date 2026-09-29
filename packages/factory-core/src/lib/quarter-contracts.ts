@@ -189,6 +189,29 @@ export type WorkKey = Readonly<{
 export type WorkState =
   "pending" | "leased" | "retryable" | "succeeded" | "observed-failure" | "quarantined";
 
+/**
+ * RFC-0128: the seal stages that must exist for a required instrument to count
+ * as closed. `profile` is delivered by two capture stages; every other
+ * instrument seals under its own id.
+ */
+export const INSTRUMENT_SEAL_STAGES: Readonly<Record<InstrumentId, readonly WorkKey["stageId"][]>> =
+  {
+    liveness: ["liveness"],
+    profile: ["homepage-capture", "detected-page-capture"],
+    axe: ["axe"],
+    lighthouse: ["lighthouse"],
+  };
+
+/**
+ * Expands a required-stage entry to the seal stage ids that must exist.
+ * Instrument ids expand via INSTRUMENT_SEAL_STAGES; non-instrument stage ids
+ * (frame/translate/emit/verify/capture stages) pass through unchanged.
+ */
+export const sealStagesFor = (stageId: WorkKey["stageId"]): readonly WorkKey["stageId"][] =>
+  (INSTRUMENT_SEAL_STAGES as Partial<Record<WorkKey["stageId"], readonly WorkKey["stageId"][]>>)[
+    stageId
+  ] ?? [stageId];
+
 export const isTerminalWorkState = (state: WorkState): boolean =>
   state === "succeeded" || state === "observed-failure" || state === "quarantined";
 

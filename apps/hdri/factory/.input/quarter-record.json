@@ -1,0 +1,11 @@
+{
+  "schema": "hdri-quarter-record@1",
+  "period": "2026-q3",
+  "capsuleId": "019ff219-69fe-7025-943c-dae2a8c37801",
+  "predecessorPeriod": "2026-q2",
+  "predecessorManifestSha256": "3ebf4e94511ca79ca439fb6a137eb1222352a61e9edd0bc40ad11e9f92a59583",
+  "collection": "scheduled",
+  "publication": "pending",
+  "checkpointSha256": null,
+  "gapDecisionSha256": null
+}

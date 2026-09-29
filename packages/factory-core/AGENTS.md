@@ -52,6 +52,26 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 
 ## Historical capsule verification
 
+The operator-approved `releaseProfile: availability-only@1` omits only derived
+Observatory identity/vault stage requirements. Without this explicit signed field,
+the full contract remains mandatory. The profile requires a nonlegacy device-bound
+capsule, required liveness, frame/emit/methodology, retained publication scope and
+exact availability JSON/CSV/manifest paths; other publication files are forbidden.
+All original required instrument evidence and complete byte verification remain.
+Use `sealStagesFor(instrument)` for both candidate and multi-device validation:
+profile seals are homepage-capture and detected-page-capture, not profile.json.
+Publication scope/content, scientific reports, reconstruction and custody remain
+the Observatory release owner's duties; structural validation is not admission.
+
+Large current capsules carry `artifactInventories`: content-addressed parts with
+format `hdri-artifact-inventory@1`, at most 8,192 entries and 4 MiB per part.
+Use `iterateCapsuleArtifacts` for complete archival enumeration and
+`verifyQuarterCapsuleArtifacts` for complete byte verification. Reading only
+`capsule.artifacts` covers direct stage/frame metadata, not all retained files.
+Part bytes are authenticated before parsing; nested parts and duplicate artifact
+paths fail. Do not flatten millions of entries into one JSON/signature string.
+Original signed flat manifests remain valid under their original signature contract.
+
 `readPriorCapsulesFile` reads at most 1 MiB through the shared nonsymlink reader and strictly decodes UTF-8. Pass that parsed value to `discoverPriorCapsules(input, stagingRoot, verificationKeys, expectedPeriod)`; discovery validates/detaches it without reopening the file. `currentPeriod` must match the requested operation; prior periods must be earlier, with no duplicate capsule IDs, duplicate periods or duplicate/unsafe batch IDs within an entry. This is reference validation, not approved-predecessor selection or gap authorization.
 
 `verifyPriorCapsule` consumes the actual `capsule-manifest.json` plus detached `capsule-signature.json` emitted by `sealQuarterCapsule`. Do not restore the incompatible signed-ledger-envelope interpretation. It verifies capsule identity, complete declared artifact bytes and the single signed source-frame closure through the existing shared owners. Batch IDs and ledger head must match that closure; `predecessorManifestSha256` identifies the exact manifest file bytes, not its canonical payload or source ledger head.

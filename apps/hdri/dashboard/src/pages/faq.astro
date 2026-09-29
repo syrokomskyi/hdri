@@ -1,15 +1,16 @@
 ---
 /**
  * <MODULE_CONTRACT><purpose>Provide faq behavior for the apps hdri dashboard src pages subsystem and its direct callers.</purpose><non-goals><item>Do not define unrelated cross-workspace policy or orchestration behavior.</item></non-goals></MODULE_CONTRACT>
- * <CHANGE_SUMMARY><item>Document the existing faq module contract for Compass-aware maintenance.</item></CHANGE_SUMMARY>
+ * <CHANGE_SUMMARY><item>Document the existing faq module contract for Compass-aware maintenance.</item><item>Keep visible answers and structured FAQ metadata consistent about period-specific thresholds and unapproved trends.</item></CHANGE_SUMMARY>
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Breadcrumbs from "../components/Breadcrumbs.astro";
 import "../styles/faq.css";
 import Term from "../components/Term.astro";
-import { site, ogImage, publisher } from "../lib/seo";
+import { ogImage, publisher } from "../lib/seo";
 import { count, pct } from "../lib/format";
 import { getSiteMeta } from "../data/site-meta";
+import { publicationThresholdHistory, quarterComparisonExplanation } from "../data/publication-policy";
 
 const meta = getSiteMeta();
 const cb = meta.codebook;
@@ -79,7 +80,7 @@ const schema = {
       name: "Warum sind nicht alle erfassten Domains im Dashboard sichtbar?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Im Dashboard werden ausschließlich Aggregate veröffentlicht, die die Publikationsschwelle erfüllen (mindestens n ≥ ${meta.kAnonymityMin} Fälle pro Slice). Einzelne Betriebe, Domains, URLs oder individuelle Scores werden nie veröffentlicht. Zu kleine Gruppen (z. B. seltene Gewerke in dünn besiedelten Regionen) werden unterdrückt. Die Schwelle reduziert das Risiko einer indirekten Zuordnung einzelner Betriebe und erhöht zugleich die statistische Stabilität kleiner Gruppen.`,
+        text: `Im Dashboard werden ausschließlich Aggregate veröffentlicht, die die Publikationsschwelle des jeweiligen Quartals erfüllen. ${publicationThresholdHistory} Einzelne Betriebe, Domains, URLs oder individuelle Scores werden nie veröffentlicht. Zu kleine Gruppen werden unterdrückt.`,
       },
     },
     {
@@ -151,7 +152,7 @@ const schema = {
       name: "Was ist die Publikationsschwelle und warum wird sie eingesetzt?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Ergebnisse für Gruppen mit weniger als ${meta.kAnonymityMin} beobachteten Websites werden nicht veröffentlicht. Wenn eine Gruppe (z. B. ein bestimmtes Gewerk in einem Bundesland) weniger als ${meta.kAnonymityMin} Fälle enthält, wird sie im Dashboard nicht angezeigt. Für Kreuztabellen (Region × Gewerk) gelten noch strengere Anforderungen. Die Schwelle reduziert das Risiko einer indirekten Zuordnung einzelner Betriebe und erhöht zugleich die statistische Stabilität kleiner Gruppen.`,
+        text: `${publicationThresholdHistory} Gruppen unterhalb der jeweiligen Schwelle werden nicht veröffentlicht. Die Schwelle reduziert das Risiko einer indirekten Zuordnung; sie garantiert keine Repräsentativität oder statistische Signifikanz. Die am 29.09.2026 korrigierte Q2-Schwellenangabe verändert weder Scores noch Fallzahlen.`,
       },
     },
     {
@@ -159,7 +160,7 @@ const schema = {
       name: "Warum werden manche Deltas (Quartalsvergleiche) nicht angezeigt?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Ein Delta wird unterdrückt, wenn: die Änderung kleiner als 3 Punkte oder kleiner als 3 % relativ zum Vorquartal ist, eine der Vergleichsstichproben die Publikationsschwelle unterschreitet, oder eine Kategorie in einem der Quartale nicht vorhanden war. Das ist kein Fehler — es ist ein gezielter Schutzmechanismus.",
+        text: quarterComparisonExplanation,
       },
     },
     {
@@ -341,8 +342,8 @@ const schema = {
             <h3>Warum sind nicht alle erfassten Domains im Dashboard sichtbar?</h3>
             <p>
               Im Dashboard werden ausschließlich Aggregate veröffentlicht, die die
-              Publikationsschwelle erfüllen (mindestens n ≥
-              {meta.kAnonymityMin} Fälle pro Slice). Einzelne Betriebe, Domains, URLs oder individuelle
+              Publikationsschwelle des jeweiligen Quartals erfüllen. {publicationThresholdHistory}
+              Einzelne Betriebe, Domains, URLs oder individuelle
               Scores werden nie veröffentlicht. Zu kleine Gruppen (z. B. seltene Gewerke in dünn besiedelten
               Regionen) werden unterdrückt. Die Schwelle reduziert das Risiko einer indirekten Zuordnung
               einzelner Betriebe und erhöht zugleich die statistische Stabilität kleiner Gruppen.
@@ -577,15 +578,16 @@ const schema = {
               Was ist <Term id="k-anonymitaet">Publikationsschwelle</Term> und warum wird sie eingesetzt?
             </h3>
             <p>
-              <Term id="k-anonymitaet" iconOnly /> Ergebnisse für Gruppen mit weniger als
-              {meta.kAnonymityMin} beobachteten Websites werden nicht veröffentlicht. Wenn eine Gruppe
-              (z. B. ein bestimmtes Gewerk in einem Bundesland) weniger als {meta.kAnonymityMin} Fälle
+              <Term id="k-anonymitaet" iconOnly /> Ergebnisse für Gruppen unterhalb der
+              Publikationsschwelle des jeweiligen Quartals werden nicht veröffentlicht. Wenn eine Gruppe
+              (z. B. ein bestimmtes Gewerk in einem Bundesland) weniger als die erforderliche Anzahl an Fällen
               enthält, wird sie im Dashboard nicht angezeigt. Für Kreuztabellen (Region × Gewerk) gelten
               noch strengere Anforderungen. Die Schwelle reduziert das Risiko einer indirekten Zuordnung
               einzelner Betriebe und erhöht zugleich die statistische Stabilität kleiner Gruppen.
             </p>
             <p class="faq-cross-link">
-              → Details: <a href="/methodik">Methodik: Datenschutz & Unterdrückung</a>
+              {publicationThresholdHistory} → Details und Q2-Metadatenkorrektur:
+              <a href="/methodik#publikationsschwellen">Methodik: Datenschutz & Unterdrückung</a>
             </p>
           </article>
 
@@ -593,16 +595,8 @@ const schema = {
             <h3>
               Warum werden manche <Term id="suppression">Deltas (Quartalsvergleiche)</Term> nicht angezeigt?
             </h3>
-            <p>Ein Delta wird unterdrückt, wenn:</p>
-            <ul>
-              <li>
-                Die Änderung kleiner als 3 Punkte <strong>oder</strong> kleiner als 3 % relativ zum Vorquartal
-                ist
-              </li>
-              <li>Eine der Vergleichsstichproben die Publikationsschwelle unterschreitet</li>
-              <li>Eine Kategorie in einem der Quartale nicht vorhanden war</li>
-            </ul>
-            <p>Das ist kein Fehler — es ist ein gezielter Schutzmechanismus.</p>
+            <p>{quarterComparisonExplanation}</p>
+            <p><a href="/methodik#quartalsvergleich">Was für künftige Zeitvergleiche erforderlich ist</a></p>
           </article>
         </div>
 

@@ -12,6 +12,7 @@ pipeline) and the rebuild-from-vault round-trip (WP7), so both score through one
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>WP7: extracted from ScoreHdriGogol so rebuild-from-vault re-scores through the identical path.</item>
+  <item>Apply explicit current-reachability and collected-profile selection without changing retained site scores or deleting observations.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: signature is detached ed25519 over SHA-256 of the target data; never reuse or expose the private key
@@ -24,7 +25,7 @@ import type {
   SiteSignals,
   SiteSignalStatuses,
 } from "@syrokomskyi/hdri-codebook";
-import { computationHash, newId } from "@syrokomskyi/observatory-core";
+import { computationHash, newId, parsePeriod } from "@syrokomskyi/observatory-core";
 import type { SignalCollectionStatus } from "@syrokomskyi/observatory-core";
 
 /** Observation row shape consumed by the scorer (a projection of the observations table). */
@@ -64,6 +65,8 @@ export type ScoringSummary = {
   scored: number;
   skipped: number;
   total: number;
+  excludedUnavailable: number;
+  excludedMissingProfile: number;
   /** asset_id → {overallScore, confidence, computationHash} for every scored asset. */
   perAsset: Map<string, AssetScore>;
 };
@@ -73,8 +76,15 @@ export type ScoreRunOptions = {
   period: string;
   /** Single scored_at timestamp for the whole run. */
   now: string;
+  /** Explicit so historical engine/rehearsal callers keep their original behavior. */
+  selectionPolicy?: "legacy" | "reachable-profile-v1";
   onProgress?: (processed: number, total: number) => void;
 };
+
+export function scoreSelectionForPeriod(period: string): "legacy" | "reachable-profile-v1" {
+  const {year, quarter} = parsePeriod(period);
+  return year > 2026 || (year === 2026 && quarter >= 3) ? "reachable-profile-v1" : "legacy";
+}
 
 const CONDITIONAL_STATUSES = new Set<SignalCollectionStatus>([
   "absent",
@@ -184,6 +194,9 @@ export function scoreAndWriteForRun(
   const rows = readObsRowsForRun(db, opts.runId);
   const assetBundles = buildAssetBundles(rows);
   const indicatorIndex = buildIndicatorIndex(codebook);
+  const profileInputs = [...new Set(codebook.dimensions.flatMap(d => d.indicators.map(i => i.inputKey)))].filter(key => !key.startsWith("audit.axe."));
+  if (opts.selectionPolicy === "reachable-profile-v1" && !profileInputs.length)
+    throw new Error("Profile selection requires profile indicators in the codebook");
   const perAsset = new Map<string, AssetScore>();
 
   const insertScore = db.prepare(`
@@ -215,6 +228,8 @@ export function scoreAndWriteForRun(
 
   let scored = 0;
   let skipped = 0;
+  let excludedUnavailable = 0;
+  let excludedMissingProfile = 0;
 
   const scoreBatch = db.transaction(() => {
     clearPriorTraces.run(opts.runId);
@@ -223,6 +238,17 @@ export function scoreAndWriteForRun(
 
     let processed = 0;
     for (const [assetId, bundle] of assetBundles) {
+      if (opts.selectionPolicy === "reachable-profile-v1") {
+        const unavailable = bundle.signals["availability.website.is_reachable"] !== true;
+        const missingProfile = !profileInputs.every(key => bundle.signals[key] != null &&
+          bundle.statuses[key] !== "unreachable" && bundle.statuses[key] !== "forbidden");
+        if (unavailable || missingProfile) {
+          if (unavailable) excludedUnavailable++; else excludedMissingProfile++;
+          skipped++; processed++;
+          opts.onProgress?.(processed, assetBundles.size);
+          continue;
+        }
+      }
       const result = scoreSite(bundle.signals, codebook, { signalStatuses: bundle.statuses });
 
       if (result.overallScore === null) {
@@ -288,5 +314,5 @@ export function scoreAndWriteForRun(
 
   scoreBatch();
 
-  return { scored, skipped, total: assetBundles.size, perAsset };
+  return { scored, skipped, total: assetBundles.size, excludedUnavailable, excludedMissingProfile, perAsset };
 }

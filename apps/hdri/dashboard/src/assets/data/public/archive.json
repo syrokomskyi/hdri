@@ -3,5 +3,10 @@
     "period": "2026-q2",
     "manifestPath": "periods/2026-q2/manifest.json",
     "overviewPath": "periods/2026-q2/overview.json"
+  },
+  {
+    "period": "2026-q3",
+    "manifestPath": "periods/2026-q3/manifest.json",
+    "overviewPath": "periods/2026-q3/overview.json"
   }
 ]

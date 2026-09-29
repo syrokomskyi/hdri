@@ -4,27 +4,15 @@ This file provides AI agent guidance specific to the `apps/hdri/factory` pipelin
 
 ## Executable release and recovery evidence (RFC-0115)
 
-See `apps/hdri/factory/RUNBOOK.md` § Executable release and recovery evidence for
-current command status and the ordered corrective plan. The 2026-09-13 review
-reopened production-path criteria: release, independent rebuild, actual fault
-barriers, custody and outcome-to-ledger wiring are not operationally verified.
-The new offline rehearsal controller verifies adapter output bytes and resume,
-but always reports `operationallyQualified: false`. This machine is approved for
-offline qualification work; no 200k run or live activation has been certified.
+See `apps/hdri/factory/RUNBOOK.md` § Executable release and recovery evidence for current command status and the ordered corrective plan. The 2026-09-13 review reopened production-path criteria: release, independent rebuild, actual fault barriers, custody and outcome-to-ledger wiring are not operationally verified. The new offline rehearsal controller verifies adapter output bytes and resume, but always reports `operationallyQualified: false`. This machine is approved for offline qualification work; no 200k run or live activation has been certified.
 
-Q3 collection uses the forward-only `hdri-source-signature@2` contract. The source
-signature binds application/device/version/count/time metadata and the complete
-closed SQLite generation through the adjacent immutable `source-snapshot.sqlite`.
-All numeric factory producers and consumers use this format atomically; do not add
-a dual reader or mix v1 and v2 outputs in one upstream root. Keep the old format
-only inside the dedicated Q2 preservation diagnostic, where its limited meaning is
-explicit. Before activation, regenerate or remove pre-cutover outputs and confirm
-each producer emits both the v2 manifest and adjacent snapshot. The exact payload
-and evidence requirements are recorded in the RFC-0115 implementation plan.
+Q3 collection uses the forward-only `hdri-source-signature@2` contract. The source signature binds application/device/version/count/time metadata and the complete closed SQLite generation through the adjacent immutable `source-snapshot.sqlite`. All numeric factory producers and consumers use this format atomically; do not add a dual reader or mix v1 and v2 outputs in one upstream root. Keep the old format only inside the dedicated Q2 preservation diagnostic, where its limited meaning is explicit. Before activation, regenerate or remove pre-cutover outputs and confirm each producer emits both the v2 manifest and adjacent snapshot. The exact payload and evidence requirements are recorded in the RFC-0115 implementation plan.
 
 ## Locality invariant (hard rule)
 
 Every app under `apps/hdri/factory/<N>-<name>/` **writes only to its own `.output/`**. Reading from a sibling app's `.output/` is allowed in read-only mode via an explicit path declared in `brief.md`. Writes into another app's folder are bugs — fix them immediately.
+
+**Exception (RFC-0128):** the quarterly capsule root `apps/hdri/capsules/<deviceId>/<period>/<capsuleId>/` is a shared quarter-level artifact; stage apps write seals/targets/CAS and their declared output snapshots into it via `sealStage` only. Direct writes outside `sealStage` remain forbidden.
 
 ## Database naming rule (hard rule)
 
@@ -257,11 +245,7 @@ Every factory app's `run-app.ts` calls `evaluateProgramGate()` from `@syrokomsky
 
 ## Crash-safe execution (RFC-0101)
 
-The execution store now exposes durable APIs, but a single end-to-end authority
-across attempt allocation, CAS, event journal and selected projection still needs
-production crash/race verification. Orderly close/reopen and sequential calls on
-one database connection do not prove process-crash recovery or concurrent fencing.
-The invariants below are requirements, not claims that all callers meet them.
+The execution store now exposes durable APIs, but a single end-to-end authority across attempt allocation, CAS, event journal and selected projection still needs production crash/race verification. Orderly close/reopen and sequential calls on one database connection do not prove process-crash recovery or concurrent fencing. The invariants below are requirements, not claims that all callers meet them.
 
 ### Execution-state invariants
 

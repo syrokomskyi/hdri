@@ -1,0 +1,19 @@
+schema: hdri-publication-intent@1
+period: 2026-q3
+capsuleId: 019ff219-69fe-7025-943c-dae2a8c37801
+requestedProducts:
+  - cross-section
+excludedProducts:
+  - availability
+  - panel
+  - post-stratified
+claims:
+  - Quarterly HDRI maturity snapshot of currently reachable websites with collected profiles.
+  - Existing automatic regional and industry classifications; classification accuracy is not validated.
+nonClaims:
+  - Independently validated industry classification accuracy.
+  - Business closure.
+  - Population representativeness.
+  - Attrition or changes relative to an earlier quarter.
+authority: Operator approved unified Q3 HDRI, profile exclusions and automatic classification without a validation sample on 2026-09-28.
+releaseAuthority: none; all applicable scientific, privacy and custody gates remain required

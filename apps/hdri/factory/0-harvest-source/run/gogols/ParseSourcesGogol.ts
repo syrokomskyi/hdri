@@ -36,6 +36,7 @@
   <item>Add empty-quarter fail-fast guard (RFC-0068): check site count before materializeLedgerProjection.</item>
   <item>RFC-0102: per-file SourceFileReceipt with content-hash + parser-identity resume logic.</item>
   <item>Verify each batch's literal source-folder yield before signing its segment; historical assertions cannot satisfy another batch's yield.</item>
+  <item>Inherit prior-capsule batches through sealed-closure verification (verifyInheritedSourceBatch) instead of re-parsing raw inputs or resealing segments.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -63,7 +64,9 @@ import {
   rebuildLedgerHead,
   sealSourceBatch,
   sourceOccurrenceId,
+  verifyInheritedSourceBatch,
   type HdriPeriod,
+  type InheritedSeedRow,
   type ProvisionalAssetId,
   type SourceBatchManifest,
 } from "@syrokomskyi/factory-core";
@@ -150,8 +153,84 @@ export class ParseSourcesGogol extends Gogol {
     let pagesProcessed = 0;
 
     const limit = pLimit(concurrency);
+    const ledgerDir = path.join(outputRootDir, "data", "source-ledger");
+
+    const priorBatchPeriods = new Map<string, HdriPeriod>();
+    for (const ref of ctx.state.discovery?.priorCapsuleSegments ?? []) {
+      for (const priorBatchId of ref.batchIds) priorBatchPeriods.set(priorBatchId, ref.period);
+    }
 
     for (const batchName of batchNames) {
+      const priorPeriod = priorBatchPeriods.get(batchName);
+      if (priorPeriod !== undefined) {
+        // Prior-capsule batch: inherit the sealed closure. Re-verify the signed
+        // frame, segment signatures, ledger head and occurrence projection, then
+        // prove the retained catalog seeds correspond exactly to the sealed
+        // occurrences. Never re-parse prior raw inputs or reseal the segment.
+        console.log(
+          `[parse-sources] Inheriting sealed batch: ${batchName} (period ${priorPeriod}, no raw re-parse)`,
+        );
+        const inherited = await verifyInheritedSourceBatch({
+          ledgerDir,
+          batchId: batchName,
+          period: priorPeriod,
+          verificationKeys,
+          seeds: db
+            .prepare(
+              `SELECT s.domain AS domain, seed.source_path AS sourcePath, seed.source_item_key AS sourceItemKey
+               FROM site_source_seeds seed JOIN sites s ON s.id = seed.site_id
+               WHERE seed.source_path LIKE ?`,
+            )
+            .iterate(`${batchName}/%`) as unknown as Iterable<InheritedSeedRow>,
+          deriveAssetId,
+        });
+        console.log(
+          `  Verified ${inherited.occurrenceCount} inherited occurrence(s) against sealed ${priorPeriod} projection`,
+        );
+        const statRows = db
+          .prepare(
+            `SELECT source_path AS sourcePath, items_parsed AS itemsParsed,
+                    items_registered AS itemsRegistered, items_skipped AS itemsSkipped,
+                    no_url_warnings AS noUrlWarnings, no_url AS noUrl,
+                    bad_url AS badUrl, stop_domain AS stopDomain
+             FROM source_file_stats WHERE source_path LIKE ? ORDER BY source_path`,
+          )
+          .all(`${batchName}/%`) as {
+          sourcePath: string;
+          itemsParsed: number;
+          itemsRegistered: number;
+          itemsSkipped: number;
+          noUrlWarnings: number;
+          noUrl: number;
+          badUrl: number;
+          stopDomain: number;
+        }[];
+        const inheritedReport: BatchReport = {
+          batchName,
+          sourceFiles: statRows.map((row) => ({
+            path: row.sourcePath,
+            type: path.posix.extname(row.sourcePath).replace(/^\./, ""),
+            itemsParsed: row.itemsParsed,
+            itemsRegistered: row.itemsRegistered,
+            itemsSkipped: row.itemsSkipped,
+            noUrl: row.noUrl,
+            badUrl: row.badUrl,
+            stopDomain: row.stopDomain,
+          })),
+          noUrlWarnings: statRows.reduce((sum, row) => sum + row.noUrlWarnings, 0),
+          skipSummary: {
+            noUrl: statRows.reduce((sum, row) => sum + row.noUrl, 0),
+            badUrl: statRows.reduce((sum, row) => sum + row.badUrl, 0),
+            stopDomain: statRows.reduce((sum, row) => sum + row.stopDomain, 0),
+          },
+          warnings: [],
+          inherited: true,
+        };
+        allBatchReports.push(inheritedReport);
+        await writeBatchCsvArtifacts(ctx, db, outDir, batchName, inheritedReport);
+        continue;
+      }
+
       console.log(`[parse-sources] Processing batch: ${batchName} (concurrency: ${concurrency})`);
 
       const allSourceFiles = await listBatchSourceFiles(batchName, brief);
@@ -164,7 +243,6 @@ export class ParseSourcesGogol extends Gogol {
         allSourceFiles,
         currentPeriod,
       );
-      const ledgerDir = path.join(outputRootDir, "data", "source-ledger");
       await checkSourceBatch(ledgerDir, sourceManifest, verificationKeys);
 
       // Pre-filter: exclude files already processed with matching content-hash + parser-identity.
@@ -431,86 +509,7 @@ export class ParseSourcesGogol extends Gogol {
         );
       }
 
-      // Per-batch CSVs
-      await ctx.writeTextFile(
-        path.join(batchOutDir, "sources.csv"),
-        csvStringify([
-          [
-            "file",
-            "type",
-            "items_parsed",
-            "items_registered",
-            "items_skipped",
-            "no_url",
-            "bad_url",
-            "stop_domain",
-          ],
-          ...batchReport.sourceFiles.map((f) => [
-            f.path,
-            f.type,
-            f.itemsParsed,
-            f.itemsRegistered,
-            f.itemsSkipped,
-            f.noUrl,
-            f.badUrl,
-            f.stopDomain,
-          ]),
-        ]),
-      );
-
-      // 2. sites-registered.csv (query from DB to save memory)
-      const registeredRows = Array.from(
-        db
-          .prepare(
-            `
-          SELECT s.domain, sss.business_name, sss.city, sss.category, sss.website_url, sss.source_path
-          FROM site_source_seeds sss
-          JOIN sites s ON sss.site_id = s.id
-          WHERE sss.source_path LIKE ?
-        `,
-          )
-          .iterate(`${batchName}/%`) as any,
-      ).map((r: any) => [
-        r.domain,
-        r.business_name,
-        r.city,
-        r.category,
-        r.website_url,
-        r.source_path,
-      ]);
-      await ctx.writeTextFile(
-        path.join(batchOutDir, "sites-registered.csv"),
-        csvStringify([
-          ["domain", "business_name", "city", "category", "website_url", "source_file"],
-          ...registeredRows,
-        ]),
-      );
-
-      // 3. seeds-skipped.csv (query from DB to save memory)
-      const skippedRows = Array.from(
-        db
-          .prepare(
-            `
-          SELECT source_path, item_key, business_name, raw_url, reason
-          FROM skipped_source_seeds WHERE source_path LIKE ?
-        `,
-          )
-          .iterate(`${batchName}/%`) as any,
-      ).map((s: any) => [s.source_path, s.item_key, s.business_name, s.raw_url, s.reason]);
-      await ctx.writeTextFile(
-        path.join(batchOutDir, "seeds-skipped.csv"),
-        csvStringify([
-          ["source_file", "item_key", "business_name", "raw_url", "reason"],
-          ...skippedRows,
-        ]),
-      );
-
-      if (batchReport.warnings.length > 0) {
-        await ctx.writeTextFile(
-          path.join(batchOutDir, "warnings.txt"),
-          batchReport.warnings.join("\n"),
-        );
-      }
+      await writeBatchCsvArtifacts(ctx, db, outDir, batchName, batchReport);
     }
 
     if (maxPages < 0) {
@@ -544,6 +543,7 @@ export class ParseSourcesGogol extends Gogol {
           totalSitesRegistered: totalRegistered,
           batches: allBatchReports.map((b) => ({
             batchName: b.batchName,
+            inherited: b.inherited === true,
             sourceFilesCount: b.sourceFiles.length,
             sitesRegistered: b.sourceFiles.reduce((s, f) => s + f.itemsRegistered, 0),
             noUrlInSource: b.noUrlWarnings,
@@ -574,6 +574,88 @@ export class ParseSourcesGogol extends Gogol {
     );
   }
 }
+
+const writeBatchCsvArtifacts = async (
+  ctx: PipelineContext,
+  db: ReturnType<typeof openCoreSqlite>,
+  outDir: string,
+  batchName: string,
+  batchReport: BatchReport,
+): Promise<void> => {
+  const batchOutDir = path.join(outDir, "batches", batchName);
+  await ctx.writeTextFile(
+    path.join(batchOutDir, "sources.csv"),
+    csvStringify([
+      [
+        "file",
+        "type",
+        "items_parsed",
+        "items_registered",
+        "items_skipped",
+        "no_url",
+        "bad_url",
+        "stop_domain",
+      ],
+      ...batchReport.sourceFiles.map((f) => [
+        f.path,
+        f.type,
+        f.itemsParsed,
+        f.itemsRegistered,
+        f.itemsSkipped,
+        f.noUrl,
+        f.badUrl,
+        f.stopDomain,
+      ]),
+    ]),
+  );
+
+  // 2. sites-registered.csv (query from DB to save memory)
+  const registeredRows = Array.from(
+    db
+      .prepare(
+        `
+      SELECT s.domain, sss.business_name, sss.city, sss.category, sss.website_url, sss.source_path
+      FROM site_source_seeds sss
+      JOIN sites s ON sss.site_id = s.id
+      WHERE sss.source_path LIKE ?
+    `,
+      )
+      .iterate(`${batchName}/%`) as any,
+  ).map((r: any) => [r.domain, r.business_name, r.city, r.category, r.website_url, r.source_path]);
+  await ctx.writeTextFile(
+    path.join(batchOutDir, "sites-registered.csv"),
+    csvStringify([
+      ["domain", "business_name", "city", "category", "website_url", "source_file"],
+      ...registeredRows,
+    ]),
+  );
+
+  // 3. seeds-skipped.csv (query from DB to save memory)
+  const skippedRows = Array.from(
+    db
+      .prepare(
+        `
+      SELECT source_path, item_key, business_name, raw_url, reason
+      FROM skipped_source_seeds WHERE source_path LIKE ?
+    `,
+      )
+      .iterate(`${batchName}/%`) as any,
+  ).map((s: any) => [s.source_path, s.item_key, s.business_name, s.raw_url, s.reason]);
+  await ctx.writeTextFile(
+    path.join(batchOutDir, "seeds-skipped.csv"),
+    csvStringify([
+      ["source_file", "item_key", "business_name", "raw_url", "reason"],
+      ...skippedRows,
+    ]),
+  );
+
+  if (batchReport.warnings.length > 0) {
+    await ctx.writeTextFile(
+      path.join(batchOutDir, "warnings.txt"),
+      batchReport.warnings.join("\n"),
+    );
+  }
+};
 
 const hashFile = async (filePath: string): Promise<{ sha256: string; bytes: number }> => {
   const hash = createHash("sha256");

@@ -6,6 +6,7 @@ registryDbPath: "../1-register-businesses/.output/${DEVICE_ID}/data/db/registry_
 concurrency: 30
 timeoutMs: 6000
 retryCount: 1
+# FULL RUN: all domains for the Q3 2026 snapshot.
 maxDomains: -1
 skipGogols: []
 instrumentPlan:

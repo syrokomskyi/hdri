@@ -1,0 +1,21 @@
+{
+  "period": "2026-q3",
+  "observatoryRunId": "b2c497fe-67df-4619-bd98-42fc96b34e52",
+  "factoryRunId": "019ff219-69fe-7025-943c-dae2a8c37801",
+  "bundleHash": "d5caa01460895b865a769cfb202a0ad004a96b002adc635e08e916862de0a85a",
+  "codebookVersion": "1.3.0",
+  "ontologyVersion": "2.0.0",
+  "generatedAt": "2026-09-29T10:04:13.710Z",
+  "publishedAt": "2026-09-29T10:04:13.710Z",
+  "kAnonymityMin": 12,
+  "suppressionPolicy": {
+    "kind": "k_plus_suppression_diffs",
+    "kAnonymityMin": 12,
+    "minAbsoluteDelta": 3,
+    "minRelativeDelta": 0.03
+  },
+  "sampleSize": 101321,
+  "totalPublishedSlices": 77,
+  "sourceDb": "derived-release:b2c497fe-67df-4619-bd98-42fc96b34e52",
+  "releaseEnvelopeSha256": "3ea7214d902a60ad90892c3494c86be8dfc997f4053e5ffc14ee5cfe815396ea"
+}

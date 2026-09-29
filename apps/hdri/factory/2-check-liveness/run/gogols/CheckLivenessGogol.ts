@@ -41,6 +41,7 @@ import {
   quarterCapsuleDir,
   quarterExecutionEventsDir,
   readExecutionCasObject,
+  snapshotCapsuleDbArtifact,
   withLeaseHeartbeat,
   workKeyId,
   writeExecutionCasObject,
@@ -52,6 +53,7 @@ import { logProgress } from "@syrokomskyi/utils";
 import { Gogol } from "../pipeline/Gogol.js";
 import type { PipelineContext } from "../pipeline/types.js";
 import { openLivenessSqlite, openReadOnlySqlite } from "../db/connection.js";
+import { getLivenessDbPath } from "../paths.js";
 import { factoryRootDir } from "../config.js";
 
 // ---------------------------------------------------------------------------
@@ -292,11 +294,20 @@ export class CheckLivenessGogol extends Gogol {
     await Promise.all(Array.from({ length: Math.min(brief.concurrency, sites.length) }, worker));
 
     if (brief.maxDomains < 0) {
+      // RFC-0128: the liveness DB is final at seal-time — snapshot it into the
+      // capsule and declare it as this stage's output artifact.
+      const livenessDbArtifact = await snapshotCapsuleDbArtifact(
+        capsuleDir,
+        "liveness",
+        brief.deviceId,
+        getLivenessDbPath(period),
+      );
       await journal.sealStage({
         stageId: "liveness",
         keys: stageTargetSites.map(keyFor),
         eventId: mintAssetId(),
         now: new Date().toISOString(),
+        outputArtifacts: [livenessDbArtifact],
       });
     }
 

@@ -87,6 +87,20 @@ it("keeps the signed timestamp so the assembled attestation verifies cryptograph
   ).toBe(true);
 });
 
+it("local/R2 attestation v2 cryptographically binds the operator policy without changing v1", () => {
+  const envelope = makeEnvelope();
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+  const unsigned = createPublicationAttestation(envelope, ["a".repeat(64)], "fixture-key", "", "2026-09-26T18:00:00Z", "f".repeat(64));
+  const { signature: ignored, ...payload } = unsigned;
+  const signature = sign(null, createHash("sha256").update(canonicalize(payload)).digest(), privateKey).toString("base64url");
+  const attestation = createPublicationAttestation(envelope, ["a".repeat(64)], "fixture-key", signature, payload.attestedAt, "f".repeat(64));
+  const { signature: persisted, ...actual } = attestation;
+  expect(actual.schema).toBe("hdri-publication-attestation@2");
+  expect(verify(null, createHash("sha256").update(canonicalize(actual)).digest(), publicKey, Buffer.from(persisted, "base64url"))).toBe(true);
+  expect(verify(null, createHash("sha256").update(canonicalize({ ...actual, custodyPolicySha256: "0".repeat(64) })).digest(), publicKey, Buffer.from(persisted, "base64url"))).toBe(false);
+  expect(() => createPublicationAttestation(envelope, [], "fixture-key", "", payload.attestedAt, "")).toThrow("POLICY_DIGEST_INVALID");
+});
+
 const makeReceipt = (
   replicaId: string,
   failureDomain: string,

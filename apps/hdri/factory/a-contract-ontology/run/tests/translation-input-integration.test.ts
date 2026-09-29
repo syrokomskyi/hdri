@@ -15,6 +15,7 @@ import path from "node:path";
 import Database from "better-sqlite3";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  sealStagesFor,
   validateManifestSet,
   type CapsuleArtifact,
   type InstrumentPlanEntry,
@@ -42,13 +43,6 @@ const INSTRUMENT_PLAN: InstrumentPlanEntry[] = [
   { instrument: "lighthouse", state: "disabled", reason: "Not configured" },
 ];
 
-const makeArtifact = (
-  stage: string,
-  uri: string,
-  sha256: string,
-  bytes: number,
-): CapsuleArtifact => ({ stage, uri, sha256, bytes });
-
 function makeSealPayload(stageId: string, selectedResultSetSha256: string): string {
   return JSON.stringify(
     {
@@ -74,44 +68,60 @@ async function writeDeviceManifest(
   sealDigests: Record<string, string>,
 ): Promise<string> {
   const deviceDir = path.join(root, `device-${deviceId}`);
-  const sealsDir = path.join(deviceDir, "staging", "stage-seals");
-  const targetsDir = path.join(deviceDir, "staging", "targets");
-  await fs.mkdir(sealsDir, { recursive: true });
-  await fs.mkdir(targetsDir, { recursive: true });
 
+  // RFC-0128: every manifest entry must point at a real file whose bytes match
+  // the declared sha256 — write each artifact and record its real digest.
   const artifacts: CapsuleArtifact[] = [];
+  const put = async (
+    stage: CapsuleArtifact["stage"],
+    uri: string,
+    content: string,
+  ): Promise<void> => {
+    const target = path.join(deviceDir, uri);
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await fs.writeFile(target, content, "utf-8");
+    const stat = await fs.stat(target);
+    artifacts.push({
+      stage,
+      uri,
+      sha256: crypto.createHash("sha256").update(content).digest("hex"),
+      bytes: stat.size,
+    });
+  };
+
   for (const entry of INSTRUMENT_PLAN) {
     if (entry.state !== "required") continue;
-    const stageId = entry.instrument;
-    const sealSha = crypto
-      .createHash("sha256")
-      .update(makeSealPayload(stageId, sealDigests[stageId] ?? "x".repeat(64)))
-      .digest("hex");
-    const targetSha = "t".repeat(64);
-    await fs.writeFile(
-      path.join(sealsDir, `${stageId}.json`),
-      makeSealPayload(stageId, sealDigests[stageId] ?? "x".repeat(64)),
-      "utf-8",
+    // Seal files live under the seal stage ids — profile seals as
+    // homepage-capture + detected-page-capture.
+    for (const stageId of sealStagesFor(entry.instrument)) {
+      await put(
+        "qc",
+        `staging/stage-seals/${stageId}.json`,
+        makeSealPayload(stageId, sealDigests[stageId] ?? "x".repeat(64)),
+      );
+      await put(
+        "qc",
+        `staging/targets/${stageId}.json`,
+        JSON.stringify({
+          schemaVersion: 1,
+          stageId,
+          targetSetSha256: "t".repeat(64),
+          targetCount: 1,
+          workKeyIds: ["key-1"],
+        }),
+      );
+    }
+    await put(
+      entry.instrument,
+      `${entry.instrument}/${entry.instrument}-2026-q3.db`,
+      `${entry.instrument} db`,
     );
-    await fs.writeFile(
-      path.join(targetsDir, `${stageId}.json`),
-      JSON.stringify({
-        schemaVersion: 1,
-        stageId,
-        targetSetSha256: targetSha,
-        targetCount: 1,
-        workKeyIds: ["key-1"],
-      }),
-      "utf-8",
-    );
-    artifacts.push(makeArtifact("qc", `staging/stage-seals/${stageId}.json`, sealSha, 100));
-    artifacts.push(makeArtifact("qc", `staging/targets/${stageId}.json`, targetSha, 100));
-    artifacts.push(makeArtifact(stageId, `${stageId}/${stageId}-2026-q3.db`, "d".repeat(64), 500));
   }
 
   const capsule: QuarterCapsule = {
     period: PERIOD,
     capsuleId: CAPSULE_ID,
+    deviceId,
     state: "staging",
     instrumentPlan: INSTRUMENT_PLAN,
     artifacts,
@@ -154,18 +164,21 @@ describe("RFC-0114 AC-7: colliding local IDs, snapshot mutation rejection", () =
     const sealDigest = "a".repeat(64);
     const manifest1 = await writeDeviceManifest(root, "device-aaa", {
       liveness: sealDigest,
-      profile: sealDigest,
+      "homepage-capture": sealDigest,
+      "detected-page-capture": sealDigest,
     });
     const manifest2 = await writeDeviceManifest(root, "device-bbb", {
       liveness: sealDigest,
-      profile: sealDigest,
+      "homepage-capture": sealDigest,
+      "detected-page-capture": sealDigest,
     });
 
     const emptyKeys = new Map();
     const result = await validateManifestSet([manifest1, manifest2], emptyKeys, PERIOD, CAPSULE_ID);
     expect(result.deviceIds).toHaveLength(2);
     expect(result.selectedResultSetSha256.get("liveness")).toBe(sealDigest);
-    expect(result.selectedResultSetSha256.get("profile")).toBe(sealDigest);
+    expect(result.selectedResultSetSha256.get("homepage-capture")).toBe(sealDigest);
+    expect(result.selectedResultSetSha256.get("detected-page-capture")).toBe(sealDigest);
   });
 
   it("mutated admitted snapshot is rejected — digest mismatch", async () => {
@@ -189,51 +202,50 @@ describe("RFC-0114 AC-7: colliding local IDs, snapshot mutation rejection", () =
     await fs.writeFile(sealFile, mutatedSeal, "utf-8");
 
     const emptyKeys = new Map();
-    // The manifest still references the original seal SHA, but the file content has changed.
-    // validateManifestSet reads the file to extract selectedResultSetSha256 — the SHA in the
-    // manifest artifact list won't match the file on disk, but validateManifestSet doesn't
-    // re-hash the file. It reads selectedResultSetSha256 from the JSON payload.
-    // The key insight: the selectedResultSetSha256 from the mutated file differs from the
-    // original, proving that mutation is detectable downstream.
-    const result = await validateManifestSet([manifest1], emptyKeys, PERIOD, CAPSULE_ID);
-    expect(result.selectedResultSetSha256.get("liveness")).toBe("z".repeat(64));
-    expect(result.selectedResultSetSha256.get("liveness")).not.toBe(originalDigest);
+    // RFC-0128: manifest entries are hash-pinned — the mutated seal file fails
+    // closure verification at admission, before any payload is read.
+    await expect(validateManifestSet([manifest1], emptyKeys, PERIOD, CAPSULE_ID)).rejects.toThrow(
+      /closure verification/,
+    );
+    expect(originalDigest).not.toBe("z".repeat(64));
   });
 
   it("altering selected value without changing target membership requires digest/closure rejection", async () => {
     const root = await mkRoot();
 
-    // Device 1: profile stage with selectedResultSetSha256 = "a"*64
+    // Device 1: profile seal stages with selectedResultSetSha256 = "a"*64
     const digestA = "a".repeat(64);
     const manifest1 = await writeDeviceManifest(root, "device-aaa", {
       liveness: digestA,
-      profile: digestA,
+      "homepage-capture": digestA,
+      "detected-page-capture": digestA,
     });
 
     // Device 2: same target set, but different selectedResultSetSha256
     const digestB = "b".repeat(64);
     const manifest2 = await writeDeviceManifest(root, "device-bbb", {
       liveness: digestA,
-      profile: digestB,
+      "homepage-capture": digestB,
+      "detected-page-capture": digestB,
     });
 
     const emptyKeys = new Map();
-    // Both devices have the same target set SHA for profile, but different selected result digests.
-    // validateManifestSet processes them sequentially — the last one wins for the map entry.
+    // Both devices have identical target files for the profile seal stages, but
+    // different selected result digests. validateManifestSet processes them
+    // sequentially — the last one wins for the map entry.
     // A proper closure check would detect that two devices disagree on the selected result set.
     const result = await validateManifestSet([manifest1, manifest2], emptyKeys, PERIOD, CAPSULE_ID);
 
-    // The target set SHAs are the same (both "t"*64)
-    expect(result.targetSetSha256.get("profile")).toBe("t".repeat(64));
+    // The target set SHAs are identical across devices (same file bytes).
+    expect(result.targetSetSha256.get("homepage-capture")).toMatch(/^[0-9a-f]{64}$/);
 
     // But the selected result set digests differ — the map will have the last device's value
     // A closure reconciliation step would detect this mismatch and reject
-    const profileDigestA = digestA;
-    const profileDigestB = digestB;
-    expect(profileDigestA).not.toBe(profileDigestB);
+    expect(digestA).not.toBe(digestB);
 
     // The result map has whichever was processed last (device-bbb)
-    expect(result.selectedResultSetSha256.get("profile")).toBe(digestB);
+    expect(result.selectedResultSetSha256.get("homepage-capture")).toBe(digestB);
+    expect(result.selectedResultSetSha256.get("detected-page-capture")).toBe(digestB);
   });
 });
 

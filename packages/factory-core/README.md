@@ -15,6 +15,12 @@ Shared factory utilities for HDRI quarterly collection work.
 
 ## Historical verification
 
+An explicitly signed `releaseProfile: "availability-only@1"` supports aggregate-only
+availability releases without constructing a separate derived identity registry or
+Parquet vault. It retains raw frame/emit evidence, methodology, required instrument
+seals and complete archival verification. The default full contract is unchanged.
+See the [approved scope and remaining gates](../../docs/reviews/code/apps-hdri-observatory/decision-2026-09-28-availability-release-profile.md).
+
 Historical results retain their period and methodology; a new quarter does not make them obsolete. Prior-source verification rejects ambiguous multiple frames and legacy bypass flags. Use stable, writer-excluded retained roots: file checks are not a filesystem snapshot. See [verification limits and next steps](../../docs/reviews/code/packages-factory-core/review-2026-09-15-21-15-packages-factory-core.md).
 
 ## RFC markers

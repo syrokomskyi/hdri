@@ -1,0 +1,13 @@
+{
+  "schema": "hdri-quarter-ledger-index@1",
+  "period": "2026-q3",
+  "headRevision": 0,
+  "headDigest": "rev-0-9f81a1bd",
+  "revisions": [
+    {
+      "revision": 0,
+      "digest": "rev-0-9f81a1bd",
+      "createdAt": "2026-09-22T07:42:03.834Z"
+    }
+  ]
+}

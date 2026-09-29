@@ -1,0 +1,29 @@
+{
+  "schema": "hdri-public-manifest@1",
+  "period": "2026-q3",
+  "capsuleId": "019ff219-69fe-7025-943c-dae2a8c37801",
+  "products": [
+    {
+      "schema": "hdri-public-product@1",
+      "product": "availability",
+      "format": "json",
+      "contentSha256": "b4deaece945fcaaffdcef306004df636dfd596505bc88980aafa7e0a1d6a60cc",
+      "bytes": 731,
+      "policySha256": "e7e87a3f6d502ccc2bde8546997080fc50934ca259c495cc799a34c5b3fc2387",
+      "schemaId": "hdri-public-availability@2",
+      "sourceAggregateSha256": "95bd243aadbc47687c3378639fe6f95155ae9aab881161899d98b1736a65446e"
+    },
+    {
+      "schema": "hdri-public-product@1",
+      "product": "availability",
+      "format": "csv",
+      "contentSha256": "99d14d6ce038d5b49e268da18651e6673ca7e804c5d26d3449d16022111a4bfe",
+      "bytes": 136,
+      "policySha256": "e7e87a3f6d502ccc2bde8546997080fc50934ca259c495cc799a34c5b3fc2387",
+      "schemaId": "hdri-public-availability@2",
+      "sourceAggregateSha256": "95bd243aadbc47687c3378639fe6f95155ae9aab881161899d98b1736a65446e"
+    }
+  ],
+  "policyDigest": "e7e87a3f6d502ccc2bde8546997080fc50934ca259c495cc799a34c5b3fc2387",
+  "kAnonymityMin": 12
+}

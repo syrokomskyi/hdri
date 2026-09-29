@@ -1,6 +1,17 @@
 # Changelog
 
 All notable changes to the `.` project are documented here.
+## 2026-09-24 — 2026-09-30
+
+### Added
+- Introduce a check interval (Janitor) to prevent resource bottlenecks and pool deadlocks in the worker pool.
+
+### Changed
+- Treat WorkerError as a target failure and assign affected workers directly to the idle pool instead of counting them as crashes.
+
+### Fixed
+- Capture the end of worker standard output (stderr) for diagnosing fatal errors.
+
 ## 2026-09-17 — 2026-09-23
 
 ### Added

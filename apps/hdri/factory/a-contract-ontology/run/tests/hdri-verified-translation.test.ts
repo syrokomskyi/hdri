@@ -22,55 +22,58 @@ const INSTRUMENT_PLAN: InstrumentPlanEntry[] = [
   { instrument: "lighthouse", state: "disabled", reason: "Not configured for Q3 2026" },
 ];
 
-const makeArtifact = (
-  stage: string,
-  uri: string,
-  sha256: string,
-  bytes: number,
-): CapsuleArtifact => ({ stage, uri, sha256, bytes });
-
-const STAGING_ARTIFACTS: CapsuleArtifact[] = [
-  makeArtifact("qc", "staging/targets/liveness.json", "a".repeat(64), 100),
-  makeArtifact("qc", "staging/stage-seals/liveness.json", "b".repeat(64), 100),
-  makeArtifact("qc", "staging/targets/profile.json", "c".repeat(64), 100),
-  makeArtifact("qc", "staging/stage-seals/profile.json", "d".repeat(64), 100),
-  makeArtifact("qc", "staging/targets/axe.json", "e".repeat(64), 100),
-  makeArtifact("qc", "staging/stage-seals/axe.json", "f".repeat(64), 100),
-  makeArtifact("liveness", "liveness/liveness-2026-q3.db", "1".repeat(64), 500),
-  makeArtifact("profile", "profile/pages-2026-q3.db", "2".repeat(64), 500),
-  makeArtifact("axe", "axe/axe-2026-q3.db", "3".repeat(64), 500),
-  makeArtifact("frame", "frame/frame-2026-q3.json", "4".repeat(64), 200),
-  makeArtifact("emit", "emit/emit-2026-q3.json", "5".repeat(64), 200),
-  makeArtifact("identity", "identity/identity-2026-q3.json", "6".repeat(64), 200),
-  makeArtifact("vault", "vault/vault-2026-q3.json", "7".repeat(64), 200),
-  makeArtifact("methodology", "methodology/methodology-2026-q3.json", "8".repeat(64), 200),
-  makeArtifact("publication", "publication/publication-2026-q3.json", "9".repeat(64), 200),
-];
-
-const makeStagingCapsule = (deviceId: string): QuarterCapsule => ({
-  period: PERIOD,
-  capsuleId: CAPSULE_ID,
-  state: "staging",
-  instrumentPlan: INSTRUMENT_PLAN,
-  artifacts: STAGING_ARTIFACTS,
-});
+// RFC-0128: seal files live under the seal stage ids — profile is delivered by
+// homepage-capture + detected-page-capture — and every manifest entry must
+// point at a real file whose bytes match the declared sha256.
+const SEAL_STAGES = ["liveness", "homepage-capture", "detected-page-capture", "axe"] as const;
 
 const writeManifest = async (dir: string, deviceId: string): Promise<string> => {
-  const capsule = makeStagingCapsule(deviceId);
   const deviceDir = path.join(dir, `device-${deviceId}`);
-  const manifestPath = path.join(deviceDir, "capsule-staging.json");
-  await fs.mkdir(deviceDir, { recursive: true });
-  // RFC-0114 B5: validateManifestSet reads stage seal files from capsule dir
-  const sealsDir = path.join(deviceDir, "staging", "stage-seals");
-  await fs.mkdir(sealsDir, { recursive: true });
-  for (const entry of INSTRUMENT_PLAN) {
-    if (entry.state !== "required") continue;
-    const sealPath = path.join(sealsDir, `${entry.instrument}.json`);
-    const sealContent = {
-      payload: { selectedResultSetSha256: "s".repeat(64) },
-    };
-    await fs.writeFile(sealPath, JSON.stringify(sealContent, null, 2), "utf-8");
+  const artifacts: CapsuleArtifact[] = [];
+  const put = async (
+    stage: CapsuleArtifact["stage"],
+    uri: string,
+    content: string,
+  ): Promise<void> => {
+    const target = path.join(deviceDir, uri);
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await fs.writeFile(target, content, "utf-8");
+    const stat = await fs.stat(target);
+    artifacts.push({
+      stage,
+      uri,
+      sha256: createHash("sha256").update(content).digest("hex"),
+      bytes: stat.size,
+    });
+  };
+
+  for (const stageId of SEAL_STAGES) {
+    await put(
+      "qc",
+      `staging/stage-seals/${stageId}.json`,
+      JSON.stringify({ payload: { selectedResultSetSha256: "s".repeat(64) } }, null, 2),
+    );
+    await put("qc", `staging/targets/${stageId}.json`, JSON.stringify({ stageId }));
   }
+  await put("liveness", "liveness/liveness-2026-q3.db", "liveness db");
+  await put("profile", "profile/pages-2026-q3.db", "pages db");
+  await put("axe", "axe/axe-2026-q3.db", "axe db");
+  await put("frame", "frame/frame-2026-q3.json", "{}");
+  await put("emit", "emit/emit-2026-q3.json", "{}");
+  await put("identity", "identity/identity-2026-q3.json", "{}");
+  await put("vault", "vault/vault-2026-q3.json", "{}");
+  await put("methodology", "methodology/methodology-2026-q3.json", "{}");
+  await put("publication", "publication/publication-2026-q3.json", "{}");
+
+  const capsule: QuarterCapsule = {
+    period: PERIOD,
+    capsuleId: CAPSULE_ID,
+    deviceId,
+    state: "staging",
+    instrumentPlan: INSTRUMENT_PLAN,
+    artifacts,
+  };
+  const manifestPath = path.join(deviceDir, "capsule-staging.json");
   await fs.writeFile(manifestPath, JSON.stringify(capsule, null, 2), "utf-8");
   return manifestPath;
 };
@@ -133,8 +136,10 @@ describe("RFC-0106 acceptance", () => {
       const manifestPath = await writeManifest(root, "test-0001");
       const tamperedPath = path.join(root, "tampered.json");
       const raw = await fs.readFile(manifestPath, "utf-8");
-      const tampered = JSON.parse(raw) as QuarterCapsule;
-      tampered.period = "2026-q4";
+      const tampered = {
+        ...(JSON.parse(raw) as QuarterCapsule),
+        period: "2026-q4",
+      };
       await fs.writeFile(tamperedPath, JSON.stringify(tampered, null, 2), "utf-8");
 
       const emptyKeys = new Map();
@@ -155,7 +160,7 @@ describe("RFC-0106 acceptance", () => {
       const broken = {
         ...capsule,
         artifacts: capsule.artifacts.filter(
-          (a) => !(a.stage === "qc" && a.uri === "staging/stage-seals/profile.json"),
+          (a) => !(a.stage === "qc" && a.uri === "staging/stage-seals/homepage-capture.json"),
         ),
       };
       const brokenPath = path.join(root, "device-test-0001", "capsule-broken.json");
@@ -228,7 +233,8 @@ describe("RFC-0106 acceptance", () => {
       const result = await validateManifestSet([manifestPath], emptyKeys, PERIOD, CAPSULE_ID);
 
       expect(result.deviceIds).toHaveLength(1);
-      expect(result.stageSeals.size).toBe(3);
+      // liveness + homepage-capture + detected-page-capture + axe
+      expect(result.stageSeals.size).toBe(4);
     } finally {
       await fs.rm(root, { recursive: true, force: true });
     }

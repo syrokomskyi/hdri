@@ -6,6 +6,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-0115 B5: carry exact retained snapshot identity and authenticated execution selection into translation.</item>
   <item>Add DiscoveredCoreDb type and coreDbs field to PipelineState.</item>
   <item>Add discovered AXE DB tracking for audit observation translation.</item>
   <item>Replace local PipelineContextExtras with HdriFactoryContextExtras from @syrokomskyi/factory-core.</item>
@@ -18,7 +19,11 @@ import type {
   PipelineArtifacts as SharedPipelineArtifacts,
 } from "@warpgogol/pipeline-core";
 import type { NodePipelineContext } from "@warpgogol/pipeline-node/types";
-import type { HdriFactoryContextExtras } from "@syrokomskyi/factory-core";
+import type {
+  HdriFactoryContextExtras,
+  CapsuleArtifact,
+  VerifiedQuarterExecution,
+} from "@syrokomskyi/factory-core";
 import type { Observation, SignalOntology } from "@syrokomskyi/observatory-core";
 import type { EmitManifest } from "@syrokomskyi/observatory-emit";
 import type { Brief } from "../brief.js";
@@ -27,8 +32,15 @@ import type { Brief } from "../brief.js";
 // Pipeline state — serializable, carried across all gogols
 // ---------------------------------------------------------------------------
 
-export type DiscoveredPagesDb = {
+export type AdmittedSnapshot = {
   deviceId: string;
+  capsuleDir: string;
+  artifact: CapsuleArtifact;
+  execution: VerifiedQuarterExecution;
+  sourceOutputRoot: string;
+};
+
+export type DiscoveredPagesDb = AdmittedSnapshot & {
   pagesDbPath: string;
 };
 
@@ -37,15 +49,18 @@ export type IngestedObs = Observation & { _device_id: string };
 export type DiscoveredCoreDb = {
   deviceId: string;
   coreDbPath: string;
+  sourceSnapshotPath: string;
+  sourceManifestPath: string;
+  sourceManifestSha256: string;
+  snapshotSha256: string;
+  sourceLedgerRoot: string;
 };
 
-export type DiscoveredAxeDb = {
-  deviceId: string;
+export type DiscoveredAxeDb = AdmittedSnapshot & {
   axeDbPath: string;
 };
 
-export type DiscoveredLivenessDb = {
-  deviceId: string;
+export type DiscoveredLivenessDb = AdmittedSnapshot & {
   livenessDbPath: string;
 };
 

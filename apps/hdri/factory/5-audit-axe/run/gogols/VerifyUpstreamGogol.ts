@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Verifies upstream 4-audit-lighthouse closed snapshot manifests before consuming source data.</purpose>
+<purpose>Verifies upstream 2-check-liveness closed snapshot manifests before consuming source data.</purpose>
 <non-goals>
   <item>Do not modify upstream source snapshots.</item>
   <item>Do not mint new asset IDs.</item>
@@ -15,7 +15,7 @@
 // @ai-invariant: the complete closed snapshot manifest and bytes are verified before consumption; never reuse or expose the private key
 
 import { VerifyUpstreamStep } from "@syrokomskyi/pipeline-steps-hdri";
-import { toFactoryRelativePath, upstreamLighthouseOutputRoot } from "../config.js";
+import { toFactoryRelativePath, upstreamLivenessOutputRoot } from "../config.js";
 import type { PipelineContext } from "../pipeline/types.js";
 
 export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
@@ -24,11 +24,11 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
   override readonly guide = {
     title: "Verify upstream signatures",
     purpose:
-      "Check every upstream 4-audit-lighthouse closed snapshot manifest and snapshot before ingestion.",
+      "Check every upstream 2-check-liveness closed snapshot manifest and snapshot before ingestion.",
     decisionType: "auto" as const,
     inputs: [
-      "4-audit-lighthouse/.output/<deviceId>/*-sign-source/source-snapshot.sqlite",
-      "4-audit-lighthouse/.output/<deviceId>/*-sign-source/source-signature.json",
+      "2-check-liveness/.output/<deviceId>/*-sign-source/source-snapshot.sqlite",
+      "2-check-liveness/.output/<deviceId>/*-sign-source/source-signature.json",
       "<repo-root>/transparency/keys/*.pem",
     ],
     outputs: ["verify-upstream-summary.json", "verify-upstream-summary.md"],
@@ -44,11 +44,11 @@ export class VerifyUpstreamGogol extends VerifyUpstreamStep<PipelineContext> {
   }
 
   protected override getExpectedUpstreamAppId(): string {
-    return "4-audit-lighthouse";
+    return "2-check-liveness";
   }
 
   protected override getUpstreamRoot(_ctx: PipelineContext): string {
-    return upstreamLighthouseOutputRoot;
+    return upstreamLivenessOutputRoot;
   }
 
   protected override getYear(ctx: PipelineContext): number {

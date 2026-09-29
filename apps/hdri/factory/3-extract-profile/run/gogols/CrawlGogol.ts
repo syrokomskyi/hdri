@@ -374,11 +374,14 @@ export class CrawlGogol extends Gogol {
     );
 
     if (brief.maxDomains < 0) {
+      // RFC-0128: no output artifacts — pages-*.db is still mutable here;
+      // detected-page-capture snapshots it into the capsule at its own seal.
       await journal.sealStage({
         stageId: "homepage-capture",
         keys: stageTargetSites.map(keyFor),
         eventId: mintAssetId(),
         now: new Date().toISOString(),
+        outputArtifacts: [],
       });
     }
 

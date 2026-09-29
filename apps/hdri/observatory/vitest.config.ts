@@ -12,10 +12,12 @@
 */
 
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   resolve: {
     conditions: ["@syrokomskyi/source"],
+    alias: [{ find: /^@syrokomskyi\/factory-core$/, replacement: fileURLToPath(new URL("../../../packages/factory-core/src/index.ts", import.meta.url)) }],
   },
   test: {
     include: ["run/**/*.test.ts"],

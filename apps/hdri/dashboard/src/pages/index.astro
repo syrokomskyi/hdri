@@ -1,7 +1,7 @@
 ---
 /**
  * <MODULE_CONTRACT><purpose>Provide index behavior for the apps hdri dashboard src pages subsystem and its direct callers.</purpose><non-goals><item>Do not define unrelated cross-workspace policy or orchestration behavior.</item></non-goals></MODULE_CONTRACT>
- * <CHANGE_SUMMARY><item>Document the existing index module contract for Compass-aware maintenance.</item></CHANGE_SUMMARY>
+ * <CHANGE_SUMMARY><item>Unified index: render published quarters with period-specific labels and metadata; omit unavailable-site counters and absent maturity categories.</item><item>Display the documented Q2 threshold correction and explain limits of quarterly trends.</item></CHANGE_SUMMARY>
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Term from "../components/Term.astro";
@@ -11,12 +11,11 @@ import "../styles/index.css";
 import archive from "../assets/data/public/archive.json";
 import latest from "../assets/data/public/latest.json";
 import overviewTrends from "../assets/data/public/comparisons/overview-trends.json";
-import dimensionTrends from "../assets/data/public/comparisons/dimension-trends.json";
 import bundeslandTrends from "../assets/data/public/comparisons/bundesland-trends.json";
 import gewerkTrends from "../assets/data/public/comparisons/gewerk-trends.json";
 import destatisMapping from "../../../../../packages/business/business-core/src/gewerk/data/destatis-mapping.json";
 import matrixTrends from "../assets/data/public/comparisons/matrix-trends.json";
-import type { ComparisonPoint } from "../types";
+import type { ComparisonPoint, SliceItem } from "../types";
 import {
   score,
   count,
@@ -29,10 +28,13 @@ import {
 } from "../lib/format";
 import { site, ogImage, publisher } from "../lib/seo";
 import { loadCurrentPeriod } from "../data/dashboard-data";
+import { publicationThreshold, Q2_THRESHOLD_CORRECTION, quarterComparisonExplanation } from "../data/publication-policy";
 
 const pageTitle = "HDRI Dashboard Deutschland";
 
-const currentPeriod = latest.period;
+interface Props { period?: string }
+const currentPeriod = Astro.props.period ?? latest.period;
+if (!archive.some(entry => entry.period === currentPeriod)) throw new Error("Period is not in the published index archive");
 const {
   manifest: currentManifest,
   overview: currentOverview,
@@ -41,6 +43,7 @@ const {
   gewerke: currentGewerke,
   matrix: currentMatrix,
 } = loadCurrentPeriod(currentPeriod);
+const currentPublicationThreshold = publicationThreshold(currentManifest);
 
 const summary = currentOverview.summary;
 const confidence = currentOverview.confidence;
@@ -53,8 +56,7 @@ const archiveEntries = archive as Array<{
   manifestPath: string;
   overviewPath: string;
 }>;
-const overviewTrendItems = overviewTrends as ComparisonPoint[];
-const dimensionTrendItems = (dimensionTrends as ComparisonPoint[]).filter(
+const overviewTrendItems = (overviewTrends as ComparisonPoint[]).filter(
   (item) => item.period === currentPeriod,
 );
 const bundeslandTrendItems = (bundeslandTrends as ComparisonPoint[]).filter(
@@ -63,6 +65,10 @@ const bundeslandTrendItems = (bundeslandTrends as ComparisonPoint[]).filter(
 const gewerkTrendItems = (gewerkTrends as ComparisonPoint[]).filter(
   (item) => item.period === currentPeriod,
 );
+const snapshotRows = (items: SliceItem[], axis: "bundesland" | "gewerk"): ComparisonPoint[] =>
+  items.map(item => ({ ...item, axis, period: currentPeriod, key: item.id,
+    previousPeriod: null, currentStatus: "present", previousStatus: "absent",
+    deltaFromPrevious: null, suppressionReasons: [], reliability: "suppressed" }));
 const gewerkGroupLabel = new Map<string, string>(
   (
     destatisMapping as { target_system: { groups: Array<{ code: string; label: string }> } }
@@ -80,7 +86,7 @@ const schema = {
       "@type": "WebSite",
       name: pageTitle,
       description: pageDescription,
-      url: `${site}/`,
+      url: new URL(Astro.url.pathname, site).href,
       image: ogImage,
       inLanguage: "de-DE",
       datePublished: currentManifest.publishedAt,
@@ -130,7 +136,7 @@ const schema = {
       name: "HDRI Quartalsindex",
       description:
         "Öffentlicher, deskriptiver Quartalsindex der digitalen Reife deutscher Handwerkswebsites.",
-      url: `${site}/`,
+      url: new URL(Astro.url.pathname, site).href,
       image: ogImage,
       creator: publisher(),
       publisher: publisher(),
@@ -159,36 +165,12 @@ const schema = {
           value: currentOverview.sampleSize,
           unitText: "Websites",
         },
-        {
+        ...maturity.map(band => ({
           "@type": "PropertyValue",
-          name: "Reifegrad Kritisch",
-          value: maturity.find((m) => m.id === "kritisch")?.count ?? 0,
+          name: `Reifegrad ${band.label}`,
+          value: band.count,
           unitText: "Websites",
-        },
-        {
-          "@type": "PropertyValue",
-          name: "Reifegrad Basis",
-          value: maturity.find((m) => m.id === "basis")?.count ?? 0,
-          unitText: "Websites",
-        },
-        {
-          "@type": "PropertyValue",
-          name: "Reifegrad Aufbau",
-          value: maturity.find((m) => m.id === "aufbau")?.count ?? 0,
-          unitText: "Websites",
-        },
-        {
-          "@type": "PropertyValue",
-          name: "Reifegrad Fortgeschritten",
-          value: maturity.find((m) => m.id === "fortgeschritten")?.count ?? 0,
-          unitText: "Websites",
-        },
-        {
-          "@type": "PropertyValue",
-          name: "Reifegrad Vorbild",
-          value: maturity.find((m) => m.id === "vorbild")?.count ?? 0,
-          unitText: "Websites",
-        },
+        })),
       ],
     },
   ],
@@ -207,6 +189,13 @@ const schema = {
             (Handwerk Digital Reife Index). Es dient als transparente Orientierung für Regionen,
             Gewerke und methodische Entwicklungen — ohne Veröffentlichung einzelner Betriebe.
           </p>
+          <p>
+            <strong>Digitaler Reifeindex: {currentPeriod}.</strong> Die Kennzahlen rechts beziehen sich
+            ausschließlich auf diese veröffentlichte Indexperiode.
+          </p>
+          <nav class="hero-actions" aria-label="Berichtsquartal">
+            {archiveEntries.map(entry => <a class:list={["button", {"button-secondary": entry.period !== currentPeriod}]} href={`/quartale/${entry.period}`} aria-current={entry.period === currentPeriod ? "page" : undefined}>{entry.period}</a>)}
+          </nav>
           <div class="hero-actions">
             <a class="button" href="#dimensionen">Dimensionen ansehen</a>
             <a class="button button-secondary" href="/methodik">Methodik</a>
@@ -216,32 +205,33 @@ const schema = {
         </div>
         <div class="hero-aside">
           <article class="stat-card">
-            <small>P75 HDRI <Term id="p75" iconOnly /></small>
+            <small>P75 HDRI · {currentPeriod} <Term id="p75" iconOnly /></small>
             <strong>{score(summary.p75)}</strong>
             <span class="caption"
               >Interquartilsbereich {axisRange(summary)} <Term id="iqr" iconOnly /></span
             >
           </article>
           <article class="stat-card">
-            <small>Beobachtete Websites</small>
+            <small>Websites im Reifeindex · {currentPeriod}</small>
             <strong>{count(currentOverview.sampleSize)}</strong>
-            <span class="caption">nur veröffentlichungsfähige Auswertung</span>
+            <span class="caption">Stichprobe dieser Indexperiode, nicht der Umfang aller Erhebungen</span>
           </article>
           <article class="stat-card">
-            <small>Berichtsperiode</small>
+            <small>Berichtsperiode des Reifeindex</small>
             <strong>{currentManifest.period}</strong>
             <span class="caption"
               ><a href="/codebook">Codebook {currentManifest.codebookVersion}</a></span
             >
           </article>
           <article class="stat-card">
-            <small>Vertrauensniveau der Signale <Term id="konfidenz" iconOnly /></small>
+            <small>Scoring-Konfidenz · {currentPeriod} <Term id="konfidenz" iconOnly /></small>
             <strong>{score(confidence.mean)}</strong>
             <span class="caption">mittlere Scoring-Konfidenz</span>
           </article>
         </div>
       </div>
     </section>
+
 
     <div class="container">
       <div
@@ -256,7 +246,7 @@ const schema = {
           <span class="meta-line credibility-spacer"
             >Stichprobe N = {count(currentOverview.sampleSize)}
             <Term id="stichprobe" iconOnly /> | Publikationsschwelle n ≥ {
-              count(currentManifest.kAnonymityMin)
+              count(currentPublicationThreshold)
             }
             <Term id="k-anonymitaet" iconOnly /> | <a href="/codebook"
               >Codebook {currentManifest.codebookVersion}</a
@@ -273,6 +263,11 @@ const schema = {
         </div>
       </div>
 
+      {currentPeriod === Q2_THRESHOLD_CORRECTION.period && <p class="meta-line">
+        Metadatenkorrektur vom 29.09.2026: Die ursprüngliche Q2-Publikationsschwelle ist n ≥ 5,
+        nicht n ≥ 12. Scores und Fallzahlen bleiben unverändert.
+        <a href="/methodik#publikationsschwellen">Hintergrund der Korrektur</a>
+      </p>}
       <MaturityBar maturity={maturity} sampleSize={currentOverview.sampleSize} />
 
       <details class="reading-guide layer-accent accent-schema" open>
@@ -405,27 +400,28 @@ const schema = {
         <div class="section-head">
           <div>
             <span class="eyebrow">Archiv & Verlauf</span>
-            <h2>Veröffentlichte Quartale und Gesamttrend</h2>
+            <h2>Archiv des Reifeindex</h2>
           </div>
           <p>
             Pro Quartal gibt es genau einen veröffentlichten, <Term id="canonical">kanonischen</Term
-            > Index. Vergleiche zeigen nur sichere, veröffentlichbare <Term id="delta">Deltas</Term
-            >.
+            > Index. Jeder Quartalsschnitt nutzt aktuelle Messungen im wachsenden
+            Erhebungsrahmen. Veränderungen sind kein Vergleich eines festen Panels.
           </p>
         </div>
+        <p>{quarterComparisonExplanation} <a href="/methodik#quartalsvergleich">Methodische Einordnung</a></p>
         <div class="bands-grid">
           {
             archiveEntries.map((entry) => (
               <article class="maturity-card layer-accent accent-schema share-archive">
                 <small>Quartal</small>
-                <strong>{entry.period}</strong>
+                <strong><a href={`/quartale/${entry.period}`} aria-current={entry.period === currentPeriod ? "page" : undefined}>{entry.period}</a></strong>
                 <span class="caption">kanonisch veröffentlicht</span>
               </article>
             ))
           }
         </div>
 
-        <ComparisonTable
+        {overviewTrendItems.length > 0 && <ComparisonTable
           items={overviewTrendItems}
           manifest={currentManifest}
           labelHeader="Quartal"
@@ -433,7 +429,7 @@ const schema = {
           accentClass="accent-schema"
           sectionStackTop
           detailsMode="first"
-        />
+        />}
       </div>
     </section>
 
@@ -452,7 +448,8 @@ const schema = {
         {
           topBundeslaender.length > 0 ? (
             <ComparisonTable
-              items={bundeslandTrendItems}
+              items={bundeslandTrendItems.length ? bundeslandTrendItems : snapshotRows(topBundeslaender, "bundesland")}
+              showDelta={bundeslandTrendItems.length > 0}
               manifest={currentManifest}
               labelHeader="Bundesland"
               labelAccessor={(item) => item.label}
@@ -461,7 +458,7 @@ const schema = {
             />
           ) : (
             <div class="empty-state">
-              Noch keine regionalen Schnitte mit n ≥ {count(currentManifest.kAnonymityMin)}.
+              Noch keine regionalen Schnitte mit n ≥ {count(currentPublicationThreshold)}.
             </div>
           )
         }
@@ -487,9 +484,10 @@ const schema = {
           </p>
         </div>
         {
-          gewerkTrendItems.length > 0 ? (
+          topGewerke.length > 0 ? (
             <ComparisonTable
-              items={gewerkTrendItems}
+              items={gewerkTrendItems.length ? gewerkTrendItems : snapshotRows(topGewerke, "gewerk")}
+              showDelta={gewerkTrendItems.length > 0}
               manifest={currentManifest}
               labelHeader="Gewerk"
               labelAccessor={(item) =>
@@ -580,7 +578,7 @@ const schema = {
               <div class="provenance-badge">
                 Quelle: HDRI Observatory · Run {currentManifest.observatoryRunId.slice(0, 8)} ·{" "}
                 <a href="/codebook">Codebook {currentManifest.codebookVersion}</a> · n ≥{" "}
-                {count(currentManifest.kAnonymityMin)}
+                {count(currentPublicationThreshold)}
               </div>
             </>
           ) : (
@@ -619,7 +617,7 @@ const schema = {
             <ul>
               <li>Keine Domains, keine internen Kennungen, keine Einzelbetrieb-Empfehlungen.</li>
               <li>
-                Jeder veröffentlichte Slice erfüllt `n ≥ {count(currentManifest.kAnonymityMin)}`.
+                Ursprüngliche Publikationsschwelle dieses Quartals: n ≥ {count(currentPublicationThreshold)}.
               </li>
               <li>
                 Deltas werden zusätzlich nach der Suppression-Policy verborgen, wenn Vergleiche zu
@@ -631,7 +629,7 @@ const schema = {
             <h3>Leselogik</h3>
             <ul>
               <li>Primäre Kennzahl ist P75, ergänzt um Mittelwert und Quartile.</li>
-              <li>Die KPI-Karten bilden das aktuelle veröffentlichte Quartal ab.</li>
+              <li>Die Score-Karten bilden das zuletzt veröffentlichte Quartal des Reifeindex ab; Verfügbarkeit wird separat ausgewiesen.</li>
               <li>
                 Verlauf und Vergleiche verwenden nur <Term id="canonical">kanonisch</Term> veröffentlichte
                 Quartale.

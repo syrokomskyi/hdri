@@ -1,81 +1,61 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Generates availability and attrition report from liveness data and frame.</purpose>
-<non-goals><item>Does not collect liveness data — reads existing liveness DB.</item></non-goals>
+<purpose>Generate an availability report by rereading every signed liveness target and selected CAS result.</purpose>
+<non-goals><item>Does not estimate attrition, authenticate caller key authority, complete disclosure review or grant publication admission.</item></non-goals>
 </MODULE_CONTRACT>
- * <CHANGE_SUMMARY>
-  <item>Document the existing availability-report module contract for Compass-aware maintenance.</item>
-</CHANGE_SUMMARY>
+<KEY_DECISIONS><item>All four outcomes remain in the sealed-target denominator; fingerprints bind consumed evidence, policy and verification keys rather than paths.</item></KEY_DECISIONS>
+<CHANGE_SUMMARY><item>RFC-0115: replace guessed JSON liveness/frame inputs with executable authenticated evidence derivation.</item></CHANGE_SUMMARY>
 */
-
+import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  arg,
-  computeInputFingerprint,
-  fileExists,
-  readJsonFile,
-  requireCommonArgs,
-  writeReport,
-} from "./shared";
+import { createHash } from "node:crypto";
+import { parse } from "yaml";
+import { capsuleConfigSha256, loadVerifiedQuarterExecution, validateCapsule,
+  type QuarterCapsule, type HdriPeriod } from "@syrokomskyi/factory-core";
+import { loadVerificationKeys } from "@syrokomskyi/observatory-crypto";
+import { deriveAvailabilityCandidate } from "../../run/release/availability-candidate";
+import { computeInputFingerprint, requireArg, requireCommonArgs, writeReport } from "./shared";
 
 const { period, capsuleId, evidenceDir } = requireCommonArgs();
-const livenessDbPath = arg("--liveness-db");
-const framePath = arg("--frame");
-
-const violations: string[] = [];
-const warnings: string[] = [];
-
-let totalAssets = 0;
-let liveCount = 0;
-let unavailableCount = 0;
-let neverLiveCount = 0;
-let attritionRate: number | undefined;
-
-if (!livenessDbPath || !framePath) {
-  violations.push("availability_inputs_missing");
-} else {
-  if (!(await fileExists(path.resolve(livenessDbPath)))) {
-    violations.push("liveness_db_not_found");
-  } else if (!(await fileExists(path.resolve(framePath)))) {
-    violations.push("frame_not_found");
-  } else {
-    const frame = await readJsonFile<{ assets: string[] }>(path.resolve(framePath));
-    totalAssets = frame.assets.length;
-
-    const livenessData = await readJsonFile<Record<string, { status: string; lastSeen?: string }>>(
-      path.resolve(livenessDbPath),
-    );
-
-    for (const assetId of frame.assets) {
-      const entry = livenessData[assetId];
-      if (!entry) {
-        neverLiveCount++;
-      } else if (entry.status === "live") {
-        liveCount++;
-      } else if (entry.status === "unavailable") {
-        unavailableCount++;
-      } else {
-        neverLiveCount++;
-      }
-    }
-
-    attritionRate = liveCount > 0 ? unavailableCount / (liveCount + unavailableCount) : 0;
-
-    if (totalAssets === 0) violations.push("availability_frame_empty");
-    if (attritionRate > 0.3) warnings.push("high_attrition_rate");
-  }
-}
-
-await writeReport(
-  "availability",
-  "availability.json",
-  evidenceDir,
-  period,
-  capsuleId,
-  computeInputFingerprint(period, capsuleId, livenessDbPath ?? "", framePath ?? ""),
-  violations.length === 0 ? "pass" : "fail",
-  violations,
-  warnings,
-  [],
-  { totalAssets, liveCount, unavailableCount, neverLiveCount, attritionRate },
-);
+const capsuleDir = await fs.realpath(path.resolve(requireArg("--capsule-dir")));
+const keysDir = await fs.realpath(path.resolve(requireArg("--keys-dir")));
+const policyPath = path.resolve(requireArg("--policy"));
+const digest = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
+const manifestPath = path.join(capsuleDir, "capsule-staging.json");
+const manifestBytes = await fs.readFile(manifestPath);
+const capsule = JSON.parse(manifestBytes.toString("utf8")) as QuarterCapsule;
+validateCapsule(capsule);
+if (capsule.period !== period || capsule.capsuleId !== capsuleId || !capsule.deviceId)
+  throw new Error("AVAILABILITY_REPORT_SCOPE_MISMATCH");
+const policyBytes = await fs.readFile(policyPath);
+const policy = parse(policyBytes.toString("utf8"));
+if (!policy || !Number.isSafeInteger(policy.default_k) || policy.default_k < 1 ||
+  !Number.isSafeInteger(policy.hard_floor) || policy.hard_floor < 1 || typeof policy.high_risk_release !== "boolean")
+  throw new Error("AVAILABILITY_REPORT_POLICY_INVALID");
+const effectiveK = policy.high_risk_release ? policy.default_k : Math.max(policy.default_k, policy.hard_floor);
+const keys = await loadVerificationKeys(keysDir);
+if (!keys.size) throw new Error("AVAILABILITY_VERIFICATION_KEYS_MISSING");
+const keysSha256 = digest(JSON.stringify([...keys].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+  .map(([keyId, key]) => ({ keyId, collectorId: key.collectorId, publicKeyPem: key.publicKeyPem }))));
+const execution = await loadVerifiedQuarterExecution(capsuleDir, ["liveness"], keys);
+if (execution.capsuleConfigSha256 !== capsuleConfigSha256(period as HdriPeriod, capsuleId, capsule.instrumentPlan))
+  throw new Error("AVAILABILITY_CAPSULE_CONFIG_MISMATCH");
+const candidate = await deriveAvailabilityCandidate(capsuleDir, execution,
+  { period, capsuleId, deviceId: capsule.deviceId }, effectiveK);
+if (digest(await fs.readFile(manifestPath)) !== digest(manifestBytes) ||
+  digest(await fs.readFile(policyPath)) !== digest(policyBytes)) throw new Error("AVAILABILITY_REPORT_INPUT_CHANGED");
+const policySha256 = digest(policyBytes);
+const candidateSha256 = digest(`${JSON.stringify({ ...candidate, policySha256,
+  keyAuthority: "explicit-caller-supplied-keys-not-publication-admission" }, null, 2)}\n`);
+const bindings = { capsuleStagingSha256: digest(manifestBytes), policySha256, keysSha256,
+  candidateSha256, ...candidate.source };
+const status = candidate.cellPrivacy.violations.length === 0 ? "pass" : "fail";
+await writeReport("availability", "availability.json", evidenceDir, period, capsuleId,
+  computeInputFingerprint("hdri-availability-evidence-report@1", period, capsuleId, JSON.stringify(bindings)),
+  status, candidate.cellPrivacy.violations,
+  ["measured_targets_only_not_population_or_attrition", "key_authority_requires_independent_admission",
+    "cell_privacy_is_not_complete_disclosure_review"], [],
+  { evidenceSchema: "hdri-availability-evidence-report@1", bindings, denominator: candidate.denominator,
+    outcomePolicy: candidate.outcomePolicy, n: candidate.n, counts: candidate.counts,
+    reachableShareOfTargets: candidate.reachableShareOfTargets, effectiveK });
+if (status !== "pass") process.exitCode = 1;

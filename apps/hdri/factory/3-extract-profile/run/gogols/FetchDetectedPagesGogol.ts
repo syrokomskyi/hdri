@@ -17,6 +17,7 @@
   <item>Fix idempotency: use original detected URL (not finalUrl after redirect) for site_pages upsert so existingSitePage check matches on subsequent runs, preventing duplicate site_pages rows.</item>
   <item>Fix dedup fan-out: fetch each normalized URL once while updating every ext_* source row that detected it.</item>
   <item>Extract shared page-DB helpers (normalisePageUrl, sha256Hex, upsertPageContent, upsertSitePage, upsertPageObservation) to db/page-helpers.ts.</item>
+  <item>Fix stage-seal arithmetic: acquire the durable lease up front and route every declared detected-page target through journal.begin/finish so skipped and unresolvable URLs reach a terminal state. Previously early returns (no primary row, NO_SITE_PAGE, already-fetched skip) never committed a terminal state, leaving declared targets non-terminal and making sealStage throw "Stage target arithmetic is incomplete".</item>
 </CHANGE_SUMMARY>
 */
 
@@ -36,6 +37,7 @@ import {
   openExecutionDb,
   quarterCapsuleDir,
   quarterExecutionEventsDir,
+  snapshotCapsuleDbArtifact,
   withLeaseHeartbeat,
   workKeyId,
   writeExecutionCasObject,
@@ -245,27 +247,65 @@ export class FetchDetectedPagesGogol extends Gogol {
       uniqueUrls = Array.from(urlMap.values());
       console.log(`[fetch-detected-pages] ${uniqueUrls.length} unique URL(s) after deduplication`);
 
-      // ── 2b. Enforce 20 detected URL limit per asset (RFC-0104) ──────────────
-      const DETECTED_URL_LIMIT = 20;
-      const assetUrlCount = new Map<string, number>();
-      const limitedUrls: DetectedUrlGroup[] = [];
-      const limitExcluded: DetectedUrlGroup[] = [];
-      for (const item of uniqueUrls) {
-        const assetId = item.rows[0]?.asset_id ?? "";
-        const count = assetUrlCount.get(assetId) ?? 0;
-        if (count >= DETECTED_URL_LIMIT) {
-          limitExcluded.push(item);
-          continue;
+      // RFC-0114 B4b: work key for one detected URL — an asset can own up to
+      // DETECTED_URL_LIMIT pages, so the asset id alone is not a unique key.
+      // The URL hash rides in instrumentVersion, the only free-form key field.
+      const keyFor = (item: DetectedUrlGroup): WorkKey => ({
+        period,
+        capsuleId: brief.capsuleId,
+        stageId: "detected-page-capture",
+        provisionalAssetId: (item.rows[0]?.asset_id ?? "unknown") as WorkKey["provisionalAssetId"],
+        instrumentVersion: `profile-v2:page:${sha256Hex(item.url_norm)}`,
+      });
+
+      // Resume: when this stage already declared a frozen target set (a prior
+      // execution began but did not seal), constrain the work set to exactly
+      // those work keys. Re-extraction can surface additional detected URLs,
+      // but the frozen declaration is authoritative — re-deriving a different
+      // set trips the target-set immutability guard and orphans terminal results.
+      const priorDeclaredIds = new Set(
+        (
+          durableDb
+            .prepare("SELECT work_key_id FROM stage_targets WHERE stage_id = ?")
+            .all("detected-page-capture") as { work_key_id: string }[]
+        ).map((row) => row.work_key_id),
+      );
+      if (priorDeclaredIds.size > 0) {
+        const detectedCount = uniqueUrls.length;
+        uniqueUrls = uniqueUrls.filter((item) => priorDeclaredIds.has(workKeyId(keyFor(item))));
+        if (uniqueUrls.length !== priorDeclaredIds.size) {
+          throw new Error(
+            `[fetch-detected-pages] ${priorDeclaredIds.size - uniqueUrls.length} frozen target(s) are no longer detected; refusing to resume with a differing target set`,
+          );
         }
-        assetUrlCount.set(assetId, count + 1);
-        limitedUrls.push(item);
+        if (detectedCount !== uniqueUrls.length) {
+          console.log(
+            `[fetch-detected-pages] resume: constrained to ${uniqueUrls.length} frozen target(s) (${detectedCount - uniqueUrls.length} newly detected URL(s) out of scope)`,
+          );
+        }
+      } else {
+        // ── 2b. Enforce 20 detected URL limit per asset (RFC-0104) ──────────────
+        const DETECTED_URL_LIMIT = 20;
+        const assetUrlCount = new Map<string, number>();
+        const limitedUrls: DetectedUrlGroup[] = [];
+        const limitExcluded: DetectedUrlGroup[] = [];
+        for (const item of uniqueUrls) {
+          const assetId = item.rows[0]?.asset_id ?? "";
+          const count = assetUrlCount.get(assetId) ?? 0;
+          if (count >= DETECTED_URL_LIMIT) {
+            limitExcluded.push(item);
+            continue;
+          }
+          assetUrlCount.set(assetId, count + 1);
+          limitedUrls.push(item);
+        }
+        if (limitExcluded.length > 0) {
+          console.log(
+            `[fetch-detected-pages] ${limitExcluded.length} URL(s) excluded (>${DETECTED_URL_LIMIT} per asset limit)`,
+          );
+        }
+        uniqueUrls = limitedUrls;
       }
-      if (limitExcluded.length > 0) {
-        console.log(
-          `[fetch-detected-pages] ${limitExcluded.length} URL(s) excluded (>${DETECTED_URL_LIMIT} per asset limit)`,
-        );
-      }
-      uniqueUrls = limitedUrls;
 
       if (uniqueUrls.length === 0) {
         console.log(`[fetch-detected-pages] No URLs to fetch`);
@@ -273,13 +313,6 @@ export class FetchDetectedPagesGogol extends Gogol {
       }
 
       // RFC-0114 B4b: Declare stage targets for detected-page-capture
-      const keyFor = (item: DetectedUrlGroup): WorkKey => ({
-        period,
-        capsuleId: brief.capsuleId,
-        stageId: "detected-page-capture",
-        provisionalAssetId: (item.rows[0]?.asset_id ?? "unknown") as WorkKey["provisionalAssetId"],
-        instrumentVersion: "profile-v2",
-      });
       const stageTargetKeys = uniqueUrls.map(keyFor);
       await journal.declareStageTargets({
         stageId: "detected-page-capture",
@@ -321,69 +354,10 @@ export class FetchDetectedPagesGogol extends Gogol {
         const urlSha256 = sha256Hex(urlNorm);
         const primaryRow = item.rows[0];
 
-        if (!primaryRow) {
-          completed++;
-          return;
-        }
-
-        // Use explicit context key from ext_* row (RFC-0104: no LIMIT 1 ownership guessing)
-        const sitePage = pagesDb
-          .prepare<[number], { site_id: number }>(`SELECT site_id FROM site_pages WHERE id = ?`)
-          .get(primaryRow.page_observation_id) as { site_id: number } | undefined;
-
-        if (!sitePage) {
-          stats.push({
-            url: item.url,
-            source_table: sourceTablesLabel(item.rows),
-            ok: false,
-            httpStatus: null,
-            isNewContent: false,
-            errorCode: "NO_SITE_PAGE",
-            updatedRows: 0,
-          });
-          completed++;
-          return;
-        }
-
-        // Check if already fetched and apply hardcoded rescan policy (B.2)
-        // Policy: error rows always re-fetched, OK rows never re-fetched (skip)
-        const existingSitePage = pagesDb
-          .prepare<[number, string], { id: number }>(
-            `SELECT id FROM site_pages WHERE site_id = ? AND url_sha256 = ?`,
-          )
-          .get(sitePage.site_id, urlSha256);
-
-        if (existingSitePage) {
-          const hasObservation = pagesDb
-            .prepare<[number], { content_sha256: string }>(
-              `SELECT content_sha256 FROM page_observations WHERE site_page_id = ? LIMIT 1`,
-            )
-            .get(existingSitePage.id);
-
-          if (hasObservation) {
-            const updatedRows = updateDetectedSources(
-              pagesDb,
-              item.rows,
-              hasObservation.content_sha256,
-            );
-            // Successfully fetched before — never re-fetch OK rows
-            stats.push({
-              url: item.url,
-              source_table: sourceTablesLabel(item.rows),
-              ok: true,
-              httpStatus: 200,
-              isNewContent: false,
-              errorCode: null,
-              skipped: true,
-              updatedRows,
-            });
-            completed++;
-            return;
-          }
-          // No page_observation means previous fetch failed — re-fetch (error rows always re-fetched)
-        }
-
-        // RFC-0114 B4b: Acquire lease through durable authority
+        // RFC-0114 B4b: Acquire the durable lease up front so EVERY declared
+        // target reaches a terminal journal state. The stage seal counts
+        // terminal work; early returns that skip begin/finish leave declared
+        // targets non-terminal and break the seal arithmetic.
         const wk = keyFor(item);
         const wkId = workKeyId(wk);
         const measuredAt = new Date().toISOString();
@@ -403,108 +377,222 @@ export class FetchDetectedPagesGogol extends Gogol {
           return;
         }
 
-        const result = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, async () =>
-          fetchPageContent(item.url, { timeoutMs: brief.timeoutMs }),
-        );
-        const fetched = result.ok
-          ? result
-          : result.errorCode === "SSL_ERROR" ||
-              result.errorCode === "ENOTFOUND" ||
-              result.errorCode === "ETIMEDOUT"
-            ? await withLeaseHeartbeat(journal, attempt, leaseDurationMs, async () =>
-                fetchPageContent(item.url.replace(/^https:/, "http:"), {
-                  timeoutMs: brief.timeoutMs,
-                }),
+        let evidencePayload: DetectedPageEvidence;
+        let fetchedOk = false;
+
+        if (!primaryRow) {
+          stats.push({
+            url: item.url,
+            source_table: sourceTablesLabel(item.rows),
+            ok: false,
+            httpStatus: null,
+            isNewContent: false,
+            errorCode: "NO_PRIMARY_ROW",
+            updatedRows: 0,
+          });
+          evidencePayload = {
+            schemaVersion: 1,
+            stage: "detected-page-capture",
+            siteId: 0,
+            provisionalAssetId: wk.provisionalAssetId,
+            url: item.url,
+            result: {
+              ok: false,
+              httpStatus: null,
+              errorCode: "NO_PRIMARY_ROW",
+              errorMsg: "No source row for detected URL",
+            },
+          };
+        } else {
+          // Use explicit context key from ext_* row (RFC-0104: no LIMIT 1 ownership guessing)
+          const sitePage = pagesDb
+            .prepare<[number], { site_id: number }>(`SELECT site_id FROM site_pages WHERE id = ?`)
+            .get(primaryRow.page_observation_id) as { site_id: number } | undefined;
+
+          if (!sitePage) {
+            stats.push({
+              url: item.url,
+              source_table: sourceTablesLabel(item.rows),
+              ok: false,
+              httpStatus: null,
+              isNewContent: false,
+              errorCode: "NO_SITE_PAGE",
+              updatedRows: 0,
+            });
+            evidencePayload = {
+              schemaVersion: 1,
+              stage: "detected-page-capture",
+              siteId: 0,
+              provisionalAssetId: wk.provisionalAssetId,
+              url: item.url,
+              result: {
+                ok: false,
+                httpStatus: null,
+                errorCode: "NO_SITE_PAGE",
+                errorMsg: "Detected URL has no owning site_page",
+              },
+            };
+          } else {
+            // Check if already fetched and apply hardcoded rescan policy (B.2)
+            // Policy: error rows always re-fetched, OK rows never re-fetched (skip)
+            const existingSitePage = pagesDb
+              .prepare<[number, string], { id: number }>(
+                `SELECT id FROM site_pages WHERE site_id = ? AND url_sha256 = ?`,
               )
-            : result;
+              .get(sitePage.site_id, urlSha256);
+
+            const hasObservation = existingSitePage
+              ? (pagesDb
+                  .prepare<[number], { content_sha256: string }>(
+                    `SELECT content_sha256 FROM page_observations WHERE site_page_id = ? LIMIT 1`,
+                  )
+                  .get(existingSitePage.id) as { content_sha256: string } | undefined)
+              : undefined;
+
+            if (hasObservation) {
+              const updatedRows = updateDetectedSources(
+                pagesDb,
+                item.rows,
+                hasObservation.content_sha256,
+              );
+              // Successfully fetched before — never re-fetch OK rows. The page
+              // content is already captured, so the target seals as succeeded.
+              stats.push({
+                url: item.url,
+                source_table: sourceTablesLabel(item.rows),
+                ok: true,
+                httpStatus: 200,
+                isNewContent: false,
+                errorCode: null,
+                skipped: true,
+                updatedRows,
+              });
+              evidencePayload = {
+                schemaVersion: 1,
+                stage: "detected-page-capture",
+                siteId: sitePage.site_id,
+                provisionalAssetId: wk.provisionalAssetId,
+                url: item.url,
+                result: {
+                  ok: true,
+                  httpStatus: 200,
+                  finalUrl: item.url,
+                  contentHash: hasObservation.content_sha256,
+                  contentLengthBytes: 0,
+                  isNewContent: false,
+                },
+              };
+            } else {
+              // No page_observation means previous fetch failed — re-fetch.
+              const result = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, async () =>
+                fetchPageContent(item.url, { timeoutMs: brief.timeoutMs }),
+              );
+              const fetched = result.ok
+                ? result
+                : result.errorCode === "SSL_ERROR" ||
+                    result.errorCode === "ENOTFOUND" ||
+                    result.errorCode === "ETIMEDOUT"
+                  ? await withLeaseHeartbeat(journal, attempt, leaseDurationMs, async () =>
+                      fetchPageContent(item.url.replace(/^https:/, "http:"), {
+                        timeoutMs: brief.timeoutMs,
+                      }),
+                    )
+                  : result;
+
+              if (!fetched.ok || fetched.httpStatus === null || fetched.httpStatus >= 400) {
+                stats.push({
+                  url: item.url,
+                  source_table: sourceTablesLabel(item.rows),
+                  ok: false,
+                  httpStatus: fetched.ok ? fetched.httpStatus : null,
+                  isNewContent: false,
+                  errorCode: fetched.ok ? `HTTP_${fetched.httpStatus}` : fetched.errorCode,
+                  updatedRows: 0,
+                });
+                evidencePayload = {
+                  schemaVersion: 1,
+                  stage: "detected-page-capture",
+                  siteId: sitePage.site_id,
+                  provisionalAssetId: wk.provisionalAssetId,
+                  url: item.url,
+                  result: {
+                    ok: false,
+                    httpStatus: fetched.ok ? fetched.httpStatus : null,
+                    errorCode: fetched.ok ? `HTTP_${fetched.httpStatus}` : fetched.errorCode,
+                    errorMsg: fetched.ok ? `HTTP ${fetched.httpStatus}` : fetched.errorMsg,
+                  },
+                };
+              } else {
+                fetchedOk = true;
+                const sha256 = fetched.contentHash;
+                const storagePath = getContentRelativePath(sha256);
+                const contentFilePath = getContentFilePath(sha256);
+
+                const isNewContent = !(await fs
+                  .access(contentFilePath)
+                  .then(() => true)
+                  .catch(() => false));
+                if (isNewContent) {
+                  await fs.mkdir(path.dirname(contentFilePath), { recursive: true });
+                  await fs.writeFile(contentFilePath, fetched.html, "utf-8");
+                }
+
+                upsertPageContent(pagesDb, sha256, storagePath, fetched.contentLengthBytes);
+
+                // Use the original detected URL for site_pages so rescan checks match on subsequent runs.
+                const sitePageId = upsertSitePage(
+                  pagesDb,
+                  sitePage.site_id,
+                  urlNorm,
+                  urlSha256,
+                  "detected",
+                );
+
+                upsertPageObservation(pagesDb, sitePageId, sha256, isNewContent, "ok", {
+                  urlFinal: fetched.finalUrl,
+                  deviceId: brief.deviceId,
+                  sourceToken: brief.sourceToken,
+                });
+
+                const updatedRows = updateDetectedSources(pagesDb, item.rows, sha256);
+
+                stats.push({
+                  url: item.url,
+                  source_table: sourceTablesLabel(item.rows),
+                  ok: true,
+                  httpStatus: fetched.httpStatus,
+                  isNewContent,
+                  errorCode: null,
+                  updatedRows,
+                });
+                evidencePayload = {
+                  schemaVersion: 1,
+                  stage: "detected-page-capture",
+                  siteId: sitePage.site_id,
+                  provisionalAssetId: wk.provisionalAssetId,
+                  url: item.url,
+                  result: {
+                    ok: true,
+                    httpStatus: fetched.httpStatus,
+                    finalUrl: fetched.finalUrl,
+                    contentHash: sha256,
+                    contentLengthBytes: fetched.contentLengthBytes,
+                    isNewContent,
+                  },
+                };
+              }
+            }
+          }
+        }
 
         completed++;
-        if (fetched.ok) Atomics.add(okCountShared, 0, 1);
+        if (fetchedOk) Atomics.add(okCountShared, 0, 1);
         if (completed % logEvery === 0 || completed === uniqueUrls.length) {
           logProgress(this.id, completed, uniqueUrls.length, logEvery, true);
         }
 
-        // RFC-0114 B4b: Build evidence payload
-        let evidencePayload: DetectedPageEvidence;
-        if (!fetched.ok || fetched.httpStatus === null || fetched.httpStatus >= 400) {
-          evidencePayload = {
-            schemaVersion: 1,
-            stage: "detected-page-capture",
-            siteId: sitePage.site_id,
-            provisionalAssetId: primaryRow.asset_id,
-            url: item.url,
-            result: {
-              ok: false,
-              httpStatus: fetched.ok ? fetched.httpStatus : null,
-              errorCode: fetched.ok
-                ? `HTTP_${fetched.httpStatus}`
-                : (fetched as { errorCode: string }).errorCode,
-              errorMsg: fetched.ok
-                ? `HTTP ${fetched.httpStatus}`
-                : ((fetched as { errorMsg: string | null }).errorMsg ?? null),
-            },
-          };
-        } else {
-          const sha256 = fetched.contentHash;
-          const storagePath = getContentRelativePath(sha256);
-          const contentFilePath = getContentFilePath(sha256);
-
-          const isNewContent = !(await fs
-            .access(contentFilePath)
-            .then(() => true)
-            .catch(() => false));
-          if (isNewContent) {
-            await fs.mkdir(path.dirname(contentFilePath), { recursive: true });
-            await fs.writeFile(contentFilePath, fetched.html, "utf-8");
-          }
-
-          upsertPageContent(pagesDb, sha256, storagePath, fetched.contentLengthBytes);
-
-          // Use the original detected URL for site_pages so rescan checks match on subsequent runs.
-          const sitePageId = upsertSitePage(
-            pagesDb,
-            sitePage.site_id,
-            urlNorm,
-            urlSha256,
-            "detected",
-          );
-
-          upsertPageObservation(pagesDb, sitePageId, sha256, isNewContent, "ok", {
-            urlFinal: fetched.finalUrl,
-            deviceId: brief.deviceId,
-            sourceToken: brief.sourceToken,
-          });
-
-          const updatedRows = updateDetectedSources(pagesDb, item.rows, sha256);
-
-          evidencePayload = {
-            schemaVersion: 1,
-            stage: "detected-page-capture",
-            siteId: sitePage.site_id,
-            provisionalAssetId: primaryRow.asset_id,
-            url: item.url,
-            result: {
-              ok: true,
-              httpStatus: fetched.httpStatus,
-              finalUrl: fetched.finalUrl,
-              contentHash: sha256,
-              contentLengthBytes: fetched.contentLengthBytes,
-              isNewContent,
-            },
-          };
-
-          stats.push({
-            url: item.url,
-            source_table: sourceTablesLabel(item.rows),
-            ok: true,
-            httpStatus: fetched.httpStatus,
-            isNewContent,
-            errorCode: null,
-            updatedRows,
-          });
-        }
-
-        // RFC-0114 B4b: Commit through durable authority
+        // RFC-0114 B4b: Commit through durable authority — every declared
+        // target resolves to a terminal state so the stage seal balances.
         const evidence = await writeExecutionCasObject(capsuleDir, evidencePayload);
         commitAttempt(durableDb, {
           workKeyId: wkId,
@@ -522,18 +610,6 @@ export class FetchDetectedPagesGogol extends Gogol {
           resultSha256: evidence.sha256,
           ...(!evidencePayload.result.ok ? { errorClass: evidencePayload.result.errorCode } : {}),
         });
-
-        if (!evidencePayload.result.ok) {
-          stats.push({
-            url: item.url,
-            source_table: sourceTablesLabel(item.rows),
-            ok: false,
-            httpStatus: evidencePayload.result.httpStatus,
-            isNewContent: false,
-            errorCode: evidencePayload.result.errorCode,
-            updatedRows: 0,
-          });
-        }
       };
 
       // Bounded concurrency pool
@@ -550,11 +626,20 @@ export class FetchDetectedPagesGogol extends Gogol {
 
       // RFC-0114 B4b: Seal detected-page-capture stage when all targets are terminal
       if (brief.maxDomains < 0) {
+        // RFC-0128: pages-*.db is final at this seal — snapshot it into the
+        // capsule under the profile instrument namespace.
+        const pagesDbArtifact = await snapshotCapsuleDbArtifact(
+          capsuleDir,
+          "profile",
+          brief.deviceId,
+          pagesDbPath,
+        );
         await journal.sealStage({
           stageId: "detected-page-capture",
           keys: stageTargetKeys,
           eventId: mintAssetId(),
           now: new Date().toISOString(),
+          outputArtifacts: [pagesDbArtifact],
         });
       }
     } finally {

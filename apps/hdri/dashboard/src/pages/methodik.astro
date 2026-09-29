@@ -1,7 +1,7 @@
 ---
 /**
  * <MODULE_CONTRACT><purpose>Provide methodik behavior for the apps hdri dashboard src pages subsystem and its direct callers.</purpose><non-goals><item>Do not define unrelated cross-workspace policy or orchestration behavior.</item></non-goals></MODULE_CONTRACT>
- * <CHANGE_SUMMARY><item>Document the existing methodik module contract for Compass-aware maintenance.</item></CHANGE_SUMMARY>
+ * <CHANGE_SUMMARY><item>Document the existing methodik module contract for Compass-aware maintenance.</item><item>Explain expanding-frame comparison limits and the original Q2 publication threshold without altering archived evidence.</item></CHANGE_SUMMARY>
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Breadcrumbs from "../components/Breadcrumbs.astro";
@@ -12,6 +12,7 @@ import { site, ogImage, publisher } from "../lib/seo";
 import { loadChangelog, type ChangelogEntry } from "../data/dashboard-data";
 import { getSiteMeta } from "../data/site-meta";
 import { count } from "../lib/format";
+import { publicationThresholdHistory, quarterComparisonExplanation } from "../data/publication-policy";
 
 const meta = getSiteMeta();
 
@@ -172,15 +173,17 @@ const schema = {
             <h3>Stichprobenrahmen</h3>
             <ul>
               <li>
-                Die Stichprobe umfasst alle öffentlich erreichbaren Handwerkswebsites des Quartals.
+                Der Erhebungsrahmen umfasst die bisher erfassten Websites und neue Funde.
+                Der Index enthält die im jeweiligen Quartal erreichbaren, auswertbaren Websites
+                dieses Rahmens — nicht automatisch alle Handwerkswebsites Deutschlands.
               </li>
               <li>
                 Nicht jede erfasste Domain ist im Dashboard sichtbar — nur Aggregate mit
                 ausreichender Fallzahl werden veröffentlicht.
               </li>
               <li>
-                Neue Domains werden beim ersten Crawl erfasst, inaktive fallen nach mehreren
-                Fehlversuchen heraus.
+                Frühere Scores werden nicht fortgeschrieben. Nicht auswertbare Websites bleiben
+                außerhalb des aktuellen Index; ein Erhebungsfehler ist kein Reifewert von null.
               </li>
             </ul>
           </article>
@@ -423,7 +426,38 @@ const schema = {
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="quartalsvergleich">
+      <div class="container">
+        <div class="section-head"><div>
+          <span class="eyebrow">Quartalsschnitt und Zeitvergleich</span>
+          <h2>Warum Q2 und Q3 keine freigegebene Trendreihe bilden</h2>
+        </div></div>
+        <p>{quarterComparisonExplanation}</p>
+        <p>
+          Die Kennzahlen dürfen als Beschreibungen der jeweiligen beobachteten Websites
+          nebeneinander gelesen werden. Ihre Differenz ist aber weder ein Nachweis für die
+          Entwicklung derselben Betriebe noch eine repräsentative Veränderung des gesamten Marktes.
+          Eine höhere Publikationsschwelle allein verbietet einen Vergleich nicht; sie verändert,
+          welche kleinen Gruppen veröffentlicht werden dürfen.
+        </p>
+        <p>
+          Ein wachsender Erhebungsrahmen ist kein grundsätzlicher Vergleichbarkeitsbruch.
+          Für belastbare Zeitvergleiche müssen Zielpopulation, Messverfahren, Auswahlregeln und
+          Zusammensetzung nachvollziehbar berücksichtigt werden. Eine Analyse wiederholt
+          beobachteter Websites beantwortet eine andere Frage als ein Quartalsschnitt und muss
+          Ausfälle und verbleibende Auswahlverzerrungen berücksichtigen. Ein unveränderter
+          Websitebestand allein garantiert daher weder Vergleichbarkeit noch Repräsentativität.
+          Solche Trendanalysen sind für Q2 → Q3 derzeit nicht freigegeben.
+        </p>
+        <p class="caption">Statistischer Hintergrund:
+          <a href="https://www.ons.gov.uk/methodology/methodologytopicsandstatisticalconcepts/sampledesignandestimation">ONS: Stichprobendesign und Schätzung</a>;
+          <a href="https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/methodologies/improvementstotheweightingmethodologyusedinthelabourforcesurveylongitudinaldatasets">ONS: longitudinale Gewichtung und Ausfälle</a>.
+          Diese Quellen erläutern allgemeine Verfahren; sie validieren nicht den HDRI.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="publikationsschwellen">
       <div class="container">
         <div class="section-head">
           <div>
@@ -436,8 +470,7 @@ const schema = {
             <h3><Term id="k-anonymitaet">Publikationsschwelle</Term></h3>
             <ul>
               <li>
-                Jeder veröffentlichte Slice muss mindestens <code>n ≥ {meta.kAnonymityMin}</code> Fälle
-                enthalten.
+                {publicationThresholdHistory}
               </li>
               <li>Wenn ein Bundesland oder Gewerk zu wenige Fälle hat, wird es nicht angezeigt.</li>
               <li>
@@ -449,9 +482,17 @@ const schema = {
                 erhöht zugleich die statistische Stabilität kleiner Gruppen.
               </li>
             </ul>
+            <p>
+              Metadatenkorrektur vom 29.09.2026: Ein später neu erzeugtes Q2-Manifest enthielt
+              bereits die Q3-Schwelle 12. Die ursprüngliche Q2-Schwelle 5 ist im Manifest vom
+              30.05.2026 desselben Veröffentlichungslaufs dokumentiert. Die Anzeige wurde
+              korrigiert; archivierte Originaldateien, Scores und Fallzahlen bleiben unverändert.
+            </p>
           </article>
           <article class="method-card layer-accent" style="--accent-color: var(--layer-shtama);">
             <h3><Term id="suppression">Delta-Suppression</Term></h3>
+            <p>Die folgenden technischen Schutzregeln ersetzen keine methodische Freigabe.
+              Für Q2 → Q3 werden unabhängig von der Größe einer Differenz keine Trends veröffentlicht.</p>
             <ul>
               <li>
                 <code>delta_below_absolute_threshold</code>: Änderung kleiner als 3 Punkte absolut.
@@ -535,8 +576,8 @@ const schema = {
               </li>
               <li>Es werden keine p-Werte, Konfidenzintervalle oder Hypothesentests berechnet.</li>
               <li>
-                Die Aussagekraft kommt aus der Stichprobengröße (N = {count(meta.sampleSize)}),
-                nicht aus inferenzstatistischen Verfahren.
+                Eine große Fallzahl (N = {count(meta.sampleSize)}) beseitigt keine Auswahl- oder
+                Erfassungsverzerrungen und beweist keine Repräsentativität.
               </li>
               <li>
                 P75 ist robust gegenüber Ausreißern und spiegelt das „erreichbare Niveau" wider.

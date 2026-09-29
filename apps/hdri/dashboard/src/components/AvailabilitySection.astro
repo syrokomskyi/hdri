@@ -1,0 +1,41 @@
+---
+/**
+ * <MODULE_CONTRACT><purpose>AvailabilitySection renders an availability quarter separately from historical HDRI score comparisons.</purpose><non-goals><item>Does not infer uptime, population coverage, business closure or quarter-to-quarter change.</item></non-goals></MODULE_CONTRACT>
+ * <CHANGE_SUMMARY><item>RFC-0115: display four availability outcomes and exact aggregate downloads.</item></CHANGE_SUMMARY>
+ */
+import type { AvailabilityDownload } from "../types";
+import { count, pct } from "../lib/format";
+interface Props { data: AvailabilityDownload }
+const { row, kAnonymityMin } = Astro.props.data;
+const labels = [
+  ["Erreichbar", row.reachable], ["Nicht erreichbar", row.unavailable],
+  ["Zugriff blockiert", row.blocked], ["Nicht eindeutig bestimmbar", row.indeterminate],
+] as const;
+---
+<section class="section" id={`verfuegbarkeit-${row.period}`} aria-labelledby={`availability-title-${row.period}`}>
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">{row.period} · Eigenständige Verfügbarkeitsmessung</span>
+        <h2 id={`availability-title-${row.period}`}>Erreichbarkeit der untersuchten Websites</h2>
+      </div>
+      <p>Alle {count(row.n)} festgelegten Messziele bleiben im Nenner — auch blockierte und unklare Ergebnisse.</p>
+    </div>
+    <div class="cards-grid">
+      {labels.map(([label, value]) => <article class="stat-card">
+        <h3>{label}</h3><strong>{count(value)}</strong>
+        <span class="caption">{pct(value / row.n, 2)} aller Messziele</span>
+      </article>)}
+    </div>
+    <p>„Erreichbar“ folgt der gespeicherten Prüfregel; auch bestimmte HTTP-Fehlerantworten können dazu zählen.
+      Es bedeutet weder erfolgreiche Seitenauslieferung noch durchgehende Verfügbarkeit im Quartal.
+      „Nicht erreichbar“ ist kein Nachweis einer Betriebsschließung.</p>
+    <p>Diese Auswertung beschreibt ausschließlich die gemessenen Ziele, nicht das gesamte Handwerk.
+      Sie ist kein neuer HDRI-Reifescore. Aus dem historischen Q2-Index und dieser Messung wird
+      kein Quartalstrend berechnet. Veröffentlichungsschwelle: n ≥ {count(kAnonymityMin)}.</p>
+    <div class="hero-actions">
+      <a class="button button-secondary" href={`/daten/verfuegbarkeit/${row.period}.json`} download>JSON herunterladen</a>
+      <a class="button button-secondary" href={`/daten/verfuegbarkeit/${row.period}.csv`} download>CSV herunterladen</a>
+    </div>
+  </div>
+</section>

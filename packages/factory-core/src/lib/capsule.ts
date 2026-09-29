@@ -3,22 +3,23 @@
 <purpose>Validates the immutable closure and instrument plan of an HDRI quarterly capsule.</purpose>
 <non-goals><item>Does not create network observations or rewrite a sealed manifest.</item></non-goals>
 </MODULE_CONTRACT>
+<KEY_DECISIONS><item>Only explicit availability-only@1 omits derived Observatory identity and vault stages; raw collection closure, scope and signatures remain mandatory.</item></KEY_DECISIONS>
 <CHANGE_SUMMARY>
-  <item>RFC-0025 introduces a single sealed capsule per quarter.</item>
-  <item>Verify complete artifact closure before idempotent Ed25519 sealing or retry.</item>
-  <item>Require frozen targets and signed stage seals for every required instrument in sealed capsules.</item>
-  <item>RFC-0045: add optional legacy flag to skip stage closure and execution evidence checks for pre-RFC-0026 quarters.</item>
-  <item>RFC-0044: add extractBatchIdsFromManifest and extractSourceLedgerHead helpers for quarter:init tool.</item>
-  <item>RFC-0106: add validateManifestSet for verified source admission.</item>
-  <item>Reject duplicate or unsafe artifact paths and verify exact bytes through stable nonsymlink file handles.</item>
+  <history>RFC-0025, RFC-0044, RFC-0045, RFC-0106</history>
+  <item>RFC-0115: verify complete safe artifact bytes and required stage evidence before candidate writing or signing.</item>
+  <item>RFC-0128: append-only staging manifest — createQuarterCapsuleStaging at quarter-open, appendCapsuleSealArtifacts at seal-time, deviceId carried in the manifest.</item>
+  <item>RFC-0115: operator-approved availability-only profile retains raw closure without requiring unused derived identity/vault stages.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: a sealed capsule is verified before any caller may write inside its root
 
+import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import crypto from "node:crypto";
+import Database from "better-sqlite3";
+import { readCapsuleInventoryPart, type CapsuleInventoryPart } from "./capsule-inventory.js";
 import {
   assertRelativeObjectPath,
   inspectRetainedFile,
@@ -33,8 +34,10 @@ import {
 import {
   assertCapsuleId,
   assertRelativeArtifactUri,
+  sealStagesFor,
   type CapsuleId,
   type InstrumentId,
+  type WorkKey,
   KNOWN_INSTRUMENTS,
 } from "./quarter-contracts.js";
 
@@ -56,6 +59,13 @@ export type QuarterCapsule = Readonly<{
   state: "staging" | "candidate" | "sealed";
   instrumentPlan: readonly InstrumentPlanEntry[];
   artifacts: readonly CapsuleArtifact[];
+  artifactInventories?: readonly CapsuleInventoryPart[];
+  /** Explicit aggregate-only release; omission retains the complete Observatory contract. */
+  releaseProfile?: "availability-only@1";
+  // RFC-0128: self-describing device identity. Optional in the schema (sealed
+  // Q2 manifests predate it) but REQUIRED for the admission path —
+  // validateManifestSet throws when absent.
+  deviceId?: string;
   legacy?: boolean;
 }>;
 export type CapsuleSignature = Readonly<{
@@ -70,11 +80,31 @@ export type CapsuleSignature = Readonly<{
 
 const MAX_FRAME_JSON_BYTES = 64 * 1024 * 1024;
 
+export const sha256File = async (filePath: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const hash = createHash("sha256");
+    const stream = createReadStream(filePath);
+    stream.on("data", (chunk) => hash.update(chunk));
+    stream.once("error", reject);
+    stream.once("end", () => resolve(hash.digest("hex")));
+  });
+
 export const validateCapsule = (capsule: QuarterCapsule): void => {
+  if (capsule.releaseProfile !== undefined && capsule.releaseProfile !== "availability-only@1")
+    throw new Error("Unknown capsule release profile");
+  if (capsule.releaseProfile && (capsule.legacy || !capsule.deviceId))
+    throw new Error("Availability release requires a nonlegacy device-bound capsule");
+  if (capsule.artifactInventories !== undefined &&
+      (!Array.isArray(capsule.artifactInventories) || capsule.artifactInventories.length > 16384))
+    throw new Error("Invalid or oversized capsule inventory references");
   if (!/^\d{4}-q[1-4]$/.test(capsule.period))
     throw new Error(`Invalid HDRI period: ${capsule.period}`);
   assertCapsuleId(capsule.capsuleId);
+  if (capsule.deviceId !== undefined && capsule.deviceId.trim().length === 0)
+    throw new Error("Capsule deviceId must be a non-empty string when present");
   const plan = new Map(capsule.instrumentPlan.map((entry) => [entry.instrument, entry]));
+  if (capsule.releaseProfile === "availability-only@1" && plan.get("liveness")?.state !== "required")
+    throw new Error("Availability release requires the liveness instrument");
   for (const required of KNOWN_INSTRUMENTS) {
     const entry = plan.get(required);
     if (!entry) throw new Error(`Capsule lacks instrument plan entry: ${required}`);
@@ -93,17 +123,28 @@ export const validateCapsule = (capsule: QuarterCapsule): void => {
     throw new Error("Release candidate lacks required liveness artifact");
   }
   if (capsule.state !== "staging" && !capsule.legacy) {
-    for (const required of [
-      "frame",
-      "emit",
-      "identity",
-      "vault",
-      "methodology",
-      "publication",
-    ] as const) {
+    const requiredStages: readonly CapsuleArtifact["stage"][] = capsule.releaseProfile === "availability-only@1"
+      ? ["frame", "emit", "methodology", "publication"]
+      : ["frame", "emit", "identity", "vault", "methodology", "publication"];
+    for (const required of requiredStages) {
       if (!capsule.artifacts.some((artifact) => artifact.stage === required)) {
         throw new Error(`Sealed capsule lacks required ${required} closure`);
       }
+    }
+    if (capsule.releaseProfile === "availability-only@1") {
+      for (const [stage, uri] of [
+        ["methodology", "artifacts/methodology/publication-scope.yaml"],
+        ["publication", "artifacts/publication/public-manifest.json"],
+        ["publication", "artifacts/publication/availability.json"],
+        ["publication", "artifacts/publication/availability.csv"],
+      ] as const) {
+        if (!capsule.artifacts.some(artifact => artifact.stage === stage && artifact.uri === uri))
+          throw new Error(`Availability release lacks required closure: ${uri}`);
+      }
+      const publicUris = new Set(["artifacts/publication/public-manifest.json",
+        "artifacts/publication/availability.json", "artifacts/publication/availability.csv"]);
+      if (capsule.artifacts.some(artifact => artifact.stage === "publication" && !publicUris.has(artifact.uri)))
+        throw new Error("Availability release contains excluded publication artifacts");
     }
     for (const entry of capsule.instrumentPlan) {
       if (
@@ -113,10 +154,10 @@ export const validateCapsule = (capsule: QuarterCapsule): void => {
         throw new Error(`Sealed capsule lacks required ${entry.instrument} artifact`);
       }
       if (entry.state === "required") {
-        for (const evidenceUri of [
-          `staging/targets/${entry.instrument}.json`,
-          `staging/stage-seals/${entry.instrument}.json`,
-        ]) {
+        for (const evidenceUri of sealStagesFor(entry.instrument).flatMap(stage => [
+          `staging/targets/${stage}.json`,
+          `staging/stage-seals/${stage}.json`,
+        ])) {
           if (
             !capsule.artifacts.some(
               (artifact) => artifact.stage === "qc" && artifact.uri === evidenceUri,
@@ -139,14 +180,16 @@ export const verifyQuarterCapsuleArtifacts = async (
   for (const artifact of capsule.artifacts) {
     assertRelativeObjectPath(artifact.uri);
     if (
-      seen.has(artifact.uri) || !/^[0-9a-f]{64}$/.test(artifact.sha256) ||
-      !Number.isSafeInteger(artifact.bytes) || artifact.bytes < 0
+      seen.has(artifact.uri) ||
+      !/^[0-9a-f]{64}$/.test(artifact.sha256) ||
+      !Number.isSafeInteger(artifact.bytes) ||
+      artifact.bytes < 0
     ) {
       throw new Error(`Invalid or duplicate capsule artifact: ${artifact.uri}`);
     }
     seen.add(artifact.uri);
   }
-  for (const artifact of capsule.artifacts) {
+  for await (const artifact of iterateCapsuleArtifacts(capsuleDir, capsule)) {
     const filePath = path.resolve(capsuleDir, artifact.uri);
     const actual = await inspectRetainedFile(filePath);
     if (actual.bytes !== artifact.bytes || actual.sha256 !== artifact.sha256) {
@@ -154,6 +197,47 @@ export const verifyQuarterCapsuleArtifacts = async (
     }
   }
 };
+
+/** Includes authenticated inventory parts themselves so replicas retain the complete closure. */
+export async function* iterateCapsuleArtifacts(
+  capsuleDir: string,
+  capsule: QuarterCapsule,
+): AsyncGenerator<CapsuleArtifact> {
+  const seen = new Set<string>();
+  for (const artifact of capsule.artifacts) {
+    if (seen.has(artifact.uri)) throw new Error(`Duplicate capsule artifact: ${artifact.uri}`);
+    seen.add(artifact.uri);
+    yield artifact;
+  }
+  for (const part of capsule.artifactInventories ?? []) {
+    if (seen.has(part.uri)) throw new Error(`Duplicate capsule inventory: ${part.uri}`);
+    const entries = await readCapsuleInventoryPart(capsuleDir, part);
+    seen.add(part.uri);
+    yield part;
+    for (const artifact of entries) {
+      if (seen.has(artifact.uri)) throw new Error(`Duplicate capsule artifact: ${artifact.uri}`);
+      seen.add(artifact.uri);
+      yield artifact;
+    }
+  }
+}
+
+/** Commit bounded inventory references atomically; retries must preserve their exact identity. */
+export async function appendCapsuleInventoryParts(
+  capsuleDir: string,
+  parts: readonly CapsuleInventoryPart[],
+): Promise<void> {
+  const capsule = await readStagingManifest(capsuleDir);
+  if (capsule.artifactInventories) {
+    if (canonicalize(capsule.artifactInventories) !== canonicalize(parts))
+      throw new Error("Capsule inventory retry changed its committed parts");
+  }
+  const next = { ...capsule, artifactInventories: parts };
+  for await (const _artifact of iterateCapsuleArtifacts(capsuleDir, next)) {
+    // Exhaust authenticated parts and enforce unique ownership before committing references.
+  }
+  if (!capsule.artifactInventories) await writeStagingManifestAtomic(capsuleDir, next);
+}
 
 export const sealQuarterCapsule = async (
   capsuleDir: string,
@@ -237,11 +321,25 @@ export const verifyQuarterCapsuleSignature = (
   );
 };
 
-export const writeQuarterCapsuleStaging = async (
+/**
+ * RFC-0128: creates the empty declared staging container at quarter-open.
+ * The manifest starts with no artifacts; each stage's seal operation appends
+ * its admission entries via appendCapsuleSealArtifacts.
+ * Idempotent: an existing file with identical bytes is accepted.
+ */
+export const createQuarterCapsuleStaging = async (
   capsuleDir: string,
-  capsule: QuarterCapsule,
+  identity: Readonly<{ period: string; capsuleId: CapsuleId; deviceId: string }>,
+  instrumentPlan: readonly InstrumentPlanEntry[],
 ): Promise<string> => {
-  if (capsule.state !== "staging") throw new Error("Staging writer requires state=staging");
+  const capsule: QuarterCapsule = {
+    period: identity.period,
+    capsuleId: identity.capsuleId,
+    deviceId: identity.deviceId,
+    state: "staging",
+    instrumentPlan,
+    artifacts: [],
+  };
   validateCapsule(capsule);
   await fs.mkdir(capsuleDir, { recursive: true });
   const target = path.join(capsuleDir, "capsule-staging.json");
@@ -257,12 +355,172 @@ export const writeQuarterCapsuleStaging = async (
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     if ((await fs.readFile(target, "utf8")) !== bytes) {
-      throw new Error("Quarter capsule staging closure already exists with different bytes", {
+      throw new Error("Quarter capsule staging manifest already exists with different bytes", {
         cause: error,
       });
     }
   }
   return target;
+};
+
+const readStagingManifest = async (capsuleDir: string): Promise<QuarterCapsule> => {
+  const target = path.join(capsuleDir, "capsule-staging.json");
+  let raw: string;
+  try {
+    raw = await fs.readFile(target, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      throw new Error(`capsule-staging.json not found in ${capsuleDir} — run quarter:init first`, {
+        cause: error,
+      });
+    }
+    throw error;
+  }
+  const capsule = JSON.parse(raw) as QuarterCapsule;
+  if (capsule.state !== "staging") {
+    throw new Error(`capsule-staging.json is not a staging manifest (state=${capsule.state})`);
+  }
+  validateCapsule(capsule);
+  return capsule;
+};
+
+const writeStagingManifestAtomic = async (
+  capsuleDir: string,
+  capsule: QuarterCapsule,
+): Promise<void> => {
+  const target = path.join(capsuleDir, "capsule-staging.json");
+  const bytes = `${JSON.stringify(capsule, null, 2)}\n`;
+  const tmp = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
+  // fsync before rename — the manifest is an integrity index that must survive
+  // a host crash; parity with createQuarterCapsuleStaging's handle.sync().
+  const handle = await fs.open(tmp, "w");
+  try {
+    await handle.writeFile(bytes, "utf8");
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  await fs.rename(tmp, target);
+};
+
+/**
+ * RFC-0128: atomically appends artifact entries to the staging manifest.
+ * Append-only: existing entries are never rewritten or removed. An entry whose
+ * `uri` is already present must carry identical sha256/bytes (mismatch throws),
+ * so a seal retry after a mid-append crash is a no-op.
+ * Fails fast when capsule-staging.json does not exist.
+ */
+export const appendCapsuleArtifacts = async (
+  capsuleDir: string,
+  entries: readonly CapsuleArtifact[],
+): Promise<void> => {
+  if (entries.length === 0) return;
+  const capsule = await readStagingManifest(capsuleDir);
+  const byUri = new Map(capsule.artifacts.map((a) => [a.uri, a]));
+  const added: CapsuleArtifact[] = [];
+  for (const entry of entries) {
+    assertRelativeArtifactUri(entry.uri);
+    const existing = byUri.get(entry.uri);
+    if (existing) {
+      if (existing.sha256 !== entry.sha256 || existing.bytes !== entry.bytes) {
+        throw new Error(
+          `Staging manifest entry conflict for ${entry.uri}: existing sha256=${existing.sha256} bytes=${existing.bytes}, new sha256=${entry.sha256} bytes=${entry.bytes}`,
+        );
+      }
+      continue;
+    }
+    added.push(entry);
+    byUri.set(entry.uri, entry);
+  }
+  if (added.length === 0) return;
+  const next: QuarterCapsule = { ...capsule, artifacts: [...capsule.artifacts, ...added] };
+  validateCapsule(next);
+  await writeStagingManifestAtomic(capsuleDir, next);
+};
+
+/**
+ * RFC-0128: seal-time append of one stage's admission-relevant artifacts
+ * (seal artifact + target-set artifact + declared output artifacts).
+ * Entries must belong to the stage (`stage === stageId`) or be its qc evidence
+ * under `staging/`.
+ */
+// RFC-0128: a stage seals under its WorkKey stageId, but its retained capsule
+// artifacts live under the instrument namespace that owns the output — e.g.
+// homepage-capture/detected-page-capture both retain into artifacts/profile/.
+const STAGE_OUTPUT_NAMESPACE: Partial<Record<WorkKey["stageId"], CapsuleArtifact["stage"]>> = {
+  "homepage-capture": "profile",
+  "detected-page-capture": "profile",
+};
+
+export const appendCapsuleSealArtifacts = async (
+  capsuleDir: string,
+  stageId: WorkKey["stageId"],
+  entries: readonly CapsuleArtifact[],
+): Promise<void> => {
+  const outputNamespace = STAGE_OUTPUT_NAMESPACE[stageId] ?? stageId;
+  for (const entry of entries) {
+    const isStageOutput = entry.stage === outputNamespace;
+    const isStageEvidence =
+      entry.stage === "qc" &&
+      (entry.uri === `staging/stage-seals/${stageId}.json` ||
+        entry.uri === `staging/targets/${stageId}.json`);
+    if (!isStageOutput && !isStageEvidence) {
+      throw new Error(
+        `Stage ${stageId} seal append received an artifact outside its scope: ${entry.uri} (stage=${entry.stage})`,
+      );
+    }
+  }
+  await appendCapsuleArtifacts(capsuleDir, entries);
+};
+
+/**
+ * RFC-0128: snapshots a finalized stage SQLite database into the capsule at
+ * seal-time and returns its manifest entry. The capsule artifact must exist
+ * when its manifest entry does — manifest entries never point at
+ * not-yet-written files.
+ * Idempotent: an existing destination is integrity-checked and re-hashed, never
+ * re-backed-up (the first seal's bytes are the sealed bytes).
+ */
+export const snapshotCapsuleDbArtifact = async (
+  capsuleDir: string,
+  stage: InstrumentId,
+  deviceId: string,
+  sourceDbPath: string,
+): Promise<CapsuleArtifact> => {
+  const uri = `artifacts/${stage}/${deviceId}/${path.basename(sourceDbPath)}`;
+  const destination = path.join(capsuleDir, uri);
+  const integrityOk = (dbPath: string, readonly: boolean): boolean => {
+    const db = new Database(dbPath, { readonly, fileMustExist: true });
+    try {
+      const rows = db.pragma("integrity_check") as Array<{ integrity_check: string }>;
+      return rows.every((row) => row.integrity_check === "ok");
+    } finally {
+      db.close();
+    }
+  };
+  try {
+    await fs.stat(destination);
+    if (!integrityOk(destination, true)) {
+      throw new Error(`SQLite capsule snapshot failed integrity_check: ${uri}`);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    if (!integrityOk(sourceDbPath, true)) {
+      throw new Error(`SQLite source failed integrity_check: ${sourceDbPath}`);
+    }
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    const sourceDb = new Database(sourceDbPath, { readonly: true, fileMustExist: true });
+    try {
+      await sourceDb.backup(destination);
+    } finally {
+      sourceDb.close();
+    }
+    if (!integrityOk(destination, true)) {
+      throw new Error(`SQLite capsule snapshot failed integrity_check: ${uri}`);
+    }
+  }
+  const stat = await fs.stat(destination);
+  return { stage, uri, sha256: await sha256File(destination), bytes: stat.size };
 };
 
 /**
@@ -392,43 +650,59 @@ export const validateManifestSet = async (
       }
     }
 
+    // RFC-0128: every manifest entry's sha256/bytes must match the referenced
+    // file — the manifest is an integrity index, not a claim list.
+    const capsuleDir = path.dirname(resolved);
+    await verifyQuarterCapsuleArtifacts(capsuleDir, capsule);
+
     for (const entry of capsule.instrumentPlan) {
       if (entry.state !== "required") continue;
-      const stageId = entry.instrument;
-      const sealArtifact = capsule.artifacts.find(
-        (a) => a.stage === "qc" && a.uri === `staging/stage-seals/${stageId}.json`,
-      );
-      if (!sealArtifact) {
-        throw new Error(`Device manifest lacks stage seal for required instrument: ${stageId}`);
-      }
-      stageSeals.set(stageId, sealArtifact.sha256);
+      // RFC-0128: an instrument may seal under finer-grained stage ids —
+      // profile is delivered by homepage-capture + detected-page-capture.
+      for (const stageId of sealStagesFor(entry.instrument)) {
+        const sealArtifact = capsule.artifacts.find(
+          (a) => a.stage === "qc" && a.uri === `staging/stage-seals/${stageId}.json`,
+        );
+        if (!sealArtifact) {
+          throw new Error(
+            `Device manifest lacks stage seal for required instrument: ${entry.instrument} (stage ${stageId})`,
+          );
+        }
+        stageSeals.set(stageId, sealArtifact.sha256);
 
-      const targetArtifact = capsule.artifacts.find(
-        (a) => a.stage === "qc" && a.uri === `staging/targets/${stageId}.json`,
-      );
-      if (!targetArtifact) {
-        throw new Error(`Device manifest lacks target set for required instrument: ${stageId}`);
-      }
-      targetSetSha256.set(stageId, targetArtifact.sha256);
+        const targetArtifact = capsule.artifacts.find(
+          (a) => a.stage === "qc" && a.uri === `staging/targets/${stageId}.json`,
+        );
+        if (!targetArtifact) {
+          throw new Error(
+            `Device manifest lacks target set for required instrument: ${entry.instrument} (stage ${stageId})`,
+          );
+        }
+        targetSetSha256.set(stageId, targetArtifact.sha256);
 
-      // RFC-0114 B5: Read selectedResultSetSha256 from the seal file contents
-      const capsuleDir = path.dirname(resolved);
-      const sealFilePath = path.join(capsuleDir, `staging/stage-seals/${stageId}.json`);
-      try {
-        const sealRaw = await fs.readFile(sealFilePath, "utf8");
-        const seal = JSON.parse(sealRaw) as { payload: { selectedResultSetSha256: string } };
-        selectedResultSetSha256.set(stageId, seal.payload.selectedResultSetSha256);
-      } catch {
-        throw new Error(`Cannot read stage seal file for ${stageId} at ${sealFilePath}`);
-      }
+        // RFC-0114 B5: Read selectedResultSetSha256 from the seal file contents
+        const sealFilePath = path.join(capsuleDir, `staging/stage-seals/${stageId}.json`);
+        try {
+          const sealRaw = await fs.readFile(sealFilePath, "utf8");
+          const seal = JSON.parse(sealRaw) as { payload: { selectedResultSetSha256: string } };
+          selectedResultSetSha256.set(stageId, seal.payload.selectedResultSetSha256);
+        } catch {
+          throw new Error(`Cannot read stage seal file for ${stageId} at ${sealFilePath}`);
+        }
 
-      const refs = capsule.artifacts.filter((a) => a.stage === stageId).map((a) => a.uri);
-      artifactRefs.set(stageId, refs);
+        const outputNamespace = STAGE_OUTPUT_NAMESPACE[stageId] ?? stageId;
+        const refs = capsule.artifacts.filter((a) => a.stage === outputNamespace).map((a) => a.uri);
+        artifactRefs.set(stageId, refs);
+      }
     }
 
-    const deviceIdMatch = resolved.match(/\/(device-[a-f0-9-]+)\//);
-    const deviceId = deviceIdMatch?.[1] ?? path.basename(path.dirname(resolved));
-    deviceIds.add(deviceId);
+    // RFC-0128: deviceId comes from the manifest field, never from path shape.
+    if (!capsule.deviceId) {
+      throw new Error(
+        `Device manifest lacks required deviceId field: ${manifestPath} — regenerate it via quarter:init (RFC-0128)`,
+      );
+    }
+    deviceIds.add(capsule.deviceId);
   }
 
   return {

@@ -2,7 +2,7 @@
 factory: verify-upstream
 title: Verify upstream signatures
 purpose: >-
-  Check upstream 4-audit-lighthouse closed snapshot manifests and snapshots before
+  Check upstream 2-check-liveness closed snapshot manifests and snapshots before
   ingestion.
 details: >-
   Loads public keys from transparency/keys/ directory. Discovers upstream
@@ -11,8 +11,8 @@ details: >-
   then checks snapshot size and SHA-256. Writes verification summary JSON and
   Markdown artifacts.
 inputs:
-  - '4-audit-lighthouse/.output/<deviceId>/*-sign-source/source-snapshot.sqlite'
-  - '4-audit-lighthouse/.output/<deviceId>/*-sign-source/source-signature.json'
+  - '2-check-liveness/.output/<deviceId>/*-sign-source/source-snapshot.sqlite'
+  - '2-check-liveness/.output/<deviceId>/*-sign-source/source-signature.json'
   - '<repo-root>/transparency/keys/*.pem'
 outputs:
   - verify-upstream-summary.json

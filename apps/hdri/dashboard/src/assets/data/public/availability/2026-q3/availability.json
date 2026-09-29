@@ -1,0 +1,21 @@
+{
+  "schema": "hdri-public-availability@2",
+  "denominator": "sealed-liveness-targets",
+  "outcome_policy": "availability-outcome-v1",
+  "interpretation": [
+    "Reachability follows the retained probe policy, not successful page delivery or quarter-long uptime.",
+    "Blocked and indeterminate results are distinct from unavailable results and remain in the denominator.",
+    "Describes measured targets only; no population, industry, business-closure or quarter-comparison inference."
+  ],
+  "rows": [
+    {
+      "period": "2026-q3",
+      "n": 182592,
+      "reachable": 109149,
+      "unavailable": 32566,
+      "blocked": 31,
+      "indeterminate": 40846,
+      "reachable_share_of_targets": 0.5977753680336488
+    }
+  ]
+}

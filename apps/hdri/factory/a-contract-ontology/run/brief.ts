@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-0115 B5: require explicit signed harvest snapshot manifests at source admission.</item>
   <item>Initial implementation.</item>
   <item>Make period regex case-insensitive to accept lowercase 'q' in YYYY-qn format.</item>
   <item>Normalize period to lowercase after validation — lowercase is the canonical format.</item>
@@ -21,10 +22,11 @@ import {
   parseInstrumentPlanFromFrontmatter,
   type InstrumentPlanEntry,
   type InstrumentId,
+  type HdriPeriod,
 } from "@syrokomskyi/factory-core";
 export type Brief = {
   /** Period in `yyyy-qn` format (lowercase q). Hard quarterly boundary for the contract bundle. */
-  period: string;
+  period: HdriPeriod;
   /** Semver of the ontology used to validate observations. */
   ontologyVersion: string;
   /** UUID v7 minted once for this quarterly capsule. */
@@ -34,6 +36,8 @@ export type Brief = {
   instrumentPlan: InstrumentPlanEntry[];
   /** RFC-0106: Explicit manifest paths for verified source admission. */
   inputManifestSet: string[];
+  /** Signed closed harvest snapshots, one per admitted device. */
+  coreManifestSet: string[];
 };
 
 const PERIOD_RE = /^(\d{4})-Q([1-4])$/i;
@@ -46,7 +50,7 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   if (!periodRaw || !PERIOD_RE.test(periodRaw)) {
     throw new Error('brief.md: period must be in YYYY-qn format (e.g. "2026-q2")');
   }
-  const period = periodRaw.toLowerCase();
+  const period = periodRaw.toLowerCase() as HdriPeriod; // Validated by PERIOD_RE above.
 
   const ontologyVersion =
     typeof data.ontologyVersion === "string" ? data.ontologyVersion.trim() || "1.0.0" : "1.0.0";
@@ -85,6 +89,9 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
   const inputManifestSet = Array.isArray(data.inputManifestSet)
     ? data.inputManifestSet.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
     : [];
+  const coreManifestSet = Array.isArray(data.coreManifestSet)
+    ? data.coreManifestSet.map((value) => getRequiredString(value, "coreManifestSet entry"))
+    : [];
 
   return {
     period,
@@ -93,5 +100,6 @@ export const parseBriefMarkdown = (briefMd: string): Brief => {
     skipGogols,
     instrumentPlan,
     inputManifestSet,
+    coreManifestSet,
   };
 };

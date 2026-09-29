@@ -7,6 +7,7 @@
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial implementation of copyright year extraction functionality.</item>
+  <item>Allow a fixed reference year for deterministic historical replay without changing live defaults.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -30,19 +31,23 @@ export type CopyrightYearResult = {
  * Searches `<footer>` text first (higher precision), then falls back to full body text.
  * Returns the highest valid year found (clamped to 1990–current+1).
  */
-export const extractCopyrightYear = (html: string | CheerioAPI): CopyrightYearResult => {
+export const extractCopyrightYear = (
+  html: string | CheerioAPI,
+  referenceYear = new Date().getFullYear(),
+): CopyrightYearResult => {
+  if (!Number.isInteger(referenceYear) || referenceYear < 1990 || referenceYear > 9999)
+    throw new Error("Invalid copyright reference year");
   const $ = resolveCheerio(html);
   const footerText = $("footer").text();
   const bodyText = $("body").text();
 
   const findBestYear = (text: string): number | null => {
     const re = /(?:©|\(c\)|copyright)\s*(?:\d{4}\s*[–\-–—]\s*)?(\d{4})/gi;
-    const currentYear = new Date().getFullYear();
     let best: number | null = null;
     let m: RegExpExecArray | null;
     while ((m = re.exec(text)) !== null) {
       const year = parseInt(m[1]!, 10);
-      if (year >= 1990 && year <= currentYear + 1) {
+      if (year >= 1990 && year <= referenceYear + 1) {
         if (best === null || year > best) best = year;
       }
     }

@@ -1,12 +1,13 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Defines data structures for statistical summaries and comparisons for reliable use by its direct callers and maintainers.</purpose>
+<purpose>Defines dashboard types for score summaries, comparisons and separate availability downloads.</purpose>
 <non-goals>
   <item>Does not implement data processing algorithms</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
   <item>Initial definition of data types for statistical analysis</item>
+  <item>RFC-0115: keep four-outcome availability and exact downloads distinct from score summaries.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -21,6 +22,23 @@ export type Summary = {
   min: number;
   max: number;
   stdDev?: number;
+};
+
+export type AvailabilityPeriod = {
+  period: string;
+  n: number;
+  reachable: number;
+  unavailable: number;
+  blocked: number;
+  indeterminate: number;
+  reachable_share_of_targets: number;
+};
+
+export type AvailabilityDownload = {
+  row: AvailabilityPeriod;
+  kAnonymityMin: number;
+  json: string;
+  csv: string;
 };
 
 export type Maturity = {

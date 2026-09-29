@@ -7,7 +7,7 @@ Static Astro dashboard for aggregated, anonymised HDRI (Handwerk Digital Readine
 ## Commands
 
 ```bash
-# Build (also runs the data-export step automatically)
+# Build existing public data (does not export or rerun collection)
 pnpm --filter @syrokomskyi/dashboard run build
 
 # Dev mode with live reload
@@ -21,28 +21,31 @@ pnpm --filter @syrokomskyi/dashboard run typecheck
 
 - Build command: `pnpm --filter @syrokomskyi/dashboard run build`
 - Output directory: `apps/hdri/dashboard/dist`
-- Live site: [handwerk-index.de](https://handwerk-index.de)
+- Live site: [handwerk-index.org](https://handwerk-index.org)
 
 ## Data source & refresh
 
-Before the Astro build, the export script in `apps/hdri/observatory/tools/export-dashboard-archive.ts` runs automatically. It reads the current `observatory.db` and writes public JSON files into `src/assets/data/public/`.
+Build consumes existing public files under `src/assets/data/public/`; it never
+opens observation databases or runs collection. `dev` still invokes the guarded
+exporter, while `start` runs Astro against existing data. Export and deployment
+require verified publication admission, separately from a successful build.
 
-### Important: re-run the pipeline after any codebook change
+Historical Q2 score files remain unchanged. Availability-only releases are loaded
+from `availability/<period>/public-manifest.json` with `availability.json` and
+`availability.csv`. The loader checks exact product bytes and four-outcome schema v2;
+private preview descriptors are rejected. Install files only through the admitted
+release workflow, never by copying a private candidate to make the build pass.
 
-Changes to `apps/hdri/observatory/.input/codebook.yaml` only take effect after the scoring phase re-runs:
+Availability is displayed separately from the historical score index, with exact-byte
+JSON/CSV downloads at `/daten/verfuegbarkeit/<period>.{json,csv}`. Do not advance the
+score `latest.json` pointer, invent scores or infer quarter trends from unlike products.
+Changing today's codebook does not invalidate or authorize rewriting past results.
 
-1. **Run the observatory pipeline** (ScoreHdriGogol reads the current codebook):
-
-   ```bash
-   pnpm --filter @syrokomskyi/observatory start
-   ```
-
-2. **Build the dashboard** (automatically triggers the export step):
-   ```bash
-   pnpm --filter @syrokomskyi/dashboard run build
-   ```
-
-Skipping step 1 means the dashboard export continues to use the old scores from the database.
+Q3 data collection and private verification are complete enough for these integration
+checks; final release admission, public installation and deployment remain pending.
+Tests from the repository root:
+`pnpm exec vitest run --root apps/hdri/dashboard src/tests/availability.test.ts`.
+The isolated build test uses a synthetic quarter only in a temporary workspace.
 
 ## Architecture
 

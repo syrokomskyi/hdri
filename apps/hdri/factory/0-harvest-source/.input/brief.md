@@ -7,6 +7,7 @@
 exclude: []
 
 # Limits (-1 = unlimited)
+# FULL RUN: all source files for the Q3 2026 snapshot.
 maxPages: -1
 
 # List of gogol IDs to skip during this run

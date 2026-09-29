@@ -8,6 +8,7 @@
 <CHANGE_SUMMARY>
   <item>Added comprehensive glossary entries with categories and links for each term.</item>
   <item>Updated reifestufe to reflect five actual maturity levels; added pipeline, axe-core, asset-id entries; updated canonical to use kanonisch as primary German term.</item>
+  <item>Distinguish historical Q2 and Q3 publication thresholds and require methodological admission for trends.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -183,7 +184,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     ],
     category: "Datenschutz",
     short:
-      "Ergebnisse für Gruppen mit weniger als zwölf beobachteten Websites werden nicht veröffentlicht. Die Schwelle reduziert das Risiko der indirekten Zuordnung einzelner Betriebe und erhöht zugleich die statistische Stabilität kleiner Gruppen. Bundesländer oder Gewerke mit zu wenigen Fällen werden nicht angezeigt.",
+      "Mindestfallzahl für veröffentlichte Gruppen: ursprünglich n ≥ 5 in 2026-q2, n ≥ 12 in 2026-q3. Die Schwelle gilt für das jeweilige Quartal und reduziert das Risiko indirekter Zuordnung. Sie ist kein Nachweis für Repräsentativität oder statistische Signifikanz.",
     links: [
       { label: "Methodik: Publikationsschwelle", href: "/methodik" },
       {
@@ -216,7 +217,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     aliases: ["Delta", "Veränderung", "Differenz zum Vorquartal"],
     category: "Index",
     short:
-      "Die Veränderung einer Kennzahl gegenüber dem vorangegangenen veröffentlichten Quartal, in Indexpunkten. Zu kleine oder unsichere Deltas werden unterdrückt.",
+      "Die Differenz einer Kennzahl zum Vorquartal in Indexpunkten. Ihre Interpretation als Entwicklung erfordert methodische Vergleichbarkeit. Für Q2 → Q3 sind keine Trends freigegeben: Änderungen der beobachteten Zusammensetzung und der Websites sind nicht getrennt ausgewiesen.",
     links: [{ label: "Methodik: Warum fehlen manche Deltas?", href: "/methodik" }],
   },
   {

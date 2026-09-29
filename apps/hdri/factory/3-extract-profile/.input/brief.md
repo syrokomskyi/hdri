@@ -5,6 +5,7 @@ livenessDbPath: "../2-check-liveness/.output/${DEVICE_ID}/data/db/liveness-2026-
 
 concurrency: 6
 timeoutMs: 20000
+# FULL RUN: all live domains for the Q3 2026 snapshot.
 maxDomains: -1
 skipGogols: []
 instrumentPlan:

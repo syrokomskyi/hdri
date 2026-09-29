@@ -39,6 +39,7 @@ import {
   quarterCapsuleDir,
   quarterExecutionEventsDir,
   readExecutionCasObject,
+  snapshotCapsuleDbArtifact,
   withLeaseHeartbeat,
   upsertAuditRun,
   workKeyId,
@@ -47,6 +48,7 @@ import {
   type WorkKey,
   type BrowserEvidence,
 } from "@syrokomskyi/factory-core";
+import pLimit from "p-limit";
 import { stringify as csvStringify } from "csv-stringify/sync";
 import { markdownTable } from "markdown-table";
 import { logProgress } from "@syrokomskyi/utils";
@@ -126,6 +128,13 @@ const extract = (r: AxeReport): Extracted => {
     axeVersion: r.testEngine?.version ?? null,
   };
 };
+
+/**
+ * RFC-0128 (issue 03): a capped auditSampleSize run is a partial sample —
+ * it must not seal, matching the maxDomains gate in the other stages.
+ */
+export const shouldSealAxeStage = (brief: { auditSampleSize: number }): boolean =>
+  brief.auditSampleSize < 0;
 
 // ---------------------------------------------------------------------------
 // DB upserts (tool-specific)
@@ -337,102 +346,185 @@ export class AxeAuditGogol extends Gogol {
     const totalTargets = pendingTargets.length;
     const progressInterval = Math.max(1, Math.min(10, Math.floor(totalTargets / 5)));
 
+    // Bound in-flight targets: each concurrent task holds a journal lease, a
+    // heartbeat timer, and a pool queue slot. Launching all targets at once
+    // (unbounded Promise.all) exhausts memory/swap and starves the worker pool
+    // at 100k+ scale. Keep at least poolSize in flight so workers never starve.
+    const limit = pLimit(Math.max(brief.concurrency, brief.poolSize));
+
     try {
       await Promise.all(
-        pendingTargets.map(async (target) => {
-          const startedAt = Date.now();
-          for (let retryOrdinal = 0; retryOrdinal <= brief.retries; retryOrdinal++) {
-            const leaseAt = new Date();
-            const measuredAt = leaseAt.toISOString();
-            const leaseDurationMs = brief.deadlineMs + 60_000;
-            const wkId = workKeyId(keyFor(target));
-            const durableAttemptId = mintAssetId();
-            const epoch = allocateLeaseEpoch(durableDb, wkId, durableAttemptId, measuredAt);
-            const attempt = await journal.begin({
-              key: keyFor(target),
-              attemptId: mintAssetId(),
-              leaseOwner: brief.deviceId,
-              now: measuredAt,
-              leaseExpiresAt: new Date(leaseAt.getTime() + leaseDurationMs).toISOString(),
-            });
-            if (!attempt) return;
-            try {
-              const response = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, () =>
-                pool.acquire(
-                  {
+        pendingTargets.map((target) =>
+          limit(async () => {
+            const startedAt = Date.now();
+            for (let retryOrdinal = 0; retryOrdinal <= brief.retries; retryOrdinal++) {
+              const leaseAt = new Date();
+              const measuredAt = leaseAt.toISOString();
+              const leaseDurationMs = brief.deadlineMs + 60_000;
+              const wkId = workKeyId(keyFor(target));
+              const durableAttemptId = mintAssetId();
+              const epoch = allocateLeaseEpoch(durableDb, wkId, durableAttemptId, measuredAt);
+              const attempt = await journal.begin({
+                key: keyFor(target),
+                attemptId: mintAssetId(),
+                leaseOwner: brief.deviceId,
+                now: measuredAt,
+                leaseExpiresAt: new Date(leaseAt.getTime() + leaseDurationMs).toISOString(),
+              });
+              if (!attempt) return;
+              try {
+                const response = await withLeaseHeartbeat(journal, attempt, leaseDurationMs, () =>
+                  pool.acquire(
+                    {
+                      siteId: target.siteId,
+                      provisionalAssetId: target.provisionalAssetId,
+                      domain: target.domain,
+                      url: target.url,
+                    },
+                    target.provisionalAssetId,
+                  ),
+                );
+
+                const browserEvidence = response.evidence;
+                const durationMs = Date.now() - startedAt;
+
+                if (browserEvidence.outcome === "measured" && response.axeReport) {
+                  const report = response.axeReport as AxeReport;
+                  const { sha256 } = await writeReportToCas("axe", JSON.stringify(report));
+                  const extracted = extract(report);
+
+                  const payload: AxeEvidence = {
+                    schemaVersion: 2,
+                    stage: "axe",
                     siteId: target.siteId,
                     provisionalAssetId: target.provisionalAssetId,
-                    domain: target.domain,
                     url: target.url,
+                    durationMs,
+                    browserEvidence,
+                    result: { ok: true, reportSha256: sha256, extracted },
+                  };
+                  const evidence = await writeExecutionCasObject(capsuleDir, payload);
+                  // RFC-0114: Commit through durable authority
+                  commitAttempt(durableDb, {
+                    workKeyId: wkId,
+                    attemptId: durableAttemptId,
+                    epoch,
+                    measuredAt,
+                    inputFingerprint: configSha,
+                    evidence: [{ role: "axe-report", sha256: evidence.sha256, bytes: 0 }],
+                    outcome: "succeeded",
+                  });
+                  await journal.finish(attempt, {
+                    eventId: mintAssetId(),
+                    now: new Date().toISOString(),
+                    state: "succeeded",
+                    resultSha256: evidence.sha256,
+                  });
+                  checkpoint(target, payload);
+
+                  results.push({
+                    siteId: target.siteId,
+                    ok: true,
+                    errorClass: null,
+                    durationMs,
+                    extracted,
+                  });
+                  completed++;
+                  logProgress(this.id, completed, totalTargets, progressInterval, true);
+                  console.log(
+                    `[axe-audit] site ${target.siteId} (${target.domain}) ok in ${durationMs}ms ` +
+                      `violations=${extracted.violationsTotal} (crit=${extracted.criticalCount} ` +
+                      `ser=${extracted.seriousCount} mod=${extracted.moderateCount} min=${extracted.minorCount})`,
+                  );
+                  return;
+                } else {
+                  const errorClass = browserEvidence.outcome;
+                  const errorMessage = `Browser evidence outcome: ${browserEvidence.outcome} (status=${browserEvidence.mainStatus})`;
+
+                  const payload: AxeEvidence = {
+                    schemaVersion: 2,
+                    stage: "axe",
+                    siteId: target.siteId,
+                    provisionalAssetId: target.provisionalAssetId,
+                    url: target.url,
+                    durationMs,
+                    browserEvidence,
+                    result: { ok: false, errorClass, errorMessage },
+                  };
+                  const evidence = await writeExecutionCasObject(capsuleDir, payload);
+                  // RFC-0114: Commit through durable authority
+                  commitAttempt(durableDb, {
+                    workKeyId: wkId,
+                    attemptId: durableAttemptId,
+                    epoch,
+                    measuredAt,
+                    inputFingerprint: configSha,
+                    evidence: [{ role: "axe-failure", sha256: evidence.sha256, bytes: 0 }],
+                    outcome: "failed",
+                  });
+                  await journal.finish(attempt, {
+                    eventId: mintAssetId(),
+                    now: new Date().toISOString(),
+                    state: "observed-failure",
+                    resultSha256: evidence.sha256,
+                    errorClass,
+                  });
+                  checkpoint(target, payload);
+                  results.push({
+                    siteId: target.siteId,
+                    ok: false,
+                    errorClass,
+                    durationMs,
+                    extracted: null,
+                  });
+                  completed++;
+                  logProgress(this.id, completed, totalTargets, progressInterval, true);
+                  console.log(
+                    `[axe-audit] site ${target.siteId} (${target.domain}) ${errorClass} in ${durationMs}ms`,
+                  );
+                  return;
+                }
+              } catch (err) {
+                const durationMs = Date.now() - startedAt;
+                const errorClass =
+                  err instanceof Error && /timeout|deadline/i.test(err.message)
+                    ? "timeout"
+                    : "error";
+                const errorMessage =
+                  err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500);
+                if (retryOrdinal < brief.retries) {
+                  await journal.finish(attempt, {
+                    eventId: mintAssetId(),
+                    now: new Date().toISOString(),
+                    state: "retryable",
+                    errorClass,
+                  });
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, Math.min(5_000, 500 * 2 ** retryOrdinal)),
+                  );
+                  continue;
+                }
+                const payload: AxeEvidence = {
+                  schemaVersion: 2,
+                  stage: "axe",
+                  siteId: target.siteId,
+                  provisionalAssetId: target.provisionalAssetId,
+                  url: target.url,
+                  durationMs,
+                  browserEvidence: {
+                    schema: "hdri-browser-evidence@1",
+                    workKey: target.provisionalAssetId,
+                    measuredAt: new Date().toISOString(),
+                    endpoint: target.url,
+                    mainStatus: null,
+                    effectiveUrl: target.url,
+                    outcome: "instrument-failed",
+                    environmentSha256,
+                    renderedDomSha256: null,
+                    reportSha256: null,
+                    deadlineMs: brief.deadlineMs,
+                    policySha256,
                   },
-                  target.provisionalAssetId,
-                ),
-              );
-
-              const browserEvidence = response.evidence;
-              const durationMs = Date.now() - startedAt;
-
-              if (browserEvidence.outcome === "measured" && response.axeReport) {
-                const report = response.axeReport as AxeReport;
-                const { sha256 } = await writeReportToCas("axe", JSON.stringify(report));
-                const extracted = extract(report);
-
-                const payload: AxeEvidence = {
-                  schemaVersion: 2,
-                  stage: "axe",
-                  siteId: target.siteId,
-                  provisionalAssetId: target.provisionalAssetId,
-                  url: target.url,
-                  durationMs,
-                  browserEvidence,
-                  result: { ok: true, reportSha256: sha256, extracted },
-                };
-                const evidence = await writeExecutionCasObject(capsuleDir, payload);
-                // RFC-0114: Commit through durable authority
-                commitAttempt(durableDb, {
-                  workKeyId: wkId,
-                  attemptId: durableAttemptId,
-                  epoch,
-                  measuredAt,
-                  inputFingerprint: configSha,
-                  evidence: [{ role: "axe-report", sha256: evidence.sha256, bytes: 0 }],
-                  outcome: "succeeded",
-                });
-                await journal.finish(attempt, {
-                  eventId: mintAssetId(),
-                  now: new Date().toISOString(),
-                  state: "succeeded",
-                  resultSha256: evidence.sha256,
-                });
-                checkpoint(target, payload);
-
-                results.push({
-                  siteId: target.siteId,
-                  ok: true,
-                  errorClass: null,
-                  durationMs,
-                  extracted,
-                });
-                completed++;
-                logProgress(this.id, completed, totalTargets, progressInterval, true);
-                console.log(
-                  `[axe-audit] site ${target.siteId} (${target.domain}) ok in ${durationMs}ms ` +
-                    `violations=${extracted.violationsTotal} (crit=${extracted.criticalCount} ` +
-                    `ser=${extracted.seriousCount} mod=${extracted.moderateCount} min=${extracted.minorCount})`,
-                );
-                return;
-              } else {
-                const errorClass = browserEvidence.outcome;
-                const errorMessage = `Browser evidence outcome: ${browserEvidence.outcome} (status=${browserEvidence.mainStatus})`;
-
-                const payload: AxeEvidence = {
-                  schemaVersion: 2,
-                  stage: "axe",
-                  siteId: target.siteId,
-                  provisionalAssetId: target.provisionalAssetId,
-                  url: target.url,
-                  durationMs,
-                  browserEvidence,
                   result: { ok: false, errorClass, errorMessage },
                 };
                 const evidence = await writeExecutionCasObject(capsuleDir, payload);
@@ -443,7 +535,7 @@ export class AxeAuditGogol extends Gogol {
                   epoch,
                   measuredAt,
                   inputFingerprint: configSha,
-                  evidence: [{ role: "axe-failure", sha256: evidence.sha256, bytes: 0 }],
+                  evidence: [{ role: "axe-error", sha256: evidence.sha256, bytes: 0 }],
                   outcome: "failed",
                 });
                 await journal.finish(attempt, {
@@ -464,105 +556,60 @@ export class AxeAuditGogol extends Gogol {
                 completed++;
                 logProgress(this.id, completed, totalTargets, progressInterval, true);
                 console.log(
-                  `[axe-audit] site ${target.siteId} (${target.domain}) ${errorClass} in ${durationMs}ms`,
+                  `[axe-audit] site ${target.siteId} (${target.domain}) FAILED (${errorClass}) in ${durationMs}ms: ${errorMessage.slice(0, 120)}`,
                 );
                 return;
               }
-            } catch (err) {
-              const durationMs = Date.now() - startedAt;
-              const errorClass =
-                err instanceof Error && /timeout|deadline/i.test(err.message) ? "timeout" : "error";
-              const errorMessage =
-                err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500);
-              if (retryOrdinal < brief.retries) {
-                await journal.finish(attempt, {
-                  eventId: mintAssetId(),
-                  now: new Date().toISOString(),
-                  state: "retryable",
-                  errorClass,
-                });
-                await new Promise((resolve) =>
-                  setTimeout(resolve, Math.min(5_000, 500 * 2 ** retryOrdinal)),
-                );
-                continue;
-              }
-              const payload: AxeEvidence = {
-                schemaVersion: 2,
-                stage: "axe",
-                siteId: target.siteId,
-                provisionalAssetId: target.provisionalAssetId,
-                url: target.url,
-                durationMs,
-                browserEvidence: {
-                  schema: "hdri-browser-evidence@1",
-                  workKey: target.provisionalAssetId,
-                  measuredAt: new Date().toISOString(),
-                  endpoint: target.url,
-                  mainStatus: null,
-                  effectiveUrl: target.url,
-                  outcome: "instrument-failed",
-                  environmentSha256,
-                  renderedDomSha256: null,
-                  reportSha256: null,
-                  deadlineMs: brief.deadlineMs,
-                  policySha256,
-                },
-                result: { ok: false, errorClass, errorMessage },
-              };
-              const evidence = await writeExecutionCasObject(capsuleDir, payload);
-              // RFC-0114: Commit through durable authority
-              commitAttempt(durableDb, {
-                workKeyId: wkId,
-                attemptId: durableAttemptId,
-                epoch,
-                measuredAt,
-                inputFingerprint: configSha,
-                evidence: [{ role: "axe-error", sha256: evidence.sha256, bytes: 0 }],
-                outcome: "failed",
-              });
-              await journal.finish(attempt, {
-                eventId: mintAssetId(),
-                now: new Date().toISOString(),
-                state: "observed-failure",
-                resultSha256: evidence.sha256,
-                errorClass,
-              });
-              checkpoint(target, payload);
-              results.push({
-                siteId: target.siteId,
-                ok: false,
-                errorClass,
-                durationMs,
-                extracted: null,
-              });
-              completed++;
-              logProgress(this.id, completed, totalTargets, progressInterval, true);
-              console.log(
-                `[axe-audit] site ${target.siteId} (${target.domain}) FAILED (${errorClass}) in ${durationMs}ms: ${errorMessage.slice(0, 120)}`,
-              );
-              return;
             }
-          }
-        }),
+          }),
+        ),
       );
     } finally {
       await pool.shutdown();
     }
 
-    await journal.sealStage({
-      stageId: "axe",
-      keys: targets.map(keyFor),
-      eventId: mintAssetId(),
-      now: new Date().toISOString(),
-    });
+    // RFC-0128 (issue 03): a capped auditSampleSize run is a partial sample —
+    // it must not seal, matching the maxDomains gate in the other stages.
+    if (shouldSealAxeStage(brief)) {
+      // RFC-0128: the axe DB is final at seal-time — snapshot it into the
+      // capsule and declare it as this stage's output artifact.
+      const axeDbArtifact = await snapshotCapsuleDbArtifact(
+        capsuleDir,
+        "axe",
+        brief.deviceId,
+        getAuditsDbPath(period),
+      );
+      await journal.sealStage({
+        stageId: "axe",
+        keys: targets.map(keyFor),
+        eventId: mintAssetId(),
+        now: new Date().toISOString(),
+        outputArtifacts: [axeDbArtifact],
+      });
+    }
 
+    // audit_runs is an append-only log that can retain stale rows from prior
+    // runs whose target derivation differed from the frozen set (e.g. 19
+    // residual assets). A raw COUNT(*) would over-count vs targets.length, so
+    // scope the cross-check to the declared target assets only.
+    auditsDb
+      .prepare(`CREATE TEMP TABLE _axe_target_assets (provisional_asset_id TEXT PRIMARY KEY)`)
+      .run();
+    const insTarget = auditsDb.prepare(
+      `INSERT OR IGNORE INTO _axe_target_assets (provisional_asset_id) VALUES (?)`,
+    );
+    auditsDb.transaction((ids: readonly string[]) => {
+      for (const id of ids) insTarget.run(id);
+    })(targets.map((t) => t.provisionalAssetId));
     const terminal = auditsDb
       .prepare(
         `
       SELECT
-        SUM(CASE WHEN ok = 1 THEN 1 ELSE 0 END) AS succeeded,
-        SUM(CASE WHEN ok = 0 THEN 1 ELSE 0 END) AS failed
-      FROM audit_runs WHERE tool = 'axe'
+        SUM(CASE WHEN ar.ok = 1 THEN 1 ELSE 0 END) AS succeeded,
+        SUM(CASE WHEN ar.ok = 0 THEN 1 ELSE 0 END) AS failed
+      FROM audit_runs ar
+      JOIN _axe_target_assets ta ON ta.provisional_asset_id = ar.provisional_asset_id
+      WHERE ar.tool = 'axe'
     `,
       )
       .get() as { succeeded: number | null; failed: number | null };

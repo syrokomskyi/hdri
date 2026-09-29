@@ -1,9 +1,10 @@
 ---
 /**
  * <MODULE_CONTRACT><purpose>Provide ComparisonTable behavior for the apps hdri dashboard src components subsystem and its direct callers.</purpose><non-goals><item>Do not define unrelated cross-workspace policy or orchestration behavior.</item></non-goals></MODULE_CONTRACT>
- * <CHANGE_SUMMARY><item>Document the existing ComparisonTable module contract for Compass-aware maintenance.</item></CHANGE_SUMMARY>
+ * <CHANGE_SUMMARY><item>Document the existing ComparisonTable module contract for Compass-aware maintenance.</item><item>Resolve the displayed publication threshold through the documented Q2 erratum without modifying source manifests.</item></CHANGE_SUMMARY>
  */
 import type { ComparisonPoint, PeriodManifest } from "../types";
+import { publicationThreshold } from "../data/publication-policy";
 import {
   score,
   count,
@@ -21,6 +22,7 @@ type Props = {
   accentClass?: string;
   detailsMode?: "none" | "first" | "all";
   sectionStackTop?: boolean;
+  showDelta?: boolean;
 };
 
 const {
@@ -31,6 +33,7 @@ const {
   accentClass = "accent-schema",
   detailsMode = "none",
   sectionStackTop = false,
+  showDelta = true,
 } = Astro.props;
 ---
 
@@ -44,7 +47,7 @@ const {
         <th data-sort-type="text" data-col-id="label">{labelHeader}</th>
         <th class="numeric" data-sort-type="number" data-col-id="p75">P75</th>
         <th class="numeric" data-sort-type="number" data-col-id="mean">Mittelwert</th>
-        <th class="numeric" data-sort-type="number" data-col-id="delta">Delta</th>
+        {showDelta && <th class="numeric" data-sort-type="number" data-col-id="delta">Delta</th>}
         <th class="numeric" data-sort-type="number" data-col-id="n">N</th>
       </tr>
     </thead>
@@ -59,13 +62,13 @@ const {
             <td class="numeric" data-sort-value={item.mean}>
               {score(item.mean)}
             </td>
-            <td class="numeric" data-sort-value={item.deltaFromPrevious ?? -9999}>
+            {showDelta && <td class="numeric" data-sort-value={item.deltaFromPrevious ?? -9999}>
               <span
                 class={reliabilityClass(item.reliability)}
                 title={reliabilityLabel(item.reliability)}
               />
               {deltaLabel(item)}
-            </td>
+            </td>}
             <td class="numeric" data-sort-value={item.n}>
               {count(item.n)}
             </td>
@@ -77,7 +80,7 @@ const {
   <div class="provenance-badge">
     Quelle: @syrokomskyi/observatory · Run {manifest.observatoryRunId.slice(0, 8)} ·{" "}
     <a href="/codebook">Codebook {manifest.codebookVersion}</a> · n ≥{" "}
-    {count(manifest.kAnonymityMin)}
+    {count(publicationThreshold(manifest))}
   </div>
   {
     detailsMode === "first" && items.length > 0 && (

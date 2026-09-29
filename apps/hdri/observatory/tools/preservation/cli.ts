@@ -10,7 +10,8 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
+import { findRepoRoot, getDeviceId, loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
+import { mintAssetId } from "@syrokomskyi/observatory-core";
 import { readBoundedFile } from "@warpgogol/pipeline-node";
 import {
   parseDestinations,
@@ -21,6 +22,7 @@ import {
 } from "./preserve.js";
 import { inspectBaselineScope } from "./baseline-scope.js";
 import { materializeBaselineClosure } from "./baseline-closure-materialization.js";
+import { sealConvertedBaselineCapsule } from "./baseline-capsule.js";
 
 const readJson = async (file: string): Promise<unknown> =>
   JSON.parse((await readBoundedFile(path.resolve(file), 64 * 1024 * 1024)).toString("utf8"));
@@ -28,6 +30,26 @@ function required(value: unknown): string {
   if (typeof value !== "string" || !value.trim()) throw new Error("REQUIRED_ARGUMENT_MISSING");
   return value;
 }
+const readPreservationInventory = async (
+  file: string,
+): Promise<{ sourceRoots: string[]; entries: ReturnType<typeof parsePreservationInventory> }> => {
+  const raw = await readJson(file);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw))
+    throw new Error("INVALID_PRESERVATION_INPUT");
+  const input = raw as Record<string, unknown>;
+  if (
+    Object.keys(input).sort().join(",") !== "entries,schema,sourceRoots" ||
+    input.schema !== "hdri-preservation-input@1" ||
+    !Array.isArray(input.sourceRoots) ||
+    !input.sourceRoots.length ||
+    input.sourceRoots.some((root) => typeof root !== "string")
+  )
+    throw new Error("INVALID_PRESERVATION_INPUT");
+  return {
+    sourceRoots: input.sourceRoots as string[],
+    entries: parsePreservationInventory(input.entries),
+  };
+};
 export async function main(args = process.argv.slice(2)): Promise<number> {
   const [command, ...rest] = args;
   try {
@@ -59,6 +81,11 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
                 "import-metadata": { type: "string" },
                 target: { type: "string" },
                 period: { type: "string" },
+                "preserved-capsule": { type: "string" },
+                "preservation-inventory": { type: "string" },
+                "publication-dir": { type: "string" },
+                "capsule-root": { type: "string" },
+                "device-id": { type: "string" },
               }
             : {
                 ...common,
@@ -77,22 +104,11 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
     const destinations = parseDestinations(await readJson(required(values.destinations)));
     let diagnostic;
     if (command === "preserve:q2") {
-      const raw = await readJson(required(values.inventory));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw))
-        throw new Error("INVALID_PRESERVATION_INPUT");
-      const input = raw as Record<string, unknown>;
-      if (
-        Object.keys(input).sort().join(",") !== "entries,schema,sourceRoots" ||
-        input.schema !== "hdri-preservation-input@1" ||
-        !Array.isArray(input.sourceRoots) ||
-        !input.sourceRoots.length ||
-        input.sourceRoots.some((root) => typeof root !== "string")
-      )
-        throw new Error("INVALID_PRESERVATION_INPUT");
+      const input = await readPreservationInventory(required(values.inventory));
       const dryRun = values["dry-run"] === true;
       diagnostic = await preserveQ2({
-        inventory: parsePreservationInventory(input.entries),
-        sourceRoots: input.sourceRoots as string[],
+        inventory: input.entries,
+        sourceRoots: input.sourceRoots,
         destinations,
         dryRun,
         signingKey: dryRun ? undefined : loadSigningKeyFromEnv(),
@@ -126,7 +142,8 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
       const importMetadata = await readJson(required(values["import-metadata"]));
       if (!importMetadata || typeof importMetadata !== "object" || Array.isArray(importMetadata))
         throw new Error("INVALID_BASELINE_IMPORT_METADATA");
-      diagnostic = await materializeBaselineClosure({
+      const period = required(values.period);
+      const report = await materializeBaselineClosure({
         prepared,
         scopeInventory,
         observatorySnapshotUri,
@@ -134,9 +151,38 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
         ontologyArtifactUri: required(values["ontology-artifact"]),
         codebookArtifactUri: required(values["codebook-artifact"]),
         targetPath: path.resolve(required(values.target)),
-        period: required(values.period),
+        period,
         import: importMetadata as never,
       });
+      // RFC-0129: the verified conversion is sealed as a first-class prior
+      // capsule — the preserved signed source-ledger closure is carried
+      // byte-identical and the closure report is bound as qc evidence.
+      const deviceId =
+        typeof values["device-id"] === "string" && values["device-id"].trim()
+          ? (values["device-id"] as string)
+          : getDeviceId();
+      const capsuleId = mintAssetId();
+      const capsuleDir = path.join(
+        path.resolve(
+          typeof values["capsule-root"] === "string" && values["capsule-root"].trim()
+            ? (values["capsule-root"] as string)
+            : path.join(findRepoRoot(), "apps", "hdri", "capsules"),
+        ),
+        deviceId,
+        period,
+        capsuleId,
+      );
+      const sealedCapsule = await sealConvertedBaselineCapsule({
+        capsuleDir,
+        preservedCapsuleRoot: path.resolve(required(values["preserved-capsule"])),
+        inventory: await readPreservationInventory(required(values["preservation-inventory"])),
+        convertedBaselinePath: path.resolve(required(values.target)),
+        publicationDir: path.resolve(required(values["publication-dir"])),
+        report,
+        identity: { period, capsuleId, deviceId },
+        signingKey: loadSigningKeyFromEnv(),
+      });
+      diagnostic = { ...report, sealedCapsule };
     } else {
       const signingKeyId = required(values["key-id"]);
       const publicKeyPem = (

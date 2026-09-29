@@ -37,9 +37,11 @@ afterEach(async () =>
 );
 
 const mkRoot = async () => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rfc0114-ac6-"));
-  roots.push(root);
-  return root;
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "rfc0114-ac6-"));
+  roots.push(tmp);
+  // RFC-0128: quarterCapsuleDir resolves factoryRootDir/../capsules — the root
+  // must look like a factory dir so the capsule stays inside the per-test tmp.
+  return path.join(tmp, "factory");
 };
 
 const DEVICE_ID = "test-device";

@@ -1,0 +1,8 @@
+schema: hdri-classification-release-decision@1
+period: 2026-q3
+capsuleId: 019ff219-69fe-7025-943c-dae2a8c37801
+product: cross-section
+classificationMode: existing-automatic-labels
+validationSampleRequired: false
+accuracyClaim: not-validated
+authority: operator-approved-2026-09-28

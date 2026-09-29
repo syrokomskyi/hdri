@@ -1,0 +1,9 @@
+{
+  "schema": "hdri-local-r2-config@1",
+  "period": "2026-q3",
+  "localArchiveRoot": "/home/syrokomskyi/projects/warpgogol/pipelines/apps/hdri/preservation/releases",
+  "rcloneBinary": "/home/syrokomskyi/bin/rclone",
+  "remotePrefix": "r2:hdri-preservation/releases",
+  "policyPath": "/home/syrokomskyi/projects/warpgogol/pipelines/apps/hdri/observatory/.input/preservation-scope.yaml",
+  "policySha256": "a1a67667e92ddabc505dd2fa9d5dacb9b396e6759f315811ed8ad350b05da68e"
+}

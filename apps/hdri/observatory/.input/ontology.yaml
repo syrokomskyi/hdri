@@ -302,6 +302,17 @@ signals:
 
   # ── AXE Accessibility Audit ────────────────────────────────────────────────
 
+  audit.axe.violations.total.count:
+    label: "axe-core total violations count"
+    value_type: num
+    stability: medium
+    introduced_in: "1.0.0"
+    deprecated_in: null
+    extractor: axe_core_live
+    notes: "Total number of axe-core accessibility violations across all impact levels."
+    supersedes:
+      - axe_violations_total
+
   audit.axe.violations.critical.count:
     label: "AXE critical violations count"
     value_type: num

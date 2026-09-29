@@ -37,6 +37,8 @@ export type BatchReport = {
   skipSummary: SkipSummary;
   /** Free-form warning strings accumulated during batch processing. */
   warnings: string[];
+  /** True when the batch was inherited from a sealed prior capsule (no raw re-parse). */
+  inherited?: boolean;
 };
 
 export type FileResult = {

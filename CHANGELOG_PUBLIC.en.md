@@ -1,6 +1,32 @@
 # Changelog
 
 All notable client-facing changes to the `hdri` project are documented here.
+## Platform Updates 2026-09-24 — 2026-09-30
+
+During the period under review, dashboard and data availability for the Q3 release were significantly improved, increasing the stability and traceability of scientific data. At the same time, optimizations were made to data display, availability calculation, and the separation of sources and derived results to ensure transparency and data integrity for users. In addition, new mechanisms were implemented to protect scientific evidence as well as for independent verification and restoration of archival data.
+
+### Added
+- Introduced a dedicated section for displaying and comparing availability data, allowing users to quickly compare current and previous quarterly data (Q2/Q3) (DE, EU).
+- Provision of offline verifiable availability checks and robust attestation – this enables independent verification and strengthens the trustworthiness of availability data (EU).
+- Extended options to verify scientific evidence for derived scores prior to publication; this protects users from erroneous or non-transparent assessments and safeguards scientific transparency (DE, EU).
+
+### Improved
+- Correction and clearer display of thresholds and comparison boundaries on the dashboard – ensuring more understandable interpretation of results and preventing misunderstandings (DE, EU).
+- Standardization of quarterly overviews and elimination of double counting for maturity levels, providing users with complete and unbiased overall views (DE).
+- Optimized selection and retention of approved assessment profiles for previous quarters ensure more stable historical comparisons during evaluations (DE, EU).
+
+### Fixed
+- Resolved issue with table data sorting, so that all entries are now reliably displayed according to desired criteria (DE).
+- Correct display and publication of approved Q3 data in all relevant public index and summary views, closing information gaps (DE).
+- Adjustment of data delimitation methods: the separation of derived assessment candidates and source data is now transparently traceable, increasing auditability (DE, EU).
+
+### Security & Compliance
+- Enhanced verification routines for scientific evidence: Derived assessments are now only included if they are supported by their own clear scientific proof. This improves compliance with scientific and legal requirements (DE, EU).
+- Extended archiving mechanisms with strict linkage between published data and archive holdings (local & R2), ensuring verifiable, GDPR-compliant data retention and restoration (EU).
+
+### Integrations
+- Integration and independent verification of local and R2-compliant secured archive copies; this streamlines administrative processes and gives customers confidence in the secure storage and recovery of historical data (EU).
+
 ## Platform Updates 2026-09-17 — 2026-09-23
 
 During this update period, significant improvements were made to data qualification and methodology documentation, increasing transparency and traceability for users in Europe. Additionally, audit processes were expanded and errors in handling qualification data were fixed, resulting in more consistent data workflows.

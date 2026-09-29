@@ -1,0 +1,22 @@
+# Operator intent, not a receipt or an executable release-policy override.
+schema: hdri-preservation-intent@1
+decidedOn: "2026-09-26"
+period: 2026-q3
+authority: explicit-operator-instruction
+requiredCopies:
+  - role: local
+    medium: persistent-workstation-storage
+  - role: remote
+    provider: cloudflare-r2
+    bucket: hdri-preservation
+requiredEvidence:
+  - complete-release-closure
+  - local-content-verification
+  - full-remote-readback-verification
+  - recovery-and-reconstruction
+secondOffsiteRequired: false
+limitations:
+  - Local storage and R2 are two locations, not two offsite copies.
+  - Workstation access to R2 credentials remains a shared compromise risk.
+  - Raw staging archive receipts do not certify a later final release.
+  - Existing historical custody receipts are not changed by this decision.

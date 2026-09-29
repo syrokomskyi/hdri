@@ -7,18 +7,23 @@
   <item>RFC-0031: write validation-report.json to capsule artifacts/qc/release/ directory.</item>
   <item>RFC-0109: replace --candidate/--evidence-dir with --release-input manifest. Validate scientific reports with inputFingerprint. No preliminary/final distinction — one immutable verification per input. Output JSON with releaseId, scientificReportsVerified, rebuildMatch.</item>
   <item>RFC-0110: update RebuildReceipt validation for hdri-independent-rebuild@1 schema. Check schema field, hash match, and verifyRebuildReceipt.</item>
+  <item>RFC-0115: bind reports to retained scope and the explicit Q3 classification decision; preserve every other validation requirement.</item>
+  <item>RFC-0115: pre-seal validation binds reconstruction to predicted final manifest bytes; availability-only validation independently rederives retained replay receipts.</item>
 </CHANGE_SUMMARY>
 */
 
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { verifyPublicationClosure } from "../run/release/publication-closure";
+import { expectedSealedManifestSha256 } from "../run/release/sealed-manifest-digest";
+import { verifyAvailabilityRebuildReceipt } from "../run/release/availability-rebuild";
 import type { QuarterCapsule } from "@syrokomskyi/factory-core";
 import { verifyQuarterCapsuleArtifacts } from "@syrokomskyi/factory-core";
 import {
   readScientificReports,
   sha256File,
-  verifyRebuildReceipt,
+  verifyRebuildReceiptBinding,
   type QuarterValidationReport,
   type RebuildReceipt,
   type ReleaseInput,
@@ -46,14 +51,24 @@ const evidenceDir = path.resolve(releaseInput.evidenceDir);
 const rebuildReceiptPath = path.resolve(releaseInput.rebuildReceiptPath);
 
 const sealedCapsule = JSON.parse(await fs.readFile(capsuleManifestPath, "utf8")) as QuarterCapsule;
+if (sealedCapsule.state !== "candidate" && sealedCapsule.state !== "sealed")
+  throw new Error("Quarter validation requires a candidate or sealed capsule");
 await verifyQuarterCapsuleArtifacts(capsuleDir, sealedCapsule);
+// Pre-seal validation predicts the final writer's bytes without writing or signing them.
+// Once sealed, the actual file digest remains authoritative (also checked by release).
+const measurementCapsuleSha256 = sealedCapsule.state === "candidate"
+  ? expectedSealedManifestSha256(sealedCapsule) : await sha256File(capsuleManifestPath);
 
-const reports = await readScientificReports(evidenceDir, sealedCapsule);
+const { requestedProducts, publicManifestSha256 } = await verifyPublicationClosure(capsuleDir, sealedCapsule, path.resolve(releaseInput.publicManifestPath));
+const reports = await readScientificReports(evidenceDir, sealedCapsule, requestedProducts, capsuleDir);
 
 let rebuildMatch = false;
 try {
   const rebuild = JSON.parse(await fs.readFile(rebuildReceiptPath, "utf8")) as RebuildReceipt;
-  const violations = verifyRebuildReceipt(rebuild);
+  if (sealedCapsule.releaseProfile === "availability-only@1")
+    await verifyAvailabilityRebuildReceipt(capsuleDir, sealedCapsule, rebuild);
+  else if (rebuild.schema !== "hdri-independent-rebuild@1") throw new Error("Rebuild profile mismatch");
+  const violations = verifyRebuildReceiptBinding(rebuild, measurementCapsuleSha256, publicManifestSha256);
   rebuildMatch = violations.length === 0;
 } catch {
   rebuildMatch = false;
@@ -69,19 +84,26 @@ const envelopeSha256 = createHash("sha256")
     JSON.stringify({
       releaseId: sealedCapsule.capsuleId,
       period: sealedCapsule.period,
-      measurementCapsuleSha256: await sha256File(capsuleManifestPath),
+      measurementCapsuleSha256,
       scientificInputSha256: candidateManifestSha256,
     }),
   )
   .digest("hex");
 
+const validationPath = path.join(capsuleDir, "artifacts", "qc", "release", "validation-report.json");
+let checkedAt = new Date().toISOString();
+try {
+  const retained = JSON.parse(await fs.readFile(validationPath, "utf8")) as QuarterValidationReport;
+  if (retained.envelopeSha256 === envelopeSha256 && typeof retained.checkedAt === "string" && Number.isFinite(Date.parse(retained.checkedAt)))
+    checkedAt = retained.checkedAt;
+} catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
 const report: QuarterValidationReport = {
   schemaVersion: "1",
   period: sealedCapsule.period,
   capsuleId: sealedCapsule.capsuleId,
   envelopeSha256,
   status: "pass",
-  checkedAt: new Date().toISOString(),
+  checkedAt,
   scientificReports: reports.map((r) => r.reportType),
   rebuildMatch,
   replicasVerified: 0,
@@ -91,15 +113,13 @@ const report: QuarterValidationReport = {
   hardSuppressions: [],
 };
 
-const validationPath = path.join(
-  capsuleDir,
-  "artifacts",
-  "qc",
-  "release",
-  "validation-report.json",
-);
-await fs.mkdir(path.dirname(validationPath), { recursive: true });
-await fs.writeFile(validationPath, `${JSON.stringify(report, null, 2)}\n`);
+await fs.mkdir(path.dirname(validationPath), { recursive: true, mode: 0o700 });
+const reportBytes = `${JSON.stringify(report, null, 2)}\n`;
+try { await fs.writeFile(validationPath, reportBytes, { flag: "wx", mode: 0o600 }); }
+catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+  if (await fs.readFile(validationPath, "utf8") !== reportBytes) throw new Error("QUARTER_VALIDATION_RETAINED_REPORT_CONFLICT");
+}
 
 process.stdout.write(
   `${JSON.stringify(

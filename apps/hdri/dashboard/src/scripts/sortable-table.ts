@@ -21,8 +21,10 @@ import {
   type SortingState,
   type Table,
 } from "@tanstack/table-core";
+import { storeReactivityBindings } from "@tanstack/table-core/store-reactivity-bindings";
 
 const features = tableFeatures({
+  coreReactivityFeature: storeReactivityBindings(),
   rowSortingFeature,
   coreRowModel: createCoreRowModel(),
   sortedRowModel: createSortedRowModel(),

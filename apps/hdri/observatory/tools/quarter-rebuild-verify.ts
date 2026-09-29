@@ -10,6 +10,7 @@
 <CHANGE_SUMMARY>
   <item>Remove the placeholder rebuild that could certify an empty directory; fail before filesystem effects until the actual executor exists.</item>
   <item>RFC-0115: replace REBUILD_EXECUTOR_UNAVAILABLE with actual reconstruction pipeline using RebuildSandbox isolation, vault → fresh DB → scoring → public product generation, and digest comparison.</item>
+  <item>Use the shared quarter-specific profile selection during independent score reconstruction.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: A rebuild receipt requires actual reconstruction; an absent executor never yields success.
@@ -30,7 +31,7 @@ import {
 } from "@syrokomskyi/factory-core";
 import { migrateObservatory } from "../run/db/migrate";
 import { writeAssetStatesDeduped, type AssetStateInput } from "../run/db/sync-writers";
-import { scoreAndWriteForRun } from "../run/score/score-core";
+import { scoreAndWriteForRun, scoreSelectionForPeriod } from "../run/score/score-core";
 import {
   bundleAssetStatesToInputs,
   insertRebuiltObservations,
@@ -164,6 +165,7 @@ try {
   scoreAndWriteForRun(db, codebook, {
     runId,
     period,
+    selectionPolicy: scoreSelectionForPeriod(period),
     now: new Date().toISOString(),
   });
 

@@ -1,0 +1,13 @@
+---
+/**
+ * <MODULE_CONTRACT><purpose>Render each published period through the shared HDRI index page.</purpose><non-goals><item>Do not admit private candidates or alter historical period data.</item></non-goals></MODULE_CONTRACT>
+ * <CHANGE_SUMMARY><item>Unified quarterly index: expose archived periods through the same dashboard.</item></CHANGE_SUMMARY>
+ */
+import Dashboard from "../index.astro";
+import archive from "../../assets/data/public/archive.json";
+export function getStaticPaths() {
+  return archive.map(entry => ({params: {period: entry.period}, props: {period: entry.period}}));
+}
+const {period} = Astro.props;
+---
+<Dashboard period={period} />

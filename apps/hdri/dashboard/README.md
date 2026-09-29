@@ -7,7 +7,7 @@ Statisches Astro-Dashboard für aggregierte, anonymisierte HDRI-Daten (Handwerk 
 ## Befehle
 
 ```bash
-# Bauen (führt auch automatisch den Datenexport-Schritt aus)
+# Build existing public data; no automatic export or collection
 pnpm --filter @syrokomskyi/dashboard run build
 
 # Dev-Modus mit Live-Reload
@@ -21,28 +21,25 @@ pnpm --filter @syrokomskyi/dashboard run typecheck
 
 - Build-Befehl: `pnpm --filter @syrokomskyi/dashboard run build`
 - Ausgabeverzeichnis: `apps/hdri/dashboard/dist`
-- Live-Website: [handwerk-index.de](https://handwerk-index.de)
+- Live-Website: [handwerk-index.org](https://handwerk-index.org)
 
 ## Datenquelle & Aktualisierung
 
-Vor dem Astro-Build wird das Exportskript in `apps/hdri/observatory/tools/export-dashboard-archive.ts` automatisch ausgeführt. Es liest die aktuelle `observatory.db` und schreibt öffentliche JSON-Dateien in `src/assets/data/public/`.
+Build reads existing public files only; it does not export, open observation
+databases or rerun collection. `dev` still invokes the guarded exporter; `start`
+serves existing data. Publication admission is separate from a successful build.
 
-### Wichtig: Führen Sie die Pipeline nach jeder Codebook-Änderung erneut aus
+Q2 score data remain unchanged. Availability-only quarters use the separate
+`src/assets/data/public/availability/<period>/` directory containing
+`public-manifest.json`, `availability.json` and `availability.csv`. Exact bytes,
+four outcomes and denominator are validated before rendering; preview manifests
+are rejected. Only admitted releases may install these public files.
 
-Änderungen an `apps/hdri/observatory/.input/codebook.yaml` wirken sich erst aus, nachdem die Bewertungsphase erneut ausgeführt wurde:
-
-1. **Führen Sie die Observatorium-Pipeline aus** (ScoreHdriGogol liest das aktuelle Codebook):
-
-   ```bash
-   pnpm --filter @syrokomskyi/observatory start
-   ```
-
-2. **Bauen Sie das Dashboard** (löst automatisch den Export-Schritt aus):
-   ```bash
-   pnpm --filter @syrokomskyi/dashboard run build
-   ```
-
-Wenn Schritt 1 übersprungen wird, verwendet der Dashboard-Export weiterhin die alten Scores aus der Datenbank.
+The home page keeps availability separate from scores, without a fabricated
+quarter trend. JSON/CSV downloads preserve the manifest-bound bytes. Q3 public
+installation and deployment are still pending final admission. Do not rerun
+collection or rewrite historical Q2 because today's codebook changed.
+See the [English guide](README.en.md#data-source--refresh) for paths and tests.
 
 ## Architektur
 

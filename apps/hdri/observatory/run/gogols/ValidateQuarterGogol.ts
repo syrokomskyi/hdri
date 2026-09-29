@@ -1,6 +1,6 @@
 /*
 <MODULE_CONTRACT>
-<purpose>Validates the sealed capsule: generates 8 scientific QC reports, runs empty-scratch rebuild verification, and invokes quarter-validate.ts with --release-input to produce a QuarterValidationReport.</purpose>
+<purpose>ValidateQuarterGogol selects applicable scientific QC reports from retained publication scope and invokes reconstruction and quarter validation without trusting report-file presence.</purpose>
 <non-goals>
   <item>Does not seal the capsule — use SealCapsuleGogol.</item>
   <item>Does not create replicas or publish — use ReleaseQuarterGogol.</item>
@@ -14,17 +14,21 @@
   <item>Run quarter-rebuild-verify (prepare + copy publication artifacts + verify) before writing validation report.</item>
   <item>Capture stderr from tool invocations for diagnostics instead of swallowing with stdio: pipe.</item>
   <item>RFC-0109: use --release-input contract. Invoke quarter-validate.ts instead of calling validateReleaseEvidence directly. No mutable overwrite of preliminary reports — immutable revisions via shared.ts.</item>
-  <item>RFC-0115: wire --input-manifest and --report-root through SCIENTIFIC_REPORTS registry. Remove --prepare/--candidate/--primary-public rebuild simulation.</item>
+  <item>RFC-0115: select reports from byte-bound intent and the optional Q3 classification decision; reject failed required producer verdicts.</item>
+  <item>RFC-0115: pass actual capsule/key inputs to availability/source QC and the retained public manifest to privacy review.</item>
 </CHANGE_SUMMARY>
 */
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parsePeriod } from "@syrokomskyi/observatory-core";
+import type { QuarterCapsule } from "@syrokomskyi/factory-core";
+import { getTransparencyKeysDir } from "@syrokomskyi/observatory-crypto";
 import { Gogol } from "../pipeline/Gogol";
 import type { PipelineContext } from "../pipeline/types";
 import { outputRootDir } from "../config";
-import { SCIENTIFIC_REPORTS } from "../release/release-contract";
+import { requiredRetainedScientificReports } from "../release/release-contract";
+import { readRetainedPublicationScope } from "../release/publication-scope";
 
 export class ValidateQuarterGogol extends Gogol {
   override readonly id = "validate-quarter";
@@ -34,32 +38,30 @@ export class ValidateQuarterGogol extends Gogol {
     if (!capsuleDir) throw new Error("ValidateQuarterGogol requires capsuleDir in pipeline state");
 
     const evidenceDir = path.join(capsuleDir, "artifacts", "qc", "release");
-    const validationPath = path.join(evidenceDir, "validation-report.json");
-
-    try {
-      await fs.access(validationPath);
-      return;
-    } catch {
-      // not validated yet — proceed
-    }
-
     await fs.mkdir(evidenceDir, { recursive: true });
 
     const { execFileSync } = await import("node:child_process");
     const toolsDir = path.join(import.meta.dirname, "..", "..", "tools");
     const appDir = path.resolve(import.meta.dirname, "..", "..");
     const policiesDir = path.join(appDir, "policies");
+    const candidate = JSON.parse(await fs.readFile(
+      ctx.state.candidateManifestPath ?? path.join(capsuleDir, "capsule-candidate.json"), "utf8")) as QuarterCapsule;
+    const reports = await requiredRetainedScientificReports(capsuleDir, candidate, await readRetainedPublicationScope(capsuleDir, candidate));
+    const producers = new Set(reports.map(([, entry]) => entry.producer as string));
 
     const runTool = (tool: string, toolArgs: string[]): void => {
+      if (tool.startsWith("scientific-reports/") && !producers.has(tool)) return;
       try {
-        execFileSync(
+        const stdout = execFileSync(
           process.execPath,
-          ["--import", "tsx", path.join(toolsDir, tool), ...toolArgs],
+          ["--import", "tsx", "--conditions=@syrokomskyi/source", path.join(toolsDir, tool), ...toolArgs],
           {
             stdio: ["pipe", "pipe", "pipe"],
             cwd: process.cwd(),
           },
         );
+        if (tool.startsWith("scientific-reports/") && JSON.parse(stdout.toString("utf8")).status !== "pass")
+          throw new Error(`Scientific report ${tool} rejected the candidate`);
       } catch (error) {
         const stderr = (error as { stderr?: Buffer }).stderr?.toString() ?? "";
         throw new Error(`Tool ${tool} failed: ${stderr || (error as Error).message}`, {
@@ -77,7 +79,6 @@ export class ValidateQuarterGogol extends Gogol {
       ? path.resolve(brief.vaultDir)
       : path.join(outputRootDir, "vault");
     const publicArchiveRoot = path.join(outputRootDir, "public-archive");
-    const martDir = path.join(outputRootDir, "mart");
 
     const commonArgs = [
       "--period",
@@ -117,8 +118,8 @@ export class ValidateQuarterGogol extends Gogol {
 
     runTool("scientific-reports/source-qc.ts", [
       ...commonArgs,
-      "--source-ledger-dir",
-      path.join(capsuleDir, "artifacts", "source-ledger"),
+      "--capsule-dir", capsuleDir,
+      "--keys-dir", getTransparencyKeysDir(),
     ]);
 
     runTool("scientific-reports/classification-qc.ts", [
@@ -131,16 +132,15 @@ export class ValidateQuarterGogol extends Gogol {
 
     runTool("scientific-reports/availability-report.ts", [
       ...commonArgs,
-      "--liveness-db",
-      path.join(capsuleDir, "artifacts", "liveness"),
-      "--frame",
-      path.join(capsuleDir, "artifacts", "frame"),
+      "--capsule-dir", capsuleDir,
+      "--keys-dir", getTransparencyKeysDir(),
+      "--policy", path.join(policiesDir, "k-anon-policy-v1.yaml"),
     ]);
 
     runTool("scientific-reports/privacy-review.ts", [
       ...commonArgs,
-      "--products-dir",
-      martDir,
+      "--public-manifest",
+      path.join(capsuleDir, "artifacts", "publication", "public-manifest.json"),
       "--policy",
       path.join(policiesDir, "k-anon-policy-v1.yaml"),
     ]);
@@ -167,7 +167,7 @@ export class ValidateQuarterGogol extends Gogol {
     ]);
 
     // 4b. Verify all registry-declared scientific reports exist
-    for (const filename of Object.keys(SCIENTIFIC_REPORTS)) {
+    for (const [filename] of reports) {
       try {
         await fs.access(path.join(evidenceDir, filename));
       } catch {
@@ -184,6 +184,7 @@ export class ValidateQuarterGogol extends Gogol {
         [
           "--import",
           "tsx",
+          "--conditions=@syrokomskyi/source",
           path.join(toolsDir, "quarter-validate.ts"),
           "--release-input",
           releaseInputPath,

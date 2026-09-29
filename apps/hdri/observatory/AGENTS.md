@@ -101,7 +101,177 @@ This is a **package** workspace. Expose stable typed APIs. Do not import from ap
 
 See the root `AGENTS.md` for project-wide rules, skills, and capabilities.
 
+## HDRI quarterly product contract (operator clarification, 2026-09-28)
+
+HDRI is one maturity index with quarterly snapshots, not a separate availability
+dashboard. Each collection frame contains all previously collected sites plus new
+sites; current-quarter scores use current measurements of eligible available sites.
+Failed collection is internal QC, excluded from the score denominator, never zero
+maturity and never a reason to permanently drop a site from future collection.
+The intended Q2→Q3 method change is only increased k-anonymity: retain the same
+codebook, weights and score/selection semantics. Higher k changes public suppression,
+not score computation. Preserve historical releases; admit Q3 scores as a new
+release, then expose Q2/Q3 through the same quarterly index UI. The already released
+Q3 availability product does not constitute completion of Q3 HDRI scoring.
+The operator subsequently approved excluding Q3 sites with only Axe measurements
+and no collected profile. Require the collected profile inputs for the current
+score selection; retain excluded IDs in the cumulative frame for Q4. Do not turn
+failed profile collection into absent/zero maturity indicators. Missing Axe alone
+continues to use the existing codebook rules. Live scoring and both vault/quarter
+rebuild tools now explicitly select `reachable-profile-v1` from Q3 onward through
+`scoreSelectionForPeriod`. Earlier periods keep historical selection. Shared
+`scoreAndWriteForRun` callers without an explicit policy retain legacy behavior
+for historical engine/rehearsal use; do not omit the policy in production entrypoints.
+Exclusions are private summary counts and never delete source observations or
+remove IDs from the cumulative frame. The selected sites keep the same scores,
+confidence and computation hashes as the unchanged scoring engine.
+The operator also approved using the existing automatic industry classifications
+for Q3 without a separate validation sample. Retain
+`artifacts/methodology/classification-release-decision.yaml` in the new score
+release candidate. Only the closed, byte-bound Q3 cross-section decision removes
+`classification-qc.json` from the required reports. Preparation, validation and
+release use the same selection. Do not generate a fictional classification pass
+or claim measured classification accuracy. Q4, panels and weighted products do
+not inherit this exception; privacy, source, restoration, methodology,
+reconciliation, reconstruction and custody requirements remain unchanged.
+See [the clarified contract](../../../docs/reviews/code/apps-hdri-observatory/decision-2026-09-28-unified-index.md).
+
+`tools/dashboard-cross-section.ts` decodes `hdri-dashboard-cross-section@1` JSON
+into the five dashboard payloads without SQLite access or rescoring. It checks
+closed fields, unique aggregate keys, k, quantile order and maturity/sample
+accounting. It does not authenticate inputs, validate CSV equivalence, install
+files or authorize publication. A release installer must first verify admission
+and bind the exact product bytes to the admitted manifest. Do not call the old
+database-wide archive exporter to install this product or regenerate historical Q2.
+The cumulative collection frame expands with new sites; the eligible score sample
+is not guaranteed to grow, since every quarter uses current measurements.
+
+`checkComplementarySuppression` checks current cell counts and cross-format
+agreement, not complete complementary disclosure. It returns
+`crossQuarterAssessment: not-assessed`; neither sample growth nor contraction
+proves a cross-quarter privacy violation. `ExportPublicProductsGogol` supplies
+actual per-cell `n` keyed by axis/value/statistic/dimension, never aggregate row
+counts or invented zero-valued prior totals. The scientific disclosure gate is
+still required; do not treat this local count check as publication permission.
+
 ## Scientific comparison boundary
+
+The approved `availability-only@1` capsule profile does not require derived identity
+or vault stages; never relax the default full profile. It retains all raw inventory
+parts and required instruments. Publication closure requires availability-only scope
+and a quarter/capsule-bound neutral v2 JSON/CSV descriptor, with no excluded products.
+`tools/availability-rebuild-receipt.ts --capsule-manifest <candidate-or-sealed-path>`
+derives a distinct `hdri-availability-rebuild@1` receipt from retained offline replay.
+All six scientific reports must match their exact `artifacts/qc/release/` inventory
+entries; a passing same-period report outside that byte binding cannot substitute.
+It verifies runtime/control bindings and reconstructs public bytes; it does not claim
+a new container run. Validation/release independently rederive the receipt and archive
+its bytes downstream of the capsule. Default releases still require their original
+rebuild schema. See the [decision and limits](../../../docs/reviews/code/apps-hdri-observatory/decision-2026-09-28-availability-release-profile.md).
+
+Factory sync resolves the neutral `apps/hdri/capsules/` root from the configured
+contract workspace, independently of shell cwd. Explicit validated availability-only
+preparation intent retains every observation/state; panel eligibility remains unchanged
+for other scopes. Preparation intent is not publication admission. Existing sync markers
+with a different bundle digest or incomplete availability counts fail; use a fresh run.
+Release identity export joins current-run source IDs to `asset_id_map.provisional_id`,
+never guesses the namespace, and rejects missing/duplicate/non-UUIDv7/domain-mismatched
+mappings instead of shrinking the population. Original signed IDs are not rewritten.
+
+`scientific-reports/availability-report.ts` now requires explicit `--capsule-dir`,
+`--keys-dir` and `--policy` in addition to common report scope/output flags. It
+re-verifies signed execution and every selected CAS result, keeps four outcomes,
+binds consumed bytes and keys, and never calls unavailable sites attrition.
+`scientific-reports/source-qc.ts` requires capsule/key inputs and verifies the signed
+source closure plus exact frame/liveness target-set equality. It reports applicability
+only to availability; report reading rejects reuse for other requested products.
+Neither report proves caller key authority, population/parser completeness, complete
+disclosure or release admission. The release reader's full semantic input binding and
+remaining methodology/reconstruction producers still need qualification.
+
+Availability methodology has a separate explicit producer:
+`tools/scientific-reports/availability-methodology.ts --runtime-manifest <path>
+--runtime-manifest-sha256 <pin> --policy <path>` plus common scope/output flags.
+It verifies every declared runtime-kit file and the required source/bundle/image/
+policy components; it does not execute them or trust the kit's replay verdict.
+Its `hdri-availability-methodology@1` report applies only to availability. Product
+scope checks also apply to methodology reports; never reuse this snapshot for
+scores, panels or population-weighted products. The main pipeline still needs
+explicit retained-kit wiring; do not manufacture the old eight score digests.
+
+`scientific-reports/q2-restore.ts` now consumes `--restore-receipt`, its explicit
+`--restore-receipt-sha256`, `--downloaded-archive` and `--keys-dir`, plus common
+quarter/output flags. It checks the adjacent predecessor, both retained local
+archive files, restored manifest/signature and every declared artifact without
+SQLite. The v1 record describes a flat declared closure; inventory-part records
+require a separately supported recovery contract. This audits an existing
+same-host drill with both local copies available, not a fresh disaster recovery
+or proof of remote origin. No optional marker or empty archive manifest can pass.
+Automatic pipeline wiring of the explicit recovery inputs remains pending.
+
+`scientific-reports/availability-reconciliation.ts` consumes four explicit file/pin
+pairs: `--candidate`, `--comparison`, `--bundle-manifest`, `--policy`, each with
+`--<name>-sha256`, plus common report arguments. It reuses the completed per-target
+comparison only after scope, selection, all four counts, denominator, policy and
+complete declared partition counts agree. It does not reopen the observation stream.
+The `hdri-retained-availability-reconciliation@1` report applies only to availability;
+its pins need independent admission provenance, and capsule closure must still verify
+the actual bundle partitions. Do not describe this retained-record audit as a fresh
+replay or use it for scores. The generic pipeline producer wiring remains pending.
+
+Scientific report selection now follows the capsule-retained
+`artifacts/methodology/publication-scope.yaml`, with exact digest/size and quarter
+binding. Without that artifact all products remain required; mutable `.input`
+intent or omitted public products cannot reduce gates. Availability retains six
+reports: Q2 restoration, source QC, availability, privacy, methodology and
+reconciliation. Classification and comparability are excluded only by a valid
+retained availability-only scope. This selection does not qualify the report
+producers or grant admission.
+
+Preparation retains `artifacts/publication/public-manifest.json`. Validation and
+release verify an exact one-to-one match between manifest products and capsule
+publication artifacts, including manifest bytes. Extra/private publication files,
+excluded products, duplicate entries and substituted bytes fail. Release also
+verifies the capsule signature and rereads applicable reports and the rebuild
+binding before external writes. Existing validation-file presence is not reuse
+authority; validation reruns and conflicting retained reports are not overwritten.
+Generic report-presence checks are not Q3 release approval. The September 29
+derived score release additionally binds its own reports, public products,
+isolated executable replay, operational admission and signed local/R2 custody.
+See the derived-release boundary below; do not infer approval from a candidate.
+
+Before sealing, reconstruction must bind to `expectedSealedManifestSha256(candidate)`,
+the exact pretty-printed final manifest bytes with `state: sealed`. This prediction
+does not write or authorize a seal. After sealing, validation/release use the actual
+manifest file digest. Never bind the receipt only to provisional candidate bytes:
+the state transition changes them. The validation CLI integration test executes the
+real capsule writer and requires unchanged validation bytes across that transition.
+
+`quarter:release-status` is currently an artifact inspector, not a verified release
+gate. Supply explicit `--period`, `--release-id` (the capsule ID used by the writer)
+and `--vault-dir`. It reports `unverified` or `fail`, unknown release/custody/delivery
+fields as null, and exits nonzero. It never upgrades state from an unverified
+attestation file. Trusted signature, admission, custody and public-delivery
+verification remain to be implemented before a positive release verdict exists.
+
+Q3's current operator-selected publication intent is the unified cross-section,
+recorded in `.input/publication-scope.yaml`. The already sealed availability-only
+release and its retained intent remain unchanged. `availability:prepare` prepares **private**
+content-addressed candidates from authenticated liveness targets/CAS. It does
+not publish or issue release receipts. The denominator includes every sealed
+target; blocked/indeterminate results are not unavailable sites. Do not infer
+industry representativeness, business closure, attrition or quarter-to-quarter
+change. A small nonzero outcome cell blocks the whole candidate's cell-privacy
+check rather than permitting subtraction through the total. Passing that local
+check is not a complete disclosure review. Example, signed-evidence integration
+and deterministic property tests cover this boundary in `availability-*.test.ts`.
+`availability:reconcile` independently compares every outcome/reachability value
+and CAS reference in the complete signed observation stream against selected raw
+results. It rejects same-count substitutions and late partition failures. Its
+`projection-matched-not-release-proof` artifact is private and does not certify
+unrelated signals, timestamp provenance or publication admission. The frozen
+probe treats many HTTP 4xx responses as reachable: do not describe reachability
+as successful page delivery or uptime throughout the quarter.
 
 Quarterly results do not become obsolete because another quarter or methodology exists. Preserve each result with its original period, methodology, evidence and revision identity. Validity within that scope is distinct from eligibility for reuse in a new operation or direct comparison. Missing proof limits the claim; it must not be fabricated. Corrections and reproducible backcasts need separate, linked revision identities without overwriting the originals. Forward-only runtime changes do not authorize deleting historical scientific results.
 
@@ -111,7 +281,108 @@ Quarterly results do not become obsolete because another quarter or methodology 
 
 ## HDRI preservation and conversion safety
 
-Production readiness is not established by terminal RFC statuses. Follow the A1 cutover in `docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md` and the preservation sections of `RUNBOOK.md`. `baseline:import` now runs the verified converter end-to-end (replica authentication → scope/methodology checks → materialization → independent comparison), completing `compared-not-admitted`; do not use the old DDL copier or its receipts on real evidence. That status is conversion+comparison only, never operational admission. Existing bootstrap collect/publish gates must not be bypassed with fixtures or diagnostics.
+The operator moved HDRI storage from Google Drive to the private R2 bucket
+`hdri-preservation` on 2026-09-26. Use the existing `r2:` remote; never use
+`dater-*` buckets, expose raw archives publicly, or print credentials. The old
+Drive residue (21 files) was copied and download-verified before trash cleanup;
+it was not a complete Q2 replica. Historical signed custody evidence stays intact.
+See [R2 preservation operations](R2-PRESERVATION.md) for exact prefixes, operation
+logs, recovery boundaries and running services. The operator subsequently chose
+one local copy plus one R2 copy, recorded in `.input/preservation-scope.yaml`;
+do not request a second offsite copy as a Q3 blocker. Keep both copies verified
+and recovery-tested. The intent file does not bypass release admission: the new
+local/R2 branch validates its exact pinned bytes and quarter scope. Full production
+qualification of that branch remains pending. Do not alter
+historical custody receipts or delete local Q2/Q3 evidence.
+Poll collection services no more often than every 20 minutes. The operator
+clarified that this interval does not apply to recovery/debugging; inspect those
+on meaningful milestones and explicit requests without idle status loops. The Q3
+Factory bundle, availability preparation, target-level reconciliation and raw R2
+upload/readback completed successfully. Same-host restoration from R2 also
+completed: all declared inventory contents and both availability replay hashes
+passed. Neither this drill nor the private candidate is a publication
+receipt. See R2-PRESERVATION.md for exact hashes and current recovery boundaries.
+
+`serializeAvailabilityPreview` emits deterministic JSON/CSV for explicit
+`hdri-public-availability@2`, retaining all four outcomes and the full denominator.
+It projects no private source/identity fields, validates counts/rate and recomputes
+small-cell checks using the caller's policy. This pure serializer authenticates
+nothing and grants no release authority. Its output stays private until the
+versioned schema is integrated with disclosure, manifest and admission checks;
+never silently reinterpret historical binary availability products.
+
+`availability:preview --candidate <content-addressed-json> --reconciliation
+<content-addressed-json> --policy <yaml>` binds matching scope, counts, target/CAS
+selection digests and explicit policy bytes before atomic private output under
+`.output/availability-previews/`. Content-address checks do not authenticate caller
+input. Keep CSV, JSON interpretation and preview manifest together. The command
+does not run publication admission or complete disclosure review.
+
+`availability:disclosure --preview-dir <content-addressed-directory> --period
+<period> --policy <yaml>` independently checks the exact JSON/CSV bytes, closed
+fields, fixed interpretation, all four cells and cross-format equality. Its
+`single-product-checked-not-release-admission` report does not cover historical
+releases or external auxiliary information. `tools/build-availability-runtime.ts
+--outdir <private-directory>` bundles the four verification commands and rejects
+non-builtin runtime imports. The Q3 network-disabled replay matched all four
+production digests; its pinned image, source closure and receipts are retained
+locally and download-verified in R2. See R2-PRESERVATION.md; do not repeat a
+completed replay merely to inspect status.
+
+Release attestation bytes are now synced locally before delivery and reused on
+retry only after scope, custody-policy, receipt hashes and signature verification.
+Do not regenerate the signed timestamp or replace conflicting retained evidence.
+This restart boundary does not establish whole-release qualification.
+
+`run/release/r2-transport.ts` performs immutable direct transfer and streamed full
+remote readback, checking SHA-256/size and local source stability. It permits only
+the dedicated HDRI bucket and issues byte-level results, not release custody
+receipts. Archive-content binding and release-CLI integration remain separate.
+
+`local-r2-archive.ts` now binds an exact envelope inventory to an archive and full
+R2 readback. It includes inventory parts and their leaves, excludes unlisted
+files, rejects duplicate/symlink paths and rechecks source contents after packing.
+Its byte-level archive result is not release admission. Keep writer exclusion,
+retain its private work root on durable local storage and do not delete failed
+attempts blindly. `quarter:release` now has a local/R2 branch, selected by
+`hdri-local-r2-config@1` rather than a legacy replica array. It pins configuration
+and policy bytes in the release intent, archives exact inventory, retains stable
+content-addressed local bytes and readback-verifies R2 archive/control objects.
+Attestation v2 signs the custody-policy digest; v1 remains the historical format.
+The source availability release completed on September 28; the distinct derived
+score release completed custody/admission on September 29. Neither rewrites the
+other's signed scope. See the unified release evidence and R2 preservation runbook.
+
+### Derived score release boundary
+
+`derived-score-release.ts` prepares a fresh release identity referencing the
+immutable signed source capsule. It does not relabel `availability-only@1` or
+reuse that capsule's publication permission. `derived-score-evidence.ts` verifies
+the derived inventory, five selected scientific reports, paired public products,
+runtime/source closure, isolated replay receipts and exact rebuilt dashboard
+payloads. Its result is explicitly **not admission**. Operational signed admission,
+local/R2 custody, publication attestation and authenticated installation follow.
+The real release is `b2c497fe-67df-4619-bd98-42fc96b34e52` (2026-q3, 101,321 sites).
+The compact derived archive depends on the preserved raw source archive and its
+pinned runtime image; keep both. Automatic industry labels are permitted for this
+cross-section without claiming measured classification accuracy. No panel or
+population inference is authorized. Q2 public files remain byte-identical.
+Run private TypeScript release tools with `--conditions=@syrokomskyi/source`;
+plain `source` is not the workspace export condition and can load stale dist.
+Vitest has an explicit factory-core source alias for the same reason.
+See [publication evidence](../../../docs/reviews/code/apps-hdri-observatory/release-2026-09-29-unified-q2-q3-site.md).
+
+Current capsules may retain bulk files through authenticated `artifactInventories`.
+Preserve those references when constructing candidates and use the factory-core
+complete iterator/verifier for archival closure. Release envelope
+`hdri-release-envelope@2` carries inventory-part references; replica copying must
+verify and copy every referenced leaf as well as the parts. Flat envelope version 1
+remains the representation of historical releases. A copied inventory part alone
+does not prove that its evidence files were replicated.
+
+Production readiness is not established by terminal RFC statuses. Follow the A1 cutover in `docs/plans/plan-rfc-0115-require-executable-hdri-release-and-recovery-proofs.md` and the preservation sections of `RUNBOOK.md`. `baseline:import` runs the verified converter end-to-end (replica authentication → scope/methodology checks → materialization → independent comparison) and then seals the result as a **sealed prior capsule** at `apps/hdri/capsules/<deviceId>/2026-q2/<capsuleId>/` (RFC-0129). The seal stage copies the preserved signed source-ledger closure and stage products byte-identical — each file hash-verified against the preservation inventory before copying — adds the converted baseline as `vault`, the exported `asset_id_map` as `identity`, the published Q2 bundle as `publication`, and the closure report as `qc` evidence. All instruments are `disabled` (Q2 predates the seal-evidence contract); `legacy` is never set; the capsule signature attests the new manifest only — preserved bytes are never re-signed, altered, or synthesized. The sealed capsule is the admissible `2026-q2` predecessor for `quarter:init` via the unchanged `verifyPriorCapsule` path. Do not use the old DDL copier or its receipts on real evidence. Existing bootstrap collect/publish gates must not be bypassed with fixtures or diagnostics.
+
+Before a fresh quarter collection run, clear or archive stale `.output/N-<gogolId>/` step dirs from the prior run. The pipeline writes to the shared `outputRootDir`, so idempotent steps (`ctx.fileExists` / convertIfMissing) would silently reuse a previous quarter's outputs instead of regenerating them. The canonical DB is seeded separately by `seedStagingFromCanonical`; the numbered step dirs are per-run artifacts, not durable state.
 
 Never open retained Q2 original DB/WAL sets with SQLite, even read-only: SHM can change. `prepareBaselineSource` authenticates all declared replicas with external pins and copies the entire closure into a fresh private root disjoint from originals and replicas. It alone registers the resulting deeply frozen object for `assertPreparedBaselineSource`; clones, JSON round-trips and caller-built metadata are rejected by the observation reader before I/O. This process-local acquisition check is neither an admission receipt nor durable resume support. Retry failed preparation into a fresh root. Maintain writer exclusion and stable path ancestors.
 

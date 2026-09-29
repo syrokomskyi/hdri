@@ -10,6 +10,7 @@
   <item>Add a public consumer verifier binding frozen targets, terminal events, CAS objects and signed stage seals.</item>
   <item>Bind each stage target set to exactly one matching declaration and stage-specific WorkKeys.</item>
   <item>RFC-0111: verified journal/index paths for resource evidence. No changes required — existing bounded reads and indexed lookups satisfy qualification harness demands.</item>
+  <item>RFC-0115 B5: expose immutable authenticated selected results and verify the actual producer evidence schemas.</item>
 </CHANGE_SUMMARY>
 */
 // @ai-invariant: terminal evidence is committed before its lease is released
@@ -27,7 +28,13 @@ import {
   type SigningKeyConfig,
   type VerificationKey,
 } from "@syrokomskyi/observatory-crypto";
-import { canonicalResumeKey, type WorkKey, type WorkState } from "./quarter-contracts.js";
+import {
+  canonicalResumeKey,
+  sealStagesFor,
+  type WorkKey,
+  type WorkState,
+} from "./quarter-contracts.js";
+import { appendCapsuleSealArtifacts, sha256File, type CapsuleArtifact } from "./capsule.js";
 import {
   assertStageComplete,
   selectTerminalResult,
@@ -87,6 +94,15 @@ export const workKeyId = (key: WorkKey): string =>
     key.provisionalAssetId,
     key.instrumentVersion,
   ]);
+
+/**
+ * Bounded filesystem-safe name for coordination artifacts. The canonical
+ * workKeyId hex can exceed NAME_MAX once lease/ordinal suffixes are appended,
+ * so on-disk coordination files are named by its SHA-256 instead. The full
+ * key remains the identity inside journal events and stage seals.
+ */
+const coordinationFileId = (id: string): string =>
+  createHash("sha256").update(id, "utf8").digest("hex");
 
 export const executionEventSha256 = (event: ExecutionEvent): string =>
   createHash("sha256").update(canonical(event)).digest("hex");
@@ -213,21 +229,14 @@ export class ExecutionEventStore {
   }
 }
 
+// RFC-0128: the capsule root is a neutral shared location — apps/hdri/capsules/
+// — not one app's .output/. factoryRootDir resolves to apps/hdri/factory.
 export const quarterCapsuleDir = (
   factoryRootDir: string,
   deviceId: string,
   period: string,
   capsuleId: string,
-): string =>
-  path.join(
-    factoryRootDir,
-    "a-contract-ontology",
-    ".output",
-    deviceId,
-    "capsules",
-    period,
-    capsuleId,
-  );
+): string => path.resolve(factoryRootDir, "..", "capsules", deviceId, period, capsuleId);
 
 export const quarterExecutionEventsDir = (
   factoryRootDir: string,
@@ -290,7 +299,7 @@ export const readExecutionCasObject = async <T>(capsuleDir: string, sha256: stri
 };
 
 export type ExecutionEvidenceEnvelope = Readonly<{
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   stage: WorkKey["stageId"];
   provisionalAssetId: string;
 }> &
@@ -305,9 +314,13 @@ export function assertExecutionEvidenceMatchesWorkKey(
     throw new Error(`Execution evidence is not an object for ${workKeyId(key)}`);
   }
   const evidence = payload as Record<string, unknown>;
+  // Producer contracts: homepage-capture emits the profile instrument envelope;
+  // the browser-pool Axe collector emits schema 2 with browser evidence.
+  const expectedStage = key.stageId === "homepage-capture" ? "profile" : key.stageId;
+  const expectedSchema = key.stageId === "axe" ? 2 : 1;
   if (
-    evidence.schemaVersion !== 1 ||
-    evidence.stage !== key.stageId ||
+    evidence.schemaVersion !== expectedSchema ||
+    evidence.stage !== expectedStage ||
     evidence.provisionalAssetId !== key.provisionalAssetId
   ) {
     throw new Error(`Execution evidence identity does not match WorkKey ${workKeyId(key)}`);
@@ -384,11 +397,49 @@ export const verifyQuarterExecutionClosure = async (
   requiredStages: readonly WorkKey["stageId"][],
   verificationKeys: ReadonlyMap<string, VerificationKey>,
 ): Promise<void> => {
+  await loadVerifiedQuarterExecution(capsuleDir, requiredStages, verificationKeys);
+};
+
+export type VerifiedStageSelection = Readonly<{
+  stageId: WorkKey["stageId"];
+  collectorId: string;
+  targetSetSha256: string;
+  selectedResultSetSha256: string;
+  results: readonly Readonly<{
+    key: WorkKey;
+    state: "succeeded" | "observed-failure";
+    resultSha256: string;
+  }>[];
+}>;
+
+export type VerifiedQuarterExecution = Readonly<{
+  capsuleConfigSha256: string;
+  journalSha256: string;
+  stages: readonly VerifiedStageSelection[];
+}>;
+
+const verifiedExecutionInstances = new WeakSet<object>();
+
+export const assertVerifiedQuarterExecution = (value: VerifiedQuarterExecution): void => {
+  if (!verifiedExecutionInstances.has(value)) {
+    throw new Error("Execution selection was not issued by the closure verifier");
+  }
+};
+
+export const loadVerifiedQuarterExecution = async (
+  capsuleDir: string,
+  requiredStages: readonly WorkKey["stageId"][],
+  verificationKeys: ReadonlyMap<string, VerificationKey>,
+): Promise<VerifiedQuarterExecution> => {
   const executionDir = path.join(capsuleDir, "staging", "execution");
   const store = new ExecutionEventStore(path.join(executionDir, "events"));
-  const rebuilt = await store.rebuild();
   const events = await store.readAll();
-  for (const stageId of requiredStages) {
+  const rebuilt = rebuildExecution(events);
+  const stages: VerifiedStageSelection[] = [];
+  // RFC-0128: callers pass instrument ids from the instrument plan — expand
+  // them to the seal stage ids that actually carry seals (profile →
+  // homepage-capture + detected-page-capture).
+  for (const stageId of requiredStages.flatMap((stage) => sealStagesFor(stage))) {
     const targetPath = path.join(capsuleDir, "staging", "targets", `${stageId}.json`);
     const target = JSON.parse(await fs.readFile(targetPath, "utf8")) as {
       schemaVersion: number;
@@ -469,7 +520,31 @@ export const verifyQuarterExecutionClosure = async (
     ) {
       throw new Error(`Stage ${stageId} immutable seal event is missing or inconsistent`);
     }
+    stages.push(
+      Object.freeze({
+        stageId,
+        collectorId: seal.collectorId,
+        targetSetSha256: targetHash,
+        selectedResultSetSha256,
+        results: Object.freeze(
+          selected.map((item) =>
+            Object.freeze({
+              key: Object.freeze({ ...rebuilt.work.get(item.id)!.key }),
+              state: item.state,
+              resultSha256: item.sha256,
+            }),
+          ),
+        ),
+      }),
+    );
   }
+  const verified = Object.freeze({
+    capsuleConfigSha256: rebuilt.capsuleConfigSha256,
+    journalSha256: rebuilt.journalSha256,
+    stages: Object.freeze(stages),
+  });
+  verifiedExecutionInstances.add(verified);
+  return verified;
 };
 
 /** Single-process coordinator backed by append-only evidence; reloads terminal work on resume. */
@@ -634,7 +709,7 @@ export class QuarterExecutionJournal {
     if (this.isTerminal(input.key)) return null;
     const id = workKeyId(input.key);
     if (await this.hasTerminalMarker(id)) return null;
-    const leasePath = path.join(this.coordinationDir, "leases", `${id}.json`);
+    const leasePath = path.join(this.coordinationDir, "leases", `${coordinationFileId(id)}.json`);
     if (!(await this.acquireLease(leasePath, workKeyId(input.key), input))) return null;
     if (await this.hasTerminalMarker(id)) {
       await this.releaseLease(leasePath, input.attemptId);
@@ -677,7 +752,11 @@ export class QuarterExecutionJournal {
     ) {
       throw new Error(`Terminal attempt ${attempt.attemptId} requires immutable CAS evidence`);
     }
-    const leasePath = path.join(this.coordinationDir, "leases", `${workKeyId(attempt.key)}.json`);
+    const leasePath = path.join(
+      this.coordinationDir,
+      "leases",
+      `${coordinationFileId(workKeyId(attempt.key))}.json`,
+    );
     const lease = JSON.parse(await fs.readFile(leasePath, "utf8")) as { attemptId: string };
     if (lease.attemptId !== attempt.attemptId)
       throw new Error(`Attempt ${attempt.attemptId} lost its execution lease`);
@@ -708,13 +787,14 @@ export class QuarterExecutionJournal {
     input: Readonly<{ now: string; leaseExpiresAt: string }>,
   ): Promise<void> {
     const id = workKeyId(attempt.key);
-    const leasePath = path.join(this.coordinationDir, "leases", `${id}.json`);
+    const fileId = coordinationFileId(id);
+    const leasePath = path.join(this.coordinationDir, "leases", `${fileId}.json`);
     const lease = JSON.parse(await fs.readFile(leasePath, "utf8")) as { attemptId: string };
     if (lease.attemptId !== attempt.attemptId)
       throw new Error(`Attempt ${attempt.attemptId} lost its execution lease`);
     if (Date.parse(input.leaseExpiresAt) <= Date.parse(input.now))
       throw new Error("Heartbeat expiry must be after heartbeat time");
-    const heartbeatDir = path.join(this.coordinationDir, "heartbeats", id);
+    const heartbeatDir = path.join(this.coordinationDir, "heartbeats", fileId);
     await fs.mkdir(heartbeatDir, { recursive: true });
     const heartbeatPath = path.join(
       heartbeatDir,
@@ -797,7 +877,7 @@ export class QuarterExecutionJournal {
   }
 
   private async latestHeartbeatExpiry(id: string, attemptId: string): Promise<number> {
-    const heartbeatDir = path.join(this.coordinationDir, "heartbeats", id);
+    const heartbeatDir = path.join(this.coordinationDir, "heartbeats", coordinationFileId(id));
     let names: string[];
     try {
       names = await fs.readdir(heartbeatDir);
@@ -828,7 +908,9 @@ export class QuarterExecutionJournal {
 
   private async hasTerminalMarker(id: string): Promise<boolean> {
     try {
-      await fs.access(path.join(this.coordinationDir, "terminal", `${id}.json`));
+      await fs.access(
+        path.join(this.coordinationDir, "terminal", `${coordinationFileId(id)}.json`),
+      );
       return true;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
@@ -841,7 +923,11 @@ export class QuarterExecutionJournal {
     state: "succeeded" | "observed-failure",
     resultSha256: string,
   ): Promise<void> {
-    const markerPath = path.join(this.coordinationDir, "terminal", `${id}.json`);
+    const markerPath = path.join(
+      this.coordinationDir,
+      "terminal",
+      `${coordinationFileId(id)}.json`,
+    );
     const bytes = `${canonical({ state, resultSha256 })}\n`;
     await fs.mkdir(path.dirname(markerPath), { recursive: true });
     try {
@@ -861,7 +947,11 @@ export class QuarterExecutionJournal {
   }
 
   private async ensureOrdinalCounter(id: string, minimum: number): Promise<void> {
-    const counterPath = path.join(this.coordinationDir, "ordinals", `${id}.txt`);
+    const counterPath = path.join(
+      this.coordinationDir,
+      "ordinals",
+      `${coordinationFileId(id)}.txt`,
+    );
     await fs.mkdir(path.dirname(counterPath), { recursive: true });
     try {
       const current = Number.parseInt(await fs.readFile(counterPath, "utf8"), 10);
@@ -875,7 +965,11 @@ export class QuarterExecutionJournal {
   }
 
   private async claimNextOrdinal(id: string): Promise<number> {
-    const counterPath = path.join(this.coordinationDir, "ordinals", `${id}.txt`);
+    const counterPath = path.join(
+      this.coordinationDir,
+      "ordinals",
+      `${coordinationFileId(id)}.txt`,
+    );
     let current = 0;
     try {
       current = Number.parseInt(await fs.readFile(counterPath, "utf8"), 10);
@@ -898,6 +992,9 @@ export class QuarterExecutionJournal {
       keys: readonly WorkKey[];
       eventId: string;
       now: string;
+      // RFC-0128: the stage's declared capsule output artifacts, snapshotted
+      // into the capsule dir by the caller before sealing.
+      outputArtifacts: readonly CapsuleArtifact[];
     }>,
   ): Promise<
     Readonly<{
@@ -961,23 +1058,50 @@ export class QuarterExecutionJournal {
         throw new Error(`Stage ${input.stageId} seal conflicts with immutable prior seal`);
       }
       await this.writeSignedStageSeal(stageSealPayload);
-      return { targetSetSha256, selectedResultSetSha256, succeeded, observedFailures };
+    } else {
+      await this.writeSignedStageSeal(stageSealPayload);
+      await this.store.append({
+        eventId: input.eventId,
+        eventAt: input.now,
+        eventType: "stage-sealed",
+        capsuleConfigSha256: this.capsuleConfigSha256,
+        stageId: input.stageId,
+        targetSetSha256,
+        targetCount: ids.length,
+        selectedResultSetSha256,
+        succeeded,
+        observedFailures,
+        approvedExclusions: 0,
+        quarantined: 0,
+      });
     }
-    await this.writeSignedStageSeal(stageSealPayload);
-    await this.store.append({
-      eventId: input.eventId,
-      eventAt: input.now,
-      eventType: "stage-sealed",
-      capsuleConfigSha256: this.capsuleConfigSha256,
-      stageId: input.stageId,
-      targetSetSha256,
-      targetCount: ids.length,
-      selectedResultSetSha256,
-      succeeded,
-      observedFailures,
-      approvedExclusions: 0,
-      quarantined: 0,
-    });
+    // RFC-0128: the staging manifest is a contemporaneous seal record — append
+    // this stage's admission entries (seal + target-set + declared outputs) on
+    // every seal, including idempotent retries after a mid-append crash.
+    const capsuleDir = path.dirname(this.stagingDir);
+    const sealPath = path.join(this.stagingDir, "stage-seals", `${input.stageId}.json`);
+    const targetPath = path.join(this.stagingDir, "targets", `${input.stageId}.json`);
+    const [sealStat, targetStat, sealSha256, targetSha256] = await Promise.all([
+      fs.stat(sealPath),
+      fs.stat(targetPath),
+      sha256File(sealPath),
+      sha256File(targetPath),
+    ]);
+    await appendCapsuleSealArtifacts(capsuleDir, input.stageId, [
+      {
+        stage: "qc",
+        uri: `staging/stage-seals/${input.stageId}.json`,
+        sha256: sealSha256,
+        bytes: sealStat.size,
+      },
+      {
+        stage: "qc",
+        uri: `staging/targets/${input.stageId}.json`,
+        sha256: targetSha256,
+        bytes: targetStat.size,
+      },
+      ...input.outputArtifacts,
+    ]);
     return { targetSetSha256, selectedResultSetSha256, succeeded, observedFailures };
   }
 
@@ -1319,10 +1443,11 @@ export const writeMeasurementEvidence = (db: DatabaseType, evidence: Measurement
       evidence.dependencyFingerprint,
       JSON.stringify(evidence.upstreamDigests),
       evidence.outcome,
-      JSON.stringify(evidence.contentRefs),
+      evidence.contentRefs === undefined ? null : JSON.stringify(evidence.contentRefs),
       new Date().toISOString(),
     );
   }).immediate();
+  stageProjectionCaches.get(db)?.clear();
 };
 
 export const readMeasurementEvidence = (
@@ -1482,6 +1607,7 @@ export const declareStageTargetSet = (
       stmt.run(input.stageId, input.deviceId, id, targetSetSha256, input.now);
     }
   }).immediate();
+  stageProjectionCaches.get(db)?.clear();
 
   return targetSetSha256;
 };
@@ -1526,8 +1652,108 @@ export const sealedProjection = (db: DatabaseType, workKeyId: string): SealedPro
 // ─── Transactional commit (RFC-0114) ──────────────────────────────────────
 // @ai-invariant: lease verification, evidence persistence, projection write, and lease release are atomic
 
+// Per-stage projection cache. commitAttempt recomputes stage-level digests on
+// every call; the expected work set is frozen after declareStageTargetSet and
+// measurement_evidence only grows through this module, so both are safe to
+// memoize per (db, stageId) for the life of the process. Without this cache
+// each commit issues one point query per expected key (O(targets²) per stage).
+type ProjectionTuple = {
+  workKeyId: string;
+  attemptId: string;
+  outcome: string;
+  measuredAt: string | null;
+  inputFingerprint: string;
+  evidenceRefs: string[];
+};
+
+type StageProjectionCache = {
+  expectedWorkKeys: string[];
+  terminalIds: Set<string>;
+  tuples: ProjectionTuple[];
+  fragments: string[];
+};
+
+const stageProjectionCaches = new WeakMap<DatabaseType, Map<string, StageProjectionCache>>();
+
+const projectionTupleCompare = (a: ProjectionTuple, b: ProjectionTuple): number =>
+  a.workKeyId === b.workKeyId
+    ? a.attemptId < b.attemptId
+      ? -1
+      : a.attemptId > b.attemptId
+        ? 1
+        : 0
+    : a.workKeyId < b.workKeyId
+      ? -1
+      : 1;
+
+const projectionInsertIndex = (
+  tuples: readonly ProjectionTuple[],
+  tuple: ProjectionTuple,
+): number => {
+  let lo = 0;
+  let hi = tuples.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (projectionTupleCompare(tuples[mid]!, tuple) < 0) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+};
+
+const loadStageProjectionCache = (db: DatabaseType, stageId: string): StageProjectionCache => {
+  let byStage = stageProjectionCaches.get(db);
+  if (!byStage) {
+    byStage = new Map();
+    stageProjectionCaches.set(db, byStage);
+  }
+  const cached = byStage.get(stageId);
+  if (cached) return cached;
+
+  const expectedWorkKeys = (
+    db
+      .prepare("SELECT work_key_id FROM stage_targets WHERE stage_id = ? ORDER BY work_key_id ASC")
+      .all(stageId) as { work_key_id: string }[]
+  ).map((row) => row.work_key_id);
+
+  type EvidenceRow = {
+    work_key_id: string;
+    attempt_id: string;
+    measured_at: string | null;
+    dependency_fingerprint: string;
+    outcome: string;
+    content_refs: string;
+  };
+  const rows = db
+    .prepare(
+      `SELECT work_key_id, attempt_id, measured_at, dependency_fingerprint, outcome, content_refs
+       FROM measurement_evidence
+       WHERE work_key_id IN (SELECT work_key_id FROM stage_targets WHERE stage_id = ?)
+       ORDER BY work_key_id ASC, attempt_id ASC`,
+    )
+    .all(stageId) as EvidenceRow[];
+
+  const tuples: ProjectionTuple[] = rows.map((row) => ({
+    workKeyId: row.work_key_id,
+    attemptId: row.attempt_id,
+    outcome: row.outcome,
+    measuredAt: row.measured_at,
+    inputFingerprint: row.dependency_fingerprint,
+    evidenceRefs: JSON.parse(row.content_refs) as string[],
+  }));
+  const cache: StageProjectionCache = {
+    expectedWorkKeys,
+    terminalIds: new Set(tuples.map((tuple) => tuple.workKeyId)),
+    tuples,
+    fragments: tuples.map((tuple) => canonical(tuple)),
+  };
+  byStage.set(stageId, cache);
+  return cache;
+};
+
 export const commitAttempt = (db: DatabaseType, input: CommitAttemptInput): SealedProjection => {
-  return withBusyRetry(() => {
+  const deferred: { applyCacheUpdate: (() => void) | null } = { applyCacheUpdate: null };
+  const projection = withBusyRetry(() => {
+    deferred.applyCacheUpdate = null;
     return db
       .transaction(() => {
         // 1. Verify lease epoch
@@ -1598,23 +1824,15 @@ export const commitAttempt = (db: DatabaseType, input: CommitAttemptInput): Seal
         // 4a. expectedWorkSetSha256 — from stage_targets (already have it)
 
         // 4b. terminalWorkSetSha256 — using typed set reconciliation (RFC-0114)
-        type WorkKeyRow = { work_key_id: string };
-        const stageWorkKeyRows = db
-          .prepare(
-            "SELECT work_key_id FROM stage_targets WHERE stage_id = ? ORDER BY work_key_id ASC",
-          )
-          .all(stageId) as WorkKeyRow[];
-        const expectedWorkKeys = stageWorkKeyRows.map((r) => r.work_key_id);
-
-        type EvidenceRow = { outcome: string };
-        const terminalWorkKeys = expectedWorkKeys.filter((id) => {
-          const ev = db
-            .prepare(
-              "SELECT outcome FROM measurement_evidence WHERE work_key_id = ? ORDER BY committed_at DESC LIMIT 1",
-            )
-            .get(id) as EvidenceRow | undefined;
-          return ev !== undefined;
-        });
+        // The expected set is frozen after declaration and measurement_evidence
+        // only grows through this module, so both are served from the per-stage
+        // in-memory cache instead of rescanning the tables on every commit.
+        const cache = loadStageProjectionCache(db, stageId);
+        const expectedWorkKeys = cache.expectedWorkKeys;
+        const isNewEvidence = !existing;
+        const terminalWorkKeys = expectedWorkKeys.filter(
+          (id) => cache.terminalIds.has(id) || (isNewEvidence && id === input.workKeyId),
+        );
 
         // Typed set reconciliation — validates no duplicates, computes disjoint partition
         const reconciliation = reconcileTerminalSet(expectedWorkKeys, terminalWorkKeys);
@@ -1624,36 +1842,42 @@ export const commitAttempt = (db: DatabaseType, input: CommitAttemptInput): Seal
           .digest("hex");
 
         // 4c. selectedResultSetSha256 — from sorted tuples
-        type AllEvidenceRow = {
-          work_key_id: string;
-          attempt_id: string;
-          measured_at: string | null;
-          dependency_fingerprint: string;
-          upstream_digests: string;
-          outcome: string;
-          content_refs: string;
+        const newTuple: ProjectionTuple = {
+          workKeyId: input.workKeyId,
+          attemptId: input.attemptId,
+          outcome: evidence.outcome,
+          measuredAt: evidence.measuredAt,
+          inputFingerprint: evidence.dependencyFingerprint,
+          evidenceRefs: evidence.contentRefs,
         };
-        const allEvidenceRows = db
-          .prepare(
-            `SELECT work_key_id, attempt_id, measured_at, dependency_fingerprint, upstream_digests, outcome, content_refs
-           FROM measurement_evidence
-           WHERE work_key_id IN (SELECT work_key_id FROM stage_targets WHERE stage_id = ?)
-           ORDER BY work_key_id ASC, attempt_id ASC`,
-          )
-          .all(stageId) as AllEvidenceRow[];
-
-        const selectedTuples = allEvidenceRows.map((row) => ({
-          workKeyId: row.work_key_id,
-          attemptId: row.attempt_id,
-          outcome: row.outcome,
-          measuredAt: row.measured_at,
-          inputFingerprint: row.dependency_fingerprint,
-          evidenceRefs: JSON.parse(row.content_refs) as string[],
-        }));
-
+        let fragments = cache.fragments;
+        let insertIndex = -1;
+        let newFragment = "";
+        if (isNewEvidence) {
+          newFragment = canonical(newTuple);
+          insertIndex = projectionInsertIndex(cache.tuples, newTuple);
+          fragments = [
+            ...cache.fragments.slice(0, insertIndex),
+            newFragment,
+            ...cache.fragments.slice(insertIndex),
+          ];
+        }
+        // canonical(array) is "[" + comma-joined canonical elements + "]", so
+        // hashing the joined fragments is byte-identical to canonical(tuples).
         const selectedResultSetSha256 = createHash("sha256")
-          .update(canonical(selectedTuples))
+          .update(`[${fragments.join(",")}]`)
           .digest("hex");
+
+        if (isNewEvidence) {
+          const tuple = newTuple;
+          const fragment = newFragment;
+          const index = insertIndex;
+          deferred.applyCacheUpdate = () => {
+            cache.tuples.splice(index, 0, tuple);
+            cache.fragments.splice(index, 0, fragment);
+            cache.terminalIds.add(input.workKeyId);
+          };
+        }
 
         // 4d. projectionSha256 — from canonical consumed row values with keys
         const projectionInput = {
@@ -1718,4 +1942,6 @@ export const commitAttempt = (db: DatabaseType, input: CommitAttemptInput): Seal
       })
       .immediate();
   });
+  deferred.applyCacheUpdate?.();
+  return projection;
 };

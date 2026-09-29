@@ -46,17 +46,16 @@ describe("AC-2: public boundary integration — complementary disclosure attack"
     const priorManifestPath = path.join(priorArchiveDir, "public-manifest.json");
     await fs.writeFile(priorManifestPath, JSON.stringify(priorManifest, null, 2));
 
-    // Simulate a complementary disclosure attack: current n exceeds prior n
+    // A genuine count inconsistency must fail even while the sample expands.
     const currentProducts: ProductDisclosureEntry[] = [
       { product: "cross-section", format: "csv", contentSha256: "new-hash", n: 200 },
+      { product: "cross-section", format: "json", contentSha256: "new-json-hash", n: 199 },
     ];
-    const priorProducts: ProductDisclosureEntry[] = [
-      { product: "cross-section", format: "csv", contentSha256: "prior-csv-hash", n: 100 },
-    ];
-    const result = checkComplementarySuppression(currentProducts, priorProducts, 5);
+    const result = checkComplementarySuppression(currentProducts, 5);
 
     expect(result.status).toBe("fail");
-    expect(result.crossQuarterRegressions).toHaveLength(1);
+    expect(result.crossFormatMismatches).toHaveLength(1);
+    expect(result.crossQuarterAssessment).toBe("not-assessed");
 
     // Prior manifest must still exist and be unchanged
     const priorContent = await fs.readFile(priorManifestPath, "utf8");
@@ -78,7 +77,7 @@ describe("AC-2: public boundary integration — complementary disclosure attack"
       { product: "cross-section", format: "csv", contentSha256: "a".repeat(64), n: 100 },
       { product: "cross-section", format: "json", contentSha256: "b".repeat(64), n: 100 },
     ];
-    const result = checkComplementarySuppression(currentProducts, [], 5);
+    const result = checkComplementarySuppression(currentProducts, 5);
 
     expect(result.status).toBe("pass");
 

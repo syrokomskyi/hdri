@@ -4,13 +4,11 @@
 <non-goals><item>Does not collect sites, calculate scores or waive a failed gate.</item></non-goals>
 </MODULE_CONTRACT>
  * <CHANGE_SUMMARY>
-  <item>Require the already-signed timestamp when assembling a publication attestation.</item>
-  <item>Document the existing release-contract module contract for Compass-aware maintenance.</item>
   <item>RFC-0107: add ScientificInputs, ProductVerdict, ScientificReport typed contracts and product verdict suppression.</item>
   <item>RFC-0108: add PublicProductRef, DisclosureReport, PUBLIC_PRODUCT_SCHEMAS typed contracts for private/public mart separation.</item>
   <item>RFC-0109: add ReleaseEnvelope, ReleaseInput, PublicationAttestation, new ReplicaReceipt schema. Remove validateReleaseEvidence and N+8+3 arithmetic. Add acyclic closure verification, resumable copy, independence validation, and attestation delivery.</item>
   <item>RFC-0110: replace RebuildReceipt with hdri-independent-rebuild@1 schema. Add RebuildInput, computeInputClosureSha256, createRebuildReceipt, verifyRebuildReceipt.</item>
-  <item>RFC-0115: add ExecutedStageProof, OperationalProof interfaces. Extend SCIENTIFIC_REPORTS registry with per-producer input schema, validator and affected products. Add complementary suppression cross-format/cross-quarter checks.</item>
+  <item>RFC-0115: select applicable scientific reports, including the retained operator-approved Q3 classification exception; preserve every other gate.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -19,6 +17,8 @@ import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { CapsuleArtifact, EvidenceRef, QuarterCapsule } from "@syrokomskyi/factory-core";
+import { readCapsuleInventoryPart, type CapsuleInventoryPart } from "@syrokomskyi/factory-core";
+import { hasRetainedClassificationDecision } from "./classification-release-decision";
 
 export const SCIENTIFIC_REPORTS = {
   "q2-restore.json": {
@@ -93,6 +93,25 @@ export type ScientificReportType =
 export type ScientificReportEntry = (typeof SCIENTIFIC_REPORTS)[keyof typeof SCIENTIFIC_REPORTS];
 
 export type ScientificProduct = "cross-section" | "panel" | "availability" | "post-stratified";
+export const SCIENTIFIC_PRODUCTS: readonly ScientificProduct[] = ["cross-section", "panel", "availability", "post-stratified"];
+
+export function requiredScientificReports(products: readonly ScientificProduct[] = SCIENTIFIC_PRODUCTS) {
+  if (products.length === 0 || new Set(products).size !== products.length ||
+    products.some(product => !SCIENTIFIC_PRODUCTS.includes(product)))
+    throw new Error("SCIENTIFIC_PRODUCT_SCOPE_INVALID");
+  return Object.entries(SCIENTIFIC_REPORTS).filter(([, entry]) =>
+    (entry.affectedProducts as readonly string[]).includes("methodology") ||
+    products.some(product => (entry.affectedProducts as readonly string[]).includes(product)));
+}
+
+/** Only a retained, quarter-bound operator decision can remove the classification sample requirement. */
+export async function requiredRetainedScientificReports(
+  capsuleDir: string, capsule: Pick<QuarterCapsule, "period" | "capsuleId" | "artifacts">, products: readonly ScientificProduct[],
+) {
+  const reports = requiredScientificReports(products);
+  if (!await hasRetainedClassificationDecision(capsuleDir, capsule, products)) return reports;
+  return reports.filter(([filename]) => filename !== "classification-qc.json");
+}
 
 export interface ScientificInputs {
   schema: "hdri-scientific-inputs@1";
@@ -232,7 +251,8 @@ export type ScientificGateReport = Readonly<{
   Readonly<Record<string, unknown>>;
 
 export type RebuildReceipt = Readonly<{
-  schema: "hdri-independent-rebuild@1";
+  schema: "hdri-independent-rebuild@1" | "hdri-availability-rebuild@1";
+  verificationMode?: "retained-offline-data-replay-with-current-descriptor-reconstruction";
   capsuleManifestSha256: string;
   methodologySha256: string;
   runtimeClosureSha256: string;
@@ -319,21 +339,30 @@ export const sha256Directory = async (
 
 export const readScientificReports = async (
   evidenceDir: string,
-  capsule: QuarterCapsule,
+  capsule: Pick<QuarterCapsule, "period" | "capsuleId" | "artifacts" | "releaseProfile">,
+  products: readonly ScientificProduct[] = SCIENTIFIC_PRODUCTS,
+  capsuleDir?: string,
 ): Promise<ScientificGateReport[]> => {
   const reports: ScientificGateReport[] = [];
-  for (const [filename, entry] of Object.entries(SCIENTIFIC_REPORTS)) {
+  const required = capsuleDir === undefined ? requiredScientificReports(products)
+    : await requiredRetainedScientificReports(capsuleDir, capsule, products);
+  for (const [filename, entry] of required) {
     const reportType = entry.reportType;
-    const report = JSON.parse(
-      await fs.readFile(path.join(evidenceDir, filename), "utf8"),
-    ) as ScientificGateReport;
+    const reportBytes = await fs.readFile(path.join(evidenceDir, filename));
+    if (capsule.releaseProfile === "availability-only@1") {
+      const retained = capsule.artifacts.filter(item => item.uri === `artifacts/qc/release/${filename}`);
+      if (retained.length !== 1 || retained[0]!.bytes !== reportBytes.length ||
+        retained[0]!.sha256 !== createHash("sha256").update(reportBytes).digest("hex"))
+        throw new Error(`Scientific report is not capsule-bound: ${filename}`);
+    }
+    const report = JSON.parse(reportBytes.toString("utf8")) as ScientificGateReport;
     if (
       report.schemaVersion !== "1" ||
       report.reportType !== reportType ||
       report.period !== capsule.period ||
       report.capsuleId !== capsule.capsuleId ||
       typeof report.inputFingerprint !== "string" ||
-      report.inputFingerprint.length !== 64 ||
+      !/^[a-f0-9]{64}$/.test(report.inputFingerprint) ||
       report.status !== "pass" ||
       !Array.isArray(report.violations) ||
       report.violations.length !== 0 ||
@@ -345,6 +374,12 @@ export const readScientificReports = async (
     ) {
       throw new Error(`Scientific release report failed: ${filename}`);
     }
+    const applicability = (report as ScientificGateReport & { applicability?: unknown }).applicability;
+    if (applicability !== undefined && (!Array.isArray(applicability) ||
+      applicability.length === 0 || applicability.some(value => !SCIENTIFIC_PRODUCTS.includes(value)) ||
+      products.some(product => ((entry.affectedProducts as readonly string[]).includes("methodology") ||
+        (entry.affectedProducts as readonly string[]).includes(product)) && !applicability.includes(product))))
+      throw new Error(`Scientific report does not cover requested products: ${filename}`);
     reports.push(report);
   }
   return reports;
@@ -364,7 +399,7 @@ export interface ReleaseInput {
 }
 
 export interface ReleaseEnvelope {
-  schema: "hdri-release-envelope@1";
+  schema: "hdri-release-envelope@1" | "hdri-release-envelope@2";
   releaseId: string;
   period: string;
   measurementCapsuleSha256: string;
@@ -374,6 +409,7 @@ export interface ReleaseEnvelope {
     sha256: string;
     bytes: number;
     access: "public" | "internal" | "restricted";
+    artifactInventory?: CapsuleInventoryPart;
   }[];
   publicManifestSha256: string;
   rebuildReceiptSha256: string;
@@ -383,7 +419,8 @@ export interface ReleaseEnvelope {
 export type ReleaseState = "prepared" | "scientifically-verified" | "replicated" | "published";
 
 export interface PublicationAttestation {
-  schema: "hdri-publication-attestation@1";
+  schema: "hdri-publication-attestation@1" | "hdri-publication-attestation@2";
+  custodyPolicySha256?: string;
   releaseId: string;
   envelopeSha256: string;
   replicaReceiptSha256s: string[];
@@ -434,10 +471,13 @@ export const createRebuildReceipt = (
 
 export const verifyRebuildReceipt = (receipt: RebuildReceipt): string[] => {
   const violations: string[] = [];
-  if (receipt.schema !== "hdri-independent-rebuild@1") {
+  if (receipt.schema !== "hdri-independent-rebuild@1" && receipt.schema !== "hdri-availability-rebuild@1") {
     violations.push("rebuild_receipt_schema_mismatch");
     return violations;
   }
+  if (receipt.schema === "hdri-availability-rebuild@1" &&
+    receipt.verificationMode !== "retained-offline-data-replay-with-current-descriptor-reconstruction")
+    violations.push("rebuild_receipt_verification_mode_invalid");
   if (!SHA256_HEX.test(receipt.capsuleManifestSha256)) {
     violations.push("rebuild_receipt_capsule_manifest_hash_invalid");
   }
@@ -474,13 +514,30 @@ export const verifyRebuildReceipt = (receipt: RebuildReceipt): string[] => {
   return violations;
 };
 
+export const verifyRebuildReceiptBinding = (receipt: RebuildReceipt, capsuleManifestSha256: string,
+  publicManifestSha256: string): string[] => {
+  const violations = verifyRebuildReceipt(receipt);
+  if (receipt.capsuleManifestSha256 !== capsuleManifestSha256)
+    violations.push("rebuild_receipt_current_capsule_mismatch");
+  if (receipt.expectedPublicManifestSha256 !== publicManifestSha256 || receipt.rebuiltPublicManifestSha256 !== publicManifestSha256)
+    violations.push("rebuild_receipt_current_public_manifest_mismatch");
+  if (Date.parse(receipt.completedAt) < Date.parse(receipt.startedAt))
+    violations.push("rebuild_receipt_time_order_invalid");
+  return violations;
+};
+
 export const computeClosureDigest = (
   inventory: readonly ReleaseEnvelope["inventory"][number][],
 ): string => {
   const sorted = [...inventory]
     .map((entry) => `${entry.uri}\0${entry.sha256}\0${entry.bytes}`)
     .sort();
-  return createHash("sha256").update(sorted.join("\n")).digest("hex");
+  const hash = createHash("sha256");
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0) hash.update("\n");
+    hash.update(sorted[i]!);
+  }
+  return hash.digest("hex");
 };
 
 export const createReleaseEnvelope = (
@@ -493,7 +550,9 @@ export const createReleaseEnvelope = (
   rebuildReceiptSha256: string,
   keyBundleSha256: string,
 ): ReleaseEnvelope => ({
-  schema: "hdri-release-envelope@1",
+  schema: inventory.some((entry) => entry.artifactInventory)
+    ? "hdri-release-envelope@2"
+    : "hdri-release-envelope@1",
   releaseId,
   period,
   measurementCapsuleSha256,
@@ -506,7 +565,10 @@ export const createReleaseEnvelope = (
 
 export const verifyReleaseEnvelope = (envelope: ReleaseEnvelope): string[] => {
   const violations: string[] = [];
-  if (envelope.schema !== "hdri-release-envelope@1") {
+  if (
+    envelope.schema !== "hdri-release-envelope@1" &&
+    envelope.schema !== "hdri-release-envelope@2"
+  ) {
     violations.push("envelope_schema_mismatch");
     return violations;
   }
@@ -527,6 +589,15 @@ export const verifyReleaseEnvelope = (envelope: ReleaseEnvelope): string[] => {
   }
   const envelopeHash = createHash("sha256").update(JSON.stringify(envelope)).digest("hex");
   for (const entry of envelope.inventory) {
+    if (
+      entry.artifactInventory &&
+      (envelope.schema !== "hdri-release-envelope@2" ||
+        entry.access !== "internal" ||
+        entry.uri !== entry.artifactInventory.uri ||
+        entry.sha256 !== entry.artifactInventory.sha256 ||
+        entry.bytes !== entry.artifactInventory.bytes)
+    )
+      violations.push(`inventory_reference_invalid:${entry.uri}`);
     if (!SHA256_HEX.test(entry.sha256)) {
       violations.push(`inventory_entry_hash_invalid:${entry.uri}`);
     }
@@ -561,7 +632,23 @@ export const resumeReplicaCopy = async (
 ): Promise<{ verifiedBytes: number; verifiedObjects: number; closureDigest: string }> => {
   let verifiedBytes = 0;
   let verifiedObjects = 0;
-  for (const entry of inventory) {
+  async function* expandedInventory() {
+    for (const entry of inventory) {
+      if (entry.artifactInventory) {
+        if (
+          entry.access !== "internal" ||
+          entry.uri !== entry.artifactInventory.uri ||
+          entry.sha256 !== entry.artifactInventory.sha256 ||
+          entry.bytes !== entry.artifactInventory.bytes
+        )
+          throw new Error(`Replica inventory reference mismatch: ${entry.uri}`);
+        for (const artifact of await readCapsuleInventoryPart(sourceDir, entry.artifactInventory))
+          yield artifact;
+      }
+      yield entry;
+    }
+  }
+  for await (const entry of expandedInventory()) {
     const source = path.join(sourceDir, entry.uri);
     const destination = path.join(destinationDir, entry.uri);
     await fs.mkdir(path.dirname(destination), { recursive: true });
@@ -577,7 +664,7 @@ export const resumeReplicaCopy = async (
     }
     // Read-back verify
     const actualHash = await sha256File(destination);
-    if (actualHash !== entry.sha256) {
+    if (actualHash !== entry.sha256 || (await fs.stat(destination)).size !== entry.bytes) {
       throw new Error(`Read-back verification failed for ${entry.uri}`);
     }
     verifiedBytes += entry.bytes;
@@ -597,15 +684,21 @@ export const createPublicationAttestation = (
   signingKeyId: string,
   signature: string,
   attestedAt: string,
-): PublicationAttestation => ({
-  schema: "hdri-publication-attestation@1",
+  custodyPolicySha256?: string,
+): PublicationAttestation => {
+  if (custodyPolicySha256 !== undefined && !SHA256_HEX.test(custodyPolicySha256))
+    throw new Error("ATTESTATION_CUSTODY_POLICY_DIGEST_INVALID");
+  return {
+  schema: custodyPolicySha256 ? "hdri-publication-attestation@2" : "hdri-publication-attestation@1",
+  ...(custodyPolicySha256 ? { custodyPolicySha256 } : {}),
   releaseId: envelope.releaseId,
   envelopeSha256: createHash("sha256").update(JSON.stringify(envelope)).digest("hex"),
   replicaReceiptSha256s,
   attestedAt,
   signingKeyId,
   signature,
-});
+  };
+};
 
 export const verifyAttestationDelivery = async (
   attestation: PublicationAttestation,
@@ -641,10 +734,12 @@ export const artifactForFile = async (
   return { stage, uri, sha256: await sha256File(absolute), bytes: stat.size };
 };
 
-// --- RFC-0115: Complementary suppression cross-format/cross-quarter checks ---
+// --- RFC-0115: Count consistency (not complete complementary-disclosure review) ---
 
 export interface ProductDisclosureEntry {
   product: PublicProductType;
+  /** Absent for a product-wide total; present for a particular aggregate cell. */
+  cellKey?: string;
   format: "csv" | "json";
   contentSha256: string;
   n: number;
@@ -654,23 +749,26 @@ export interface ComplementarySuppressionResult {
   status: "pass" | "fail";
   violations: string[];
   crossFormatMismatches: string[];
-  crossQuarterRegressions: string[];
+  crossQuarterAssessment: "not-assessed";
 }
 
+// Counts alone cannot establish cross-quarter differencing disclosure. New market
+// snapshots may grow or shrink; actual disclosure review remains a separate gate.
 export const checkComplementarySuppression = (
   currentProducts: readonly ProductDisclosureEntry[],
-  priorProducts: readonly ProductDisclosureEntry[],
   effectiveK: number,
 ): ComplementarySuppressionResult => {
   const violations: string[] = [];
   const crossFormatMismatches: string[] = [];
-  const crossQuarterRegressions: string[] = [];
+  if (!Number.isSafeInteger(effectiveK) || effectiveK < 1)
+    throw new Error("DISCLOSURE_K_INVALID");
 
-  const byProduct = new Map<PublicProductType, ProductDisclosureEntry[]>();
+  const byProduct = new Map<string, ProductDisclosureEntry[]>();
   for (const entry of currentProducts) {
-    const list = byProduct.get(entry.product) ?? [];
+    const key = entry.cellKey === undefined ? entry.product : `${entry.product}:${entry.cellKey}`;
+    const list = byProduct.get(key) ?? [];
     list.push(entry);
-    byProduct.set(entry.product, list);
+    byProduct.set(key, list);
   }
 
   for (const [product, entries] of byProduct) {
@@ -684,28 +782,11 @@ export const checkComplementarySuppression = (
       }
     }
     for (const entry of entries) {
+      if (!Number.isSafeInteger(entry.n) || entry.n < 0)
+        violations.push(`invalid_cell_count:${product}:${entry.format}`);
       if (entry.n < effectiveK) {
         violations.push(`below_k_threshold:${product}:${entry.format}:n=${entry.n}`);
       }
-    }
-  }
-
-  const priorByProduct = new Map<PublicProductType, number>();
-  for (const entry of priorProducts) {
-    const existing = priorByProduct.get(entry.product);
-    if (existing === undefined || entry.n > existing) {
-      priorByProduct.set(entry.product, entry.n);
-    }
-  }
-
-  for (const [product, entries] of byProduct) {
-    const currentMaxN = Math.max(...entries.map((e) => e.n));
-    const priorN = priorByProduct.get(product);
-    if (priorN !== undefined && currentMaxN > priorN) {
-      crossQuarterRegressions.push(
-        `cross_quarter_n_regression:${product}: prior=${priorN} current=${currentMaxN}`,
-      );
-      violations.push(`complementary_suppression_cross_quarter:${product}`);
     }
   }
 
@@ -713,6 +794,6 @@ export const checkComplementarySuppression = (
     status: violations.length === 0 ? "pass" : "fail",
     violations,
     crossFormatMismatches,
-    crossQuarterRegressions,
+    crossQuarterAssessment: "not-assessed",
   };
 };

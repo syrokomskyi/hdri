@@ -2,7 +2,7 @@
 <MODULE_CONTRACT>
 <purpose>Performs the HDRI scientific release: reads a ReleaseInput manifest, builds a ReleaseEnvelope, replicates sealed artifacts with resumable copy, creates a PublicationAttestation, and atomically publishes the public archive.</purpose>
 <non-goals>
-  <item>Does not validate evidence — use quarter:validate first.</item>
+  <item>Does not produce scientific evidence; rechecks required reports and binding before release effects.</item>
   <item>Does not seal the capsule — use SealCapsuleGogol first.</item>
   <item>Does not waive gates, mutate prior releases or collect new observations.</item>
 </non-goals>
@@ -12,7 +12,7 @@
   <item>Block unqualified direct releases before copying artifacts or loading signing keys.</item>
   <item>RFC-0031: split combined validate+seal+release into release-only. Validation moved to quarter:validate, sealing moved to SealCapsuleGogol.</item>
   <item>RFC-0109: replace --capsule/--validation/--replica-config/--vault-dir/--public-archive-dir with --release-input manifest. Build ReleaseEnvelope, resumable copy with read-back verify, validate replica independence, create PublicationAttestation, atomic publish. Remove QuarterReleaseManifest — forward-only replacement.</item>
-  <item>RFC-0115: freeze release intent before external effects, durable transaction lock, explicit acyclic closure order (M+K → S → P0/D/P → R → E → Ri → A), revalidation before pointer switch.</item>
+  <item>RFC-0115: verify capsule signature, public closure, retained report requirements including the Q3 classification decision, and reconstruction before effects.</item>
 </CHANGE_SUMMARY>
 */
 
@@ -25,12 +25,19 @@ import {
   loadAdmissionInputFromFiles,
   verifyAdmissionDomainEvidence,
   verifyQuarterCapsuleArtifacts,
+  verifyQuarterCapsuleSignature,
+  type CapsuleSignature,
   type QuarterCapsule,
 } from "@syrokomskyi/factory-core";
-import { canonicalize, loadSigningKeyFromEnv } from "@syrokomskyi/observatory-crypto";
+import { canonicalize, loadSigningKeyFromEnv, loadVerificationKeys, getTransparencyKeysDir } from "@syrokomskyi/observatory-crypto";
 import { acquirePidLock } from "@syrokomskyi/utils";
+import { archiveReleaseToR2 } from "../run/release/local-r2-archive";
+import { validateLocalR2Config } from "../run/release/local-r2-policy";
+import { putVerifiedR2Object } from "../run/release/r2-transport";
+import { retainPublicationAttestation } from "../run/release/durable-attestation";
+import { verifyPublicationClosure } from "../run/release/publication-closure";
+import { verifyAvailabilityRebuildReceipt } from "../run/release/availability-rebuild";
 import {
-  createPublicationAttestation,
   createReleaseEnvelope,
   resumeReplicaCopy,
   sha256Directory,
@@ -38,6 +45,9 @@ import {
   validateReplicaIndependence,
   verifyAttestationDelivery,
   verifyReleaseEnvelope,
+  readScientificReports,
+  verifyRebuildReceiptBinding,
+  type RebuildReceipt,
   type ReleaseEnvelope,
   type ReleaseInput,
   type ReplicaReceipt,
@@ -102,11 +112,35 @@ const gate = evaluateProgramGate(
 if (gate.status === "blocked") {
   throw new Error(`ProgramGate blocked: ${gate.blockerCodes.join(", ")}`);
 }
+const capsuleSignature = JSON.parse(await fs.readFile(path.join(capsuleDir, "capsule-signature.json"), "utf8")) as CapsuleSignature;
+const verificationKeys = await loadVerificationKeys(getTransparencyKeysDir());
+const capsuleKey = verificationKeys.get(capsuleSignature.signingKeyId);
+if (!capsuleKey || !verifyQuarterCapsuleSignature(sealedCapsule, capsuleSignature, capsuleKey))
+  throw new Error("RELEASE_CAPSULE_SIGNATURE_INVALID");
 await verifyQuarterCapsuleArtifacts(capsuleDir, sealedCapsule);
+const publicationClosure = await verifyPublicationClosure(capsuleDir, sealedCapsule, publicManifestPath);
+await readScientificReports(path.resolve(releaseInput.evidenceDir), sealedCapsule, publicationClosure.requestedProducts, capsuleDir);
+const rebuildReceipt = JSON.parse(await fs.readFile(rebuildReceiptPath, "utf8")) as RebuildReceipt;
+if (sealedCapsule.releaseProfile === "availability-only@1")
+  await verifyAvailabilityRebuildReceipt(capsuleDir, sealedCapsule, rebuildReceipt);
+else if (rebuildReceipt.schema !== "hdri-independent-rebuild@1") throw new Error("Rebuild profile mismatch");
+const rebuildViolations = verifyRebuildReceiptBinding(rebuildReceipt, await sha256File(capsuleManifestPath), publicationClosure.publicManifestSha256);
+if (rebuildViolations.length) throw new Error(`RELEASE_REBUILD_BINDING_FAILED:${rebuildViolations.join(",")}`);
+
+const replicaConfigBytes = await fs.readFile(replicaConfigPath);
+const replicaConfiguration: unknown = JSON.parse(replicaConfigBytes.toString("utf8"));
+const localR2 = Array.isArray(replicaConfiguration) ? null : await (async () => {
+  if (!replicaConfiguration || typeof replicaConfiguration !== "object" ||
+    !("policyPath" in replicaConfiguration) || typeof replicaConfiguration.policyPath !== "string")
+    throw new Error("LOCAL_R2_CONFIG_INVALID");
+  return validateLocalR2Config(replicaConfiguration, await fs.readFile(replicaConfiguration.policyPath), sealedCapsule.period);
+})();
 
 // --- RFC-0115: Freeze release intent before any external effects ---
 const releaseIntentHash = createHash("sha256")
-  .update(JSON.stringify(canonicalize(releaseInput)))
+  .update(JSON.stringify(canonicalize({ releaseInput,
+    replicaConfigSha256: createHash("sha256").update(replicaConfigBytes).digest("hex"),
+    custodyPolicySha256: localR2?.policySha256 ?? null })))
   .digest("hex");
 const releaseIntentDir = path.join(capsuleDir, "artifacts", "qc", "release");
 await fs.mkdir(releaseIntentDir, { recursive: true });
@@ -126,8 +160,10 @@ try {
   await fs.writeFile(releaseIntentPath, releaseIntentBytes, { flag: "wx" });
 } catch (error) {
   if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-  const existing = await fs.readFile(releaseIntentPath, "utf8");
-  if (existing !== releaseIntentBytes) {
+  const existing = JSON.parse(await fs.readFile(releaseIntentPath, "utf8"));
+  if (existing.schema !== "hdri-release-intent@1" || existing.releaseIntentHash !== releaseIntentHash ||
+    existing.period !== sealedCapsule.period || existing.capsuleId !== sealedCapsule.capsuleId ||
+    typeof existing.frozenAt !== "string" || !Number.isFinite(Date.parse(existing.frozenAt))) {
     throw new Error(`Release intent conflict: ${releaseIntentPath}`);
   }
 }
@@ -140,8 +176,8 @@ const lockHandle = await acquirePidLock(
 );
 
 try {
-  const replicaConfig = JSON.parse(await fs.readFile(replicaConfigPath, "utf8")) as ReplicaConfig[];
-  if (replicaConfig.length < 2)
+  const replicaConfig = localR2 ? [] : replicaConfiguration as ReplicaConfig[];
+  if (!localR2 && replicaConfig.length < 2)
     throw new Error("At least two offsite replica destinations are required");
   const destinationRoots = replicaConfig.map((item) => path.resolve(item.destinationDir));
   if (
@@ -194,6 +230,15 @@ try {
       access,
     });
   }
+  for (const part of sealedCapsule.artifactInventories ?? []) {
+    inventory.push({
+      uri: part.uri,
+      sha256: part.sha256,
+      bytes: part.bytes,
+      access: "internal",
+      artifactInventory: part,
+    });
+  }
   // Add capsule manifest, candidate, and signature to inventory
   inventory.push({
     uri: "capsule-manifest.json",
@@ -216,6 +261,13 @@ try {
   });
 
   // --- K: Key bundle ---
+  // Reconstruction controls are downstream of the capsule and must survive archival too.
+  const rebuildUri = path.relative(capsuleDir, rebuildReceiptPath).split(path.sep).join("/");
+  if (!rebuildUri || rebuildUri.startsWith("../") || path.isAbsolute(rebuildUri))
+    throw new Error("REBUILD_RECEIPT_MUST_BE_RETAINED_IN_CAPSULE_ROOT");
+  if (!inventory.some(item => item.uri === rebuildUri)) inventory.push({ uri: rebuildUri,
+    sha256: rebuildReceiptSha256, bytes: (await fs.stat(rebuildReceiptPath)).size, access: "internal" });
+
   const signingKey = loadSigningKeyFromEnv();
   const keyBundleSha256 = createHash("sha256").update(signingKey.publicKeyPem).digest("hex");
 
@@ -241,6 +293,9 @@ try {
   // --- S: Scientific input (already verified via capsule artifacts) ---
   // --- P0/D/P: Public products, dashboard, public archive (staged below, published after pointer switch) ---
   // --- R: Replicas ---
+  const localR2Archive = localR2 ? await archiveReleaseToR2({ capsuleDir,
+    workRoot: localR2.localArchiveRoot, envelope, remotePrefix: localR2.remotePrefix,
+    rcloneBinary: localR2.rcloneBinary }) : null;
   const replicaReceipts: ReplicaReceipt[] = [];
   for (let i = 0; i < replicaConfig.length; i++) {
     const config = replicaConfig[i]!;
@@ -265,7 +320,7 @@ try {
   }
 
   // --- Validate replica independence ---
-  const independenceViolations = validateReplicaIndependence(replicaReceipts);
+  const independenceViolations = localR2Archive ? [] : validateReplicaIndependence(replicaReceipts);
   if (independenceViolations.length > 0) {
     throw new Error(`Replica independence validation failed: ${independenceViolations.join(", ")}`);
   }
@@ -274,7 +329,8 @@ try {
   const releaseQcDir = path.join(capsuleDir, "artifacts", "qc", "release");
   const replicaReceiptsPath = path.join(releaseQcDir, "replica-receipts.json");
   await fs.mkdir(path.dirname(replicaReceiptsPath), { recursive: true });
-  const replicaReceiptsBytes = `${JSON.stringify(replicaReceipts, null, 2)}\n`;
+  const custodyRecords = localR2Archive ? [{ ...localR2Archive, custodyPolicySha256: localR2!.policySha256 }] : replicaReceipts;
+  const replicaReceiptsBytes = `${JSON.stringify(custodyRecords, null, 2)}\n`;
   try {
     await fs.writeFile(replicaReceiptsPath, replicaReceiptsBytes, { flag: "wx" });
   } catch (error) {
@@ -287,33 +343,47 @@ try {
 
   // --- A: Attestation ---
   const replicaReceiptSha256s = [await sha256File(replicaReceiptsPath)];
-  const attestedAt = new Date().toISOString();
-  const attestationSignature = crypto
-    .sign(
-      null,
-      createHash("sha256")
-        .update(
-          canonicalize({
-            schema: "hdri-publication-attestation@1",
-            releaseId: envelope.releaseId,
-            envelopeSha256,
-            replicaReceiptSha256s,
-            attestedAt,
-            signingKeyId: signingKey.signingKeyId,
-          }),
-        )
-        .digest(),
-      crypto.createPrivateKey(signingKey.privateKeyPem),
-    )
-    .toString("base64url");
+  const attestation = await retainPublicationAttestation({
+    file: path.join(releaseQcDir, "publication-attestation.json"),
+    envelope, replicaReceiptSha256s,
+    signingKeyId: signingKey.signingKeyId,
+    publicKeyPem: signingKey.publicKeyPem,
+    privateKeyPem: signingKey.privateKeyPem,
+    ...(localR2 ? { custodyPolicySha256: localR2.policySha256 } : {}),
+  });
 
-  const attestation = createPublicationAttestation(
-    envelope,
-    replicaReceiptSha256s,
-    signingKey.signingKeyId,
-    attestationSignature,
-    attestedAt,
-  );
+  // New custody mode is explicit: one local content-addressed archive and one R2 archive,
+  // not two invented offsite ReplicaReceipts. Deliver hash-addressed controls separately.
+  const r2ControlResults: Awaited<ReturnType<typeof putVerifiedR2Object>>[] = [];
+  if (localR2 && localR2Archive) {
+    const controls = {
+      "release-envelope": `${JSON.stringify(envelope, null, 2)}\n`,
+      "custody-receipts": replicaReceiptsBytes,
+      "publication-attestation": `${JSON.stringify(attestation, null, 2)}\n`,
+    };
+    const controlsRoot = path.join(localR2.localArchiveRoot, "controls", envelopeSha256);
+    await fs.mkdir(controlsRoot, { recursive: true, mode: 0o700 });
+    for (const [name, bytes] of Object.entries(controls)) {
+      const hash = createHash("sha256").update(bytes).digest("hex");
+      const file = path.join(controlsRoot, `${name}-${hash}.json`);
+      try { await fs.writeFile(file, bytes, { flag: "wx", mode: 0o600 }); }
+      catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        if (await fs.readFile(file, "utf8") !== bytes) throw new Error("R2_CONTROL_FILE_CONFLICT");
+      }
+      const handle = await fs.open(file, "r");
+      try { await handle.sync(); } finally { await handle.close(); }
+      r2ControlResults.push(await putVerifiedR2Object(file,
+        `${localR2.remotePrefix}/${envelopeSha256}/controls/${name}-${hash}.json`, localR2.rcloneBinary));
+    }
+    const handle = await fs.open(controlsRoot, "r");
+    try { await handle.sync(); } finally { await handle.close(); }
+    for (const directory of [path.dirname(controlsRoot), localR2.localArchiveRoot]) {
+      const parent = await fs.open(directory, "r");
+      try { await parent.sync(); } finally { await parent.close(); }
+    }
+    if (r2ControlResults.length !== 3) throw new Error("R2_CONTROL_DELIVERY_INCOMPLETE");
+  }
 
   // --- Copy attestation + receipts to each destination ---
   for (let i = 0; i < destinationRoots.length; i++) {
@@ -442,7 +512,9 @@ try {
         envelopeSha256,
         releaseIntentHash,
         replicasVerified: replicaReceipts.length,
-        attestationDelivered: deliveryViolations.length === 0,
+        custodyMode: localR2 ? "local-plus-r2" : "independent-directory-replicas",
+        copiesVerified: localR2Archive ? 2 : replicaReceipts.length,
+        attestationDelivered: deliveryViolations.length === 0 && (!localR2 || r2ControlResults.length === 3),
       },
       null,
       2,
